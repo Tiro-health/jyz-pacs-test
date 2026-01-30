@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radiology Report</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+            },
+            colors: {
+              background: "hsl(var(--background))",
+              muted: {
+                DEFAULT: "hsl(var(--muted))",
+                foreground: "hsl(var(--muted-foreground))",
+              },
+              accent: "hsl(var(--accent))",
+            },
+          },
+        },
+      };
+    </script>
+
+    <!-- Theme detection script (runs before render to prevent flash) -->
+    <script>
+      (function () {
+        const params = new URLSearchParams(window.location.search);
+        const themeParam = params.get("theme");
+
+        let isDark;
+        if (themeParam === "dark") {
+          isDark = true;
+        } else if (themeParam === "light") {
+          isDark = false;
+        } else {
+          // Default to system preference
+          isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        }
+
+        if (isDark) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+
+    <!-- Google Fonts (required for Tiro Web SDK) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lexend:wght@100..900&family=Fira+Mono:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Tiro Web SDK CSS -->
+    <link
+      rel="stylesheet"
+      href="https://atticus-assets.tiro.health/sdk-dev/v0.2.0-dev.21/style.css"
+    />
+
+    <style>
+      tiro-form-filler {
+        display: block;
+        height: 100%;
+      }
+
+      tiro-magic-clipboard {
+        display: block;
+      }
+
+      details summary::-webkit-details-marker {
+        display: none;
+      }
+
+      details summary {
+        list-style: none;
+      }
+
+      details[open] .chevron {
+        transform: rotate(180deg);
+      }
+
+      /* Color variables from frontend UI package */
+      :root {
+        --background: 0 0% 100%;
+        --muted: 210 40% 96.1%;
+        --muted-foreground: 215.4 16.3% 46.9%;
+        --accent: 210 40% 90%;
+      }
+
+      :root.dark {
+        --background: 222.2 84% 4.9%;
+        --muted: 217.2 32.6% 17.5%;
+        --muted-foreground: 215 20.2% 65.1%;
+        --accent: 217.2 32.6% 25%;
+      }
+
+      :root {
+        /* Dropdown-specific variables */
+        --dropdown-bg: #ffffff;
+        --dropdown-text: #374151; /* gray-700 */
+        --dropdown-text-muted: #6b7280; /* gray-500 */
+        --dropdown-border: #d1d5db; /* gray-300 */
+        --dropdown-border-hover: #9ca3af; /* gray-400 */
+        --dropdown-hover: #f3f4f6; /* gray-100 */
+        --dropdown-disabled-bg: #eceef0; /* gray-100 */
+        --dropdown-disabled-text: #9ca3af; /* gray-400 */
+        --dropdown-disabled-border: #d1d5db; /* gray-300 */
+        --dropdown-multi-value-bg: #e5e7eb; /* gray-200 */
+        --dropdown-multi-value-hover: #d1d5db; /* gray-300 */
+        --dropdown-focus-ring: #006cd9; /* blue-500 */
+        --dropdown-indicator-color: #374151; /* gray-700 */
+      }
+
+      :root.dark {
+        /* Dropdown-specific variables for dark mode */
+        --dropdown-bg: #121212;
+        --dropdown-text: #e5e7eb; /* gray-200 */
+        --dropdown-text-muted: #9ca3af; /* gray-400 */
+        --dropdown-border: #4b5563; /* gray-600 */
+        --dropdown-border-hover: #6b7280; /* gray-500 */
+        --dropdown-hover: #374151; /* gray-700 */
+        --dropdown-disabled-bg: #374151; /* gray-700 */
+        --dropdown-disabled-text: #6b7280; /* gray-500 */
+        --dropdown-disabled-border: #4b5563; /* gray-600 */
+        --dropdown-multi-value-bg: #4b5563; /* gray-600 */
+        --dropdown-multi-value-hover: #6b7280; /* gray-500 */
+        --dropdown-focus-ring: #3d8eff; /* blue-500 (brighter for dark) */
+        --dropdown-indicator-color: #e5e7eb; /* gray-200 */
+      }
+    </style>
+  </head>
+  <body
+    class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200"
+  >
+    <!-- Loading overlay (hidden by default) -->
+    <div
+      id="loading-overlay"
+      class="fixed inset-0 bg-white/95 dark:bg-background/95 items-center justify-center z-50 hidden"
+    >
+      <div class="text-center">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-4 border-neutral-300 dark:border-neutral-600 border-t-blue-500 mb-4 mx-auto"
+        ></div>
+        <p class="text-neutral-800 dark:text-neutral-200 text-lg">
+          Generating report...
+        </p>
+        <p class="text-neutral-500 text-sm mt-2">This may take a few seconds</p>
+      </div>
+    </div>
+
+    <div class="h-full flex flex-col p-4 font-sans">
+      <!-- Toolbar -->
+      <div class="flex justify-end mb-3 gap-2">
+        <button
+          type="submit"
+          form="questionnaire-form"
+          name="status"
+          value="in-progress"
+          class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+        >
+          Save Progress
+        </button>
+        <button
+          type="submit"
+          form="questionnaire-form"
+          name="status"
+          value="completed"
+          class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+        >
+          Validate
+        </button>
+      </div>
+
+      <!-- Autofill Accordion -->
+      <details
+        id="autofill-accordion"
+        class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
+      >
+        <summary
+          class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72"
+            />
+            <path d="m14 7 3 3" />
+            <path d="M5 6v4" />
+            <path d="M19 14v4" />
+            <path d="M10 2v2" />
+            <path d="M7 8H3" />
+            <path d="M21 16h-4" />
+            <path d="M11 3H9" />
+          </svg>
+          Autofill
+          <svg
+            class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </summary>
+        <div
+          class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800"
+        >
+          <tiro-magic-clipboard for="report-form">
+            <button
+              type="submit"
+              class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors mt-2"
+            >
+              Autofill Template
+            </button>
+          </tiro-magic-clipboard>
+        </div>
+      </details>
+
+      <div class="flex-1 min-h-0 overflow-auto">
+        <tiro-form-filler
+          id="report-form"
+          sdc-endpoint-address="https://sdc-service-dev-35032072625.europe-west1.run.app/fhir/r5"
+          compact-grouping
+        />
+      </div>
+    </div>
+
+    <!-- Tiro Web SDK IIFE Bundle -->
+    <script src="https://atticus-assets.tiro.health/sdk-dev/v0.2.0-dev.21/tiro-web-sdk.iife.js"></script>
+
+    <script>
+      // ============================================
+      // URL Parameters
+      // ============================================
+      const params = new URLSearchParams(window.location.search);
+      const DEFAULT_QUESTIONNAIRE =
+        "http://templates.tiro.health/templates/aa87c115c40149e98faba070cacb15c9";
+      const questionnaire =
+        params.get("questionnaire") || DEFAULT_QUESTIONNAIRE;
+
+      // Build Parameters resource, always including questionnaire
+      const paramResource = {
+        resourceType: "Parameters",
+        parameter: [
+          ...Array.from(params.entries())
+            .filter(([name]) => name !== "questionnaire")
+            .map(([name, value]) => ({
+              name,
+              valueString: value,
+            })),
+          {
+            name: "questionnaire",
+            valueString: questionnaire,
+          },
+        ],
+      };
+
+      // ============================================
+      // DOM Elements
+      // ============================================
+      const form = document.getElementById("report-form");
+      const loadingOverlay = document.getElementById("loading-overlay");
+
+      // ============================================
+      // Utility Functions
+      // ============================================
+      const launchContext = {
+        custom: paramResource,
+        patient: {
+          resourceType: "Patient",
+          identifier: [
+            {
+              value: params.get("patientId") || "example-patient-id",
+            },
+          ],
+        },
+      };
+      const patientId =
+        launchContext.patient.identifier[0].value || "example-patient-id";
+      const accessionNumber =
+        params.get("accessionNumber") || "example-accession-number";
+      form.setAttribute("launch-context", JSON.stringify(launchContext));
+
+      // Set questionnaire on form
+      form.setAttribute("questionnaire", questionnaire);
+
+      console.log("Questionnaire:", form.questionnaire);
+
+      function showLoading() {
+        loadingOverlay.classList.remove("hidden");
+        loadingOverlay.classList.add("flex");
+      }
+
+      function hideLoading() {
+        loadingOverlay.classList.add("hidden");
+        loadingOverlay.classList.remove("flex");
+      }
+
+      function showError(message, error = null) {
+        hideLoading();
+        if (error) {
+          console.error(message, error);
+        }
+        alert(`Error: ${message}`);
+      }
+
+      // ============================================
+      // Event Listeners
+      // ============================================
+
+      form.addEventListener("tiro-ready", (event) => {
+        console.log("Questionnaire loaded:", event.detail.questionnaire);
+      });
+
+      form.addEventListener("tiro-update", (event) => {
+        console.log("Form updated:", event.detail.response);
+      });
+
+      form.addEventListener("tiro-submit", async (event) => {
+        const response = event.detail.response;
+        console.log("Form submitted:", response);
+
+        // Save progress without PDF generation
+        if (response.status === "in-progress") {
+          console.log("Saving progress (no PDF generation)");
+          alert("Progress saved!");
+          return;
+        }
+
+        try {
+          showLoading();
+
+          // Get Questionnaire from form slot
+          const scriptTag = document.querySelector(
+            'tiro-form-filler script[type="application/fhir+json"]',
+          );
+          const questionnaire = scriptTag
+            ? JSON.parse(scriptTag.textContent)
+            : null;
+          console.log(form.sdcClient);
+          // Call $extract via SDCClient
+          const { pdfData, title } = await form.sdcClient.extract({
+            questionnaireResponse: response,
+            questionnaire: questionnaire,
+          });
+
+          if (!pdfData) {
+            throw new Error("No PDF data in extract response");
+          }
+
+          console.log(
+            "PDF extracted successfully, size:",
+            pdfData.length,
+            "chars",
+          );
+
+          // Generate unique key for localStorage
+          const id = crypto.randomUUID();
+          const key = `Report/${id}`;
+
+          // Store PDF data with context
+          localStorage.setItem(
+            key,
+            JSON.stringify({
+              pdfData,
+              title: title || "Report",
+              context: {
+                patientId,
+                accessionNumber,
+                submittedAt: new Date().toISOString(),
+              },
+            }),
+          );
+          console.log("PDF stored in localStorage:", key);
+
+          // Navigate to callback page
+          window.location.href = `/callback.html?report=${encodeURIComponent(key)}`;
+        } catch (error) {
+          showError(error.message || "Failed to generate report", error);
+        }
+      });
+
+      form.addEventListener("tiro-error", (event) => {
+        console.error(
+          "Form error:",
+          event.detail.error,
+          "Type:",
+          event.detail.type,
+        );
+      });
+
+      // ============================================
+      // Magic Clipboard Event Listeners
+      // ============================================
+      const clipboard = document.querySelector("tiro-magic-clipboard");
+      const accordion = document.getElementById("autofill-accordion");
+
+      clipboard.addEventListener("tiro-populate-start", () => {
+        console.log("Magic clipboard: starting population...");
+      });
+
+      clipboard.addEventListener("tiro-populate-complete", (event) => {
+        console.log(
+          "Magic clipboard: population complete",
+          event.detail.response,
+        );
+        accordion.removeAttribute("open");
+      });
+
+      clipboard.addEventListener("tiro-populate-error", (event) => {
+        console.error("Magic clipboard error:", event.detail.error);
+      });
+    </script>
+  </body>
+</html>
