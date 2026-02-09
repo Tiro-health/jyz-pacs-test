@@ -87,6 +87,19 @@
                 transform: rotate(180deg);
             }
 
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+            .autofill-spinner {
+                display: inline-block;
+                width: 14px;
+                height: 14px;
+                border: 2px solid rgba(255,255,255,0.3);
+                border-top-color: white;
+                border-radius: 50%;
+                animation: spin 0.6s linear infinite;
+            }
+
             /* Color variables from frontend UI package */
             :root {
                 --background: 0 0% 100%;
@@ -449,6 +462,10 @@
 
             clipboard.addEventListener("tiro-populate-start", () => {
                 console.log("Magic clipboard: starting population...");
+                const btn = clipboard.querySelector("button[type='submit']");
+                btn.disabled = true;
+                btn.classList.add("opacity-75", "cursor-not-allowed");
+                btn.innerHTML = '<span class="autofill-spinner"></span> Autofilling...';
             });
 
             clipboard.addEventListener("tiro-populate-complete", (event) => {
@@ -456,11 +473,19 @@
                     "Magic clipboard: population complete",
                     event.detail.response,
                 );
+                const btn = clipboard.querySelector("button[type='submit']");
+                btn.disabled = false;
+                btn.classList.remove("opacity-75", "cursor-not-allowed");
+                btn.innerHTML = "Autofill Template";
                 accordion.removeAttribute("open");
             });
 
             clipboard.addEventListener("tiro-populate-error", (event) => {
                 console.error("Magic clipboard error:", event.detail.error);
+                const btn = clipboard.querySelector("button[type='submit']");
+                btn.disabled = false;
+                btn.classList.remove("opacity-75", "cursor-not-allowed");
+                btn.innerHTML = "Autofill Template";
             });
         </script>
     </body>
