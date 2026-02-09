@@ -154,8 +154,8 @@
       <!-- Toolbar -->
       <div class="flex justify-end mb-3 gap-2">
         <button
+          id="save-progress-btn"
           type="submit"
-          form="questionnaire-form"
           name="status"
           value="in-progress"
           class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
@@ -325,8 +325,14 @@
       // ============================================
 
       // ============================================
-      // Validate Button
+      // Submit Buttons
       // ============================================
+      const saveProgressBtn = document.getElementById("save-progress-btn");
+      saveProgressBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        form.requestSubmit(saveProgressBtn);
+      });
+
       const validateBtn = document.getElementById("validate-btn");
       validateBtn.addEventListener("click", (event) => {
         event.preventDefault();
