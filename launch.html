@@ -163,10 +163,8 @@
           Save Progress
         </button>
         <button
-          type="submit"
-          form="questionnaire-form"
-          name="status"
-          value="completed"
+          id="validate-btn"
+          type="button"
           class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
         >
           Validate
@@ -323,6 +321,14 @@
       // ============================================
       // Event Listeners
       // ============================================
+
+      // ============================================
+      // Validate Button
+      // ============================================
+      const validateBtn = document.getElementById("validate-btn");
+      validateBtn.addEventListener("click", () => {
+        form.requestSubmit();
+      });
 
       form.addEventListener("tiro-ready", (event) => {
         console.log("Questionnaire loaded:", event.detail.questionnaire);
