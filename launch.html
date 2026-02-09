@@ -327,18 +327,28 @@
       // ============================================
       // Submit Buttons
       // ============================================
-      const questionnaireForm = document.getElementById("questionnaire-form");
+      function submitForm(name, value) {
+        const innerForm = form.shadowRoot.querySelector("form");
+        const tempBtn = document.createElement("button");
+        tempBtn.type = "submit";
+        tempBtn.name = name;
+        tempBtn.value = value;
+        tempBtn.hidden = true;
+        innerForm.appendChild(tempBtn);
+        innerForm.requestSubmit(tempBtn);
+        tempBtn.remove();
+      }
 
       const saveProgressBtn = document.getElementById("save-progress-btn");
       saveProgressBtn.addEventListener("click", (event) => {
         event.preventDefault();
-        questionnaireForm.requestSubmit(saveProgressBtn);
+        submitForm("status", "in-progress");
       });
 
       const validateBtn = document.getElementById("validate-btn");
       validateBtn.addEventListener("click", (event) => {
         event.preventDefault();
-        questionnaireForm.requestSubmit(validateBtn);
+        submitForm("status", "completed");
       });
 
       form.addEventListener("tiro-ready", (event) => {
