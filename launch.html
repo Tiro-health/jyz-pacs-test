@@ -164,7 +164,9 @@
         </button>
         <button
           id="validate-btn"
-          type="button"
+          type="submit"
+          name="status"
+          value="completed"
           class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
         >
           Validate
@@ -326,8 +328,9 @@
       // Validate Button
       // ============================================
       const validateBtn = document.getElementById("validate-btn");
-      validateBtn.addEventListener("click", () => {
-        form.requestSubmit();
+      validateBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        form.requestSubmit(validateBtn);
       });
 
       form.addEventListener("tiro-ready", (event) => {
