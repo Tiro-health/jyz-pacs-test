@@ -88,13 +88,15 @@
             }
 
             @keyframes spin {
-                to { transform: rotate(360deg); }
+                to {
+                    transform: rotate(360deg);
+                }
             }
             .autofill-spinner {
                 display: inline-block;
                 width: 14px;
                 height: 14px;
-                border: 2px solid rgba(255,255,255,0.3);
+                border: 2px solid rgba(255, 255, 255, 0.3);
                 border-top-color: white;
                 border-radius: 50%;
                 animation: spin 0.6s linear infinite;
@@ -251,6 +253,7 @@
                         id="dictation-provider"
                         class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
+                        <option value="">None</option>
                         <option value="Endpoint/squire">Squire</option>
                         <option value="Endpoint/corti">Corti</option>
                         <option value="Endpoint/dmsk">Dragon Medical</option>
@@ -258,7 +261,6 @@
                     <tiro-magic-clipboard
                         for="report-form"
                         dictation-language="nl"
-                        dictation-endpoint="Endpoint/squire"
                     >
                         <button
                             type="submit"
@@ -273,14 +275,14 @@
             <div class="flex-1 min-h-0 overflow-auto">
                 <tiro-form-filler
                     id="report-form"
-                    sdc-endpoint-address="https://sdc-dev.tiro.health/fhir/r5"
+                    sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
                     compact-grouping
                 />
             </div>
         </div>
 
         <!-- Tiro Web SDK IIFE Bundle -->
-        <script src="https://cdn.tiro.health/sdk-dev/v0.2.2-dev.6/tiro-web-sdk.iife.js"></script>
+        <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
 
         <script>
             // ============================================
@@ -475,9 +477,17 @@
             const accordion = document.getElementById("autofill-accordion");
 
             // Sync dictation provider dropdown with magic clipboard
-            const dictationSelect = document.getElementById("dictation-provider");
+            const dictationSelect =
+                document.getElementById("dictation-provider");
             dictationSelect.addEventListener("change", () => {
-                clipboard.setAttribute("dictation-endpoint", dictationSelect.value);
+                if (dictationSelect.value) {
+                    clipboard.setAttribute(
+                        "dictation-endpoint",
+                        dictationSelect.value,
+                    );
+                } else {
+                    clipboard.removeAttribute("dictation-endpoint");
+                }
             });
 
             clipboard.addEventListener("tiro-populate-start", () => {
@@ -485,7 +495,8 @@
                 const btn = clipboard.querySelector("button[type='submit']");
                 btn.disabled = true;
                 btn.classList.add("opacity-75", "cursor-not-allowed");
-                btn.innerHTML = '<span class="autofill-spinner"></span> Autofilling...';
+                btn.innerHTML =
+                    '<span class="autofill-spinner"></span> Autofilling...';
             });
 
             clipboard.addEventListener("tiro-populate-complete", (event) => {
