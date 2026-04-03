@@ -196,6 +196,27 @@
                 </button>
             </div>
 
+            <!-- Template Selector -->
+            <div class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3 px-3 py-2">
+                <label
+                    for="template-selector"
+                    class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                    >Template</label
+                >
+                <input
+                    id="template-selector"
+                    list="template-list"
+                    class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Select a template..."
+                />
+                <datalist id="template-list">
+                    <option value="MR Rectum" data-url="http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.1"></option>
+                    <option value="RX/ECHO Schouder (structured)" data-url="http://templates.tiro.health/templates/6a25021db0d547bda2e0d5b798deca63|1.0.0"></option>
+                    <option value="ECHO Schouder (auto SNOMED)" data-url="http://templates.tiro.health/templates/4060b04a532e4f2b856c405cc901fefe|1.0.1"></option>
+                    <option value="Echo Abdomen" data-url="http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0"></option>
+                </datalist>
+            </div>
+
             <!-- Autofill Accordion -->
             <details
                 id="autofill-accordion"
@@ -286,6 +307,25 @@
 
         <script>
             // ============================================
+            // Template Map & Selector
+            // ============================================
+            const TEMPLATES = {
+                "MR Rectum": "http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.1",
+                "RX/ECHO Schouder (structured)": "http://templates.tiro.health/templates/6a25021db0d547bda2e0d5b798deca63|1.0.0",
+                "ECHO Schouder (auto SNOMED)": "http://templates.tiro.health/templates/4060b04a532e4f2b856c405cc901fefe|1.0.1",
+                "Echo Abdomen": "http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0",
+            };
+
+            const templateSelector = document.getElementById("template-selector");
+            templateSelector.addEventListener("change", () => {
+                const url = TEMPLATES[templateSelector.value];
+                if (!url) return;
+                const newParams = new URLSearchParams(window.location.search);
+                newParams.set("questionnaire", url);
+                window.location.search = newParams.toString();
+            });
+
+            // ============================================
             // URL Parameters
             // ============================================
             const params = new URLSearchParams(window.location.search);
@@ -293,6 +333,13 @@
                 "http://templates.tiro.health/templates/a1b9a07562514db0af31ac872431e49e|1.0.0";
             const questionnaire =
                 params.get("questionnaire") || DEFAULT_QUESTIONNAIRE;
+
+            // Set the template selector to show the current template name
+            const currentTemplateName = Object.entries(TEMPLATES)
+                .find(([, url]) => url === questionnaire)?.[0];
+            if (currentTemplateName) {
+                templateSelector.value = currentTemplateName;
+            }
 
             // Build Parameters resource, always including questionnaire
             const paramResource = {
