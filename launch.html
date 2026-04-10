@@ -196,13 +196,22 @@
                     Save Progress
                 </button>
                 <button
+                    id="validate-and-save-btn"
+                    type="submit"
+                    name="status"
+                    value="in-progress"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 transition-colors"
+                >
+                    Validate and save
+                </button>
+                <button
                     id="validate-btn"
                     type="submit"
                     name="status"
                     value="completed"
                     class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                 >
-                    Validate
+                    Validate &amp; database
                 </button>
             </div>
             </div>
@@ -703,6 +712,13 @@
             saveProgressBtn.addEventListener("click", (event) => {
                 event.preventDefault();
                 form.requestSubmit();
+            });
+
+            const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
+            validateAndSaveBtn.addEventListener("click", (event) => {
+                event.preventDefault();
+                const dbParams = new URLSearchParams(window.location.search);
+                window.location.href = `database.html?${dbParams.toString()}`;
             });
 
             const validateBtn = document.getElementById("validate-btn");
