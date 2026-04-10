@@ -717,7 +717,8 @@
             const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
             validateAndSaveBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                form.requestSubmit();
+                const dbParams = new URLSearchParams(window.location.search);
+                window.location.href = `database.html?${dbParams.toString()}`;
             });
 
             const validateBtn = document.getElementById("validate-btn");

@@ -9,6 +9,7 @@ export default defineConfig({
         callback: "callback.html",
         flow: "flow.html",
         qc: "qc.html",
+        database: "database.html",
       },
     },
   },
