@@ -8,6 +8,7 @@ export default defineConfig({
         launch: "launch.html",
         callback: "callback.html",
         flow: "flow.html",
+        qc: "qc.html",
       },
     },
   },

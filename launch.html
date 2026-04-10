@@ -157,8 +157,8 @@
     >
         <!-- QC floating button -->
         <a
-            href="#"
-            title="QC - landing page still to configure"
+            href="qc.html"
+            title="Quality Control"
             class="fixed top-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg transition-colors"
         >
             QC
@@ -626,6 +626,10 @@
             const templateFlowBtn = document.getElementById("template-flow-btn");
             const flowParams = new URLSearchParams(window.location.search);
             templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
+
+            // QC button: pass current URL params to qc.html
+            const qcBtn = document.querySelector('a[href="qc.html"]');
+            qcBtn.href = `qc.html?${flowParams.toString()}`;
 
             // Initialize context form with fixed questionnaire
             const contextForm = document.getElementById("context-form");
