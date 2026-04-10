@@ -73,6 +73,17 @@
 
             tiro-magic-clipboard {
                 display: block;
+                overflow: visible !important;
+                max-height: none !important;
+                height: auto !important;
+            }
+
+            /* Override any internal scroll containers within the dictation component */
+            tiro-magic-clipboard *,
+            tiro-magic-clipboard > * {
+                max-height: none !important;
+                overflow: visible !important;
+                height: auto !important;
             }
 
             details summary::-webkit-details-marker {
@@ -853,6 +864,29 @@
             // Magic Clipboard Event Listeners
             // ============================================
             const clipboard = document.querySelector("tiro-magic-clipboard");
+
+            // Override internal scroll in shadow DOM of tiro-magic-clipboard
+            function overrideDictationScroll() {
+                if (!clipboard.shadowRoot) return;
+                const style = document.createElement("style");
+                style.textContent = `
+                    * {
+                        max-height: none !important;
+                        overflow: visible !important;
+                        height: auto !important;
+                    }
+                    textarea {
+                        overflow-y: visible !important;
+                        resize: none;
+                        height: auto !important;
+                        min-height: 4rem;
+                    }
+                `;
+                clipboard.shadowRoot.appendChild(style);
+            }
+            // Try immediately and after component upgrades
+            overrideDictationScroll();
+            customElements.whenDefined("tiro-magic-clipboard").then(overrideDictationScroll);
             const accordion = document.getElementById("autofill-accordion");
 
             // Sync dictation provider dropdown with magic clipboard
