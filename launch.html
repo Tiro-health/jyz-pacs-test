@@ -174,87 +174,6 @@
         </div>
 
         <div class="h-full flex flex-col p-4 font-sans">
-            <!-- Settings -->
-            <details
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
-            >
-                <summary
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
-                        <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    Settings
-                    <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </summary>
-                <div
-                    class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800 space-y-3"
-                >
-                    <!-- Questionnaire Reference -->
-                    <form id="questionnaire-form">
-                        <label
-                            for="questionnaire-input"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Questionnaire Reference</label
-                        >
-                        <div class="flex gap-2">
-                            <input
-                                id="questionnaire-input"
-                                type="text"
-                                placeholder="http://templates.tiro.health/templates/..."
-                                class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <button
-                                type="submit"
-                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors whitespace-nowrap"
-                            >
-                                Load
-                            </button>
-                        </div>
-                    </form>
-
-                    <!-- Dictation Provider -->
-                    <div>
-                        <label
-                            for="dictation-provider"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Dictation Provider</label
-                        >
-                        <select
-                            id="dictation-provider"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="">None</option>
-                            <option value="Endpoint/squire">Squire</option>
-                            <option value="Endpoint/corti">Corti</option>
-                            <option value="Endpoint/dmsk">Dragon Medical</option>
-                        </select>
-                    </div>
-                </div>
-            </details>
-
             <!-- Toolbar -->
             <div class="flex justify-end mb-3 gap-2">
                 <button
@@ -368,6 +287,87 @@
                     compact-grouping
                 />
             </div>
+
+            <!-- Settings -->
+            <details
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mt-3"
+            >
+                <summary
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                        <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Settings
+                    <svg
+                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
+                </summary>
+                <div
+                    class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800 space-y-3"
+                >
+                    <!-- Questionnaire Reference -->
+                    <form id="questionnaire-form">
+                        <label
+                            for="questionnaire-input"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Questionnaire Reference</label
+                        >
+                        <div class="flex gap-2">
+                            <input
+                                id="questionnaire-input"
+                                type="text"
+                                placeholder="http://templates.tiro.health/templates/..."
+                                class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <button
+                                type="submit"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors whitespace-nowrap"
+                            >
+                                Load
+                            </button>
+                        </div>
+                    </form>
+
+                    <!-- Dictation Provider -->
+                    <div>
+                        <label
+                            for="dictation-provider"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Dictation Provider</label
+                        >
+                        <select
+                            id="dictation-provider"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">None</option>
+                            <option value="Endpoint/squire">Squire</option>
+                            <option value="Endpoint/corti">Corti</option>
+                            <option value="Endpoint/dmsk">Dragon Medical</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
         </div>
 
         <!-- Tiro Web SDK IIFE Bundle -->
