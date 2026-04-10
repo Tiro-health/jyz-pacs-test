@@ -193,7 +193,7 @@
                     value="in-progress"
                     class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
                 >
-                    Save Progress
+                    Save progress (F11)
                 </button>
                 <button
                     id="validate-and-save-btn"
@@ -202,7 +202,7 @@
                     value="in-progress"
                     class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-blue-300 dark:border-blue-600 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-300 transition-colors"
                 >
-                    Validate and save
+                    Validate &amp; store (F10)
                 </button>
                 <button
                     id="validate-btn"
@@ -211,7 +211,7 @@
                     value="completed"
                     class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                 >
-                    Validate &amp; database
+                    Validate (F9)
                 </button>
             </div>
             </div>
@@ -526,9 +526,6 @@
                             <option value="F6">F6</option>
                             <option value="F7">F7</option>
                             <option value="F8">F8</option>
-                            <option value="F9">F9</option>
-                            <option value="F10">F10</option>
-                            <option value="F11">F11</option>
                             <option value="F12">F12</option>
                         </select>
                     </div>
@@ -754,6 +751,15 @@
             validateBtn.addEventListener("click", (event) => {
                 event.preventDefault();
                 form.requestSubmit();
+            });
+
+            // F9 / F10 / F11 keyboard shortcuts for toolbar buttons
+            document.addEventListener("keydown", (event) => {
+                const tag = document.activeElement?.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+                if (event.key === "F9") { event.preventDefault(); validateBtn.click(); }
+                if (event.key === "F10") { event.preventDefault(); validateAndSaveBtn.click(); }
+                if (event.key === "F11") { event.preventDefault(); saveProgressBtn.click(); }
             });
 
             form.addEventListener("tiro-ready", (event) => {
