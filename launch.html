@@ -507,6 +507,32 @@
                         </select>
                     </div>
 
+                    <!-- Dictation Shortcut -->
+                    <div>
+                        <label
+                            for="dictation-shortcut"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Dictation Shortcut</label
+                        >
+                        <select
+                            id="dictation-shortcut"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">None</option>
+                            <option value="F2">F2</option>
+                            <option value="F3">F3</option>
+                            <option value="F4" selected>F4</option>
+                            <option value="F5">F5</option>
+                            <option value="F6">F6</option>
+                            <option value="F7">F7</option>
+                            <option value="F8">F8</option>
+                            <option value="F9">F9</option>
+                            <option value="F10">F10</option>
+                            <option value="F11">F11</option>
+                            <option value="F12">F12</option>
+                        </select>
+                    </div>
+
                     <!-- Template Flow -->
                     <div>
                         <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Workflow - landing page still to configure!</label>
@@ -839,6 +865,44 @@
             dictationSelect.addEventListener("change", applyDictationProvider);
             applyDictationProvider();
 
+            // ============================================
+            // Dictation keyboard shortcut
+            // ============================================
+            const shortcutSelect = document.getElementById("dictation-shortcut");
+            let dictationShortcutKey = shortcutSelect.value;
+            shortcutSelect.addEventListener("change", () => {
+                dictationShortcutKey = shortcutSelect.value;
+                localStorage.setItem("dictationShortcut", dictationShortcutKey);
+            });
+
+            // Restore saved shortcut
+            const savedShortcut = localStorage.getItem("dictationShortcut");
+            if (savedShortcut !== null) {
+                shortcutSelect.value = savedShortcut;
+                dictationShortcutKey = savedShortcut;
+            }
+
+            document.addEventListener("keydown", (event) => {
+                if (!dictationShortcutKey) return;
+                if (event.key !== dictationShortcutKey) return;
+                // Don't trigger when typing in an input/textarea/select
+                const tag = document.activeElement?.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+                event.preventDefault();
+
+                // Try light DOM button first, then shadow DOM
+                let dictBtn = clipboard.querySelector("button[data-role='dictation'], button.dictation-btn, button[aria-label*='dict' i], button[aria-label*='record' i], button[aria-label*='micro' i]");
+                if (!dictBtn && clipboard.shadowRoot) {
+                    dictBtn = clipboard.shadowRoot.querySelector("button");
+                }
+                if (dictBtn) {
+                    dictBtn.click();
+                } else {
+                    // Fallback: dispatch a custom event the SDK may listen to
+                    clipboard.dispatchEvent(new CustomEvent("tiro-dictation-toggle", { bubbles: true }));
+                }
+            });
+
             clipboard.addEventListener("tiro-populate-start", () => {
                 console.log("Magic clipboard: starting population...");
                 const btn = clipboard.querySelector("button[type='submit']");
@@ -867,6 +931,58 @@
                 btn.classList.remove("opacity-75", "cursor-not-allowed");
                 btn.innerHTML = "Autofill Template";
             });
+
+            // ============================================
+            // Dictation background hotfix
+            // ============================================
+
+            // 1. Screen Wake Lock: prevent screen/device sleep while page is open
+            let wakeLock = null;
+            async function requestWakeLock() {
+                if ("wakeLock" in navigator) {
+                    try {
+                        wakeLock = await navigator.wakeLock.request("screen");
+                        console.log("Wake lock acquired");
+                    } catch (err) {
+                        console.warn("Wake lock not granted:", err);
+                    }
+                }
+            }
+            requestWakeLock();
+
+            // Re-acquire wake lock when tab regains focus (browser may release it)
+            document.addEventListener("visibilitychange", async () => {
+                if (document.visibilityState === "visible") {
+                    await requestWakeLock();
+                    showDictationWarning();
+                }
+            });
+
+            // 2. Warning banner when returning from background
+            const dictationWarning = document.createElement("div");
+            dictationWarning.id = "dictation-warning";
+            dictationWarning.className = [
+                "fixed bottom-4 left-1/2 -translate-x-1/2 z-50",
+                "hidden items-center gap-3 px-4 py-3 rounded-lg shadow-lg",
+                "bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600",
+                "text-sm text-amber-800 dark:text-amber-200",
+            ].join(" ");
+            dictationWarning.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>Dictation may have been interrupted. Please restart if needed.</span>
+                <button onclick="document.getElementById('dictation-warning').classList.replace('flex','hidden')" class="ml-2 text-amber-600 dark:text-amber-400 hover:text-amber-800 font-medium">✕</button>
+            `;
+            document.body.appendChild(dictationWarning);
+
+            function showDictationWarning() {
+                dictationWarning.classList.remove("hidden");
+                dictationWarning.classList.add("flex");
+                setTimeout(() => {
+                    dictationWarning.classList.replace("flex", "hidden");
+                }, 6000);
+            }
         </script>
     </body>
 </html>
