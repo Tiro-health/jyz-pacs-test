@@ -507,6 +507,32 @@
                         </select>
                     </div>
 
+                    <!-- Dictation Shortcut -->
+                    <div>
+                        <label
+                            for="dictation-shortcut"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Dictation Shortcut</label
+                        >
+                        <select
+                            id="dictation-shortcut"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">None</option>
+                            <option value="F2">F2</option>
+                            <option value="F3">F3</option>
+                            <option value="F4" selected>F4</option>
+                            <option value="F5">F5</option>
+                            <option value="F6">F6</option>
+                            <option value="F7">F7</option>
+                            <option value="F8">F8</option>
+                            <option value="F9">F9</option>
+                            <option value="F10">F10</option>
+                            <option value="F11">F11</option>
+                            <option value="F12">F12</option>
+                        </select>
+                    </div>
+
                     <!-- Template Flow -->
                     <div>
                         <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Workflow - landing page still to configure!</label>
@@ -838,6 +864,44 @@
             };
             dictationSelect.addEventListener("change", applyDictationProvider);
             applyDictationProvider();
+
+            // ============================================
+            // Dictation keyboard shortcut
+            // ============================================
+            const shortcutSelect = document.getElementById("dictation-shortcut");
+            let dictationShortcutKey = shortcutSelect.value;
+            shortcutSelect.addEventListener("change", () => {
+                dictationShortcutKey = shortcutSelect.value;
+                localStorage.setItem("dictationShortcut", dictationShortcutKey);
+            });
+
+            // Restore saved shortcut
+            const savedShortcut = localStorage.getItem("dictationShortcut");
+            if (savedShortcut !== null) {
+                shortcutSelect.value = savedShortcut;
+                dictationShortcutKey = savedShortcut;
+            }
+
+            document.addEventListener("keydown", (event) => {
+                if (!dictationShortcutKey) return;
+                if (event.key !== dictationShortcutKey) return;
+                // Don't trigger when typing in an input/textarea/select
+                const tag = document.activeElement?.tagName;
+                if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+                event.preventDefault();
+
+                // Try light DOM button first, then shadow DOM
+                let dictBtn = clipboard.querySelector("button[data-role='dictation'], button.dictation-btn, button[aria-label*='dict' i], button[aria-label*='record' i], button[aria-label*='micro' i]");
+                if (!dictBtn && clipboard.shadowRoot) {
+                    dictBtn = clipboard.shadowRoot.querySelector("button");
+                }
+                if (dictBtn) {
+                    dictBtn.click();
+                } else {
+                    // Fallback: dispatch a custom event the SDK may listen to
+                    clipboard.dispatchEvent(new CustomEvent("tiro-dictation-toggle", { bubbles: true }));
+                }
+            });
 
             clipboard.addEventListener("tiro-populate-start", () => {
                 console.log("Magic clipboard: starting population...");
