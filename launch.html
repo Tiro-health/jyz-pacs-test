@@ -624,10 +624,8 @@
 
             // Template flow button — opens this page with a fixed template in a new tab
             const templateFlowBtn = document.getElementById("template-flow-btn");
-            const FLOW_QUESTIONNAIRE = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|1.0.0";
             const flowParams = new URLSearchParams(window.location.search);
-            flowParams.set("questionnaire", FLOW_QUESTIONNAIRE);
-            templateFlowBtn.href = `${window.location.pathname}?${flowParams.toString()}`;
+            templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
 
             // Initialize context form with fixed questionnaire
             const contextForm = document.getElementById("context-form");

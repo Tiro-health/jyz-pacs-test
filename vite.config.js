@@ -7,6 +7,7 @@ export default defineConfig({
         main: "index.html",
         launch: "launch.html",
         callback: "callback.html",
+        flow: "flow.html",
       },
     },
   },

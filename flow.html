@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Template Flow</title>
+
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: [
+                                "Inter",
+                                "system-ui",
+                                "-apple-system",
+                                "sans-serif",
+                            ],
+                        },
+                        colors: {
+                            background: "hsl(var(--background))",
+                            muted: {
+                                DEFAULT: "hsl(var(--muted))",
+                                foreground: "hsl(var(--muted-foreground))",
+                            },
+                            accent: "hsl(var(--accent))",
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <!-- Theme detection script (runs before render to prevent flash) -->
+        <script>
+            (function () {
+                const params = new URLSearchParams(window.location.search);
+                const themeParam = params.get("theme");
+
+                let isDark;
+                if (themeParam === "dark") {
+                    isDark = true;
+                } else if (themeParam === "light") {
+                    isDark = false;
+                } else {
+                    isDark = window.matchMedia(
+                        "(prefers-color-scheme: dark)",
+                    ).matches;
+                }
+
+                if (isDark) {
+                    document.documentElement.classList.add("dark");
+                }
+            })();
+        </script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lexend:wght@100..900&family=Fira+Mono:wght@400;500;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            tiro-form-filler {
+                display: block;
+                height: 100%;
+            }
+
+            details summary::-webkit-details-marker {
+                display: none;
+            }
+
+            details summary {
+                list-style: none;
+            }
+
+            details[open] .chevron {
+                transform: rotate(180deg);
+            }
+
+            :root {
+                --background: 0 0% 100%;
+                --muted: 210 40% 96.1%;
+                --muted-foreground: 215.4 16.3% 46.9%;
+                --accent: 210 40% 90%;
+                --dropdown-bg: #ffffff;
+                --dropdown-text: #374151;
+                --dropdown-text-muted: #6b7280;
+                --dropdown-border: #d1d5db;
+                --dropdown-border-hover: #9ca3af;
+                --dropdown-hover: #f3f4f6;
+                --dropdown-disabled-bg: #eceef0;
+                --dropdown-disabled-text: #9ca3af;
+                --dropdown-disabled-border: #d1d5db;
+                --dropdown-multi-value-bg: #e5e7eb;
+                --dropdown-multi-value-hover: #d1d5db;
+                --dropdown-focus-ring: #006cd9;
+                --dropdown-indicator-color: #374151;
+            }
+
+            :root.dark {
+                --background: 222.2 84% 4.9%;
+                --muted: 217.2 32.6% 17.5%;
+                --muted-foreground: 215 20.2% 65.1%;
+                --accent: 217.2 32.6% 25%;
+                --dropdown-bg: #121212;
+                --dropdown-text: #e5e7eb;
+                --dropdown-text-muted: #9ca3af;
+                --dropdown-border: #4b5563;
+                --dropdown-border-hover: #6b7280;
+                --dropdown-hover: #374151;
+                --dropdown-disabled-bg: #374151;
+                --dropdown-disabled-text: #6b7280;
+                --dropdown-disabled-border: #4b5563;
+                --dropdown-multi-value-bg: #4b5563;
+                --dropdown-multi-value-hover: #6b7280;
+                --dropdown-focus-ring: #3d8eff;
+                --dropdown-indicator-color: #e5e7eb;
+            }
+        </style>
+    </head>
+    <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200">
+
+        <!-- Loading overlay -->
+        <div
+            id="loading-overlay"
+            class="fixed inset-0 bg-white/95 dark:bg-background/95 items-center justify-center z-50 hidden"
+        >
+            <div class="text-center">
+                <div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Generating PDF...</p>
+                <p class="text-neutral-500 text-sm mt-2">This may take a few seconds</p>
+            </div>
+        </div>
+
+        <div class="h-full flex flex-col p-4 font-sans">
+
+            <!-- Toolbar -->
+            <div class="sticky top-0 z-10 flex justify-between mb-3 gap-2 py-2 pointer-events-none">
+                <div class="pointer-events-auto">
+                    <button
+                        id="back-btn"
+                        type="button"
+                        onclick="history.back()"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m15 18-6-6 6-6"/>
+                        </svg>
+                        Terug
+                    </button>
+                </div>
+                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 shadow-sm">
+                    <button
+                        id="save-progress-btn"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                    >
+                        Save Progress
+                    </button>
+                    <button
+                        id="validate-btn"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                    >
+                        Validate
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form filler -->
+            <div class="flex-1 min-h-0 overflow-auto">
+                <tiro-form-filler
+                    id="flow-form"
+                    sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                    compact-grouping
+                />
+            </div>
+        </div>
+
+        <!-- Tiro Web SDK -->
+        <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
+
+        <script>
+            const FLOW_QUESTIONNAIRE = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|1.0.0";
+
+            const params = new URLSearchParams(window.location.search);
+            const loadingOverlay = document.getElementById("loading-overlay");
+            const form = document.getElementById("flow-form");
+
+            const launchContext = {
+                custom: {
+                    resourceType: "Parameters",
+                    parameter: [
+                        ...Array.from(params.entries()).map(([name, value]) => ({
+                            name,
+                            valueString: value,
+                        })),
+                        { name: "questionnaire", valueString: FLOW_QUESTIONNAIRE },
+                    ],
+                },
+                patient: {
+                    resourceType: "Patient",
+                    identifier: [
+                        { value: params.get("patientId") || "example-patient-id" },
+                    ],
+                },
+            };
+
+            form.setAttribute("launch-context", JSON.stringify(launchContext));
+            form.setAttribute("questionnaire", FLOW_QUESTIONNAIRE);
+
+            document.getElementById("save-progress-btn").addEventListener("click", () => {
+                form.requestSubmit();
+            });
+            document.getElementById("validate-btn").addEventListener("click", () => {
+                form.requestSubmit();
+            });
+
+            form.addEventListener("tiro-submit", async (event) => {
+                const response = event.detail.response;
+                if (response.status === "in-progress") {
+                    alert("Progress saved!");
+                    return;
+                }
+                try {
+                    loadingOverlay.classList.remove("hidden");
+                    loadingOverlay.classList.add("flex");
+                    const scriptTag = document.querySelector(
+                        'tiro-form-filler script[type="application/fhir+json"]',
+                    );
+                    const questionnaire = scriptTag ? JSON.parse(scriptTag.textContent) : null;
+                    const { pdfData, title } = await form.sdcClient.extract({
+                        questionnaireResponse: response,
+                        questionnaire,
+                    });
+                    if (!pdfData) throw new Error("No PDF data in extract response");
+                    const pdfBlob = new Blob(
+                        [Uint8Array.from(atob(pdfData), (c) => c.charCodeAt(0))],
+                        { type: "application/pdf" },
+                    );
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    sessionStorage.setItem("pdfUrl", pdfUrl);
+                    sessionStorage.setItem("pdfTitle", title || "Report");
+                    window.location.href = "callback.html";
+                } catch (err) {
+                    loadingOverlay.classList.add("hidden");
+                    loadingOverlay.classList.remove("flex");
+                    alert("Error generating PDF: " + err.message);
+                }
+            });
+        </script>
+    </body>
+</html>
