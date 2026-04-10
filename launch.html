@@ -867,6 +867,58 @@
                 btn.classList.remove("opacity-75", "cursor-not-allowed");
                 btn.innerHTML = "Autofill Template";
             });
+
+            // ============================================
+            // Dictation background hotfix
+            // ============================================
+
+            // 1. Screen Wake Lock: prevent screen/device sleep while page is open
+            let wakeLock = null;
+            async function requestWakeLock() {
+                if ("wakeLock" in navigator) {
+                    try {
+                        wakeLock = await navigator.wakeLock.request("screen");
+                        console.log("Wake lock acquired");
+                    } catch (err) {
+                        console.warn("Wake lock not granted:", err);
+                    }
+                }
+            }
+            requestWakeLock();
+
+            // Re-acquire wake lock when tab regains focus (browser may release it)
+            document.addEventListener("visibilitychange", async () => {
+                if (document.visibilityState === "visible") {
+                    await requestWakeLock();
+                    showDictationWarning();
+                }
+            });
+
+            // 2. Warning banner when returning from background
+            const dictationWarning = document.createElement("div");
+            dictationWarning.id = "dictation-warning";
+            dictationWarning.className = [
+                "fixed bottom-4 left-1/2 -translate-x-1/2 z-50",
+                "hidden items-center gap-3 px-4 py-3 rounded-lg shadow-lg",
+                "bg-amber-50 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-600",
+                "text-sm text-amber-800 dark:text-amber-200",
+            ].join(" ");
+            dictationWarning.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                </svg>
+                <span>Dictation may have been interrupted. Please restart if needed.</span>
+                <button onclick="document.getElementById('dictation-warning').classList.replace('flex','hidden')" class="ml-2 text-amber-600 dark:text-amber-400 hover:text-amber-800 font-medium">✕</button>
+            `;
+            document.body.appendChild(dictationWarning);
+
+            function showDictationWarning() {
+                dictationWarning.classList.remove("hidden");
+                dictationWarning.classList.add("flex");
+                setTimeout(() => {
+                    dictationWarning.classList.replace("flex", "hidden");
+                }, 6000);
+            }
         </script>
     </body>
 </html>
