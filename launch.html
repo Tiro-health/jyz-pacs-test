@@ -493,6 +493,34 @@
                             <option value="Endpoint/dmsk" selected>Dragon Medical</option>
                         </select>
                     </div>
+
+                    <!-- Template Flow -->
+                    <div>
+                        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Quick Access</label>
+                        <a
+                            id="template-flow-btn"
+                            href="#"
+                            target="_blank"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="14"
+                                height="14"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            >
+                                <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5z"/>
+                                <path d="M9 3v18"/>
+                                <path d="m16 15-3-3 3-3"/>
+                            </svg>
+                            Template flow
+                        </a>
+                    </div>
                 </div>
             </details>
         </div>
@@ -591,6 +619,13 @@
             form.setAttribute("questionnaire", questionnaire);
 
             console.log("Questionnaire:", form.questionnaire);
+
+            // Template flow button — opens this page with a fixed template in a new tab
+            const templateFlowBtn = document.getElementById("template-flow-btn");
+            const FLOW_QUESTIONNAIRE = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|1.0.0";
+            const flowParams = new URLSearchParams(window.location.search);
+            flowParams.set("questionnaire", FLOW_QUESTIONNAIRE);
+            templateFlowBtn.href = `${window.location.pathname}?${flowParams.toString()}`;
 
             // Initialize context form with fixed questionnaire
             const contextForm = document.getElementById("context-form");
