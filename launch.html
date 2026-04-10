@@ -267,6 +267,49 @@
                 </div>
             </details>
 
+            <!-- Clinical Information Form -->
+            <details
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
+            >
+                <summary
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    </svg>
+                    Clinical information and diagnostic question
+                    <svg
+                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
+                </summary>
+                <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
+                    <tiro-form-filler
+                        id="clinical-form"
+                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                        compact-grouping
+                    />
+                </div>
+            </details>
+
             <!-- Autofill Accordion -->
             <details
                 id="autofill-accordion"
@@ -554,6 +597,12 @@
             const CONTEXT_QUESTIONNAIRE = "http://templates.tiro.health/templates/b5bf6d467e184b0fb36dde14d040f594|1.0.0";
             contextForm.setAttribute("launch-context", JSON.stringify(launchContext));
             contextForm.setAttribute("questionnaire", CONTEXT_QUESTIONNAIRE);
+
+            // Initialize clinical information form
+            const clinicalForm = document.getElementById("clinical-form");
+            const CLINICAL_QUESTIONNAIRE = "http://templates.tiro.health/templates/01c43a0128d647af93b8bde21cab8d0a|1.0.0";
+            clinicalForm.setAttribute("launch-context", JSON.stringify(launchContext));
+            clinicalForm.setAttribute("questionnaire", CLINICAL_QUESTIONNAIRE);
 
             // ============================================
             // Load Questionnaire Handler
