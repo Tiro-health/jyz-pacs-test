@@ -401,7 +401,7 @@
                             <option value="">None</option>
                             <option value="Endpoint/squire">Squire</option>
                             <option value="Endpoint/corti">Corti</option>
-                            <option value="Endpoint/dmsk">Dragon Medical</option>
+                            <option value="Endpoint/dmsk" selected>Dragon Medical</option>
                         </select>
                     </div>
                 </div>
@@ -667,7 +667,7 @@
             // Sync dictation provider dropdown with magic clipboard
             const dictationSelect =
                 document.getElementById("dictation-provider");
-            dictationSelect.addEventListener("change", () => {
+            const applyDictationProvider = () => {
                 if (dictationSelect.value) {
                     clipboard.setAttribute(
                         "dictation-endpoint",
@@ -676,7 +676,9 @@
                 } else {
                     clipboard.removeAttribute("dictation-endpoint");
                 }
-            });
+            };
+            dictationSelect.addEventListener("change", applyDictationProvider);
+            applyDictationProvider();
 
             clipboard.addEventListener("tiro-populate-start", () => {
                 console.log("Magic clipboard: starting population...");
