@@ -125,6 +125,33 @@
     </head>
     <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200">
 
+        <!-- Floating action buttons (top-right) -->
+        <div class="fixed top-4 right-4 z-50 flex gap-2">
+            <button
+                id="save-btn"
+                type="button"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-lg"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save
+            </button>
+            <button
+                id="save-and-send-btn"
+                type="button"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-lg"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 2 11 13"/>
+                    <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                </svg>
+                Save and send
+            </button>
+        </div>
+
         <div class="h-full flex flex-col p-4 font-sans">
 
             <!-- Toolbar -->
@@ -277,6 +304,60 @@
             // Back button: return to launch.html preserving all URL params
             document.getElementById("back-btn").addEventListener("click", () => {
                 window.location.href = `launch.html?${params.toString()}`;
+            });
+
+            // Save: submit both forms
+            document.getElementById("save-btn").addEventListener("click", () => {
+                studyForm.requestSubmit();
+                qcForm.requestSubmit();
+            });
+
+            // Save and send: submit QC form, then send email via Tiro mail
+            let sendAfterSubmit = false;
+            document.getElementById("save-and-send-btn").addEventListener("click", () => {
+                sendAfterSubmit = true;
+                studyForm.requestSubmit();
+                qcForm.requestSubmit();
+            });
+
+            const MAIL_FROM = "xavier.hoste@tiro.health";
+            const MAIL_TO = "xavier.hoste@tiro.health";
+
+            qcForm.addEventListener("tiro-submit", async (event) => {
+                const response = event.detail.response;
+                if (!sendAfterSubmit) return;
+                sendAfterSubmit = false;
+
+                try {
+                    const saveAndSendBtn = document.getElementById("save-and-send-btn");
+                    saveAndSendBtn.disabled = true;
+                    saveAndSendBtn.textContent = "Sending...";
+
+                    await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/fhir+json" },
+                        body: JSON.stringify({
+                            resourceType: "Parameters",
+                            parameter: [
+                                { name: "response", resource: response },
+                                { name: "from", valueString: MAIL_FROM },
+                                { name: "to", valueString: MAIL_TO },
+                            ],
+                        }),
+                    });
+
+                    saveAndSendBtn.textContent = "Sent!";
+                    setTimeout(() => {
+                        saveAndSendBtn.disabled = false;
+                        saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
+                    }, 2000);
+                } catch (err) {
+                    console.error("Mail send failed:", err);
+                    alert("Form saved but email could not be sent: " + err.message);
+                    const saveAndSendBtn = document.getElementById("save-and-send-btn");
+                    saveAndSendBtn.disabled = false;
+                    saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
+                }
             });
         </script>
     </body>
