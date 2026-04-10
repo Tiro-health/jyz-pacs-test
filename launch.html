@@ -555,9 +555,12 @@
             templateSelector.addEventListener("change", () => {
                 const url = TEMPLATES[templateSelector.value];
                 if (!url) return;
+                // Update only the Template form-filler, no full page reload
+                form.setAttribute("questionnaire", url);
+                // Silently update the URL so a refresh loads the same template
                 const newParams = new URLSearchParams(window.location.search);
                 newParams.set("questionnaire", url);
-                window.location.search = newParams.toString();
+                history.replaceState(null, "", "?" + newParams.toString());
             });
 
             // ============================================
