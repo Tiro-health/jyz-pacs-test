@@ -415,6 +415,7 @@
 
             <!-- Report Form -->
             <details
+                id="template-accordion"
                 class="flex-1 min-h-0 flex flex-col w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
             >
                 <summary
@@ -1095,6 +1096,7 @@
                 btn.classList.remove("opacity-75", "cursor-not-allowed");
                 btn.innerHTML = "Autofill Template";
                 accordion.removeAttribute("open");
+                document.getElementById("template-accordion").setAttribute("open", "");
             });
 
             clipboard.addEventListener("tiro-populate-error", (event) => {
