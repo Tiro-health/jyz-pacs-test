@@ -643,6 +643,8 @@
                 form.setAttribute("questionnaire", url);
                 // Sync Questionnaire Reference input in Settings
                 questionnaireInput.value = url;
+                // Persist so the choice survives a page reload/reopen
+                localStorage.setItem("savedQuestionnaire", url);
                 // Silently update the URL so a refresh loads the same template
                 const newParams = new URLSearchParams(window.location.search);
                 newParams.set("questionnaire", url);
@@ -655,8 +657,11 @@
             const params = new URLSearchParams(window.location.search);
             const DEFAULT_QUESTIONNAIRE =
                 "http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.2";
+            // Priority: URL param → localStorage saved → default
             const questionnaire =
-                params.get("questionnaire") || DEFAULT_QUESTIONNAIRE;
+                params.get("questionnaire") ||
+                localStorage.getItem("savedQuestionnaire") ||
+                DEFAULT_QUESTIONNAIRE;
 
             // Set the template selector to show the current template name
             const currentTemplateName = Object.entries(TEMPLATES)
@@ -767,7 +772,9 @@
 
             questionnaireForm.addEventListener("submit", (e) => {
                 e.preventDefault();
-                loadQuestionnaire(questionnaireInput.value.trim());
+                const newUrl = questionnaireInput.value.trim();
+                localStorage.setItem("savedQuestionnaire", newUrl);
+                loadQuestionnaire(newUrl);
             });
 
             function showLoading() {
