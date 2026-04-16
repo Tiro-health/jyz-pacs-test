@@ -518,31 +518,6 @@
                         </div>
                     </form>
 
-                    <!-- Template URL management -->
-                    <div>
-                        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Template URLs</label>
-                        <div id="template-url-editor" class="space-y-2 mb-2">
-                            <!-- dynamically filled -->
-                        </div>
-                        <div class="mb-2">
-                            <label for="github-token-input" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">GitHub Token</label>
-                            <input
-                                id="github-token-input"
-                                type="password"
-                                placeholder="ghp_..."
-                                class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                            <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Token met <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">contents:write</code> rechten op de repo.</p>
-                        </div>
-                        <button
-                            id="save-template-urls-btn"
-                            type="button"
-                            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
-                        >
-                            Sla template URLs op
-                        </button>
-                    </div>
-
                     <!-- Dictation Provider -->
                     <div>
                         <label
@@ -660,27 +635,6 @@
                 "Echo Abdomen": "http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0",
             };
 
-            // ============================================
-            // Template URL Editor (Settings)
-            // ============================================
-            function renderTemplateUrlEditor() {
-                const container = document.getElementById("template-url-editor");
-                if (!container) return;
-                container.innerHTML = "";
-                for (const [name, url] of Object.entries(TEMPLATES)) {
-                    const div = document.createElement("div");
-                    div.innerHTML = `
-                        <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">${name}</label>
-                        <input type="text" data-template-name="${name}" value="${url}"
-                            class="w-full px-2 py-1.5 text-xs font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    `;
-                    container.appendChild(div);
-                }
-            }
-
-            // ============================================
-            // Template Map & Selector
-            // ============================================
             const templateSelector = document.getElementById("template-selector");
             templateSelector.addEventListener("change", () => {
                 const url = TEMPLATES[templateSelector.value];
@@ -689,9 +643,8 @@
                 form.setAttribute("questionnaire", url);
                 // Sync Questionnaire Reference input in Settings
                 questionnaireInput.value = url;
-                // Save template NAME (not URL) so next load resolves via templates.json
-                localStorage.setItem("savedTemplateName", templateSelector.value);
-                localStorage.removeItem("savedQuestionnaire");
+                // Persist so the choice survives a page reload/reopen
+                localStorage.setItem("savedQuestionnaire", url);
                 // Silently update the URL so a refresh loads the same template
                 const newParams = new URLSearchParams(window.location.search);
                 newParams.set("questionnaire", url);
@@ -704,25 +657,10 @@
             const params = new URLSearchParams(window.location.search);
             const DEFAULT_QUESTIONNAIRE =
                 "http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.2";
-
-            // Fetch templates.json to update TEMPLATES with latest URLs (shared for all users)
-            fetch('./templates.json?_=' + Date.now())
-                .then(r => r.ok ? r.json() : null)
-                .then(data => {
-                    if (!data) return;
-                    for (const [name, url] of Object.entries(data)) {
-                        if (name in TEMPLATES) TEMPLATES[name] = url;
-                    }
-                    renderTemplateUrlEditor();
-                })
-                .catch(() => {});
-
-            // Priority: URL param → custom saved URL → template name lookup → default
-            const savedTemplateName = localStorage.getItem("savedTemplateName");
+            // Priority: URL param → localStorage saved → default
             const questionnaire =
                 params.get("questionnaire") ||
                 localStorage.getItem("savedQuestionnaire") ||
-                (savedTemplateName && TEMPLATES[savedTemplateName]) ||
                 DEFAULT_QUESTIONNAIRE;
 
             // Set the template selector to show the current template name
@@ -836,7 +774,6 @@
                 e.preventDefault();
                 const newUrl = questionnaireInput.value.trim();
                 localStorage.setItem("savedQuestionnaire", newUrl);
-                localStorage.removeItem("savedTemplateName");
                 loadQuestionnaire(newUrl);
             });
 
@@ -980,79 +917,6 @@
                     "Type:",
                     event.detail.type,
                 );
-            });
-
-            // ============================================
-            // Template URL editor: init + GitHub save
-            // ============================================
-            renderTemplateUrlEditor();
-
-            const githubTokenInput = document.getElementById("github-token-input");
-            githubTokenInput.value = localStorage.getItem("githubToken") || "";
-            githubTokenInput.addEventListener("change", () => {
-                localStorage.setItem("githubToken", githubTokenInput.value);
-            });
-
-            document.getElementById("save-template-urls-btn").addEventListener("click", async () => {
-                const token = githubTokenInput.value.trim();
-                if (!token) {
-                    alert("Voer een GitHub token in om de template URLs op te slaan.");
-                    return;
-                }
-
-                // Read new values from editor
-                const newTemplates = {};
-                document.querySelectorAll("#template-url-editor input[data-template-name]").forEach(input => {
-                    newTemplates[input.dataset.templateName] = input.value.trim();
-                });
-
-                const btn = document.getElementById("save-template-urls-btn");
-                btn.disabled = true;
-                btn.textContent = "Opslaan...";
-
-                try {
-                    const apiUrl = "https://api.github.com/repos/tiro-health/jyz-pacs-test/contents/public/templates.json";
-                    const headers = {
-                        Authorization: `Bearer ${token}`,
-                        Accept: "application/vnd.github+json",
-                        "Content-Type": "application/json",
-                    };
-
-                    // Get current file SHA
-                    const getResp = await fetch(apiUrl, { headers });
-                    if (!getResp.ok) throw new Error(`Kan bestand niet ophalen (${getResp.status})`);
-                    const fileData = await getResp.json();
-
-                    // Commit updated JSON
-                    const content = btoa(unescape(encodeURIComponent(JSON.stringify(newTemplates, null, 2))));
-                    const putResp = await fetch(apiUrl, {
-                        method: "PUT",
-                        headers,
-                        body: JSON.stringify({
-                            message: "Update template URLs via Settings",
-                            content,
-                            sha: fileData.sha,
-                            branch: "main",
-                        }),
-                    });
-                    if (!putResp.ok) {
-                        const err = await putResp.json();
-                        throw new Error(`Opslaan mislukt (${putResp.status}): ${err.message}`);
-                    }
-
-                    // Apply locally immediately
-                    Object.assign(TEMPLATES, newTemplates);
-
-                    btn.textContent = "Opgeslagen!";
-                    setTimeout(() => {
-                        btn.disabled = false;
-                        btn.textContent = "Sla template URLs op";
-                    }, 2000);
-                } catch (err) {
-                    alert("Fout bij opslaan: " + err.message);
-                    btn.disabled = false;
-                    btn.textContent = "Sla template URLs op";
-                }
             });
 
             // ============================================
