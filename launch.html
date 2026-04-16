@@ -282,7 +282,7 @@
                         <line x1="16" y1="17" x2="8" y2="17" />
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
-                    Study and patient information<span id="study-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate"></span>
+                    Study and patient information<span id="study-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
                     <svg
                         class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
@@ -325,7 +325,7 @@
                     >
                         <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                     </svg>
-                    Clinical information and diagnostic question
+                    Clinical information and diagnostic question<span id="clinical-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
                     <button
                         id="radiology-check-btn"
                         type="button"
@@ -459,9 +459,9 @@
                     >
                         <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
                     </svg>
-                    Template
+                    Template<span id="active-template-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
                     <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -480,7 +480,6 @@
 
             <!-- Active Template Selector -->
             <details
-                open
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
             >
                 <summary
@@ -499,7 +498,7 @@
                     >
                         <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
                     </svg>
-                    Active template<span id="active-template-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate"></span>
+                    Active template
                     <svg
                         class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
@@ -818,13 +817,20 @@
                 const typeOnderzoek = extractClinicalField(r, "type onderzoek", "type of examination", "onderzoek");
                 const lateralisatie = extractClinicalField(r, "lateralisatie", "laterality", "lateralisation");
                 const parts = [naam, typeOnderzoek, lateralisatie].filter(Boolean);
-                studyTitleSuffix.textContent = parts.length ? " - " + parts.join(" - ") : "";
+                studyTitleSuffix.textContent = parts.length ? parts.join(" - ") : "";
+            });
+
+            const clinicalTitleSuffix = document.getElementById("clinical-title-suffix");
+            clinicalForm.addEventListener("tiro-update", (event) => {
+                const r = event.detail?.response;
+                const dv = extractClinicalField(r, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                clinicalTitleSuffix.textContent = dv || "";
             });
 
             function updateActiveTemplateSuffix() {
                 const suffix = document.getElementById("active-template-suffix");
                 const checked = Array.from(document.querySelectorAll(".template-checkbox:checked")).map(cb => cb.value);
-                suffix.textContent = checked.length ? " - " + checked.join(", ") : "";
+                suffix.textContent = checked.length ? checked.join(", ") : "";
             }
             document.querySelectorAll(".template-checkbox").forEach(cb => {
                 cb.addEventListener("change", updateActiveTemplateSuffix);
