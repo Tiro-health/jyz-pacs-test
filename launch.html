@@ -939,6 +939,13 @@
 
                     container.appendChild(ff);
                 });
+
+                // Re-link magic clipboard to the new primary form so it initialises correctly
+                const mc = document.querySelector("tiro-magic-clipboard");
+                if (mc) {
+                    mc.removeAttribute("for");
+                    if (form) mc.setAttribute("for", "report-form");
+                }
             }
 
             // ============================================
