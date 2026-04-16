@@ -415,6 +415,7 @@
 
             <!-- Report Form -->
             <details
+                id="template-accordion"
                 class="flex-1 min-h-0 flex flex-col w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
             >
                 <summary
@@ -935,6 +936,8 @@
             // ============================================
             // Translate button
             // ============================================
+            // Translate button
+            // ============================================
             const translateBtn = document.getElementById("translate-btn");
             const dictationActionUrlInput = document.getElementById("dictation-action-url");
 
@@ -948,29 +951,42 @@
                 localStorage.setItem("dictationActionUrl", dictationActionUrlInput.value);
             });
 
+            // Cache dictation text via input events that bubble up (composed) through shadow DOM.
+            // composedPath()[0] gives the original source element for open shadow DOMs.
+            let latestDictationText = "";
+            clipboard.addEventListener("input", (e) => {
+                const path = e.composedPath?.() ?? [];
+                const src = path[0];
+                if (src && src !== clipboard && "value" in src) {
+                    latestDictationText = src.value;
+                }
+            }, { capture: true });
+
+            function readDictationText() {
+                // 1. Known public property names the SDK might expose
+                const fromProp = clipboard.text ?? clipboard.value ?? clipboard.dictationText ?? null;
+                if (fromProp) return fromProp;
+
+                // 2. Cached value from input events (works when shadow DOM is open)
+                if (latestDictationText) return latestDictationText;
+
+                // 3. Light DOM: textarea, text input or contenteditable
+                const lightEl = clipboard.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']");
+                if (lightEl) return lightEl.value ?? lightEl.textContent ?? "";
+
+                // 4. Open shadow DOM
+                if (clipboard.shadowRoot) {
+                    const shadowEl = clipboard.shadowRoot.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']");
+                    if (shadowEl) return shadowEl.value ?? shadowEl.textContent ?? "";
+                }
+
+                return "";
+            }
+
             translateBtn.addEventListener("click", () => {
-                const actionUrl = dictationActionUrlInput.value.trim();
-                if (!actionUrl) {
-                    alert("Please configure a Dictation button Url in Settings first.");
-                    return;
-                }
+                const actionUrl = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_URL;
+                const dictationText = readDictationText();
 
-                // Try to read dictation text from clipboard component (light DOM then shadow DOM)
-                let dictationText = "";
-                const lightTextarea = clipboard.querySelector("textarea");
-                if (lightTextarea) {
-                    dictationText = lightTextarea.value;
-                } else if (clipboard.shadowRoot) {
-                    const shadowTextarea = clipboard.shadowRoot.querySelector("textarea");
-                    if (shadowTextarea) dictationText = shadowTextarea.value;
-                }
-
-                // Copy text to clipboard as fallback
-                if (dictationText) {
-                    navigator.clipboard.writeText(dictationText).catch(() => {});
-                }
-
-                // Build URL: replace {text} placeholder or append as query
                 const finalUrl = actionUrl.includes("{text}")
                     ? actionUrl.replace("{text}", encodeURIComponent(dictationText))
                     : actionUrl + (dictationText ? "?q=" + encodeURIComponent(dictationText) : "");
@@ -1095,6 +1111,7 @@
                 btn.classList.remove("opacity-75", "cursor-not-allowed");
                 btn.innerHTML = "Autofill Template";
                 accordion.removeAttribute("open");
+                document.getElementById("template-accordion").setAttribute("open", "");
             });
 
             clipboard.addEventListener("tiro-populate-error", (event) => {
