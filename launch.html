@@ -282,9 +282,9 @@
                         <line x1="16" y1="17" x2="8" y2="17" />
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
-                    Study and patient information
+                    Study and patient information<span id="study-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate"></span>
                     <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -499,9 +499,9 @@
                     >
                         <path d="M9 12h6M9 16h6M9 8h6M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
                     </svg>
-                    Active template
+                    Active template<span id="active-template-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate"></span>
                     <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -807,6 +807,29 @@
             const CLINICAL_QUESTIONNAIRE = "http://templates.tiro.health/templates/01c43a0128d647af93b8bde21cab8d0a|1.0.0";
             clinicalForm.setAttribute("launch-context", JSON.stringify(launchContext));
             clinicalForm.setAttribute("questionnaire", CLINICAL_QUESTIONNAIRE);
+
+            // ============================================
+            // Dynamic panel titles
+            // ============================================
+            const studyTitleSuffix = document.getElementById("study-title-suffix");
+            contextForm.addEventListener("tiro-update", (event) => {
+                const r = event.detail?.response;
+                const naam = extractClinicalField(r, "naam", "name", "patiënt", "patient name");
+                const typeOnderzoek = extractClinicalField(r, "type onderzoek", "type of examination", "onderzoek");
+                const lateralisatie = extractClinicalField(r, "lateralisatie", "laterality", "lateralisation");
+                const parts = [naam, typeOnderzoek, lateralisatie].filter(Boolean);
+                studyTitleSuffix.textContent = parts.length ? " - " + parts.join(" - ") : "";
+            });
+
+            function updateActiveTemplateSuffix() {
+                const suffix = document.getElementById("active-template-suffix");
+                const checked = Array.from(document.querySelectorAll(".template-checkbox:checked")).map(cb => cb.value);
+                suffix.textContent = checked.length ? " - " + checked.join(", ") : "";
+            }
+            document.querySelectorAll(".template-checkbox").forEach(cb => {
+                cb.addEventListener("change", updateActiveTemplateSuffix);
+            });
+            updateActiveTemplateSuffix();
 
             // ============================================
             // Load Questionnaire Handler
