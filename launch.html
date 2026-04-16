@@ -164,6 +164,50 @@
             QC
         </a>
 
+        <!-- Radiology check modal -->
+        <div id="radiology-check-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-md mx-4 p-5">
+                <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Radiology check</h2>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-4">Vul de ontbrekende gegevens in om verder te gaan.</p>
+                <div class="space-y-3">
+                    <div>
+                        <label for="modal-ki" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Klinische inlichtingen</label>
+                        <textarea
+                            id="modal-ki"
+                            rows="3"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Klinische inlichtingen..."
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="modal-dv" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Diagnostische vraagstelling</label>
+                        <textarea
+                            id="modal-dv"
+                            rows="2"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Diagnostische vraagstelling..."
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button
+                        id="radiology-check-modal-cancel"
+                        type="button"
+                        class="px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                    >
+                        Annuleren
+                    </button>
+                    <button
+                        id="radiology-check-modal-go"
+                        type="button"
+                        class="px-4 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                    >
+                        GO
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading overlay (hidden by default) -->
         <div
             id="loading-overlay"
@@ -1047,20 +1091,56 @@
                 return searchItems(response?.item) || "";
             }
 
-            radiologyCheckBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
+            const radiologyModal = document.getElementById("radiology-check-modal");
+            const modalKi = document.getElementById("modal-ki");
+            const modalDv = document.getElementById("modal-dv");
+
+            function openRadiologyCheckUrl(ki, dv) {
                 const actionUrl = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_URL;
-
                 const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
-                const klinischeInlichtingen = extractClinicalField(latestClinicalResponse, "klinische inlichtingen", "clinical information", "klinisch");
-                const diagnostischeVraag = extractClinicalField(latestClinicalResponse, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-
                 const finalUrl = actionUrl
                     .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
-                    .replace("{klinische_inlichtingen}", encodeURIComponent(klinischeInlichtingen))
-                    .replace("{diagnostische_vraagstelling}", encodeURIComponent(diagnostischeVraag));
-
+                    .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
+                    .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
                 window.open(finalUrl, "_blank", "noopener,noreferrer");
+            }
+
+            radiologyCheckBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const ki = extractClinicalField(latestClinicalResponse, "klinische inlichtingen", "clinical information", "klinisch");
+                const dv = extractClinicalField(latestClinicalResponse, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+
+                if (!ki || !dv) {
+                    // Pre-fill whatever was found, let user complete the rest
+                    modalKi.value = ki;
+                    modalDv.value = dv;
+                    radiologyModal.classList.remove("hidden");
+                    radiologyModal.classList.add("flex");
+                    (ki ? modalDv : modalKi).focus();
+                } else {
+                    openRadiologyCheckUrl(ki, dv);
+                }
+            });
+
+            document.getElementById("radiology-check-modal-cancel").addEventListener("click", () => {
+                radiologyModal.classList.add("hidden");
+                radiologyModal.classList.remove("flex");
+            });
+
+            document.getElementById("radiology-check-modal-go").addEventListener("click", () => {
+                const ki = modalKi.value.trim();
+                const dv = modalDv.value.trim();
+                radiologyModal.classList.add("hidden");
+                radiologyModal.classList.remove("flex");
+                openRadiologyCheckUrl(ki, dv);
+            });
+
+            // Close modal on backdrop click
+            radiologyModal.addEventListener("click", (e) => {
+                if (e.target === radiologyModal) {
+                    radiologyModal.classList.add("hidden");
+                    radiologyModal.classList.remove("flex");
+                }
             });
 
             // ============================================
