@@ -257,24 +257,7 @@
                 </button>
         </div>
 
-        <div class="h-full flex flex-col p-4 pb-16 font-sans">
-
-            <!-- Template Selector -->
-            <div class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3 px-3 py-2">
-                <label
-                    for="template-selector"
-                    class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                    >Template</label
-                >
-                <select
-                    id="template-selector"
-                    class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="MR Rectum">MR Rectum</option>
-                    <option value="ECHO Schouder (auto SNOMED)">ECHO Schouder (auto SNOMED)</option>
-                    <option value="Echo Abdomen">Echo Abdomen</option>
-                </select>
-            </div>
+        <div class="h-full flex flex-col p-4 pb-24 font-sans">
 
             <!-- Context Form -->
             <details
@@ -500,9 +483,26 @@
                 </div>
             </details>
 
+            <!-- Active Template Selector -->
+            <div class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3 px-3 py-2">
+                <label
+                    for="template-selector"
+                    class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                    >Active template</label
+                >
+                <select
+                    id="template-selector"
+                    class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                    <option value="MR Rectum">MR Rectum</option>
+                    <option value="ECHO Schouder (auto SNOMED)">ECHO Schouder (auto SNOMED)</option>
+                    <option value="Echo Abdomen">Echo Abdomen</option>
+                </select>
+            </div>
+
             <!-- Settings -->
             <details
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mt-3"
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-6"
             >
                 <summary
                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
