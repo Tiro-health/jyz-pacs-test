@@ -68,7 +68,6 @@
         <style>
             tiro-form-filler {
                 display: block;
-                height: 100%;
             }
 
             tiro-magic-clipboard {
@@ -475,29 +474,27 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="report-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div id="template-forms-container" class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-700"></div>
                 </div>
             </details>
 
             <!-- Active Template Selector -->
             <div class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3 px-3 py-2">
-                <label
-                    for="template-selector"
-                    class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                    >Active template</label
-                >
-                <select
-                    id="template-selector"
-                    class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="MR Rectum">MR Rectum</option>
-                    <option value="ECHO Schouder (auto SNOMED)">ECHO Schouder (auto SNOMED)</option>
-                    <option value="Echo Abdomen">Echo Abdomen</option>
-                </select>
+                <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">Active template</label>
+                <div id="template-checkboxes" class="flex flex-col gap-1.5">
+                    <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                        <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500" value="MR Rectum" />
+                        MR Rectum
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                        <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500" value="ECHO Schouder (auto SNOMED)" />
+                        ECHO Schouder (auto SNOMED)
+                    </label>
+                    <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                        <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-blue-600 focus:ring-blue-500" value="Echo Abdomen" />
+                        Echo Abdomen
+                    </label>
+                </div>
             </div>
 
             <!-- Settings -->
@@ -678,20 +675,8 @@
                 "Echo Abdomen": "http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0",
             };
 
-            const templateSelector = document.getElementById("template-selector");
-            templateSelector.addEventListener("change", () => {
-                const url = TEMPLATES[templateSelector.value];
-                if (!url) return;
-                // Update only the Template form-filler, no full page reload
-                form.setAttribute("questionnaire", url);
-                // Sync Questionnaire Reference input in Settings
-                questionnaireInput.value = url;
-                // Persist so the choice survives a page reload/reopen
-                localStorage.setItem("savedQuestionnaire", url);
-                // Silently update the URL so a refresh loads the same template
-                const newParams = new URLSearchParams(window.location.search);
-                newParams.set("questionnaire", url);
-                history.replaceState(null, "", "?" + newParams.toString());
+            document.querySelectorAll(".template-checkbox").forEach(cb => {
+                cb.addEventListener("change", createTemplateForms);
             });
 
             // ============================================
@@ -706,12 +691,16 @@
                 localStorage.getItem("savedQuestionnaire") ||
                 DEFAULT_QUESTIONNAIRE;
 
-            // Set the template selector to show the current template name
-            const currentTemplateName = Object.entries(TEMPLATES)
-                .find(([, url]) => url === questionnaire)?.[0];
-            if (currentTemplateName) {
-                templateSelector.value = currentTemplateName;
-            }
+            // Restore saved template selections
+            const savedTemplateNames = JSON.parse(localStorage.getItem("savedTemplateNames") || "[]");
+            const defaultNames = savedTemplateNames.length > 0
+                ? savedTemplateNames
+                : (Object.entries(TEMPLATES).find(([, url]) => url === questionnaire)?.[0]
+                    ? [Object.entries(TEMPLATES).find(([, url]) => url === questionnaire)[0]]
+                    : [Object.keys(TEMPLATES)[0]]);
+            document.querySelectorAll(".template-checkbox").forEach(cb => {
+                cb.checked = defaultNames.includes(cb.value);
+            });
 
             // Build Parameters resource, always including questionnaire
             const paramResource = {
@@ -733,7 +722,7 @@
             // ============================================
             // DOM Elements
             // ============================================
-            const form = document.getElementById("report-form");
+            let form = null; // set by createTemplateForms(), always points to the primary (first) form filler
             const loadingOverlay = document.getElementById("loading-overlay");
             const questionnaireForm = document.getElementById("questionnaire-form");
             const questionnaireInput = document.getElementById("questionnaire-input");
@@ -761,12 +750,8 @@
                 "example-patient-id";
             const accessionNumber =
                 params.get("accessionNumber") || "example-accession-number";
-            form.setAttribute("launch-context", JSON.stringify(launchContext));
-
-            // Set questionnaire on form
-            form.setAttribute("questionnaire", questionnaire);
-
-            console.log("Questionnaire:", form.questionnaire);
+            // createTemplateForms() will set launch-context and questionnaire on each form filler
+            createTemplateForms();
 
             // Template flow button — opens this page with a fixed template in a new tab
             const templateFlowBtn = document.getElementById("template-flow-btn");
@@ -850,7 +835,7 @@
                 document.getElementById("save-progress-btn");
             saveProgressBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                form.requestSubmit();
+                if (form) form.requestSubmit();
             });
 
             const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
@@ -863,7 +848,7 @@
             const validateBtn = document.getElementById("validate-btn");
             validateBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                form.requestSubmit();
+                if (form) form.requestSubmit();
             });
 
             // F9 / F10 / F11 keyboard shortcuts for toolbar buttons
@@ -875,92 +860,86 @@
                 if (event.key === "F11") { event.preventDefault(); saveProgressBtn.click(); }
             });
 
-            form.addEventListener("tiro-ready", (event) => {
-                console.log(
-                    "Questionnaire loaded:",
-                    event.detail.questionnaire,
-                );
-            });
+            // ============================================
+            // Multi-Template Form Builder
+            // ============================================
+            function createTemplateForms() {
+                const selected = Array.from(document.querySelectorAll(".template-checkbox:checked")).map(cb => cb.value);
+                localStorage.setItem("savedTemplateNames", JSON.stringify(selected));
 
-            form.addEventListener("tiro-update", (event) => {
-                console.log("Form updated:", event.detail.response);
-            });
+                const container = document.getElementById("template-forms-container");
+                container.innerHTML = "";
+                form = null;
 
-            form.addEventListener("tiro-submit", async (event) => {
-                const response = event.detail.response;
-                console.log("Form submitted:", response);
+                selected.forEach((name, index) => {
+                    const url = TEMPLATES[name];
+                    if (!url) return;
 
-                // Save progress without PDF generation
-                if (response.status === "in-progress") {
-                    console.log("Saving progress (no PDF generation)");
-                    alert("Progress saved!");
-                    return;
-                }
+                    const updatedParamResource = {
+                        ...paramResource,
+                        parameter: [
+                            ...paramResource.parameter.filter(p => p.name !== "questionnaire"),
+                            { name: "questionnaire", valueString: url },
+                        ],
+                    };
+                    const updatedLaunchContext = { ...launchContext, custom: updatedParamResource };
 
-                try {
-                    showLoading();
+                    const ff = document.createElement("tiro-form-filler");
+                    ff.setAttribute("sdc-endpoint-address", "https://sdc.tiro.health/fhir/r5");
+                    ff.setAttribute("compact-grouping", "");
+                    ff.setAttribute("questionnaire", url);
+                    ff.setAttribute("launch-context", JSON.stringify(updatedLaunchContext));
 
-                    // Get Questionnaire from form slot
-                    const scriptTag = document.querySelector(
-                        'tiro-form-filler script[type="application/fhir+json"]',
-                    );
-                    const questionnaire = scriptTag
-                        ? JSON.parse(scriptTag.textContent)
-                        : null;
-                    console.log(form.sdcClient);
-                    // Call $extract via SDCClient
-                    const { pdfData, title } = await form.sdcClient.extract({
-                        questionnaireResponse: response,
-                        questionnaire: questionnaire,
-                    });
+                    if (index === 0) {
+                        ff.id = "report-form";
+                        form = ff;
 
-                    if (!pdfData) {
-                        throw new Error("No PDF data in extract response");
+                        ff.addEventListener("tiro-ready", (event) => {
+                            console.log("Questionnaire loaded:", event.detail.questionnaire);
+                        });
+                        ff.addEventListener("tiro-update", (event) => {
+                            console.log("Form updated:", event.detail.response);
+                        });
+                        ff.addEventListener("tiro-submit", async (event) => {
+                            const response = event.detail.response;
+                            console.log("Form submitted:", response);
+                            if (response.status === "in-progress") {
+                                console.log("Saving progress (no PDF generation)");
+                                alert("Progress saved!");
+                                return;
+                            }
+                            try {
+                                showLoading();
+                                const scriptTag = document.querySelector('tiro-form-filler script[type="application/fhir+json"]');
+                                const questionnaire = scriptTag ? JSON.parse(scriptTag.textContent) : null;
+                                console.log(form.sdcClient);
+                                const { pdfData, title } = await form.sdcClient.extract({
+                                    questionnaireResponse: response,
+                                    questionnaire: questionnaire,
+                                });
+                                if (!pdfData) throw new Error("No PDF data in extract response");
+                                console.log("PDF extracted successfully, size:", pdfData.length, "chars");
+                                const id = crypto.randomUUID();
+                                const key = `Report/${id}`;
+                                localStorage.setItem(key, JSON.stringify({
+                                    pdfData,
+                                    title: title || "Report",
+                                    context: { patientId, accessionNumber, submittedAt: new Date().toISOString() },
+                                }));
+                                console.log("PDF stored in localStorage:", key);
+                                window.location.href = `/callback.html?report=${encodeURIComponent(key)}`;
+                            } catch (error) {
+                                showError(error.message || "Failed to generate report", error);
+                            }
+                        });
+                        ff.addEventListener("tiro-error", (event) => {
+                            console.error("Form error:", event.detail.error, "Type:", event.detail.type);
+                        });
                     }
 
-                    console.log(
-                        "PDF extracted successfully, size:",
-                        pdfData.length,
-                        "chars",
-                    );
-
-                    // Generate unique key for localStorage
-                    const id = crypto.randomUUID();
-                    const key = `Report/${id}`;
-
-                    // Store PDF data with context
-                    localStorage.setItem(
-                        key,
-                        JSON.stringify({
-                            pdfData,
-                            title: title || "Report",
-                            context: {
-                                patientId,
-                                accessionNumber,
-                                submittedAt: new Date().toISOString(),
-                            },
-                        }),
-                    );
-                    console.log("PDF stored in localStorage:", key);
-
-                    // Navigate to callback page
-                    window.location.href = `/callback.html?report=${encodeURIComponent(key)}`;
-                } catch (error) {
-                    showError(
-                        error.message || "Failed to generate report",
-                        error,
-                    );
-                }
-            });
-
-            form.addEventListener("tiro-error", (event) => {
-                console.error(
-                    "Form error:",
-                    event.detail.error,
-                    "Type:",
-                    event.detail.type,
-                );
-            });
+                    container.appendChild(ff);
+                });
+            }
 
             // ============================================
             // Magic Clipboard Event Listeners
