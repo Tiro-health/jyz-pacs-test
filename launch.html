@@ -159,7 +159,7 @@
         <a
             href="qc.html"
             title="Quality Control"
-            class="fixed top-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg transition-colors"
+            class="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-lg transition-colors"
         >
             QC
         </a>
@@ -226,10 +226,8 @@
             </div>
         </div>
 
-        <div class="h-full flex flex-col p-4 font-sans">
-            <!-- Toolbar -->
-            <div class="sticky top-0 z-10 flex justify-end mb-3 gap-2 py-2 pointer-events-none">
-            <div class="flex gap-2 pointer-events-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 shadow-sm">
+        <!-- Toolbar (fixed bottom-right) -->
+        <div class="fixed bottom-4 right-4 z-10 flex gap-2 pointer-events-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 shadow-sm">
                 <button
                     id="save-progress-btn"
                     type="submit"
@@ -257,8 +255,9 @@
                 >
                     Validate (F9)
                 </button>
-            </div>
-            </div>
+        </div>
+
+        <div class="h-full flex flex-col p-4 pb-16 font-sans">
 
             <!-- Template Selector -->
             <div class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3 px-3 py-2">
