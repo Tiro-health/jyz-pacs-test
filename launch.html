@@ -207,6 +207,68 @@
             </div>
         </div>
 
+        <!-- Verslag check modal -->
+        <div id="verslag-check-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-md mx-4 p-5">
+                <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Verslag check</h2>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-4">Vul de ontbrekende gegevens in om verder te gaan.</p>
+                <div class="space-y-3">
+                    <div>
+                        <label for="modal-vc-tekst" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Verslag tekst</label>
+                        <textarea
+                            id="modal-vc-tekst"
+                            rows="4"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Verslag tekst..."
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="modal-vc-type" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Type onderzoek</label>
+                        <textarea
+                            id="modal-vc-type"
+                            rows="1"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Type onderzoek..."
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="modal-vc-ki" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Klinische inlichtingen</label>
+                        <textarea
+                            id="modal-vc-ki"
+                            rows="2"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Klinische inlichtingen..."
+                        ></textarea>
+                    </div>
+                    <div>
+                        <label for="modal-vc-dv" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Diagnostische vraagstelling</label>
+                        <textarea
+                            id="modal-vc-dv"
+                            rows="2"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                            placeholder="Diagnostische vraagstelling..."
+                        ></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button
+                        id="verslag-check-modal-cancel"
+                        type="button"
+                        class="px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                    >
+                        Annuleren
+                    </button>
+                    <button
+                        id="verslag-check-modal-go"
+                        type="button"
+                        class="px-4 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                    >
+                        GO
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Loading overlay (hidden by default) -->
         <div
             id="loading-overlay"
@@ -1236,6 +1298,22 @@
 
             let verslagCheckActive = false;
 
+            const verslagModal = document.getElementById("verslag-check-modal");
+            const modalVcTekst = document.getElementById("modal-vc-tekst");
+            const modalVcType = document.getElementById("modal-vc-type");
+            const modalVcKi = document.getElementById("modal-vc-ki");
+            const modalVcDv = document.getElementById("modal-vc-dv");
+
+            function openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv) {
+                const actionUrl = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_URL;
+                const finalUrl = actionUrl
+                    .replace("{tekst}", encodeURIComponent(tekst))
+                    .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
+                    .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
+                    .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
+                window.open(finalUrl, "_blank", "noopener,noreferrer");
+            }
+
             verslagCheckBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 verslagCheckActive = !verslagCheckActive;
@@ -1246,13 +1324,45 @@
                     const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
                     const ki = extractClinicalField(latestClinicalResponse, "klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractClinicalField(latestClinicalResponse, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                    const actionUrl = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_URL;
-                    const finalUrl = actionUrl
-                        .replace("{tekst}", encodeURIComponent(tekst))
-                        .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
-                        .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
-                        .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
-                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+
+                    if (!tekst || !typeOnderzoek || !ki || !dv) {
+                        modalVcTekst.value = tekst;
+                        modalVcType.value = typeOnderzoek;
+                        modalVcKi.value = ki;
+                        modalVcDv.value = dv;
+                        verslagModal.classList.remove("hidden");
+                        verslagModal.classList.add("flex");
+                        [modalVcTekst, modalVcType, modalVcKi, modalVcDv].find(el => !el.value)?.focus();
+                    } else {
+                        openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv);
+                    }
+                }
+            });
+
+            document.getElementById("verslag-check-modal-cancel").addEventListener("click", () => {
+                verslagModal.classList.add("hidden");
+                verslagModal.classList.remove("flex");
+                // Turn button back off when cancelled
+                verslagCheckActive = false;
+                verslagCheckBtn.className = BTN_OFF_CLASS;
+            });
+
+            document.getElementById("verslag-check-modal-go").addEventListener("click", () => {
+                const tekst = modalVcTekst.value.trim();
+                const typeOnderzoek = modalVcType.value.trim();
+                const ki = modalVcKi.value.trim();
+                const dv = modalVcDv.value.trim();
+                verslagModal.classList.add("hidden");
+                verslagModal.classList.remove("flex");
+                openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv);
+            });
+
+            verslagModal.addEventListener("click", (e) => {
+                if (e.target === verslagModal) {
+                    verslagModal.classList.add("hidden");
+                    verslagModal.classList.remove("flex");
+                    verslagCheckActive = false;
+                    verslagCheckBtn.className = BTN_OFF_CLASS;
                 }
             });
 
