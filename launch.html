@@ -513,7 +513,7 @@
                                 type="submit"
                                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors whitespace-nowrap"
                             >
-                                Load
+                                Save
                             </button>
                         </div>
                     </form>
@@ -641,6 +641,8 @@
                 if (!url) return;
                 // Update only the Template form-filler, no full page reload
                 form.setAttribute("questionnaire", url);
+                // Sync Questionnaire Reference input in Settings
+                questionnaireInput.value = url;
                 // Silently update the URL so a refresh loads the same template
                 const newParams = new URLSearchParams(window.location.search);
                 newParams.set("questionnaire", url);
