@@ -391,8 +391,19 @@
                         <path d="M11 3H9" />
                     </svg>
                     Dictation
+                    <button
+                        id="verslag-check-btn"
+                        type="button"
+                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Verslag check
+                    </button>
                     <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -662,6 +673,21 @@
                             class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Use <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> as placeholders.</p>
+                    </div>
+
+                    <!-- Verslag check button URL -->
+                    <div>
+                        <label
+                            for="verslag-check-url"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Verslag check Url</label
+                        >
+                        <input
+                            id="verslag-check-url"
+                            type="text"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Use <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> as placeholders.</p>
                     </div>
 
                     <!-- Template Flow -->
@@ -1188,6 +1214,45 @@
                 if (e.target === radiologyModal) {
                     radiologyModal.classList.add("hidden");
                     radiologyModal.classList.remove("flex");
+                }
+            });
+
+            // ============================================
+            // Verslag check button
+            // ============================================
+            const verslagCheckBtn = document.getElementById("verslag-check-btn");
+            const verslagCheckUrlInput = document.getElementById("verslag-check-url");
+
+            const DEFAULT_VERSLAG_CHECK_URL = "https://chatgpt.com/?q= controleer onderstaand radiologisch verslag  op typische radiologische fouten alsook typische speechfouten rekening houdende met het onderstaand gedefinieerde type onderzoek, ga dus actief op zoek naar links-rechts fouten, woorden die kunnen wijzen op een verkeerde speech-to-text binnen deze radiologische context en het type onderzoek, alsook naar verkeerde anatomische benamingen binnen het type onderzoek. Vervang enkel de fouten in de huidige text met jouw voorgestelde verbetering op de plaats van de fouten, maak deze vervangde tekst vet en cursief, en laat alle andere (juiste) tekst onveranderd in layout en van inhoud. Het is belangrijk dat er vender niets veranderd wordt aan de tekst of de inhoud er van, controleer dit steeds. Hier de informatie type onderzoek: {type_onderzoek}, klinische inlichtingen: {klinische_inlichtingen}, diagnostische vraagstelling: {diagnostische_vraagstelling} en het verslag: {tekst}.";
+
+            const savedVerslagCheckUrl = localStorage.getItem("verslagCheckUrl") ?? DEFAULT_VERSLAG_CHECK_URL;
+            verslagCheckUrlInput.value = savedVerslagCheckUrl;
+            verslagCheckUrlInput.addEventListener("change", () => {
+                localStorage.setItem("verslagCheckUrl", verslagCheckUrlInput.value);
+            });
+
+            const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
+            const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+
+            let verslagCheckActive = false;
+
+            verslagCheckBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                verslagCheckActive = !verslagCheckActive;
+                verslagCheckBtn.className = verslagCheckActive ? BTN_ON_CLASS : BTN_OFF_CLASS;
+
+                if (verslagCheckActive) {
+                    const tekst = readDictationText();
+                    const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
+                    const ki = extractClinicalField(latestClinicalResponse, "klinische inlichtingen", "clinical information", "klinisch");
+                    const dv = extractClinicalField(latestClinicalResponse, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                    const actionUrl = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_URL;
+                    const finalUrl = actionUrl
+                        .replace("{tekst}", encodeURIComponent(tekst))
+                        .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
+                        .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
+                        .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
+                    window.open(finalUrl, "_blank", "noopener,noreferrer");
                 }
             });
 
