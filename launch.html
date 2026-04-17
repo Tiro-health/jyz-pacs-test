@@ -1472,11 +1472,20 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
 
             // Cache the latest clinical form response via tiro-update
             let latestClinicalResponse = null;
+            let latestContextResponse = null;
             clinicalForm.addEventListener("tiro-update", (event) => {
                 latestClinicalResponse = event.detail?.response || null;
             });
+            contextForm.addEventListener("tiro-update", (event) => {
+                latestContextResponse = event.detail?.response || null;
+            });
 
             // Extract a field value from a QuestionnaireResponse by matching item text
+            function extractAnyField(...searchTerms) {
+                return extractClinicalField(latestClinicalResponse, ...searchTerms)
+                    || extractClinicalField(latestContextResponse, ...searchTerms);
+            }
+
             function extractClinicalField(response, ...searchTerms) {
                 function searchItems(items) {
                     if (!items) return "";
@@ -1505,7 +1514,7 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             const modalDv = document.getElementById("modal-dv");
 
             async function openRadiologyCheckUrl(ki, dv) {
-                const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const template = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_PROMPT;
                 const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 if (GEMINI_API_KEY) {
@@ -1525,8 +1534,8 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
 
             radiologyCheckBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                const ki = extractClinicalField(latestClinicalResponse, "klinische inlichtingen", "clinical information", "klinisch");
-                const dv = extractClinicalField(latestClinicalResponse, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
 
                 if (!ki || !dv) {
                     // Pre-fill whatever was found, let user complete the rest
@@ -1635,9 +1644,9 @@ INSTRUCTIES VOOR UITVOER:
 
                 if (verslagCheckActive) {
                     const tekst = readDictationText();
-                    const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
-                    const ki = extractClinicalField(latestClinicalResponse, "klinische inlichtingen", "clinical information", "klinisch");
-                    const dv = extractClinicalField(latestClinicalResponse, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                    const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                    const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                    const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
 
                     if (!tekst || !typeOnderzoek || !ki || !dv) {
                         modalVcTekst.value = tekst;
