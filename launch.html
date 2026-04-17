@@ -1271,7 +1271,7 @@
                     const body = await res.json().catch(() => ({}));
                     const msg = body?.error?.message || res.statusText;
                     if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer een ander model in Settings, of wacht even en probeer opnieuw. Details: ${msg}`);
-                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400). Controleer de API-sleutel en het model in Settings.`);
+                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
                     if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer of de API-sleutel geldig is via aistudio.google.com/apikey.`);
                     throw new Error(`Gemini fout ${res.status}: ${msg}`);
                 }
@@ -1385,7 +1385,9 @@
 
             translateBtn.addEventListener("click", async () => {
                 const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
-                const prompt = fillPrompt(template, { text: readDictationText() });
+                const dictText = readDictationText();
+                if (!dictText.trim()) { alert("Geen dictatietekst gevonden. Dicteer eerst een verslag."); return; }
+                const prompt = fillPrompt(template, { text: dictText });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Vertaling");
                     try { resolveGeminiModal(await callGemini(prompt)); }
