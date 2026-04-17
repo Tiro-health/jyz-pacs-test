@@ -698,6 +698,24 @@
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gratis sleutel via <a href="https://aistudio.google.com/apikey" target="_blank" class="underline hover:text-neutral-600">aistudio.google.com/apikey</a>. Ingevuld → Translate, Radiology check en Verslag check werken inline.</p>
                     </div>
 
+                    <!-- Gemini Model -->
+                    <div>
+                        <label
+                            for="gemini-model"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Gemini Model</label
+                        >
+                        <select
+                            id="gemini-model"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="gemini-1.5-flash">gemini-1.5-flash (aanbevolen gratis tier)</option>
+                            <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b (snelst, meeste gratis quota)</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash (nieuwste)</option>
+                            <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+                        </select>
+                    </div>
+
                     <!-- Dictation Provider -->
                     <div>
                         <label
@@ -1166,6 +1184,12 @@
                 GEMINI_API_KEY = _envKey || geminiApiKeyInput.value.trim();
             });
 
+            const geminiModelSelect = document.getElementById("gemini-model");
+            geminiModelSelect.value = localStorage.getItem("geminiModel") || "gemini-1.5-flash";
+            geminiModelSelect.addEventListener("change", () => {
+                localStorage.setItem("geminiModel", geminiModelSelect.value);
+            });
+
             // Strip legacy ChatGPT URL wrapper from stored prompts
             function migratePrompt(stored) {
                 if (!stored) return "";
@@ -1183,12 +1207,20 @@
             }
 
             async function callGemini(prompt) {
+                const model = geminiModelSelect.value || "gemini-1.5-flash";
                 const res = await fetch(
-                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                     { method: "POST", headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
                 );
-                if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    const msg = body?.error?.message || res.statusText;
+                    if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer een ander model in Settings, of wacht even en probeer opnieuw. Details: ${msg}`);
+                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400). Controleer de API-sleutel en het model in Settings.`);
+                    if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer of de API-sleutel geldig is via aistudio.google.com/apikey.`);
+                    throw new Error(`Gemini fout ${res.status}: ${msg}`);
+                }
                 const data = await res.json();
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
