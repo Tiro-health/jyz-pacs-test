@@ -1405,6 +1405,18 @@
                 }
             }, { capture: true });
 
+            function extractText(el) {
+                if (!el) return "";
+                if ("value" in el) return el.value;
+                // contenteditable: convert block elements and <br> to newlines
+                const clone = el.cloneNode(true);
+                clone.querySelectorAll("br").forEach(br => br.replaceWith("\n"));
+                clone.querySelectorAll("p, div, li").forEach(block => {
+                    if (block.nextSibling) block.after("\n");
+                });
+                return clone.textContent.replace(/\n{3,}/g, "\n\n").trim();
+            }
+
             function readDictationText() {
                 // 1. Known public property names the SDK might expose
                 const fromProp = clipboard.text ?? clipboard.value ?? clipboard.dictationText ?? null;
@@ -1415,12 +1427,12 @@
 
                 // 3. Light DOM: textarea, text input or contenteditable
                 const lightEl = clipboard.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']");
-                if (lightEl) return lightEl.value ?? lightEl.textContent ?? "";
+                if (lightEl) return extractText(lightEl);
 
                 // 4. Open shadow DOM
                 if (clipboard.shadowRoot) {
                     const shadowEl = clipboard.shadowRoot.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']");
-                    if (shadowEl) return shadowEl.value ?? shadowEl.textContent ?? "";
+                    if (shadowEl) return extractText(shadowEl);
                 }
 
                 return "";
