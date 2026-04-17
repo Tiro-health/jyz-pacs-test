@@ -269,6 +269,24 @@
             </div>
         </div>
 
+        <!-- Gemini result modal -->
+        <div id="gemini-result-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-2xl mx-4 p-5 max-h-[80vh] flex flex-col">
+                <div class="flex items-center justify-between mb-3 shrink-0">
+                    <h2 id="gemini-result-title" class="text-sm font-semibold text-neutral-900 dark:text-neutral-100"></h2>
+                    <div class="flex gap-2">
+                        <button id="gemini-result-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                        <button id="gemini-result-close" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">✕</button>
+                    </div>
+                </div>
+                <div id="gemini-result-loading" class="hidden items-center justify-center gap-3 py-8 shrink-0">
+                    <div class="w-5 h-5 border-2 border-neutral-300 border-t-blue-500 rounded-full animate-spin"></div>
+                    <span class="text-sm text-neutral-500">Bezig met analyseren...</span>
+                </div>
+                <div id="gemini-result-content" class="flex-1 overflow-auto text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed"></div>
+            </div>
+        </div>
+
         <!-- Loading overlay (hidden by default) -->
         <div
             id="loading-overlay"
@@ -663,6 +681,22 @@
                             </button>
                         </div>
                     </form>
+
+                    <!-- Gemini API Key -->
+                    <div>
+                        <label
+                            for="gemini-api-key"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Gemini API Key</label
+                        >
+                        <input
+                            id="gemini-api-key"
+                            type="password"
+                            placeholder="AIza..."
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gratis sleutel via <a href="https://aistudio.google.com/apikey" target="_blank" class="underline hover:text-neutral-600">aistudio.google.com/apikey</a>. Ingevuld → Translate, Radiology check en Verslag check werken inline.</p>
+                    </div>
 
                     <!-- Dictation Provider -->
                     <div>
@@ -1123,7 +1157,79 @@
             applyDictationProvider();
 
             // ============================================
-            // Translate button
+            // Gemini API integration
+            // ============================================
+            const _envKey = (() => { const v = "%VITE_GEMINI_API_KEY%"; return (v.startsWith("%") && v.endsWith("%")) ? "" : v; })();
+            const geminiApiKeyInput = document.getElementById("gemini-api-key");
+            geminiApiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
+            let GEMINI_API_KEY = _envKey || geminiApiKeyInput.value;
+            geminiApiKeyInput.addEventListener("input", () => {
+                localStorage.setItem("geminiApiKey", geminiApiKeyInput.value.trim());
+                GEMINI_API_KEY = _envKey || geminiApiKeyInput.value.trim();
+            });
+
+            function templateToPrompt(template, vars) {
+                let prompt = template;
+                // Strip base URL prefix (e.g. https://chatgpt.com/?q=) to get raw prompt
+                if (/^https?:\/\/[^?]+\?q=/.test(prompt)) {
+                    prompt = decodeURIComponent(prompt.replace(/^https?:\/\/[^?]+\?q=/, ''));
+                }
+                for (const [k, v] of Object.entries(vars)) prompt = prompt.replaceAll(`{${k}}`, v);
+                return prompt;
+            }
+
+            async function callGemini(prompt) {
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+                    { method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+                );
+                if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`);
+                const data = await res.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
+            }
+
+            function renderMarkdown(text) {
+                const esc = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+                return esc
+                    .replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em style="color:#ef4444">$1</em></strong>')
+                    .replace(/\*\*(.*?)\*\*/gs,      "<strong>$1</strong>")
+                    .replace(/\*(.*?)\*/gs,          "<em>$1</em>")
+                    .replace(/\n/g, "<br>");
+            }
+
+            let _geminiRawText = "";
+            const geminiModal    = document.getElementById("gemini-result-modal");
+            const geminiTitle    = document.getElementById("gemini-result-title");
+            const geminiLoading  = document.getElementById("gemini-result-loading");
+            const geminiContent  = document.getElementById("gemini-result-content");
+
+            function openGeminiModal(title) {
+                _geminiRawText = "";
+                geminiTitle.textContent = title;
+                geminiContent.innerHTML = "";
+                geminiLoading.classList.remove("hidden"); geminiLoading.classList.add("flex");
+                geminiModal.classList.remove("hidden");   geminiModal.classList.add("flex");
+            }
+            function resolveGeminiModal(text) {
+                _geminiRawText = text;
+                geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                geminiContent.innerHTML = renderMarkdown(text);
+            }
+            function rejectGeminiModal(err) {
+                geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                geminiContent.innerHTML = `<span class="text-red-500">Fout: ${err}</span>`;
+            }
+            document.getElementById("gemini-result-close").addEventListener("click", () => {
+                geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex");
+            });
+            geminiModal.addEventListener("click", (e) => {
+                if (e.target === geminiModal) { geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex"); }
+            });
+            document.getElementById("gemini-result-copy").addEventListener("click", () => {
+                navigator.clipboard.writeText(_geminiRawText).catch(() => {});
+            });
+
             // ============================================
             // Translate button
             // ============================================
@@ -1172,15 +1278,21 @@
                 return "";
             }
 
-            translateBtn.addEventListener("click", () => {
+            translateBtn.addEventListener("click", async () => {
                 const actionUrl = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_URL;
                 const dictationText = readDictationText();
 
-                const finalUrl = actionUrl.includes("{text}")
-                    ? actionUrl.replace("{text}", encodeURIComponent(dictationText))
-                    : actionUrl + (dictationText ? "?q=" + encodeURIComponent(dictationText) : "");
-
-                window.open(finalUrl, "_blank", "noopener,noreferrer");
+                if (GEMINI_API_KEY) {
+                    const prompt = templateToPrompt(actionUrl, { text: dictationText });
+                    openGeminiModal("Vertaling");
+                    try { resolveGeminiModal(await callGemini(prompt)); }
+                    catch (e) { rejectGeminiModal(e.message); }
+                } else {
+                    const finalUrl = actionUrl.includes("{text}")
+                        ? actionUrl.replace("{text}", encodeURIComponent(dictationText))
+                        : actionUrl + (dictationText ? "?q=" + encodeURIComponent(dictationText) : "");
+                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+                }
             });
 
             // ============================================
@@ -1231,14 +1343,21 @@
             const modalKi = document.getElementById("modal-ki");
             const modalDv = document.getElementById("modal-dv");
 
-            function openRadiologyCheckUrl(ki, dv) {
+            async function openRadiologyCheckUrl(ki, dv) {
                 const actionUrl = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_URL;
                 const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
-                const finalUrl = actionUrl
-                    .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
-                    .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
-                    .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
-                window.open(finalUrl, "_blank", "noopener,noreferrer");
+                if (GEMINI_API_KEY) {
+                    const prompt = templateToPrompt(actionUrl, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                    openGeminiModal("Radiology check");
+                    try { resolveGeminiModal(await callGemini(prompt)); }
+                    catch (e) { rejectGeminiModal(e.message); }
+                } else {
+                    const finalUrl = actionUrl
+                        .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
+                        .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
+                        .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
+                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+                }
             }
 
             radiologyCheckBtn.addEventListener("click", (e) => {
@@ -1304,14 +1423,21 @@
             const modalVcKi = document.getElementById("modal-vc-ki");
             const modalVcDv = document.getElementById("modal-vc-dv");
 
-            function openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv) {
+            async function openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv) {
                 const actionUrl = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_URL;
-                const finalUrl = actionUrl
-                    .replace("{tekst}", encodeURIComponent(tekst))
-                    .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
-                    .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
-                    .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
-                window.open(finalUrl, "_blank", "noopener,noreferrer");
+                if (GEMINI_API_KEY) {
+                    const prompt = templateToPrompt(actionUrl, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                    openGeminiModal("Verslag check");
+                    try { resolveGeminiModal(await callGemini(prompt)); }
+                    catch (e) { rejectGeminiModal(e.message); }
+                } else {
+                    const finalUrl = actionUrl
+                        .replace("{tekst}", encodeURIComponent(tekst))
+                        .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
+                        .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
+                        .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
+                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+                }
             }
 
             verslagCheckBtn.addEventListener("click", (e) => {
