@@ -1262,7 +1262,10 @@
                 const res = await fetch(
                     `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                     { method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+                      body: JSON.stringify({
+                        system_instruction: { parts: [{ text: "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <font color='red'> voor rode tekst. Combineer tags waar nodig, bv. <b><i><font color='red'>tekst</font></i></b>." }] },
+                        contents: [{ parts: [{ text: prompt }] }]
+                      }) }
                 );
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
@@ -1277,21 +1280,25 @@
             }
 
             function renderMarkdown(rawText) {
-                // Handle HTML tags Gemini may return BEFORE escaping
-                let text = rawText
-                    .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis, '\x00RED\x01$1\x00RED\x01')
-                    .replace(/<b>(.*?)<\/b>/gis, '**$1**')
-                    .replace(/<i>(.*?)<\/i>/gis, '*$1*')
-                    .replace(/<strong>(.*?)<\/strong>/gis, '**$1**')
-                    .replace(/<em>(.*?)<\/em>/gis, '*$1*');
-                // Escape remaining HTML
-                const esc = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-                return esc
-                    .replace(/\x00RED\x01(.*?)\x00RED\x01/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
-                    .replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em style="color:#ef4444">$1</em></strong>')
-                    .replace(/\*\*(.*?)\*\*/gs,      "<strong>$1</strong>")
-                    .replace(/\*(.*?)\*/gs,           "<em>$1</em>")
-                    .replace(/\n/g, "<br>");
+                // Whitelist and convert known safe HTML tags, strip the rest
+                const html = rawText
+                    // Nested bold+italic+red combinations
+                    .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
+                        '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                    .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis,
+                        '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                    .replace(/<b>(.*?)<\/b>/gis,      '<strong>$1</strong>')
+                    .replace(/<strong>(.*?)<\/strong>/gis, '<strong>$1</strong>')
+                    .replace(/<i>(.*?)<\/i>/gis,      '<em>$1</em>')
+                    .replace(/<em>(.*?)<\/em>/gis,    '<em>$1</em>')
+                    // Markdown fallback
+                    .replace(/\*\*\*(.*?)\*\*\*/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                    .replace(/\*\*(.*?)\*\*/gs,      '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/gs,           '<em>$1</em>')
+                    // Strip any remaining unknown tags
+                    .replace(/<(?!\/?(strong|em|span|br)\b)[^>]+>/gi, '')
+                    .replace(/\n/g, '<br>');
+                return html;
             }
 
             function stripFormatting(rawText) {
