@@ -1649,10 +1649,16 @@ INSTRUCTIES VOOR UITVOER:
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const savedVerslagCheck = migratePrompt(localStorage.getItem("verslagCheckUrl"));
+            const VERSLAG_CHECK_VERSION = "3";
+            const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
+            const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
+                ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
+                : "";
             verslagCheckUrlInput.value = savedVerslagCheck || DEFAULT_VERSLAG_CHECK_PROMPT;
+            if (!savedVerslagCheck) localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
             verslagCheckUrlInput.addEventListener("input", () => {
                 localStorage.setItem("verslagCheckUrl", verslagCheckUrlInput.value);
+                localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
             });
 
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
