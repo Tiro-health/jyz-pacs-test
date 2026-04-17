@@ -682,6 +682,22 @@
                         </div>
                     </form>
 
+                    <!-- Gemini API Key -->
+                    <div>
+                        <label
+                            for="gemini-api-key"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >Gemini API Key</label
+                        >
+                        <input
+                            id="gemini-api-key"
+                            type="password"
+                            placeholder="AIza..."
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gratis sleutel via <a href="https://aistudio.google.com/apikey" target="_blank" class="underline hover:text-neutral-600">aistudio.google.com/apikey</a>. Ingevuld → Translate, Radiology check en Verslag check werken inline.</p>
+                    </div>
+
                     <!-- Dictation Provider -->
                     <div>
                         <label
@@ -1143,8 +1159,14 @@
             // ============================================
             // Gemini API integration
             // ============================================
-            const _gk = "%VITE_GEMINI_API_KEY%";
-            const GEMINI_API_KEY = (_gk.startsWith("%") && _gk.endsWith("%")) ? "" : _gk;
+            const _envKey = (() => { const v = "%VITE_GEMINI_API_KEY%"; return (v.startsWith("%") && v.endsWith("%")) ? "" : v; })();
+            const geminiApiKeyInput = document.getElementById("gemini-api-key");
+            geminiApiKeyInput.value = localStorage.getItem("geminiApiKey") || "";
+            let GEMINI_API_KEY = _envKey || geminiApiKeyInput.value;
+            geminiApiKeyInput.addEventListener("input", () => {
+                localStorage.setItem("geminiApiKey", geminiApiKeyInput.value.trim());
+                GEMINI_API_KEY = _envKey || geminiApiKeyInput.value.trim();
+            });
 
             function templateToPrompt(template, vars) {
                 let prompt = template;
