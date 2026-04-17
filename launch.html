@@ -1213,8 +1213,13 @@
                     if (stored && models.find(m => m.id === stored)) {
                         geminiModelSelect.value = stored;
                     } else if (models.length) {
-                        // Prefer a 1.5-flash variant as default
-                        const preferred = models.find(m => m.id.includes("1.5-flash") && !m.id.includes("8b")) || models[0];
+                        // Prefer newest capable flash: 2.5-flash > 2.0-flash > first available
+                        const preferred =
+                            models.find(m => m.id === "gemini-2.5-flash") ||
+                            models.find(m => m.id.includes("2.5-flash") && !m.id.includes("lite")) ||
+                            models.find(m => m.id === "gemini-2.0-flash") ||
+                            models.find(m => m.id.includes("2.0-flash") && !m.id.includes("lite")) ||
+                            models[0];
                         geminiModelSelect.value = preferred.id;
                         localStorage.setItem("geminiModel", preferred.id);
                     }
@@ -1257,7 +1262,10 @@
                 const res = await fetch(
                     `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                     { method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) }
+                      body: JSON.stringify({
+                        system_instruction: { parts: [{ text: "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <font color='red'> voor rode tekst. Combineer tags waar nodig, bv. <b><i><font color='red'>tekst</font></i></b>." }] },
+                        contents: [{ parts: [{ text: prompt }] }]
+                      }) }
                 );
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
@@ -1271,13 +1279,30 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
-            function renderMarkdown(text) {
-                const esc = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
-                return esc
-                    .replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em style="color:#ef4444">$1</em></strong>')
-                    .replace(/\*\*(.*?)\*\*/gs,      "<strong>$1</strong>")
-                    .replace(/\*(.*?)\*/gs,          "<em>$1</em>")
-                    .replace(/\n/g, "<br>");
+            function renderMarkdown(rawText) {
+                // Whitelist and convert known safe HTML tags, strip the rest
+                const html = rawText
+                    // Nested bold+italic+red combinations
+                    .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
+                        '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                    .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis,
+                        '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                    .replace(/<b>(.*?)<\/b>/gis,      '<strong>$1</strong>')
+                    .replace(/<strong>(.*?)<\/strong>/gis, '<strong>$1</strong>')
+                    .replace(/<i>(.*?)<\/i>/gis,      '<em>$1</em>')
+                    .replace(/<em>(.*?)<\/em>/gis,    '<em>$1</em>')
+                    // Markdown fallback
+                    .replace(/\*\*\*(.*?)\*\*\*/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                    .replace(/\*\*(.*?)\*\*/gs,      '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/gs,           '<em>$1</em>')
+                    // Strip any remaining unknown tags
+                    .replace(/<(?!\/?(strong|em|span|br)\b)[^>]+>/gi, '')
+                    .replace(/\n/g, '<br>');
+                return html;
+            }
+
+            function stripFormatting(rawText) {
+                return rawText.replace(/<[^>]+>/g, '');
             }
 
             let _geminiRawText = "";
@@ -1309,7 +1334,7 @@
                 if (e.target === geminiModal) { geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex"); }
             });
             document.getElementById("gemini-result-copy").addEventListener("click", () => {
-                navigator.clipboard.writeText(_geminiRawText).catch(() => {});
+                navigator.clipboard.writeText(stripFormatting(_geminiRawText)).catch(() => {});
             });
 
             // ============================================
@@ -1376,7 +1401,23 @@
             const radiologyCheckBtn = document.getElementById("radiology-check-btn");
             const kidvActionUrlInput = document.getElementById("kidv-action-url");
 
-            const DEFAULT_KIDV_PROMPT = "Maak een beknopte checklist voor een radioloog die een verslag opstelt voor een {type_onderzoek}. Klinische inlichtingen: {klinische_inlichtingen}. Diagnostische vraagstelling: {diagnostische_vraagstelling}.";
+            const DEFAULT_KIDV_PROMPT = `Je bent een gespecialiseerde radiologie-assistent. Genereer een gestructureerde companion checklist voor een radioloog op basis van onderstaande informatie. Baseer je uitsluitend op evidence-based radiologische bronnen (Radiopaedia, Radiology Assistant, Fleischner Society, SRU, TNM, ACR, ESR iGuide, relevante richtlijnen en academische literatuur).
+
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+
+Geef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinische context: bij oncologische vraagstellingen focus op staging/uitbreiding; bij niet-oncologische vraagstellingen focus op systematische volledigheid en besluitondersteuning.
+
+1. <b>Te beoordelen regio's en structuren</b> — wat mag niet gemist worden
+2. <b>Typische radiologische kenmerken</b> — kernbevindingen van de gevraagde pathologie
+3. <b>Uitbreiding / complicaties</b> — locoregionaal, metastasen (oncologie) of complicaties/nevenbevin­dingen (niet-oncologie)
+4. <b>Top 3 differentiaaldiagnoses</b> — met onderscheidende radiologische features
+5. <b>Classificatie / scoring</b> — toepasselijke protocollen (Fleischner, Bosniak, LI-RADS, TNM, BI-RADS, ASPECTS, Wells, ...)
+6. <b>Evidence-based follow-up</b> — aanbevolen interval, modaliteit en drempelwaarden volgens richtlijnen
+7. <b>Pitfalls & frequent gemiste bevindingen</b> — klassieke valkuilen voor dit onderzoekstype
+
+Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale scanbaarheid.`;
 
             const savedKidv = migratePrompt(localStorage.getItem("kidvActionUrl"));
             kidvActionUrlInput.value = savedKidv || DEFAULT_KIDV_PROMPT;
