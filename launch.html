@@ -1213,8 +1213,13 @@
                     if (stored && models.find(m => m.id === stored)) {
                         geminiModelSelect.value = stored;
                     } else if (models.length) {
-                        // Prefer a 1.5-flash variant as default
-                        const preferred = models.find(m => m.id.includes("1.5-flash") && !m.id.includes("8b")) || models[0];
+                        // Prefer newest capable flash: 2.5-flash > 2.0-flash > first available
+                        const preferred =
+                            models.find(m => m.id === "gemini-2.5-flash") ||
+                            models.find(m => m.id.includes("2.5-flash") && !m.id.includes("lite")) ||
+                            models.find(m => m.id === "gemini-2.0-flash") ||
+                            models.find(m => m.id.includes("2.0-flash") && !m.id.includes("lite")) ||
+                            models[0];
                         geminiModelSelect.value = preferred.id;
                         localStorage.setItem("geminiModel", preferred.id);
                     }
