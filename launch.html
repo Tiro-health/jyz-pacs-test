@@ -1516,7 +1516,37 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             const verslagCheckBtn = document.getElementById("verslag-check-btn");
             const verslagCheckUrlInput = document.getElementById("verslag-check-url");
 
-            const DEFAULT_VERSLAG_CHECK_PROMPT = "controleer onderstaand radiologisch verslag op typische radiologische fouten alsook typische speechfouten rekening houdende met het onderstaand gedefinieerde type onderzoek, ga dus actief op zoek naar links-rechts fouten, woorden die kunnen wijzen op een verkeerde speech-to-text binnen deze radiologische context en het type onderzoek, alsook naar verkeerde anatomische benamingen binnen het type onderzoek. Vervang enkel de fouten in de huidige text met jouw voorgestelde verbetering op de plaats van de fouten, maak deze vervangde tekst vet, cursief en rood, en laat alle andere (juiste) tekst onveranderd in layout en van inhoud. Het is belangrijk dat er verder niets veranderd wordt aan de tekst of de inhoud er van, controleer dit steeds. Hier de informatie type onderzoek: {type_onderzoek}, klinische inlichtingen: {klinische_inlichtingen}, diagnostische vraagstelling: {diagnostische_vraagstelling} en het verslag: {tekst}";
+            const DEFAULT_VERSLAG_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten. Houd rekening met het type onderzoek, de klinische inlichtingen en de diagnostische vraagstelling.
+
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Verslag: {tekst}
+
+Controleer actief op de volgende foutcategorieën:
+
+**KRITIEK (altijd controleren):**
+- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren
+- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder" — bv. "geen pneumothorax" → "pneumothorax"
+- Klinisch-logische fouten: bevindingen die anatomisch onmogelijk zijn voor dit type onderzoek
+
+**SPEECH-TO-TEXT FOUTEN:**
+- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname, acuut↔inactief, focaal↔diffuus
+- Voorvoegsel-/achtervoegselfouten: hyper-/hypo-, in-/un-, -itis/-osis, vergroot↔verkleind, aanwezig↔afwezig
+- Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
+- Zinsafbreking: ontbrekende woorden die de betekenis wijzigen
+
+**TERMINOLOGIE:**
+- Verkeerde anatomische benamingen voor dit type onderzoek
+- Inconsistent gebruik van termen binnen hetzelfde verslag
+- Niet-gedefinieerde afkortingen
+
+INSTRUCTIES VOOR UITVOER:
+- Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
+- Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
+- Markeer elke correctie als: <b><i><font color='red'>correctie</font></i></b>
+- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
+- Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
             const savedVerslagCheck = migratePrompt(localStorage.getItem("verslagCheckUrl"));
             verslagCheckUrlInput.value = savedVerslagCheck || DEFAULT_VERSLAG_CHECK_PROMPT;
