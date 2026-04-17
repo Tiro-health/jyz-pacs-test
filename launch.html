@@ -1276,13 +1276,26 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
-            function renderMarkdown(text) {
+            function renderMarkdown(rawText) {
+                // Handle HTML tags Gemini may return BEFORE escaping
+                let text = rawText
+                    .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis, '\x00RED\x01$1\x00RED\x01')
+                    .replace(/<b>(.*?)<\/b>/gis, '**$1**')
+                    .replace(/<i>(.*?)<\/i>/gis, '*$1*')
+                    .replace(/<strong>(.*?)<\/strong>/gis, '**$1**')
+                    .replace(/<em>(.*?)<\/em>/gis, '*$1*');
+                // Escape remaining HTML
                 const esc = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
                 return esc
+                    .replace(/\x00RED\x01(.*?)\x00RED\x01/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
                     .replace(/\*\*\*(.*?)\*\*\*/gs, '<strong><em style="color:#ef4444">$1</em></strong>')
                     .replace(/\*\*(.*?)\*\*/gs,      "<strong>$1</strong>")
-                    .replace(/\*(.*?)\*/gs,          "<em>$1</em>")
+                    .replace(/\*(.*?)\*/gs,           "<em>$1</em>")
                     .replace(/\n/g, "<br>");
+            }
+
+            function stripFormatting(rawText) {
+                return rawText.replace(/<[^>]+>/g, '');
             }
 
             let _geminiRawText = "";
@@ -1314,7 +1327,7 @@
                 if (e.target === geminiModal) { geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex"); }
             });
             document.getElementById("gemini-result-copy").addEventListener("click", () => {
-                navigator.clipboard.writeText(_geminiRawText).catch(() => {});
+                navigator.clipboard.writeText(stripFormatting(_geminiRawText)).catch(() => {});
             });
 
             // ============================================
