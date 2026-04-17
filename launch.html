@@ -1256,15 +1256,17 @@
                 window.open("https://chatgpt.com/?q=" + encodeURIComponent(prompt), "_blank", "noopener,noreferrer");
             }
 
+            const GEMINI_SYSTEM = "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <font color='red'> voor rode tekst. Combineer tags waar nodig, bv. <b><i><font color='red'>tekst</font></i></b>.";
+
             async function callGemini(prompt) {
                 const model = geminiModelSelect.value;
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
+                const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
                 const res = await fetch(
                     `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                     { method: "POST", headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
-                        system_instruction: { parts: [{ text: "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <font color='red'> voor rode tekst. Combineer tags waar nodig, bv. <b><i><font color='red'>tekst</font></i></b>." }] },
-                        contents: [{ parts: [{ text: prompt }] }]
+                        contents: [{ parts: [{ text: fullPrompt }] }]
                       }) }
                 );
                 if (!res.ok) {
