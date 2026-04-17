@@ -1258,7 +1258,7 @@
 
             const GEMINI_SYSTEM = "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <font color='red'> voor rode tekst. Combineer tags waar nodig, bv. <b><i><font color='red'>tekst</font></i></b>.";
 
-            async function callGemini(prompt) {
+            async function callGemini(prompt, signal) {
                 const model = geminiModelSelect.value;
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
@@ -1267,7 +1267,7 @@
                     { method: "POST", headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
                         contents: [{ parts: [{ text: fullPrompt }] }]
-                      }) }
+                      }), signal }
                 );
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
@@ -1281,15 +1281,14 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
-            async function callGeminiStream(prompt, onChunk) {
+            async function callGeminiStream(prompt, onChunk, signal) {
                 const model = geminiModelSelect.value;
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
                 const body = { contents: [{ parts: [{ text: fullPrompt }] }] };
-                if (model.includes("2.5")) body.generationConfig = { thinkingConfig: { thinkingBudget: 0 } };
                 const res = await fetch(
                     `https://generativelanguage.googleapis.com/v1/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
-                    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+                    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal }
                 );
                 if (!res.ok) {
                     const b = await res.json().catch(() => ({}));
@@ -1349,6 +1348,24 @@
             }
 
             let _geminiRawText = "";
+            let _currentAbort = null;
+            let _abortedByUser = false;
+
+            function _abortGemini(byUser = false) {
+                _abortedByUser = byUser;
+                if (_currentAbort) { _currentAbort.abort(); _currentAbort = null; }
+            }
+
+            function _newGeminiSignal(timeoutMs = 60000) {
+                _abortedByUser = false;
+                _abortGemini();
+                const ctrl = new AbortController();
+                _currentAbort = ctrl;
+                const id = setTimeout(() => { if (_currentAbort === ctrl) { _currentAbort = null; ctrl.abort(); } }, timeoutMs);
+                ctrl.signal.addEventListener("abort", () => clearTimeout(id), { once: true });
+                return ctrl.signal;
+            }
+
             const geminiModal    = document.getElementById("gemini-result-modal");
             const geminiTitle    = document.getElementById("gemini-result-title");
             const geminiLoading  = document.getElementById("gemini-result-loading");
@@ -1370,11 +1387,17 @@
                 geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                 geminiContent.innerHTML = `<span class="text-red-500">Fout: ${err}</span>`;
             }
-            document.getElementById("gemini-result-close").addEventListener("click", () => {
+            function _closeGeminiModal() {
                 geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex");
-            });
+                _abortGemini(true);
+                if (typeof verslagCheckActive !== "undefined" && verslagCheckActive) {
+                    verslagCheckActive = false;
+                    verslagCheckBtn.className = BTN_OFF_CLASS;
+                }
+            }
+            document.getElementById("gemini-result-close").addEventListener("click", _closeGeminiModal);
             geminiModal.addEventListener("click", (e) => {
-                if (e.target === geminiModal) { geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex"); }
+                if (e.target === geminiModal) _closeGeminiModal();
             });
             document.getElementById("gemini-result-copy").addEventListener("click", () => {
                 navigator.clipboard.writeText(stripFormatting(_geminiRawText)).catch(() => {});
@@ -1445,8 +1468,11 @@
                 const prompt = fillPrompt(template, { text: dictText });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Vertaling");
-                    try { resolveGeminiModal(await callGemini(prompt)); }
-                    catch (e) { rejectGeminiModal(e.message); }
+                    try { resolveGeminiModal(await callGemini(prompt, _newGeminiSignal())); }
+                    catch (e) {
+                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
+                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                    }
                 } else {
                     openChatGPT(prompt);
                 }
@@ -1536,9 +1562,12 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                             geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                             _geminiRawText = partial;
                             geminiContent.innerHTML = renderMarkdown(partial);
-                        });
+                        }, _newGeminiSignal());
                         resolveGeminiModal(text);
-                    } catch (e) { rejectGeminiModal(e.message); }
+                    } catch (e) {
+                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
+                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                    }
                 } else {
                     openChatGPT(prompt);
                 }
@@ -1642,8 +1671,11 @@ INSTRUCTIES VOOR UITVOER:
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Verslag check");
-                    try { resolveGeminiModal(await callGemini(prompt)); }
-                    catch (e) { rejectGeminiModal(e.message); }
+                    try { resolveGeminiModal(await callGemini(prompt, _newGeminiSignal())); }
+                    catch (e) {
+                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
+                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                    }
                 } else {
                     openChatGPT(prompt);
                 }
