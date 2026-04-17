@@ -1281,6 +1281,47 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
+            async function callGeminiStream(prompt, onChunk) {
+                const model = geminiModelSelect.value;
+                if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
+                const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
+                const body = { contents: [{ parts: [{ text: fullPrompt }] }] };
+                if (model.includes("2.5")) body.generationConfig = { thinkingConfig: { thinkingBudget: 0 } };
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
+                    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
+                );
+                if (!res.ok) {
+                    const b = await res.json().catch(() => ({}));
+                    const msg = b?.error?.message || res.statusText;
+                    if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer een ander model in Settings. Details: ${msg}`);
+                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
+                    if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de API-sleutel via aistudio.google.com/apikey.`);
+                    throw new Error(`Gemini fout ${res.status}: ${msg}`);
+                }
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "", fullText = "";
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+                    for (const line of lines) {
+                        if (!line.startsWith("data: ")) continue;
+                        const jsonStr = line.slice(6).trim();
+                        if (jsonStr === "[DONE]") continue;
+                        try {
+                            const chunk = JSON.parse(jsonStr);
+                            const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+                            if (text) { fullText += text; onChunk(fullText); }
+                        } catch {}
+                    }
+                }
+                return fullText;
+            }
+
             function renderMarkdown(rawText) {
                 // Whitelist and convert known safe HTML tags, strip the rest
                 const html = rawText
@@ -1469,8 +1510,14 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                 const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Radiology check");
-                    try { resolveGeminiModal(await callGemini(prompt)); }
-                    catch (e) { rejectGeminiModal(e.message); }
+                    try {
+                        const text = await callGeminiStream(prompt, (partial) => {
+                            geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                            _geminiRawText = partial;
+                            geminiContent.innerHTML = renderMarkdown(partial);
+                        });
+                        resolveGeminiModal(text);
+                    } catch (e) { rejectGeminiModal(e.message); }
                 } else {
                     openChatGPT(prompt);
                 }
