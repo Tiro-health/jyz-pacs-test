@@ -1401,21 +1401,23 @@
             const radiologyCheckBtn = document.getElementById("radiology-check-btn");
             const kidvActionUrlInput = document.getElementById("kidv-action-url");
 
-            const DEFAULT_KIDV_PROMPT = `Je bent een gespecialiseerde radiologie-assistent. Genereer een gestructureerde companion checklist voor een radioloog op basis van onderstaande informatie. Baseer je uitsluitend op evidence-based radiologische bronnen (Radiopaedia, Radiology Assistant, Fleischner Society, SRU, TNM, ACR, relevante academische literatuur).
+            const DEFAULT_KIDV_PROMPT = `Je bent een gespecialiseerde radiologie-assistent. Genereer een gestructureerde companion checklist voor een radioloog op basis van onderstaande informatie. Baseer je uitsluitend op evidence-based radiologische bronnen (Radiopaedia, Radiology Assistant, Fleischner Society, SRU, TNM, ACR, ESR iGuide, relevante richtlijnen en academische literatuur).
 
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
 
-Geef een beknopte, scanbare checklist met volgende structuur:
-1. Te beoordelen regio's en structuren
-2. Typische radiologische presentatie van de gevraagde pathologie
-3. Meest frequente locoregionale uitbreiding en metastaatplaatsen
-4. Top 3 differentiaaldiagnoses met kenmerkende radiologische features
-5. Toepasselijke classificatie/staging protocollen (Fleischner, Bosniak, LI-RADS, TNM, BI-RADS, ...)
-6. Belangrijkste pitfalls en frequent gemiste bevindingen
+Geef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinische context: bij oncologische vraagstellingen focus op staging/uitbreiding; bij niet-oncologische vraagstellingen focus op systematische volledigheid en besluitondersteuning.
 
-Gebruik genummerde lijsten, vetgedrukte kernwoorden, geen lange zinnen.`;
+1. <b>Te beoordelen regio's en structuren</b> — wat mag niet gemist worden
+2. <b>Typische radiologische kenmerken</b> — kernbevindingen van de gevraagde pathologie
+3. <b>Uitbreiding / complicaties</b> — locoregionaal, metastasen (oncologie) of complicaties/nevenbevin­dingen (niet-oncologie)
+4. <b>Top 3 differentiaaldiagnoses</b> — met onderscheidende radiologische features
+5. <b>Classificatie / scoring</b> — toepasselijke protocollen (Fleischner, Bosniak, LI-RADS, TNM, BI-RADS, ASPECTS, Wells, ...)
+6. <b>Evidence-based follow-up</b> — aanbevolen interval, modaliteit en drempelwaarden volgens richtlijnen
+7. <b>Pitfalls & frequent gemiste bevindingen</b> — klassieke valkuilen voor dit onderzoekstype
+
+Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale scanbaarheid.`;
 
             const savedKidv = migratePrompt(localStorage.getItem("kidvActionUrl"));
             kidvActionUrlInput.value = savedKidv || DEFAULT_KIDV_PROMPT;
