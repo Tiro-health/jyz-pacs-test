@@ -739,51 +739,49 @@
                         </select>
                     </div>
 
-                    <!-- Dictation button URL -->
+                    <!-- Translate prompt -->
                     <div>
                         <label
                             for="dictation-action-url"
                             class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Dictation button Url</label
+                            >Translate prompt</label
                         >
-                        <input
+                        <textarea
                             id="dictation-action-url"
-                            type="text"
-                            placeholder="https://chatgpt.com/?q=Vertaal het volgende medisch radiologisch verslag naar het Frans. Behoud de volledige layout, structuur en medische terminologie ongewijzigd: {text}"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Use <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{text}</code> as placeholder for the dictation content.</p>
+                            rows="3"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                        ></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{text}</code> als placeholder voor de dictatie tekst.</p>
                     </div>
 
-                    <!-- KI en DV button URL -->
+                    <!-- Radiology check prompt -->
                     <div>
                         <label
                             for="kidv-action-url"
                             class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >KI en DV button Url</label
+                            >Radiology check prompt</label
                         >
-                        <input
+                        <textarea
                             id="kidv-action-url"
-                            type="text"
-                            placeholder="https://chatgpt.com/?q=..."
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Use <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> as placeholders.</p>
+                            rows="3"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                        ></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> als placeholders.</p>
                     </div>
 
-                    <!-- Verslag check button URL -->
+                    <!-- Verslag check prompt -->
                     <div>
                         <label
                             for="verslag-check-url"
                             class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Verslag check Url</label
+                            >Verslag check prompt</label
                         >
-                        <input
+                        <textarea
                             id="verslag-check-url"
-                            type="text"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Use <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> as placeholders.</p>
+                            rows="5"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                        ></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> als placeholders.</p>
                     </div>
 
                     <!-- Template Flow -->
@@ -1168,14 +1166,20 @@
                 GEMINI_API_KEY = _envKey || geminiApiKeyInput.value.trim();
             });
 
-            function templateToPrompt(template, vars) {
-                let prompt = template;
-                // Strip base URL prefix (e.g. https://chatgpt.com/?q=) to get raw prompt
-                if (/^https?:\/\/[^?]+\?q=/.test(prompt)) {
-                    prompt = decodeURIComponent(prompt.replace(/^https?:\/\/[^?]+\?q=/, ''));
-                }
-                for (const [k, v] of Object.entries(vars)) prompt = prompt.replaceAll(`{${k}}`, v);
-                return prompt;
+            // Strip legacy ChatGPT URL wrapper from stored prompts
+            function migratePrompt(stored) {
+                if (!stored) return "";
+                if (/^https?:\/\/[^?]+\?q=/.test(stored))
+                    return decodeURIComponent(stored.replace(/^https?:\/\/[^?]+\?q=/, ''));
+                return stored;
+            }
+            function fillPrompt(template, vars) {
+                let p = template;
+                for (const [k, v] of Object.entries(vars)) p = p.replaceAll(`{${k}}`, v);
+                return p;
+            }
+            function openChatGPT(prompt) {
+                window.open("https://chatgpt.com/?q=" + encodeURIComponent(prompt), "_blank", "noopener,noreferrer");
             }
 
             async function callGemini(prompt) {
@@ -1236,13 +1240,11 @@
             const translateBtn = document.getElementById("translate-btn");
             const dictationActionUrlInput = document.getElementById("dictation-action-url");
 
-            // Default URL with detailed medical translation prompt
-            const DEFAULT_TRANSLATE_URL = "https://chatgpt.com/?q=Vertaal het volgende medisch radiologisch verslag naar het Frans. Behoud de volledige layout, structuur en medische terminologie ongewijzigd: {text}";
+            const DEFAULT_TRANSLATE_PROMPT = "Vertaal het volgende medisch radiologisch verslag naar het Frans. Behoud de volledige layout, structuur en medische terminologie ongewijzigd: {text}";
 
-            // Restore saved URL or apply default
-            const savedActionUrl = localStorage.getItem("dictationActionUrl") ?? DEFAULT_TRANSLATE_URL;
-            dictationActionUrlInput.value = savedActionUrl;
-            dictationActionUrlInput.addEventListener("change", () => {
+            const savedTranslate = migratePrompt(localStorage.getItem("dictationActionUrl"));
+            dictationActionUrlInput.value = savedTranslate || DEFAULT_TRANSLATE_PROMPT;
+            dictationActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("dictationActionUrl", dictationActionUrlInput.value);
             });
 
@@ -1279,19 +1281,14 @@
             }
 
             translateBtn.addEventListener("click", async () => {
-                const actionUrl = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_URL;
-                const dictationText = readDictationText();
-
+                const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
+                const prompt = fillPrompt(template, { text: readDictationText() });
                 if (GEMINI_API_KEY) {
-                    const prompt = templateToPrompt(actionUrl, { text: dictationText });
                     openGeminiModal("Vertaling");
                     try { resolveGeminiModal(await callGemini(prompt)); }
                     catch (e) { rejectGeminiModal(e.message); }
                 } else {
-                    const finalUrl = actionUrl.includes("{text}")
-                        ? actionUrl.replace("{text}", encodeURIComponent(dictationText))
-                        : actionUrl + (dictationText ? "?q=" + encodeURIComponent(dictationText) : "");
-                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+                    openChatGPT(prompt);
                 }
             });
 
@@ -1301,11 +1298,11 @@
             const radiologyCheckBtn = document.getElementById("radiology-check-btn");
             const kidvActionUrlInput = document.getElementById("kidv-action-url");
 
-            const DEFAULT_KIDV_URL = "https://chatgpt.com/?q=Maak een beknopte checklist voor een radioloog die een verslag opstelt voor een {type_onderzoek}. Klinische inlichtingen: {klinische_inlichtingen}. Diagnostische vraagstelling: {diagnostische_vraagstelling}.";
+            const DEFAULT_KIDV_PROMPT = "Maak een beknopte checklist voor een radioloog die een verslag opstelt voor een {type_onderzoek}. Klinische inlichtingen: {klinische_inlichtingen}. Diagnostische vraagstelling: {diagnostische_vraagstelling}.";
 
-            const savedKidvUrl = localStorage.getItem("kidvActionUrl") ?? DEFAULT_KIDV_URL;
-            kidvActionUrlInput.value = savedKidvUrl;
-            kidvActionUrlInput.addEventListener("change", () => {
+            const savedKidv = migratePrompt(localStorage.getItem("kidvActionUrl"));
+            kidvActionUrlInput.value = savedKidv || DEFAULT_KIDV_PROMPT;
+            kidvActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("kidvActionUrl", kidvActionUrlInput.value);
             });
 
@@ -1344,19 +1341,15 @@
             const modalDv = document.getElementById("modal-dv");
 
             async function openRadiologyCheckUrl(ki, dv) {
-                const actionUrl = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_URL;
                 const typeOnderzoek = extractClinicalField(latestClinicalResponse, "type onderzoek", "type of examination", "onderzoek");
+                const template = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_PROMPT;
+                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 if (GEMINI_API_KEY) {
-                    const prompt = templateToPrompt(actionUrl, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                     openGeminiModal("Radiology check");
                     try { resolveGeminiModal(await callGemini(prompt)); }
                     catch (e) { rejectGeminiModal(e.message); }
                 } else {
-                    const finalUrl = actionUrl
-                        .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
-                        .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
-                        .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
-                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+                    openChatGPT(prompt);
                 }
             }
 
@@ -1404,11 +1397,11 @@
             const verslagCheckBtn = document.getElementById("verslag-check-btn");
             const verslagCheckUrlInput = document.getElementById("verslag-check-url");
 
-            const DEFAULT_VERSLAG_CHECK_URL = "https://chatgpt.com/?q= controleer onderstaand radiologisch verslag  op typische radiologische fouten alsook typische speechfouten rekening houdende met het onderstaand gedefinieerde type onderzoek, ga dus actief op zoek naar links-rechts fouten, woorden die kunnen wijzen op een verkeerde speech-to-text binnen deze radiologische context en het type onderzoek, alsook naar verkeerde anatomische benamingen binnen het type onderzoek. Vervang enkel de fouten in de huidige text met jouw voorgestelde verbetering op de plaats van de fouten, maak deze vervangde tekst vet, cursief en rood, en laat alle andere (juiste) tekst onveranderd in layout en van inhoud. Het is belangrijk dat er vender niets veranderd wordt aan de tekst of de inhoud er van, controleer dit steeds. Hier de informatie type onderzoek: {type_onderzoek}, klinische inlichtingen: {klinische_inlichtingen}, diagnostische vraagstelling: {diagnostische_vraagstelling} en het verslag: {tekst}";
+            const DEFAULT_VERSLAG_CHECK_PROMPT = "controleer onderstaand radiologisch verslag op typische radiologische fouten alsook typische speechfouten rekening houdende met het onderstaand gedefinieerde type onderzoek, ga dus actief op zoek naar links-rechts fouten, woorden die kunnen wijzen op een verkeerde speech-to-text binnen deze radiologische context en het type onderzoek, alsook naar verkeerde anatomische benamingen binnen het type onderzoek. Vervang enkel de fouten in de huidige text met jouw voorgestelde verbetering op de plaats van de fouten, maak deze vervangde tekst vet, cursief en rood, en laat alle andere (juiste) tekst onveranderd in layout en van inhoud. Het is belangrijk dat er verder niets veranderd wordt aan de tekst of de inhoud er van, controleer dit steeds. Hier de informatie type onderzoek: {type_onderzoek}, klinische inlichtingen: {klinische_inlichtingen}, diagnostische vraagstelling: {diagnostische_vraagstelling} en het verslag: {tekst}";
 
-            const savedVerslagCheckUrl = localStorage.getItem("verslagCheckUrl") ?? DEFAULT_VERSLAG_CHECK_URL;
-            verslagCheckUrlInput.value = savedVerslagCheckUrl;
-            verslagCheckUrlInput.addEventListener("change", () => {
+            const savedVerslagCheck = migratePrompt(localStorage.getItem("verslagCheckUrl"));
+            verslagCheckUrlInput.value = savedVerslagCheck || DEFAULT_VERSLAG_CHECK_PROMPT;
+            verslagCheckUrlInput.addEventListener("input", () => {
                 localStorage.setItem("verslagCheckUrl", verslagCheckUrlInput.value);
             });
 
@@ -1424,19 +1417,14 @@
             const modalVcDv = document.getElementById("modal-vc-dv");
 
             async function openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv) {
-                const actionUrl = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_URL;
+                const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 if (GEMINI_API_KEY) {
-                    const prompt = templateToPrompt(actionUrl, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                     openGeminiModal("Verslag check");
                     try { resolveGeminiModal(await callGemini(prompt)); }
                     catch (e) { rejectGeminiModal(e.message); }
                 } else {
-                    const finalUrl = actionUrl
-                        .replace("{tekst}", encodeURIComponent(tekst))
-                        .replace("{type_onderzoek}", encodeURIComponent(typeOnderzoek))
-                        .replace("{klinische_inlichtingen}", encodeURIComponent(ki))
-                        .replace("{diagnostische_vraagstelling}", encodeURIComponent(dv));
-                    window.open(finalUrl, "_blank", "noopener,noreferrer");
+                    openChatGPT(prompt);
                 }
             }
 
