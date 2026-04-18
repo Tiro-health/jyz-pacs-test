@@ -1382,17 +1382,24 @@
                     const diff = lcsWordDiff(_verslagOriginalText.replace(/\s+/g, ' ').trim(), cleanCorrected);
                     if (diff) {
                         origMap = new Map();
+                        const setOrig = (insTokens, origVal) => {
+                            const key = insTokens.join('').toLowerCase().trim();
+                            origMap.set(key, origVal);
+                            // Also index without leading/trailing punctuation for fuzzy matching
+                            const norm = key.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '');
+                            if (norm && norm !== key) origMap.set(norm, origVal);
+                        };
                         let k = 0;
                         while (k < diff.length) {
                             if (diff[k].op === '-') {
                                 const dels = [], ins = [];
                                 while (k < diff.length && diff[k].op === '-') dels.push(diff[k++].v);
                                 while (k < diff.length && diff[k].op === '+') ins.push(diff[k++].v);
-                                if (ins.length) origMap.set(ins.join('').toLowerCase().trim(), dels.join('').trim());
+                                if (ins.length) setOrig(ins, dels.join('').trim());
                             } else if (diff[k].op === '+') {
                                 const ins = [];
                                 while (k < diff.length && diff[k].op === '+') ins.push(diff[k++].v);
-                                origMap.set(ins.join('').toLowerCase().trim(), '');
+                                setOrig(ins, ''); // pure insertion — no original word
                             } else k++;
                         }
                     }
@@ -1400,8 +1407,20 @@
 
                 const corrSpan = (fallbackOrig, corr) => {
                     if (!hoveringMode) return `<span style="color:#ef4444;font-weight:bold;font-style:italic">${corr}</span>`;
-                    const orig = (origMap?.get(corr.toLowerCase().trim())) ?? fallbackOrig;
-                    return `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${(orig || corr).replace(/"/g,'&quot;')}">${corr}</span>`;
+                    let orig = fallbackOrig;
+                    if (origMap) {
+                        const key = corr.toLowerCase().trim();
+                        const norm = key.replace(/^[^a-z0-9]+|[^a-z0-9]+$/gi, '');
+                        // Exact match first, then punctuation-stripped match
+                        const found = origMap.has(key) ? origMap.get(key)
+                                    : origMap.has(norm) ? origMap.get(norm)
+                                    : undefined;
+                        if (found) orig = found;           // non-empty string from diff
+                        else if (found === undefined) orig = fallbackOrig; // key not in map, use title attr
+                        // found === '' means pure insertion — keep orig as fallbackOrig (likely '')
+                    }
+                    // data-orig='' → tooltip JS returns early → no tooltip shown (correct for unknown orig)
+                    return `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`;
                 };
 
                 // Whitelist and convert known safe HTML tags, strip the rest
