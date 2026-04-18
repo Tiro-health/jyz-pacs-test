@@ -963,6 +963,27 @@
                                 </svg>
                                 Patient letter
                             </a>
+                            <button
+                                id="demo-patient-btn"
+                                type="button"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                    <circle cx="12" cy="7" r="4"/>
+                                </svg>
+                                Demo patiënt
+                            </button>
                         </div>
                     </div>
 
@@ -1087,6 +1108,34 @@
 
             // Patient letter button — passes URL params to patient_letter.html
             document.getElementById("patient-letter-btn").href = `patient_letter.html?${flowParams.toString()}`;
+
+            // Demo patient button — fills study/clinical/previous-studies forms with demo data
+            document.getElementById("demo-patient-btn").addEventListener("click", () => {
+                const DEMO = {
+                    context: [
+                        ["naam", "John, Do"],
+                        ["geboortedatum", "09/11/2000"],
+                        ["geslacht", "Men"],
+                        ["datum onderzoek", "01/01/2026"],
+                        ["uur onderzoek", "11U30"],
+                        ["referentie", "PACS0000000"],
+                        ["type onderzoek", "RX HEUP"],
+                        ["lateralisatie", "Rechts"],
+                        ["sequentie", "X-RAY"],
+                        ["gebruikte medicatie", "None"],
+                    ],
+                    clinical: [
+                        ["klinische inlichtingen", "Val van paard op bil"],
+                        ["diagnostische vraagstelling", "Fractuur rechter heup"],
+                    ],
+                    previousStudies: [
+                        ["overige relevante onderzoeken", "RX HEUP RECHTS 01/02/2000"],
+                    ],
+                };
+                DEMO.context.forEach(([label, value]) => deepFillByLabel(contextForm, label, value));
+                DEMO.clinical.forEach(([label, value]) => deepFillByLabel(clinicalForm, label, value));
+                DEMO.previousStudies.forEach(([label, value]) => deepFillByLabel(previousStudiesForm, label, value));
+            });
 
             // QC button: pass current URL params to qc.html
             const qcBtn = document.querySelector('a[href="qc.html"]');
