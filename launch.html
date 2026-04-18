@@ -1277,7 +1277,13 @@
             }
             function fillPrompt(template, vars) {
                 let p = template;
-                for (const [k, v] of Object.entries(vars)) p = p.replaceAll(`{${k}}`, v);
+                for (const [k, v] of Object.entries(vars)) {
+                    if (!v) {
+                        p = p.replace(new RegExp(`^[^\n]*\\{${k}\\}[^\n]*\n?`, "m"), "");
+                    } else {
+                        p = p.replaceAll(`{${k}}`, v);
+                    }
+                }
                 return p;
             }
             function openChatGPT(prompt) {
@@ -1647,6 +1653,7 @@
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
 
 Geef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinische context: bij oncologische vraagstellingen focus op staging/uitbreiding; bij niet-oncologische vraagstellingen focus op systematische volledigheid en besluitondersteuning.
 
@@ -1682,6 +1689,12 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                     || extractClinicalField(latestContextResponse, ...searchTerms);
             }
 
+            function extractPatientInfo() {
+                const geslacht = extractAnyField("geslacht", "gender", "sexe", "sex");
+                const leeftijd = extractAnyField("leeftijd", "age", "geboortedatum", "birthdate");
+                return [geslacht, leeftijd].filter(Boolean).join(", ");
+            }
+
             function extractClinicalField(response, ...searchTerms) {
                 function searchItems(items) {
                     if (!items) return "";
@@ -1711,8 +1724,9 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
 
             async function openRadiologyCheckUrl(ki, dv) {
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const patientInfo = extractPatientInfo();
                 const template = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_PROMPT;
-                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Radiology check");
                     try {
@@ -1781,6 +1795,7 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
 === EINDE CONTEXT ===
 
 === TE CONTROLEREN VERSLAG ===
@@ -1814,7 +1829,7 @@ INSTRUCTIES VOOR UITVOER:
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "7";
+            const VERSLAG_CHECK_VERSION = "8";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
@@ -1853,8 +1868,9 @@ INSTRUCTIES VOOR UITVOER:
             const modalVcDv = document.getElementById("modal-vc-dv");
 
             async function openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv) {
+                const patientInfo = extractPatientInfo();
                 const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 if (GEMINI_API_KEY) {
                     _verslagOriginalText = tekst;
                     openGeminiModal("Verslag check");
