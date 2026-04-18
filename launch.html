@@ -74,6 +74,37 @@
                 display: block;
             }
 
+            /* Correction tooltip */
+            .corr {
+                position: relative;
+                cursor: help;
+                text-decoration: underline dotted #ef4444;
+            }
+            .corr::after {
+                content: "Origineel: " attr(data-orig);
+                position: absolute;
+                bottom: calc(100% + 5px);
+                left: 50%;
+                transform: translateX(-50%);
+                background: #1e293b;
+                color: #f1f5f9;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: normal;
+                font-style: normal;
+                white-space: nowrap;
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.15s;
+                z-index: 200;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            }
+            .corr:hover::after { opacity: 1; }
+
             details summary::-webkit-details-marker {
                 display: none;
             }
@@ -1365,7 +1396,12 @@
             function renderMarkdown(rawText) {
                 // Whitelist and convert known safe HTML tags, strip the rest
                 const html = rawText
-                    // Nested bold+italic+red combinations
+                    // Nested bold+italic+red WITH original text tooltip
+                    .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s+title=['"]([^'"]+)['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
+                        (_, orig, corr) => `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`)
+                    .replace(/<font\s+color=['"]red['"]\s+title=['"]([^'"]+)['"]\s*>(.*?)<\/font>/gis,
+                        (_, orig, corr) => `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`)
+                    // Nested bold+italic+red combinations (no tooltip fallback)
                     .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
                         '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
                     .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis,
@@ -1735,11 +1771,12 @@ Controleer actief op de volgende foutcategorieën:
 INSTRUCTIES VOOR UITVOER:
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
-- Markeer elke correctie als: <b><i><font color='red'>correctie</font></i></b>
+- Markeer elke correctie als: <b><i><font color='red' title="ORIGINELE_TEKST">correctie</font></i></b>
+  waarbij ORIGINELE_TEKST de exacte originele (foutieve) tekst is die vervangen wordt — bv. <b><i><font color='red' title="pneumothorax">geen pneumothorax</font></i></b>
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "3";
+            const VERSLAG_CHECK_VERSION = "4";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
