@@ -74,36 +74,8 @@
                 display: block;
             }
 
-            /* Correction tooltip (hovering mode) */
-            .corr {
-                position: relative;
-                cursor: help;
-                text-decoration: underline dotted #ef4444;
-            }
-            .corr::after {
-                content: "Origineel: " attr(data-orig);
-                position: absolute;
-                top: calc(100% + 5px);
-                left: 50%;
-                transform: translateX(-50%);
-                background: #1e293b;
-                color: #f1f5f9;
-                padding: 4px 10px;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: normal;
-                font-style: normal;
-                white-space: nowrap;
-                max-width: 320px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.15s;
-                z-index: 200;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.35);
-            }
-            .corr:hover::after { opacity: 1; }
+            /* Correction tooltip (hovering mode) — tooltip rendered via JS fixed div */
+            .corr { cursor: help; text-decoration: underline dotted #ef4444; }
 
             details summary::-webkit-details-marker {
                 display: none;
@@ -301,22 +273,24 @@
         </div>
 
         <!-- Gemini result modal -->
-        <div id="gemini-result-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-2xl mx-4 p-5 max-h-[80vh] flex flex-col">
-                <div class="flex items-center justify-between mb-3 shrink-0">
+        <div id="gemini-result-modal" class="fixed inset-0 z-50 hidden items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-10">
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-2xl mx-4 p-5 flex flex-col my-auto">
+                <div class="flex items-center justify-between mb-3">
                     <h2 id="gemini-result-title" class="text-sm font-semibold text-neutral-900 dark:text-neutral-100"></h2>
                     <div class="flex gap-2">
                         <button id="gemini-result-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                         <button id="gemini-result-close" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">✕</button>
                     </div>
                 </div>
-                <div id="gemini-result-loading" class="hidden items-center justify-center gap-3 py-8 shrink-0">
+                <div id="gemini-result-loading" class="hidden items-center justify-center gap-3 py-8">
                     <div class="w-5 h-5 border-2 border-neutral-300 border-t-blue-500 rounded-full animate-spin"></div>
                     <span class="text-sm text-neutral-500">Bezig met analyseren...</span>
                 </div>
-                <div id="gemini-result-content" class="flex-1 overflow-auto text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed"></div>
+                <div id="gemini-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed"></div>
             </div>
         </div>
+        <!-- Fixed tooltip for .corr hover (position: fixed bypasses any overflow clipping) -->
+        <div id="corr-tooltip" class="fixed z-[999] hidden pointer-events-none px-2.5 py-1 rounded-md text-xs text-[#f1f5f9] bg-[#1e293b] shadow-lg" style="white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;transition:opacity 0.1s"></div>
 
         <!-- Loading overlay (hidden by default) -->
         <div
@@ -1514,6 +1488,40 @@
             });
             document.getElementById("gemini-result-copy").addEventListener("click", () => {
                 navigator.clipboard.writeText(stripFormatting(_geminiRawText)).catch(() => {});
+            });
+
+            // Fixed-position tooltip for .corr spans — bypasses overflow clipping in any container
+            const corrTooltip = document.getElementById("corr-tooltip");
+            document.addEventListener("mouseover", (e) => {
+                const corr = e.target.closest(".corr");
+                if (!corr) return;
+                const orig = corr.getAttribute("data-orig");
+                if (!orig) return;
+                corrTooltip.textContent = "Origineel: " + orig;
+                corrTooltip.classList.remove("hidden");
+                const r = corr.getBoundingClientRect();
+                let left = r.left + r.width / 2;
+                let top = r.bottom + 6;
+                corrTooltip.style.transform = "translateX(-50%)";
+                corrTooltip.style.left = left + "px";
+                corrTooltip.style.top = top + "px";
+                // Clamp to viewport after paint
+                requestAnimationFrame(() => {
+                    const tr = corrTooltip.getBoundingClientRect();
+                    if (tr.right > window.innerWidth - 8) {
+                        corrTooltip.style.left = (window.innerWidth - tr.width - 8) + "px";
+                        corrTooltip.style.transform = "none";
+                    } else if (tr.left < 8) {
+                        corrTooltip.style.left = "8px";
+                        corrTooltip.style.transform = "none";
+                    }
+                    if (tr.bottom > window.innerHeight - 8) {
+                        corrTooltip.style.top = (r.top - tr.height - 6) + "px";
+                    }
+                });
+            });
+            document.addEventListener("mouseout", (e) => {
+                if (e.target.closest(".corr")) corrTooltip.classList.add("hidden");
             });
 
             // ============================================
