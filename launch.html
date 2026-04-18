@@ -1858,8 +1858,14 @@ INSTRUCTIES VOOR UITVOER:
                 if (GEMINI_API_KEY) {
                     _verslagOriginalText = tekst;
                     openGeminiModal("Verslag check");
-                    try { resolveGeminiModal(await callGemini(prompt, _newGeminiSignal())); }
-                    catch (e) {
+                    try {
+                        const text = await callGeminiStream(prompt, (partial) => {
+                            geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                            _geminiRawText = partial;
+                            geminiContent.innerHTML = renderMarkdown(partial);
+                        }, _newGeminiSignal());
+                        resolveGeminiModal(text);
+                    } catch (e) {
                         if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
                         else if (e.name !== "AbortError") rejectGeminiModal(e.message);
                     }
