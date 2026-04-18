@@ -523,26 +523,26 @@
                     </svg>
                     Dictation
                     <button
-                        id="verslag-check-btn"
-                        type="button"
-                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        Verslag check
-                    </button>
-                    <button
                         id="snomed-ct-btn"
                         type="button"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
                             <path d="M12 8v4l3 3"/>
                         </svg>
                         SNOMED CT
+                    </button>
+                    <button
+                        id="verslag-check-btn"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Verslag check
                     </button>
                     <svg
                         class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
@@ -1605,7 +1605,7 @@
                 geminiToggleOrig.classList.add("hidden");
                 if (typeof verslagCheckActive !== "undefined" && verslagCheckActive) {
                     verslagCheckActive = false;
-                    verslagCheckBtn.className = BTN_OFF_CLASS;
+                    verslagCheckBtn.className = BTN_OFF_CLASS.replace("ml-auto ", "");
                 }
             }
             geminiToggleOrig.addEventListener("click", () => {
@@ -1996,6 +1996,10 @@ INSTRUCTIES VOOR UITVOER:
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
 
+            // Declare here so updateSnomedCtBtn() can reference them when called below
+            const snomedCtBtn = document.getElementById("snomed-ct-btn");
+            let snomedCtActive = false;
+
             updateSnomedCtBtn(); // initialize now that BTN classes are defined
 
             // Hovering mode toggle
@@ -2047,7 +2051,7 @@ INSTRUCTIES VOOR UITVOER:
             verslagCheckBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 verslagCheckActive = !verslagCheckActive;
-                verslagCheckBtn.className = verslagCheckActive ? BTN_ON_CLASS : BTN_OFF_CLASS;
+                verslagCheckBtn.className = (verslagCheckActive ? BTN_ON_CLASS : BTN_OFF_CLASS).replace("ml-auto ", "");
 
                 if (verslagCheckActive) {
                     const tekst = readDictationText();
@@ -2074,7 +2078,7 @@ INSTRUCTIES VOOR UITVOER:
                 verslagModal.classList.remove("flex");
                 // Turn button back off when cancelled
                 verslagCheckActive = false;
-                verslagCheckBtn.className = BTN_OFF_CLASS;
+                verslagCheckBtn.className = BTN_OFF_CLASS.replace("ml-auto ", "");
             });
 
             document.getElementById("verslag-check-modal-go").addEventListener("click", () => {
@@ -2092,7 +2096,7 @@ INSTRUCTIES VOOR UITVOER:
                     verslagModal.classList.add("hidden");
                     verslagModal.classList.remove("flex");
                     verslagCheckActive = false;
-                    verslagCheckBtn.className = BTN_OFF_CLASS;
+                    verslagCheckBtn.className = BTN_OFF_CLASS.replace("ml-auto ", "");
                 }
             });
 
@@ -2211,13 +2215,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             }
 
             // SNOMED CT button — synced two-way with Active template checkbox
-            const snomedCtBtn = document.getElementById("snomed-ct-btn");
-            let snomedCtActive = false;
-
             function updateSnomedCtBtn() {
                 const cb = document.querySelector('.template-checkbox[value="SNOMED CT"]');
                 snomedCtActive = cb?.checked || false;
-                snomedCtBtn.className = (snomedCtActive ? BTN_ON_CLASS : BTN_OFF_CLASS).replace("ml-auto ", "");
+                snomedCtBtn.className = snomedCtActive ? BTN_ON_CLASS : BTN_OFF_CLASS;
             }
 
             snomedCtBtn.addEventListener("click", (e) => {
