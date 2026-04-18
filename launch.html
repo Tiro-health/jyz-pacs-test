@@ -1409,12 +1409,24 @@
             const translateBtn = document.getElementById("translate-btn");
             const dictationActionUrlInput = document.getElementById("dictation-action-url");
 
-            const DEFAULT_TRANSLATE_PROMPT = "Vertaal het volgende medisch radiologisch verslag naar het Frans. Behoud de volledige layout, structuur en medische terminologie ongewijzigd: {text}";
+            const DEFAULT_TRANSLATE_PROMPT = `Vertaal onderstaand medisch radiologisch verslag naar het Frans.
 
-            const savedTranslate = migratePrompt(localStorage.getItem("dictationActionUrl"));
+- Behoud de volledige opmaak en structuur (koppen, alinea's, witregels) ongewijzigd
+- Vertaal medische termen naar het correcte Frans medisch equivalent
+- Behoud getallen, eenheden, metingen en afkortingen exact zoals ze zijn
+
+{text}`;
+
+            const TRANSLATE_PROMPT_VERSION = "2";
+            const storedTranslateVersion = localStorage.getItem("dictationActionVersion");
+            const savedTranslate = storedTranslateVersion === TRANSLATE_PROMPT_VERSION
+                ? migratePrompt(localStorage.getItem("dictationActionUrl"))
+                : "";
             dictationActionUrlInput.value = savedTranslate || DEFAULT_TRANSLATE_PROMPT;
+            if (!savedTranslate) localStorage.setItem("dictationActionVersion", TRANSLATE_PROMPT_VERSION);
             dictationActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("dictationActionUrl", dictationActionUrlInput.value);
+                localStorage.setItem("dictationActionVersion", TRANSLATE_PROMPT_VERSION);
             });
 
             // Cache dictation text via input events that bubble up (composed) through shadow DOM.
