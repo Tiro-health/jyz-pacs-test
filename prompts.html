@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Prompting</title>
+
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        fontFamily: { sans: ["Inter", "system-ui", "-apple-system", "sans-serif"] },
+                        colors: {
+                            background: "hsl(var(--background))",
+                            muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+                            accent: "hsl(var(--accent))",
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <script>
+            (function () {
+                const p = new URLSearchParams(window.location.search);
+                const t = p.get("theme");
+                const dark = t === "dark" ? true : t === "light" ? false : window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (dark) document.documentElement.classList.add("dark");
+            })();
+        </script>
+
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Fira+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+        <style>
+            :root {
+                --background: 0 0% 100%;
+                --muted: 210 40% 96.1%;
+                --muted-foreground: 215.4 16.3% 46.9%;
+                --accent: 210 40% 90%;
+            }
+            :root.dark {
+                --background: 222.2 84% 4.9%;
+                --muted: 217.2 32.6% 17.5%;
+                --muted-foreground: 215 20.2% 65.1%;
+                --accent: 217.2 32.6% 25%;
+            }
+        </style>
+    </head>
+    <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200 font-sans min-h-screen">
+
+        <!-- Toolbar -->
+        <div class="sticky top-0 z-10 flex items-center gap-3 px-4 py-2 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 shadow-sm">
+            <button id="back-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                Back
+            </button>
+            <span class="text-sm font-medium">Prompting</span>
+        </div>
+
+        <div class="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
+
+            <!-- Translate prompt -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <span class="text-sm font-medium">Translate prompt</span>
+                    <button data-reset="translate" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="translate-prompt" rows="6" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholder: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{text}</code></p>
+                </div>
+            </div>
+
+            <!-- Radiology check prompt -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <span class="text-sm font-medium">Radiology check prompt</span>
+                    <button data-reset="kidv" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="kidv-prompt" rows="10" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                </div>
+            </div>
+
+            <!-- Verslag check prompt -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <span class="text-sm font-medium">Verslag check prompt</span>
+                    <button data-reset="verslag" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="verslag-prompt" rows="14" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                </div>
+            </div>
+
+            <!-- SNOMED CT prompt -->
+            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+                    <span class="text-sm font-medium">SNOMED CT prompt</span>
+                    <button data-reset="snomed" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="snomed-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                </div>
+            </div>
+
+            <!-- SNOMED database note -->
+            <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3">
+                <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen</p>
+                <p class="text-xs text-amber-700 dark:text-amber-400">Gegenereerde codes worden momenteel <b>niet</b> gevalideerd tegen een officiële SNOMED CT-database. Validatie via de admin-interface wordt in een latere fase toegevoegd.</p>
+            </div>
+
+        </div>
+
+        <script>
+            const params = new URLSearchParams(window.location.search);
+
+            // ── Default prompts (must match launch.html) ──────────────────────
+            const DEFAULT_TRANSLATE = `Vertaal onderstaand medisch radiologisch verslag naar het Frans.
+
+- Behoud de volledige opmaak en structuur (koppen, alinea's, witregels) ongewijzigd
+- Vertaal medische termen naar het correcte Frans medisch equivalent
+- Behoud getallen, eenheden, metingen en afkortingen exact zoals ze zijn
+
+{text}`;
+
+            const DEFAULT_KIDV = `Je bent een gespecialiseerde radiologie-assistent. Genereer een gestructureerde companion checklist voor een radioloog op basis van onderstaande informatie. Baseer je uitsluitend op evidence-based radiologische bronnen (Radiopaedia, Radiology Assistant, Fleischner Society, SRU, TNM, ACR, ESR iGuide, relevante richtlijnen en academische literatuur).
+
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+
+Geef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinische context: bij oncologische vraagstellingen focus op staging/uitbreiding; bij niet-oncologische vraagstellingen focus op systematische volledigheid en besluitondersteuning.
+
+1. <b>Te beoordelen regio's en structuren</b> — wat mag niet gemist worden
+2. <b>Typische radiologische kenmerken</b> — kernbevindingen van de gevraagde pathologie
+3. <b>Uitbreiding / complicaties</b> — locoregionaal, metastasen (oncologie) of complicaties/nevenbevin­dingen (niet-oncologie)
+4. <b>Top 3 differentiaaldiagnoses</b> — met onderscheidende radiologische features
+5. <b>Classificatie / scoring</b> — toepasselijke protocollen (Fleischner, Bosniak, LI-RADS, TNM, BI-RADS, ASPECTS, Wells, ...)
+6. <b>Evidence-based follow-up</b> — aanbevolen interval, modaliteit en drempelwaarden volgens richtlijnen
+7. <b>Pitfalls & frequent gemiste bevindingen</b> — klassieke valkuilen voor dit onderzoekstype
+
+Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale scanbaarheid.`;
+
+            const DEFAULT_VERSLAG = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten.
+
+=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+=== EINDE CONTEXT ===
+
+=== TE CONTROLEREN VERSLAG ===
+{tekst}
+=== EINDE VERSLAG ===
+
+Controleer actief op de volgende foutcategorieën:
+
+**KRITIEK (altijd controleren):**
+- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren
+- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder" — bv. "geen pneumothorax" → "pneumothorax"
+- Klinisch-logische fouten: bevindingen die anatomisch onmogelijk zijn voor dit type onderzoek
+
+**SPEECH-TO-TEXT FOUTEN:**
+- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname, acuut↔inactief, focaal↔diffuus
+- Voorvoegsel-/achtervoegselfouten: hyper-/hypo-, in-/un-, -itis/-osis, vergroot↔verkleind, aanwezig↔afwezig
+- Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
+- Zinsafbreking: ontbrekende woorden die de betekenis wijzigen
+
+**TERMINOLOGIE:**
+- Verkeerde anatomische benamingen voor dit type onderzoek
+- Inconsistent gebruik van termen binnen hetzelfde verslag
+- Niet-gedefinieerde afkortingen
+
+INSTRUCTIES VOOR UITVOER:
+- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen labels, geen sectietitels, geen context
+- Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
+- Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
+- Markeer elke correctie als: <del>originele tekst</del><ins>gecorrigeerde tekst</ins>
+  Voorbeeld: <del>humeruskop rechts</del><ins>femurhals links</ins>
+- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
+- Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
+
+            const DEFAULT_SNOMED = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
+
+=== CONTEXT (uitsluitend ter referentie — niet weergeven in output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+=== EINDE CONTEXT ===
+
+=== TE CODEREN VERSLAG ===
+{tekst}
+=== EINDE VERSLAG ===
+
+CODERINGREGELS:
+- Codeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
+- Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
+- Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
+- Gebruik uitsluitend bestaande, numerieke SNOMED CT-codes; hallucineer NOOIT fictieve codes; laat weg bij twijfel
+
+UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
+<b>hoofddiagnose</b>
+[numerieke SNOMED-code] ([Nederlandse omschrijving])
+<b>bijdiagnose</b>
+[numerieke SNOMED-code] ([Nederlandse omschrijving])
+[numerieke SNOMED-code] ([Nederlandse omschrijving])`;
+
+            // ── localStorage helpers ───────────────────────────────────────────
+            function migratePrompt(stored) {
+                if (!stored) return "";
+                if (/^https?:\/\/[^?]+\?q=/.test(stored))
+                    return decodeURIComponent(stored.replace(/^https?:\/\/[^?]+\?q=/, ""));
+                return stored;
+            }
+
+            const CONFIGS = [
+                {
+                    id: "translate-prompt",
+                    resetKey: "translate",
+                    storageKey: "dictationActionUrl",
+                    versionKey: "dictationActionVersion",
+                    version: "2",
+                    defaultPrompt: DEFAULT_TRANSLATE,
+                },
+                {
+                    id: "kidv-prompt",
+                    resetKey: "kidv",
+                    storageKey: "kidvActionUrl",
+                    versionKey: null,
+                    version: null,
+                    defaultPrompt: DEFAULT_KIDV,
+                },
+                {
+                    id: "verslag-prompt",
+                    resetKey: "verslag",
+                    storageKey: "verslagCheckUrl",
+                    versionKey: "verslagCheckVersion",
+                    version: "8",
+                    defaultPrompt: DEFAULT_VERSLAG,
+                },
+                {
+                    id: "snomed-prompt",
+                    resetKey: "snomed",
+                    storageKey: "snomedCtActionUrl",
+                    versionKey: "snomedCtPromptVersion",
+                    version: "1",
+                    defaultPrompt: DEFAULT_SNOMED,
+                },
+            ];
+
+            CONFIGS.forEach(cfg => {
+                const textarea = document.getElementById(cfg.id);
+
+                // Load saved value
+                let saved = "";
+                if (cfg.versionKey && cfg.version) {
+                    const storedVersion = localStorage.getItem(cfg.versionKey);
+                    saved = storedVersion === cfg.version
+                        ? migratePrompt(localStorage.getItem(cfg.storageKey))
+                        : "";
+                } else {
+                    saved = migratePrompt(localStorage.getItem(cfg.storageKey));
+                }
+                textarea.value = saved || cfg.defaultPrompt;
+
+                // Save on input
+                textarea.addEventListener("input", () => {
+                    localStorage.setItem(cfg.storageKey, textarea.value);
+                    if (cfg.versionKey && cfg.version) {
+                        localStorage.setItem(cfg.versionKey, cfg.version);
+                    }
+                });
+
+                // Reset button
+                const resetBtn = document.querySelector(`[data-reset="${cfg.resetKey}"]`);
+                resetBtn.addEventListener("click", () => {
+                    textarea.value = cfg.defaultPrompt;
+                    localStorage.setItem(cfg.storageKey, cfg.defaultPrompt);
+                    if (cfg.versionKey && cfg.version) {
+                        localStorage.setItem(cfg.versionKey, cfg.version);
+                    }
+                });
+            });
+
+            // Back button
+            document.getElementById("back-btn").addEventListener("click", () => {
+                window.location.href = `launch.html?${params.toString()}`;
+            });
+        </script>
+    </body>
+</html>
