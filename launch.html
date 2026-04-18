@@ -1118,7 +1118,7 @@
                 const r = event.detail?.response;
                 const naam = extractClinicalField(r, "naam", "name", "patiënt", "patient name");
                 const datum = extractClinicalField(r, "datum", "date", "geboortedatum", "onderzoeksdatum");
-                const typeOnderzoek = extractClinicalField(r, "type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractClinicalField(r, "type onderzoek", "type of examination");
                 const lateralisatie = extractClinicalField(r, "lateralisatie", "laterality", "lateralisation");
                 const parts = [naam, datum, typeOnderzoek, lateralisatie].filter(Boolean);
                 studyTitleSuffix.textContent = parts.length ? parts.join(" - ") : "";
