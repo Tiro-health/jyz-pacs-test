@@ -670,6 +670,21 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
+                    <!-- Generated SNOMED result (hidden until generated) -->
+                    <div id="snomed-ct-result" class="hidden border-b border-neutral-200 dark:border-neutral-800 px-3 py-2.5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Gegenereerde codes</span>
+                            <div class="flex gap-1.5">
+                                <button id="snomed-copy-btn" type="button" class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                    Kopieer
+                                </button>
+                                <button id="snomed-clear-btn" type="button" class="text-xs px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-500 dark:text-neutral-400 transition-colors">✕</button>
+                            </div>
+                        </div>
+                        <div id="snomed-ct-result-content" class="text-xs leading-relaxed space-y-0.5 text-neutral-700 dark:text-neutral-300"></div>
+                        <p class="text-xs text-amber-600 dark:text-amber-400 mt-2.5">⚠ SNOMED database nog toe te voegen — codes zijn niet gevalideerd</p>
+                    </div>
                     <tiro-form-filler
                         id="snomed-ct-form"
                         sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
@@ -926,10 +941,16 @@
                         >
                         <textarea
                             id="snomed-ct-action-url"
-                            rows="3"
+                            rows="5"
                             class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
                         ></textarea>
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{hoofddiagnose}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> als placeholders.</p>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                    </div>
+
+                    <!-- SNOMED database note -->
+                    <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-3 py-2">
+                        <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen</p>
+                        <p class="text-xs text-amber-700 dark:text-amber-400">Gegenereerde codes worden momenteel <b>niet</b> gevalideerd tegen een officiële SNOMED CT-database. Validatie via de admin-interface wordt in een latere fase toegevoegd.</p>
                     </div>
 
                     <!-- Template Flow -->
@@ -2106,23 +2127,104 @@ INSTRUCTIES VOOR UITVOER:
             const snomedCtGenerateBtn = document.getElementById("snomed-ct-generate-btn");
             const snomedCtActionUrlInput = document.getElementById("snomed-ct-action-url");
 
-            const DEFAULT_SNOMED_CT_PROMPT = ``;
+            const DEFAULT_SNOMED_CT_PROMPT = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
 
-            const savedSnomedCt = localStorage.getItem("snomedCtActionUrl");
-            snomedCtActionUrlInput.value = savedSnomedCt !== null ? savedSnomedCt : DEFAULT_SNOMED_CT_PROMPT;
+=== CONTEXT (uitsluitend ter referentie — niet weergeven in output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+=== EINDE CONTEXT ===
+
+=== TE CODEREN VERSLAG ===
+{tekst}
+=== EINDE VERSLAG ===
+
+CODERINGREGELS:
+- Codeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
+- Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
+- Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
+- Gebruik uitsluitend bestaande, numerieke SNOMED CT-codes; hallucineer NOOIT fictieve codes; laat weg bij twijfel
+
+UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
+<b>hoofddiagnose</b>
+[numerieke SNOMED-code] ([Nederlandse omschrijving])
+<b>bijdiagnose</b>
+[numerieke SNOMED-code] ([Nederlandse omschrijving])
+[numerieke SNOMED-code] ([Nederlandse omschrijving])`;
+
+            const SNOMED_CT_PROMPT_VERSION = "1";
+            const savedSnomedCtVersion = localStorage.getItem("snomedCtPromptVersion");
+            const savedSnomedCt = savedSnomedCtVersion === SNOMED_CT_PROMPT_VERSION
+                ? localStorage.getItem("snomedCtActionUrl")
+                : "";
+            snomedCtActionUrlInput.value = savedSnomedCt || DEFAULT_SNOMED_CT_PROMPT;
+            if (!savedSnomedCt) localStorage.setItem("snomedCtPromptVersion", SNOMED_CT_PROMPT_VERSION);
             snomedCtActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("snomedCtActionUrl", snomedCtActionUrlInput.value);
+                localStorage.setItem("snomedCtPromptVersion", SNOMED_CT_PROMPT_VERSION);
+            });
+
+            function parseSnomedResult(rawText) {
+                const resultPanel = document.getElementById("snomed-ct-result");
+                const resultContent = document.getElementById("snomed-ct-result-content");
+                if (!resultPanel || !resultContent) return;
+
+                const plain = rawText.replace(/<b>(.*?)<\/b>/gi, "$1").replace(/<[^>]+>/g, "").trim();
+                const lines = plain.split("\n").map(l => l.trim()).filter(Boolean);
+                if (!lines.length) return;
+
+                let html = "";
+                let section = "";
+                for (const line of lines) {
+                    const lower = line.toLowerCase();
+                    if (lower === "hoofddiagnose") {
+                        section = "hoofd";
+                        html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-0.5 pb-0.5">Hoofddiagnose</div>`;
+                    } else if (lower === "bijdiagnose") {
+                        section = "bij";
+                        html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-2 pb-0.5">Bijdiagnose</div>`;
+                    } else {
+                        const m = line.match(/^(\d+)\s+\((.+)\)$/);
+                        if (m) {
+                            const codeColor = section === "hoofd"
+                                ? "text-blue-700 dark:text-blue-400"
+                                : "text-neutral-500 dark:text-neutral-400";
+                            html += `<div class="flex gap-2 font-mono"><span class="${codeColor} shrink-0">${m[1]}</span><span class="font-sans">(${m[2]})</span></div>`;
+                        } else {
+                            html += `<div>${line}</div>`;
+                        }
+                    }
+                }
+
+                resultContent.innerHTML = html;
+                resultPanel.classList.remove("hidden");
+
+                // Auto-expand SNOMED CT section and update title suffix
+                resultPanel.closest("details").setAttribute("open", "");
+                const first = plain.match(/^(\d+)\s+\((.+)\)$/m);
+                if (first) snomedCtTitleSuffix.textContent = first[2];
+            }
+
+            const snomedResultPanel = document.getElementById("snomed-ct-result");
+            document.getElementById("snomed-copy-btn").addEventListener("click", () => {
+                const plain = document.getElementById("snomed-ct-result-content").innerText;
+                navigator.clipboard.writeText(plain).catch(() => {});
+            });
+            document.getElementById("snomed-clear-btn").addEventListener("click", () => {
+                snomedResultPanel.classList.add("hidden");
+                snomedCtTitleSuffix.textContent = "";
             });
 
             snomedCtGenerateBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const tekst = readDictationText();
-                const hoofddiagnose = extractClinicalField(latestSnomedCtResponse, "hoofddiagnose", "main diagnosis", "diagnose");
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const patientInfo = extractPatientInfo();
                 const template = snomedCtActionUrlInput.value.trim() || DEFAULT_SNOMED_CT_PROMPT;
-                if (!template) { alert("Stel eerst een SNOMED CT prompt in via Settings."); return; }
-                const prompt = fillPrompt(template, { tekst, hoofddiagnose, type_onderzoek: typeOnderzoek, patient_info: patientInfo });
+                const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("SNOMED CT");
                     callGeminiStream(prompt, (partial) => {
@@ -2130,7 +2232,7 @@ INSTRUCTIES VOOR UITVOER:
                         _geminiRawText = partial;
                         geminiContent.innerHTML = renderMarkdown(partial);
                     }, _newGeminiSignal())
-                        .then(text => resolveGeminiModal(text))
+                        .then(text => { resolveGeminiModal(text); parseSnomedResult(text); })
                         .catch(e => {
                             if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
                             else if (e.name !== "AbortError") rejectGeminiModal(e.message);
