@@ -670,8 +670,13 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <!-- Generated SNOMED result (hidden until generated) -->
-                    <div id="snomed-ct-result" class="hidden border-b border-neutral-200 dark:border-neutral-800 px-3 py-2.5">
+                    <tiro-form-filler
+                        id="snomed-ct-form"
+                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                        compact-grouping
+                    />
+                    <!-- Fallback result panel — shown only when shadow DOM fill fails -->
+                    <div id="snomed-ct-result" class="hidden border-t border-neutral-200 dark:border-neutral-800 px-3 py-2.5">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Gegenereerde codes</span>
                             <div class="flex gap-1.5">
@@ -685,11 +690,6 @@
                         <div id="snomed-ct-result-content" class="text-xs leading-relaxed space-y-0.5 text-neutral-700 dark:text-neutral-300"></div>
                         <p class="text-xs text-amber-600 dark:text-amber-400 mt-2.5">⚠ SNOMED database nog toe te voegen — codes zijn niet gevalideerd</p>
                     </div>
-                    <tiro-form-filler
-                        id="snomed-ct-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
                 </div>
             </details>
 
@@ -2165,43 +2165,99 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 localStorage.setItem("snomedCtPromptVersion", SNOMED_CT_PROMPT_VERSION);
             });
 
-            function parseSnomedResult(rawText) {
-                const resultPanel = document.getElementById("snomed-ct-result");
-                const resultContent = document.getElementById("snomed-ct-result-content");
-                if (!resultPanel || !resultContent) return;
+            // Set a native input/textarea value in a way that works for Lit/React components
+            function setNativeValue(el, value) {
+                const proto = el.tagName === "TEXTAREA"
+                    ? window.HTMLTextAreaElement.prototype
+                    : window.HTMLInputElement.prototype;
+                const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+                if (setter) setter.call(el, value); else el.value = value;
+                el.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true }));
+                el.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+            }
 
+            // Recursively search shadow DOMs for an input/textarea near a label matching labelHint
+            function deepFillByLabel(rootEl, labelHint, value) {
+                function search(root) {
+                    if (!root) return false;
+                    for (const el of root.querySelectorAll("*")) {
+                        // Check leaf text content of this element (skip elements with child elements)
+                        const leafText = Array.from(el.childNodes)
+                            .filter(n => n.nodeType === Node.TEXT_NODE)
+                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
+                        if (leafText.includes(labelHint.toLowerCase())) {
+                            // Search for input in containing block (up to 3 levels up)
+                            let container = el;
+                            for (let i = 0; i < 3; i++) {
+                                const input = container.querySelector(
+                                    "input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea"
+                                );
+                                if (input) { setNativeValue(input, value); return true; }
+                                container = container.parentElement;
+                                if (!container) break;
+                            }
+                        }
+                        if (el.shadowRoot && search(el.shadowRoot)) return true;
+                    }
+                    return false;
+                }
+                return search(rootEl.shadowRoot || rootEl);
+            }
+
+            function parseSnomedResult(rawText) {
                 const plain = rawText.replace(/<b>(.*?)<\/b>/gi, "$1").replace(/<[^>]+>/g, "").trim();
                 const lines = plain.split("\n").map(l => l.trim()).filter(Boolean);
                 if (!lines.length) return;
 
-                let html = "";
+                // Partition lines into hoofddiagnose / bijdiagnose
+                const hoofdLines = [], bijLines = [];
                 let section = "";
                 for (const line of lines) {
                     const lower = line.toLowerCase();
-                    if (lower === "hoofddiagnose") {
-                        section = "hoofd";
-                        html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-0.5 pb-0.5">Hoofddiagnose</div>`;
-                    } else if (lower === "bijdiagnose") {
-                        section = "bij";
-                        html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-2 pb-0.5">Bijdiagnose</div>`;
-                    } else {
-                        const m = line.match(/^(\d+)\s+\((.+)\)$/);
-                        if (m) {
-                            const codeColor = section === "hoofd"
-                                ? "text-blue-700 dark:text-blue-400"
-                                : "text-neutral-500 dark:text-neutral-400";
-                            html += `<div class="flex gap-2 font-mono"><span class="${codeColor} shrink-0">${m[1]}</span><span class="font-sans">(${m[2]})</span></div>`;
-                        } else {
-                            html += `<div>${line}</div>`;
-                        }
-                    }
+                    if (lower === "hoofddiagnose") { section = "hoofd"; continue; }
+                    if (lower === "bijdiagnose")   { section = "bij";   continue; }
+                    if (section === "hoofd") hoofdLines.push(line);
+                    else if (section === "bij") bijLines.push(line);
                 }
 
-                resultContent.innerHTML = html;
-                resultPanel.classList.remove("hidden");
+                // Try shadow DOM fill first
+                const filledHoofd = hoofdLines.length
+                    ? deepFillByLabel(snomedCtForm, "hoofddiagnose", hoofdLines.join("\n"))
+                    : false;
+                const filledBij = bijLines.length
+                    ? deepFillByLabel(snomedCtForm, "bijdiagnose", bijLines.join("\n"))
+                    : false;
 
-                // Auto-expand SNOMED CT section and update title suffix
-                resultPanel.closest("details").setAttribute("open", "");
+                // Show fallback panel only if shadow DOM filling failed
+                if (!filledHoofd && !filledBij) {
+                    const resultPanel = document.getElementById("snomed-ct-result");
+                    const resultContent = document.getElementById("snomed-ct-result-content");
+                    let html = "";
+                    let sec = "";
+                    for (const line of lines) {
+                        const lower = line.toLowerCase();
+                        if (lower === "hoofddiagnose") {
+                            sec = "hoofd";
+                            html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-0.5 pb-0.5">Hoofddiagnose</div>`;
+                        } else if (lower === "bijdiagnose") {
+                            sec = "bij";
+                            html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-2 pb-0.5">Bijdiagnose</div>`;
+                        } else {
+                            const m = line.match(/^(\d+)\s+\((.+)\)$/);
+                            if (m) {
+                                const c = sec === "hoofd" ? "text-blue-700 dark:text-blue-400" : "text-neutral-500 dark:text-neutral-400";
+                                html += `<div class="flex gap-2 font-mono"><span class="${c} shrink-0">${m[1]}</span><span class="font-sans">(${m[2]})</span></div>`;
+                            } else {
+                                html += `<div>${line}</div>`;
+                            }
+                        }
+                    }
+                    resultContent.innerHTML = html;
+                    resultPanel.classList.remove("hidden");
+                }
+
+                // Auto-expand section and update title suffix
+                snomedCtForm.closest("details").setAttribute("open", "");
                 const first = plain.match(/^(\d+)\s+\((.+)\)$/m);
                 if (first) snomedCtTitleSuffix.textContent = first[2];
             }
