@@ -560,6 +560,11 @@
                 <div
                     class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800"
                 >
+                    <!-- SNOMED CT error banner -->
+                    <div id="snomed-error-banner" class="hidden mb-2 flex items-start gap-2 px-3 py-2 rounded-md bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-sm text-red-700 dark:text-red-300">
+                        <span id="snomed-error-text" class="flex-1"></span>
+                        <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
+                    </div>
                     <tiro-magic-clipboard
                         for="report-form"
                         dictation-language="nl"
@@ -2227,6 +2232,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); }
             });
 
+            function showSnomedError(msg) {
+                const banner = document.getElementById("snomed-error-banner");
+                document.getElementById("snomed-error-text").textContent = "SNOMED CT: " + msg;
+                banner.classList.remove("hidden");
+            }
+
             function runSnomedCtGeneration() {
                 const tekst = readDictationText();
                 if (!tekst.trim()) return;
@@ -2237,17 +2248,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const template = snomedCtActionUrlInput.value.trim() || DEFAULT_SNOMED_CT_PROMPT;
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 if (GEMINI_API_KEY) {
-                    openGeminiModal("SNOMED CT");
-                    callGeminiStream(prompt, (partial) => {
-                        geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
-                        _geminiRawText = partial;
-                        geminiContent.innerHTML = renderMarkdown(partial);
-                    }, _newGeminiSignal())
-                        .then(text => { resolveGeminiModal(text); parseSnomedResult(text); })
-                        .catch(e => {
-                            if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
-                            else if (e.name !== "AbortError") rejectGeminiModal(e.message);
-                        });
+                    document.getElementById("snomed-error-banner").classList.add("hidden");
+                    callGemini(prompt)
+                        .then(text => parseSnomedResult(text))
+                        .catch(e => { if (e.name !== "AbortError") showSnomedError(e.message); });
                 } else {
                     openChatGPT(prompt);
                 }
