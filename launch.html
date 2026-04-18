@@ -300,32 +300,6 @@
             </div>
         </div>
 
-        <!-- Paste text modal -->
-        <div id="paste-text-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-2xl mx-4 p-5 flex flex-col gap-3">
-                <div class="flex items-center justify-between">
-                    <span class="text-sm font-medium text-neutral-900 dark:text-neutral-100">Verslagtekst plakken</span>
-                    <button id="paste-text-modal-close" type="button" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                </div>
-                <textarea id="paste-text-area" rows="10"
-                    placeholder="Plak hier je verslagtekst (Ctrl+V)…"
-                    class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y font-mono"
-                ></textarea>
-                <div class="flex gap-2 justify-end">
-                    <button id="paste-text-modal-cancel" type="button"
-                        class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                        Annuleer
-                    </button>
-                    <button id="paste-text-modal-ok" type="button"
-                        class="px-3 py-1.5 text-xs rounded-md bg-blue-600 hover:bg-blue-700 text-white">
-                        Bevestigen
-                    </button>
-                </div>
-            </div>
-        </div>
-
         <!-- Gemini result modal -->
         <div id="gemini-result-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
             <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl w-full max-w-2xl mx-4 p-5 max-h-[80vh] flex flex-col">
@@ -581,20 +555,9 @@
                                 </svg>
                                 Translate
                             </button>
-                            <button
-                                id="paste-text-btn"
-                                type="button"
-                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect width="8" height="4" x="8" y="2" rx="1" ry="1"/>
-                                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-                                </svg>
-                                Plak tekst
-                            </button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Tekst opgeslagen
+                                Tekst ontvangen
                             </span>
                         </div>
                     </tiro-magic-clipboard>
@@ -1590,42 +1553,23 @@
                 }
             }, { capture: true });
 
-            // "Plak tekst" modal — reliable alternative for pasting large reports.
-            // Bypasses the magic-clipboard SDK entirely: text is stored in
-            // latestDictationText and becomes immediately available for Translate
-            // and Verslag check without risking an SDK freeze.
-            const pasteTextModal     = document.getElementById("paste-text-modal");
-            const pasteTextArea      = document.getElementById("paste-text-area");
+            // Auto-intercept large pastes (>500 chars) into the dictation field to
+            // bypass the SDK's AI processing and prevent UI freeze.
             const pasteTextIndicator = document.getElementById("paste-text-indicator");
-
-            document.getElementById("paste-text-btn").addEventListener("click", () => {
-                pasteTextArea.value = latestDictationText;
-                pasteTextModal.classList.remove("hidden");
-                pasteTextModal.classList.add("flex");
-                setTimeout(() => pasteTextArea.focus(), 50);
-            });
-
-            function closePasteModal() {
-                pasteTextModal.classList.add("hidden");
-                pasteTextModal.classList.remove("flex");
-            }
-
-            document.getElementById("paste-text-modal-close").addEventListener("click", closePasteModal);
-            document.getElementById("paste-text-modal-cancel").addEventListener("click", closePasteModal);
-            pasteTextModal.addEventListener("click", (e) => { if (e.target === pasteTextModal) closePasteModal(); });
-
-            document.getElementById("paste-text-modal-ok").addEventListener("click", () => {
-                const text = pasteTextArea.value.trim();
-                if (!text) { closePasteModal(); return; }
-                latestDictationText = text;
-                closePasteModal();
+            document.addEventListener("paste", (e) => {
+                const text = e.clipboardData?.getData("text/plain") || "";
+                if (text.length <= 500) return;
+                if (document.activeElement !== clipboard) return;
+                e.preventDefault();
+                e.stopPropagation();
+                latestDictationText = text.trim();
                 pasteTextIndicator.classList.remove("hidden");
                 pasteTextIndicator.classList.add("inline-flex");
                 setTimeout(() => {
                     pasteTextIndicator.classList.add("hidden");
                     pasteTextIndicator.classList.remove("inline-flex");
                 }, 3000);
-            });
+            }, { capture: true });
 
             function extractText(el) {
                 if (!el) return "";
