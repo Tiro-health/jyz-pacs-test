@@ -1441,10 +1441,10 @@
             }, { capture: true });
 
             // Intercept large pastes before the SDK processes them.
-            // The magic-clipboard uses AI to fill form fields on every input; for large
-            // text blocks this freezes the UI. We catch the paste, store the text
-            // ourselves, write it directly into the internal element, then ask the user
-            // whether to trigger the SDK autofill (which may still be slow).
+            // Strategy: temporarily remove the 'for' attribute so the SDK cannot find its
+            // target form and won't autofill on paste. The browser inserts the text normally
+            // (stays visible). After a short delay we show a confirm dialog; the 'for'
+            // attribute is always restored, and on OK we re-trigger the SDK manually.
             const LARGE_PASTE_THRESHOLD = 500;
             document.addEventListener("paste", (e) => {
                 const path = e.composedPath?.() ?? [];
@@ -1453,32 +1453,35 @@
                 const text = e.clipboardData?.getData("text/plain") ?? "";
                 if (text.length <= LARGE_PASTE_THRESHOLD) return;
 
-                e.preventDefault();
-                e.stopImmediatePropagation();
+                // Unlink the form so the SDK skips autofill for this paste
+                const forAttr = clipboard.getAttribute("for");
+                if (forAttr) clipboard.removeAttribute("for");
                 latestDictationText = text;
 
-                // Write directly into the internal editable element (no SDK trigger yet)
-                const internalEl =
-                    clipboard.shadowRoot?.querySelector("[contenteditable='true'], textarea") ??
-                    clipboard.querySelector("[contenteditable='true'], textarea");
-                if (internalEl) {
-                    if ("value" in internalEl) {
-                        internalEl.value = text;
-                    } else {
-                        internalEl.textContent = text;
+                // Let the browser insert the text naturally (text becomes visible)
+                // Show dialog after rendering
+                setTimeout(() => {
+                    const trigger = confirm(
+                        `Tekst te groot voor automatische SDK-verwerking (${text.length} tekens).\n\nNu toch toepassen? Dit kan even duren.`
+                    );
+                    // Always restore the form link
+                    if (forAttr) clipboard.setAttribute("for", forAttr);
+                    if (trigger) {
+                        // Re-trigger SDK by dispatching an input event on the internal element
+                        const internalEl =
+                            clipboard.shadowRoot?.querySelector("[contenteditable='true'], textarea") ??
+                            clipboard.querySelector("[contenteditable='true'], textarea");
+                        setTimeout(() => {
+                            if (internalEl) {
+                                internalEl.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+                            } else {
+                                // Fallback: toggle the for attribute to force SDK re-init
+                                clipboard.removeAttribute("for");
+                                clipboard.setAttribute("for", forAttr);
+                            }
+                        }, 50);
                     }
-                }
-
-                // Ask user whether to run SDK autofill (may be slow for large texts)
-                const trigger = confirm(
-                    `Tekst te groot voor automatische SDK-verwerking (${text.length} tekens).\n\nNu toch toepassen? Dit kan even duren.`
-                );
-                if (trigger && internalEl) {
-                    // Small delay so the browser can render the text before SDK blocks the thread
-                    setTimeout(() => {
-                        internalEl.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
-                    }, 50);
-                }
+                }, 100);
             }, true);
 
             function extractText(el) {
