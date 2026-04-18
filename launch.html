@@ -1085,12 +1085,12 @@
                 ];
                 demoContext.forEach(([label, value]) => deepFillByLabel(contextForm, label, value));
                 demoClinical.forEach(([label, value]) => deepFillByLabel(clinicalForm, label, value));
-                setDictationText(
+                const demoVerslag =
                     "Klein avulsiefragmentje aan het acetabulum links.\n" +
                     "Normaal botpatroon.\n" +
                     "Normale coxofemorale verhoudingen.\n" +
-                    "Schuin fractuur doorheen de hals van de humerus links zonder belangrijke verplaatsingen."
-                );
+                    "Schuin fractuur doorheen de hals van de humerus links zonder belangrijke verplaatsingen.";
+                navigator.clipboard.writeText(demoVerslag).catch(() => {});
                 // Dropdown fields — need to open the control and click the option
                 await deepFillDropdownByLabel(contextForm, "lateralisatie", "Rechts");
                 await deepFillDropdownByLabel(previousStudiesForm, "overige relevante onderzoeken", "RX HEUP RECHTS 01/02/2000");
