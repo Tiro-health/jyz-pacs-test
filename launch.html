@@ -279,6 +279,7 @@
                 <div class="flex items-center justify-between mb-3">
                     <h2 id="gemini-result-title" class="text-sm font-semibold text-neutral-900 dark:text-neutral-100"></h2>
                     <div class="flex gap-2">
+                        <button id="gemini-result-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                         <button id="gemini-result-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                         <button id="gemini-result-close" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">✕</button>
                     </div>
@@ -1484,31 +1485,56 @@
                 geminiLoading.classList.remove("hidden"); geminiLoading.classList.add("flex");
                 geminiModal.classList.remove("hidden");   geminiModal.classList.add("flex");
             }
+            const geminiToggleOrig = document.getElementById("gemini-result-toggle-orig");
+            let _showingOriginal = false;
+            let _workingHTML = null; // preserves per-correction toggle state when viewing original
+
             function resolveGeminiModal(text) {
                 _geminiRawText = text;
+                _showingOriginal = false;
+                _workingHTML = null;
                 geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                 geminiContent.innerHTML = renderMarkdown(text);
+                geminiToggleOrig.classList.toggle("hidden", !_verslagOriginalText);
+                geminiToggleOrig.textContent = "↩ Origineel";
             }
             function rejectGeminiModal(err) {
                 geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                 geminiContent.innerHTML = `<span class="text-red-500">Fout: ${err}</span>`;
+                geminiToggleOrig.classList.add("hidden");
             }
             function _closeGeminiModal() {
                 geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex");
                 _abortGemini(true);
                 _verslagOriginalText = null;
+                _showingOriginal = false;
+                _workingHTML = null;
+                geminiToggleOrig.classList.add("hidden");
                 if (typeof verslagCheckActive !== "undefined" && verslagCheckActive) {
                     verslagCheckActive = false;
                     verslagCheckBtn.className = BTN_OFF_CLASS;
                 }
             }
+            geminiToggleOrig.addEventListener("click", () => {
+                _showingOriginal = !_showingOriginal;
+                if (_showingOriginal) {
+                    _workingHTML = geminiContent.innerHTML; // save current per-correction state
+                    geminiContent.innerHTML = _verslagOriginalText.replace(/\n/g, "<br>");
+                    geminiToggleOrig.textContent = "↩ Gecorrigeerd";
+                } else {
+                    geminiContent.innerHTML = _workingHTML; // restore per-correction state
+                    geminiToggleOrig.textContent = "↩ Origineel";
+                }
+                corrTooltip.classList.add("hidden");
+            });
             document.getElementById("gemini-result-close").addEventListener("click", _closeGeminiModal);
             geminiModal.addEventListener("click", (e) => {
                 if (e.target === geminiModal) _closeGeminiModal();
             });
             document.getElementById("gemini-result-copy").addEventListener("click", () => {
-                // Copy the current visible text (respects individually reverted corrections)
-                navigator.clipboard.writeText(geminiContent.innerText).catch(() => {});
+                navigator.clipboard.writeText(
+                    _showingOriginal ? _verslagOriginalText : geminiContent.innerText
+                ).catch(() => {});
             });
 
             // Fixed-position tooltip + per-correction click toggle
