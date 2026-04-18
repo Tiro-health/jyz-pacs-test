@@ -44,11 +44,10 @@
                     isDark = true;
                 } else if (themeParam === "light") {
                     isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
                 } else {
-                    // Default to system preference
-                    isDark = window.matchMedia(
-                        "(prefers-color-scheme: dark)",
-                    ).matches;
+                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 }
 
                 if (isDark) {
@@ -954,6 +953,22 @@
                             class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-blue-600 transition-colors focus:outline-none"
                         >
                             <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[19px]"></span>
+                        </button>
+                    </div>
+
+                    <!-- Dark mode -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="dark-mode-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Dark mode
+                        </label>
+                        <button
+                            id="dark-mode-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
                         </button>
                     </div>
                 </div>
@@ -2044,6 +2059,21 @@ INSTRUCTIES VOOR UITVOER:
                 updateHoveringToggle();
             });
             updateHoveringToggle();
+
+            const darkModeToggle = document.getElementById("dark-mode-toggle");
+            let darkMode = document.documentElement.classList.contains("dark");
+            function updateDarkModeToggle() {
+                darkModeToggle.setAttribute("aria-checked", String(darkMode));
+                darkModeToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${darkMode ? "bg-blue-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
+                darkModeToggle.querySelector("span").className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${darkMode ? "translate-x-[19px]" : "translate-x-[3px]"}`;
+            }
+            darkModeToggle.addEventListener("click", () => {
+                darkMode = !darkMode;
+                document.documentElement.classList.toggle("dark", darkMode);
+                localStorage.setItem("darkMode", String(darkMode));
+                updateDarkModeToggle();
+            });
+            updateDarkModeToggle();
 
             let verslagCheckActive = false;
 
