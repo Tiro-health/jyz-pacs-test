@@ -1057,14 +1057,15 @@
                     if (!items) return;
                     for (const item of items) {
                         if (item.answer && item.answer.length > 0) {
-                            const ans = item.answer[0];
-                            let val;
-                            if (ans.valueBoolean !== undefined) {
-                                val = ans.valueBoolean ? (item.text || "") : "";
-                            } else {
-                                val = ans.valueString || ans.valueCoding?.display || ans.valueDate || "";
+                            for (const ans of item.answer) {
+                                let val;
+                                if (ans.valueBoolean !== undefined) {
+                                    val = ans.valueBoolean ? (item.text || "") : "";
+                                } else {
+                                    val = ans.valueString || ans.valueCoding?.display || ans.valueDate || "";
+                                }
+                                if (val) values.push(val);
                             }
-                            if (val) values.push(val);
                         }
                         walkItems(item.item);
                     }
