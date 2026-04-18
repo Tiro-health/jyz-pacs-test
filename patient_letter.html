@@ -399,11 +399,7 @@ Met collegiale groeten en dank voor uw verwijzing,
             // Toolbar actions
             // ============================================
             document.getElementById("back-btn").addEventListener("click", () => {
-                if (document.referrer) {
-                    window.history.back();
-                } else {
-                    window.location.href = `launch.html?${params.toString()}`;
-                }
+                window.location.href = `launch.html?${params.toString()}`;
             });
 
             document.getElementById("print-btn").addEventListener("click", () => {
