@@ -126,7 +126,12 @@
     <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200">
 
         <!-- Floating action buttons (top-right) -->
-        <div class="fixed top-4 right-4 z-50 flex gap-2">
+        <div class="fixed top-4 right-4 z-50 flex gap-2 items-center">
+            <button
+                id="secret-copy-btn"
+                type="button"
+                class="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600 opacity-20 hover:opacity-50 transition-opacity flex-shrink-0 border-0 p-0 cursor-pointer"
+            ></button>
             <button
                 id="save-btn"
                 type="button"
@@ -360,6 +365,31 @@
                     saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
                 }
             });
+            // Secret copy button: PIN-protected decrypt + copy
+            (function() {
+                const BLOB = "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==";
+                async function decrypt(blob, pin) {
+                    const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
+                    const salt = data.slice(0, 16), iv = data.slice(16, 28), enc = data.slice(28);
+                    const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]);
+                    const key = await crypto.subtle.deriveKey(
+                        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+                        km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]
+                    );
+                    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, enc);
+                    return new TextDecoder().decode(plain);
+                }
+                document.getElementById("secret-copy-btn").addEventListener("click", async () => {
+                    const pin = prompt("Code:");
+                    if (!pin) return;
+                    try {
+                        const value = await decrypt(BLOB, pin);
+                        await navigator.clipboard.writeText(value);
+                    } catch {
+                        alert("Onjuiste code.");
+                    }
+                });
+            })();
         </script>
     </body>
 </html>
