@@ -1428,6 +1428,47 @@
                 }
             }, { capture: true });
 
+            // Intercept large pastes before the SDK processes them.
+            // The magic-clipboard uses AI to fill form fields on every input; for large
+            // text blocks this freezes the UI. We catch the paste, store the text
+            // ourselves, write it directly into the internal element, then ask the user
+            // whether to trigger the SDK autofill (which may still be slow).
+            const LARGE_PASTE_THRESHOLD = 500;
+            document.addEventListener("paste", (e) => {
+                const path = e.composedPath?.() ?? [];
+                const insideClipboard = path.some(n => n === clipboard || n?.host === clipboard);
+                if (!insideClipboard) return;
+                const text = e.clipboardData?.getData("text/plain") ?? "";
+                if (text.length <= LARGE_PASTE_THRESHOLD) return;
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                latestDictationText = text;
+
+                // Write directly into the internal editable element (no SDK trigger yet)
+                const internalEl =
+                    clipboard.shadowRoot?.querySelector("[contenteditable='true'], textarea") ??
+                    clipboard.querySelector("[contenteditable='true'], textarea");
+                if (internalEl) {
+                    if ("value" in internalEl) {
+                        internalEl.value = text;
+                    } else {
+                        internalEl.textContent = text;
+                    }
+                }
+
+                // Ask user whether to run SDK autofill (may be slow for large texts)
+                const trigger = confirm(
+                    `Tekst te groot voor automatische SDK-verwerking (${text.length} tekens).\n\nNu toch toepassen? Dit kan even duren.`
+                );
+                if (trigger && internalEl) {
+                    // Small delay so the browser can render the text before SDK blocks the thread
+                    setTimeout(() => {
+                        internalEl.dispatchEvent(new Event("input", { bubbles: true, composed: true }));
+                    }, 50);
+                }
+            }, true);
+
             function extractText(el) {
                 if (!el) return "";
                 if ("value" in el) return el.value;
