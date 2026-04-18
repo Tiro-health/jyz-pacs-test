@@ -909,29 +909,56 @@
                     <!-- Template Flow -->
                     <div>
                         <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Workflow - landing page still to configure!</label>
-                        <a
-                            id="template-flow-btn"
-                            href="#"
-                            target="_blank"
-                            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
-                        >
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="14"
-                                height="14"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
+                        <div class="flex gap-2 flex-wrap">
+                            <a
+                                id="template-flow-btn"
+                                href="#"
+                                target="_blank"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
                             >
-                                <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5z"/>
-                                <path d="M9 3v18"/>
-                                <path d="m16 15-3-3 3-3"/>
-                            </svg>
-                            Template flow
-                        </a>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5z"/>
+                                    <path d="M9 3v18"/>
+                                    <path d="m16 15-3-3 3-3"/>
+                                </svg>
+                                Template flow
+                            </a>
+                            <a
+                                id="patient-letter-btn"
+                                href="/patient_letter"
+                                target="_blank"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                >
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                    <polyline points="10 9 9 9 8 9"/>
+                                </svg>
+                                Patient letter
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Hovering mode -->
@@ -1052,6 +1079,9 @@
             const templateFlowBtn = document.getElementById("template-flow-btn");
             const flowParams = new URLSearchParams(window.location.search);
             templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
+
+            // Patient letter button — passes URL params to patient_letter.html
+            document.getElementById("patient-letter-btn").href = `patient_letter.html?${flowParams.toString()}`;
 
             // QC button: pass current URL params to qc.html
             const qcBtn = document.querySelector('a[href="qc.html"]');
@@ -2067,9 +2097,8 @@ INSTRUCTIES VOOR UITVOER:
             });
 
             // ============================================
-            // SNOMED CT Generate button
+            // SNOMED CT prompt settings + generation
             // ============================================
-            const snomedCtGenerateBtn = document.getElementById("snomed-ct-generate-btn");
             const snomedCtActionUrlInput = document.getElementById("snomed-ct-action-url");
 
             const DEFAULT_SNOMED_CT_PROMPT = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
