@@ -446,6 +446,50 @@
                 </div>
             </details>
 
+            <!-- Previous Studies Form -->
+            <details
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
+            >
+                <summary
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M12 20h9"/>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    Previous studies<span id="previous-studies-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
+                    <svg
+                        class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
+                </summary>
+                <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
+                    <tiro-form-filler
+                        id="previous-studies-form"
+                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                        compact-grouping
+                    />
+                </div>
+            </details>
+
             <!-- Autofill Accordion -->
             <details
                 id="autofill-accordion"
@@ -979,6 +1023,12 @@
             clinicalForm.setAttribute("launch-context", JSON.stringify(launchContext));
             clinicalForm.setAttribute("questionnaire", CLINICAL_QUESTIONNAIRE);
 
+            // Initialize previous studies form
+            const previousStudiesForm = document.getElementById("previous-studies-form");
+            const PREVIOUS_STUDIES_QUESTIONNAIRE = "http://templates.tiro.health/templates/70998e77562b4be9af36de8ae3c1422f|1.0.1";
+            previousStudiesForm.setAttribute("launch-context", JSON.stringify(launchContext));
+            previousStudiesForm.setAttribute("questionnaire", PREVIOUS_STUDIES_QUESTIONNAIRE);
+
             // ============================================
             // Dynamic panel titles
             // ============================================
@@ -997,6 +1047,30 @@
                 const r = event.detail?.response;
                 const dv = extractClinicalField(r, "diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 clinicalTitleSuffix.textContent = dv || "";
+            });
+
+            const previousStudiesTitleSuffix = document.getElementById("previous-studies-title-suffix");
+            previousStudiesForm.addEventListener("tiro-update", (event) => {
+                const r = event.detail?.response;
+                const values = [];
+                function walkItems(items) {
+                    if (!items) return;
+                    for (const item of items) {
+                        if (item.answer && item.answer.length > 0) {
+                            const ans = item.answer[0];
+                            let val;
+                            if (ans.valueBoolean !== undefined) {
+                                val = ans.valueBoolean ? (item.text || "") : "";
+                            } else {
+                                val = ans.valueString || ans.valueCoding?.display || ans.valueDate || "";
+                            }
+                            if (val) values.push(val);
+                        }
+                        walkItems(item.item);
+                    }
+                }
+                walkItems(r?.item);
+                previousStudiesTitleSuffix.textContent = values.length ? values.join(" - ") : "";
             });
 
             function updateActiveTemplateSuffix() {
