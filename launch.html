@@ -624,6 +624,60 @@
                 </div>
             </details>
 
+            <!-- SNOMED CT Form -->
+            <details
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
+            >
+                <summary
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+                        <path d="M12 8v4l3 3"/>
+                    </svg>
+                    SNOMED CT<span id="snomed-ct-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
+                    <button
+                        id="snomed-ct-generate-btn"
+                        type="button"
+                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 3l14 9-14 9V3z"/>
+                        </svg>
+                        Generate
+                    </button>
+                    <svg
+                        class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
+                </summary>
+                <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
+                    <tiro-form-filler
+                        id="snomed-ct-form"
+                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                        compact-grouping
+                    />
+                </div>
+            </details>
+
             <!-- Active Template Selector -->
             <details
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
@@ -863,6 +917,21 @@
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> als placeholders.</p>
                     </div>
 
+                    <!-- SNOMED CT prompt -->
+                    <div>
+                        <label
+                            for="snomed-ct-action-url"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >SNOMED CT prompt</label
+                        >
+                        <textarea
+                            id="snomed-ct-action-url"
+                            rows="3"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                        ></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{hoofddiagnose}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> als placeholders.</p>
+                    </div>
+
                     <!-- Template Flow -->
                     <div>
                         <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Workflow - landing page still to configure!</label>
@@ -1029,6 +1098,12 @@
             previousStudiesForm.setAttribute("launch-context", JSON.stringify(launchContext));
             previousStudiesForm.setAttribute("questionnaire", PREVIOUS_STUDIES_QUESTIONNAIRE);
 
+            // Initialize SNOMED CT form
+            const snomedCtForm = document.getElementById("snomed-ct-form");
+            const SNOMED_CT_QUESTIONNAIRE = "http://templates.tiro.health/templates/646640d97a2c4285a881af8f8adc1c2b|1.0.0";
+            snomedCtForm.setAttribute("launch-context", JSON.stringify(launchContext));
+            snomedCtForm.setAttribute("questionnaire", SNOMED_CT_QUESTIONNAIRE);
+
             // ============================================
             // Dynamic panel titles
             // ============================================
@@ -1072,6 +1147,14 @@
                 }
                 walkItems(r?.item);
                 previousStudiesTitleSuffix.textContent = values.length ? values.join(" - ") : "";
+            });
+
+            const snomedCtTitleSuffix = document.getElementById("snomed-ct-title-suffix");
+            let latestSnomedCtResponse = null;
+            snomedCtForm.addEventListener("tiro-update", (event) => {
+                latestSnomedCtResponse = event.detail?.response || null;
+                const hoofddiagnose = extractClinicalField(latestSnomedCtResponse, "hoofddiagnose", "main diagnosis", "diagnose");
+                snomedCtTitleSuffix.textContent = hoofddiagnose || "";
             });
 
             function updateActiveTemplateSuffix() {
@@ -2014,6 +2097,46 @@ INSTRUCTIES VOOR UITVOER:
                     verslagModal.classList.remove("flex");
                     verslagCheckActive = false;
                     verslagCheckBtn.className = BTN_OFF_CLASS;
+                }
+            });
+
+            // ============================================
+            // SNOMED CT Generate button
+            // ============================================
+            const snomedCtGenerateBtn = document.getElementById("snomed-ct-generate-btn");
+            const snomedCtActionUrlInput = document.getElementById("snomed-ct-action-url");
+
+            const DEFAULT_SNOMED_CT_PROMPT = ``;
+
+            const savedSnomedCt = localStorage.getItem("snomedCtActionUrl");
+            snomedCtActionUrlInput.value = savedSnomedCt !== null ? savedSnomedCt : DEFAULT_SNOMED_CT_PROMPT;
+            snomedCtActionUrlInput.addEventListener("input", () => {
+                localStorage.setItem("snomedCtActionUrl", snomedCtActionUrlInput.value);
+            });
+
+            snomedCtGenerateBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const tekst = readDictationText();
+                const hoofddiagnose = extractClinicalField(latestSnomedCtResponse, "hoofddiagnose", "main diagnosis", "diagnose");
+                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const patientInfo = extractPatientInfo();
+                const template = snomedCtActionUrlInput.value.trim() || DEFAULT_SNOMED_CT_PROMPT;
+                if (!template) { alert("Stel eerst een SNOMED CT prompt in via Settings."); return; }
+                const prompt = fillPrompt(template, { tekst, hoofddiagnose, type_onderzoek: typeOnderzoek, patient_info: patientInfo });
+                if (GEMINI_API_KEY) {
+                    openGeminiModal("SNOMED CT");
+                    callGeminiStream(prompt, (partial) => {
+                        geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                        _geminiRawText = partial;
+                        geminiContent.innerHTML = renderMarkdown(partial);
+                    }, _newGeminiSignal())
+                        .then(text => resolveGeminiModal(text))
+                        .catch(e => {
+                            if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
+                            else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                        });
+                } else {
+                    openChatGPT(prompt);
                 }
             });
 
