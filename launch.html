@@ -83,7 +83,7 @@
             .corr::after {
                 content: "Origineel: " attr(data-orig);
                 position: absolute;
-                bottom: calc(100% + 5px);
+                top: calc(100% + 5px);
                 left: 50%;
                 transform: translateX(-50%);
                 background: #1e293b;
@@ -1410,23 +1410,74 @@
                 return fullText;
             }
 
+            // LCS word-level diff: returns array of {op:'='|'+'|'-', v:string}
+            function lcsWordDiff(a, b) {
+                const tok = s => s.match(/\S+|\s+/g) || [];
+                const A = tok(a), B = tok(b);
+                if (A.length * B.length > 400000) return null;
+                const M = A.length, N = B.length;
+                const dp = Array.from({length: M + 1}, () => new Int32Array(N + 1));
+                for (let i = 1; i <= M; i++)
+                    for (let j = 1; j <= N; j++)
+                        dp[i][j] = A[i-1].toLowerCase() === B[j-1].toLowerCase()
+                            ? dp[i-1][j-1] + 1 : Math.max(dp[i-1][j], dp[i][j-1]);
+                const ops = [];
+                let i = M, j = N;
+                while (i > 0 || j > 0) {
+                    if (i > 0 && j > 0 && A[i-1].toLowerCase() === B[j-1].toLowerCase())
+                        { ops.unshift({op:'=', v:A[i-1]}); i--; j--; }
+                    else if (j > 0 && (i === 0 || dp[i][j-1] >= dp[i-1][j]))
+                        { ops.unshift({op:'+', v:B[j-1]}); j--; }
+                    else
+                        { ops.unshift({op:'-', v:A[i-1]}); i--; }
+                }
+                return ops;
+            }
+
+            let _verslagOriginalText = null;
+
             function renderMarkdown(rawText) {
-                const corrSpan = (orig, corr) => hoveringMode
-                    ? `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`
-                    : `<span style="color:#ef4444;font-weight:bold;font-style:italic">${corr}</span>`;
+                // Build a correction→original map from word-level diff when original text is available
+                let origMap = null;
+                if (hoveringMode && _verslagOriginalText) {
+                    const cleanCorrected = rawText.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+                    const diff = lcsWordDiff(_verslagOriginalText.replace(/\s+/g, ' ').trim(), cleanCorrected);
+                    if (diff) {
+                        origMap = new Map();
+                        let k = 0;
+                        while (k < diff.length) {
+                            if (diff[k].op === '-') {
+                                const dels = [], ins = [];
+                                while (k < diff.length && diff[k].op === '-') dels.push(diff[k++].v);
+                                while (k < diff.length && diff[k].op === '+') ins.push(diff[k++].v);
+                                if (ins.length) origMap.set(ins.join('').toLowerCase().trim(), dels.join('').trim());
+                            } else if (diff[k].op === '+') {
+                                const ins = [];
+                                while (k < diff.length && diff[k].op === '+') ins.push(diff[k++].v);
+                                origMap.set(ins.join('').toLowerCase().trim(), '');
+                            } else k++;
+                        }
+                    }
+                }
+
+                const corrSpan = (fallbackOrig, corr) => {
+                    if (!hoveringMode) return `<span style="color:#ef4444;font-weight:bold;font-style:italic">${corr}</span>`;
+                    const orig = (origMap?.get(corr.toLowerCase().trim())) ?? fallbackOrig;
+                    return `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${(orig || corr).replace(/"/g,'&quot;')}">${corr}</span>`;
+                };
 
                 // Whitelist and convert known safe HTML tags, strip the rest
                 const html = rawText
-                    // Nested bold+italic+red WITH tooltip (title attribute)
+                    // Nested bold+italic+red WITH tooltip (title attribute, kept for backwards compat)
                     .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s+title=['"]([^'"]+)['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
                         (_, orig, corr) => corrSpan(orig, corr))
                     .replace(/<font\s+color=['"]red['"]\s+title=['"]([^'"]+)['"]\s*>(.*?)<\/font>/gis,
                         (_, orig, corr) => corrSpan(orig, corr))
-                    // Nested bold+italic+red combinations (no title)
+                    // Nested bold+italic+red combinations (no title) — also use corrSpan for diff lookup
                     .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
-                        '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                        (_, corr) => corrSpan('', corr))
                     .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis,
-                        '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                        (_, corr) => corrSpan('', corr))
                     .replace(/<b>(.*?)<\/b>/gis,      '<strong>$1</strong>')
                     .replace(/<strong>(.*?)<\/strong>/gis, '<strong>$1</strong>')
                     .replace(/<i>(.*?)<\/i>/gis,      '<em>$1</em>')
@@ -1488,6 +1539,7 @@
             function _closeGeminiModal() {
                 geminiModal.classList.add("hidden"); geminiModal.classList.remove("flex");
                 _abortGemini(true);
+                _verslagOriginalText = null;
                 if (typeof verslagCheckActive !== "undefined" && verslagCheckActive) {
                     verslagCheckActive = false;
                     verslagCheckBtn.className = BTN_OFF_CLASS;
@@ -1792,11 +1844,11 @@ Controleer actief op de volgende foutcategorieën:
 INSTRUCTIES VOOR UITVOER:
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
-- Markeer elke correctie als: <b><i><font color='red' title="ORIGINELE_TEKST">correctie</font></i></b>
+- Markeer elke correctie als: <b><i><font color='red'>correctie</font></i></b>
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "4";
+            const VERSLAG_CHECK_VERSION = "5";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
@@ -1838,6 +1890,7 @@ INSTRUCTIES VOOR UITVOER:
                 const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 if (GEMINI_API_KEY) {
+                    _verslagOriginalText = tekst;
                     openGeminiModal("Verslag check");
                     try { resolveGeminiModal(await callGemini(prompt, _newGeminiSignal())); }
                     catch (e) {
