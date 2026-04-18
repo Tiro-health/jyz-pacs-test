@@ -1110,31 +1110,28 @@
             document.getElementById("patient-letter-btn").href = `patient_letter.html?${flowParams.toString()}`;
 
             // Demo patient button — fills study/clinical/previous-studies forms with demo data
-            document.getElementById("demo-patient-btn").addEventListener("click", () => {
-                const DEMO = {
-                    context: [
-                        ["naam", "John, Do"],
-                        ["geboortedatum", "09/11/2000"],
-                        ["geslacht", "Men"],
-                        ["datum onderzoek", "01/01/2026"],
-                        ["uur onderzoek", "11U30"],
-                        ["referentie", "PACS0000000"],
-                        ["type onderzoek", "RX HEUP"],
-                        ["lateralisatie", "Rechts"],
-                        ["sequentie", "X-RAY"],
-                        ["gebruikte medicatie", "None"],
-                    ],
-                    clinical: [
-                        ["klinische inlichtingen", "Val van paard op bil"],
-                        ["diagnostische vraagstelling", "Fractuur rechter heup"],
-                    ],
-                    previousStudies: [
-                        ["overige relevante onderzoeken", "RX HEUP RECHTS 01/02/2000"],
-                    ],
-                };
-                DEMO.context.forEach(([label, value]) => deepFillByLabel(contextForm, label, value));
-                DEMO.clinical.forEach(([label, value]) => deepFillByLabel(clinicalForm, label, value));
-                DEMO.previousStudies.forEach(([label, value]) => deepFillByLabel(previousStudiesForm, label, value));
+            document.getElementById("demo-patient-btn").addEventListener("click", async () => {
+                // Text fields — filled via input value setter
+                const demoContext = [
+                    ["naam", "John, Do"],
+                    ["geboortedatum", "09/11/2000"],
+                    ["geslacht", "Men"],
+                    ["datum onderzoek", "01/01/2026"],
+                    ["uur onderzoek", "11U30"],
+                    ["referentie", "PACS0000000"],
+                    ["type onderzoek", "RX HEUP"],
+                    ["sequentie", "X-RAY"],
+                    ["gebruikte medicatie", "None"],
+                ];
+                const demoClinical = [
+                    ["klinische inlichtingen", "Val van paard op bil"],
+                    ["diagnostische vraagstelling", "Fractuur rechter heup"],
+                ];
+                demoContext.forEach(([label, value]) => deepFillByLabel(contextForm, label, value));
+                demoClinical.forEach(([label, value]) => deepFillByLabel(clinicalForm, label, value));
+                // Dropdown fields — need to open the control and click the option
+                await deepFillDropdownByLabel(contextForm, "lateralisatie", "Rechts");
+                await deepFillDropdownByLabel(previousStudiesForm, "overige relevante onderzoeken", "RX HEUP RECHTS 01/02/2000");
             });
 
             // QC button: pass current URL params to qc.html
@@ -2234,6 +2231,74 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     return false;
                 }
                 return search(rootEl.shadowRoot || rootEl);
+            }
+
+            // Open a dropdown near a label and click the matching option (for select/React-Select fields)
+            async function deepFillDropdownByLabel(rootEl, labelHint, optionText) {
+                // Step 1: find and click the dropdown control near the label
+                let clicked = false;
+                function openDropdown(root) {
+                    if (!root || clicked) return;
+                    for (const el of root.querySelectorAll("*")) {
+                        if (clicked) return;
+                        const leafText = Array.from(el.childNodes)
+                            .filter(n => n.nodeType === Node.TEXT_NODE)
+                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
+                        if (leafText.includes(labelHint.toLowerCase())) {
+                            let container = el;
+                            for (let i = 0; i < 6; i++) {
+                                if (!container) break;
+                                // native select
+                                const sel = container.querySelector("select");
+                                if (sel) {
+                                    for (const opt of sel.options) {
+                                        if (opt.text.toLowerCase().includes(optionText.toLowerCase())) {
+                                            sel.value = opt.value;
+                                            sel.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+                                            clicked = true;
+                                            return;
+                                        }
+                                    }
+                                }
+                                // React Select / custom dropdown control
+                                const ctrl = container.querySelector(
+                                    "[aria-haspopup], [class*='control'], [class*='Control']"
+                                );
+                                if (ctrl) {
+                                    ctrl.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, composed: true, button: 0 }));
+                                    clicked = true;
+                                    return;
+                                }
+                                container = container.parentElement;
+                            }
+                        }
+                        if (el.shadowRoot) openDropdown(el.shadowRoot);
+                    }
+                }
+                openDropdown(rootEl.shadowRoot || rootEl);
+                if (!clicked) return false;
+
+                // Step 2: wait for options to render
+                await new Promise(r => setTimeout(r, 400));
+
+                // Step 3: find and click the matching option (search shadow DOMs + document)
+                function clickOption(root) {
+                    if (!root) return false;
+                    for (const el of root.querySelectorAll(
+                        "[role='option'], [class*='option'], [class*='Option']"
+                    )) {
+                        if (el.textContent.trim().toLowerCase().includes(optionText.toLowerCase())) {
+                            el.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, composed: true }));
+                            el.dispatchEvent(new MouseEvent("click",     { bubbles: true, composed: true }));
+                            return true;
+                        }
+                    }
+                    for (const el of root.querySelectorAll("*")) {
+                        if (el.shadowRoot && clickOption(el.shadowRoot)) return true;
+                    }
+                    return false;
+                }
+                return clickOption(rootEl.shadowRoot || rootEl) || clickOption(document.body);
             }
 
             // Find the SNOMED CT tiro-form-filler inside the template forms container
