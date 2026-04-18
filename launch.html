@@ -845,70 +845,12 @@
                         </select>
                     </div>
 
-                    <!-- Translate prompt -->
-                    <div>
-                        <label
-                            for="dictation-action-url"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Translate prompt</label
-                        >
-                        <textarea
-                            id="dictation-action-url"
-                            rows="3"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                        ></textarea>
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{text}</code> als placeholder voor de dictatie tekst.</p>
-                    </div>
-
-                    <!-- Radiology check prompt -->
-                    <div>
-                        <label
-                            for="kidv-action-url"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Radiology check prompt</label
-                        >
-                        <textarea
-                            id="kidv-action-url"
-                            rows="3"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                        ></textarea>
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> als placeholders.</p>
-                    </div>
-
-                    <!-- Verslag check prompt -->
-                    <div>
-                        <label
-                            for="verslag-check-url"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Verslag check prompt</label
-                        >
-                        <textarea
-                            id="verslag-check-url"
-                            rows="5"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                        ></textarea>
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gebruik <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code>, <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> als placeholders.</p>
-                    </div>
-
-                    <!-- SNOMED CT prompt -->
-                    <div>
-                        <label
-                            for="snomed-ct-action-url"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >SNOMED CT prompt</label
-                        >
-                        <textarea
-                            id="snomed-ct-action-url"
-                            rows="5"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
-                        ></textarea>
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
-                    </div>
-
-                    <!-- SNOMED database note -->
-                    <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-3 py-2">
-                        <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen</p>
-                        <p class="text-xs text-amber-700 dark:text-amber-400">Gegenereerde codes worden momenteel <b>niet</b> gevalideerd tegen een officiële SNOMED CT-database. Validatie via de admin-interface wordt in een latere fase toegevoegd.</p>
+                    <!-- Prompt textareas — hidden here, edited via prompts.html -->
+                    <div class="hidden">
+                        <textarea id="dictation-action-url"></textarea>
+                        <textarea id="kidv-action-url"></textarea>
+                        <textarea id="verslag-check-url"></textarea>
+                        <textarea id="snomed-ct-action-url"></textarea>
                     </div>
 
                     <!-- Template Flow -->
@@ -984,6 +926,17 @@
                                 </svg>
                                 Demo patiënt
                             </button>
+                            <a
+                                id="prompts-btn"
+                                href="prompts.html"
+                                target="_blank"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                Prompting
+                            </a>
                         </div>
                     </div>
 
@@ -1108,6 +1061,9 @@
 
             // Patient letter button — passes URL params to patient_letter.html
             document.getElementById("patient-letter-btn").href = `patient_letter.html?${flowParams.toString()}`;
+
+            // Prompts button — passes theme param
+            document.getElementById("prompts-btn").href = `prompts.html?theme=${document.documentElement.classList.contains("dark") ? "dark" : "light"}`;
 
             // Demo patient button — fills study/clinical/previous-studies forms with demo data
             document.getElementById("demo-patient-btn").addEventListener("click", async () => {
