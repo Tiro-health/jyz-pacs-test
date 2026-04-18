@@ -1428,6 +1428,36 @@
                 }
             }, { capture: true });
 
+            // Intercept large pastes before the SDK processes them.
+            // The magic-clipboard uses AI to fill form fields on every input; for large
+            // text blocks this freezes the UI. We catch the paste, store the text
+            // ourselves, and write it directly into the internal element so it stays
+            // visible without triggering the SDK's autofill pipeline.
+            const LARGE_PASTE_THRESHOLD = 300;
+            document.addEventListener("paste", (e) => {
+                const path = e.composedPath?.() ?? [];
+                const insideClipboard = path.some(n => n === clipboard || n?.host === clipboard);
+                if (!insideClipboard) return;
+                const text = e.clipboardData?.getData("text/plain") ?? "";
+                if (text.length <= LARGE_PASTE_THRESHOLD) return;
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                latestDictationText = text;
+
+                // Write directly into the internal editable element
+                const internalEl =
+                    clipboard.shadowRoot?.querySelector("[contenteditable='true'], textarea") ??
+                    clipboard.querySelector("[contenteditable='true'], textarea");
+                if (internalEl) {
+                    if ("value" in internalEl) {
+                        internalEl.value = text;
+                    } else {
+                        internalEl.textContent = text;
+                    }
+                }
+            }, true);
+
             function extractText(el) {
                 if (!el) return "";
                 if ("value" in el) return el.value;
