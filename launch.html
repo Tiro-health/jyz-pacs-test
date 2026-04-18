@@ -74,6 +74,37 @@
                 display: block;
             }
 
+            /* Correction tooltip (hovering mode) */
+            .corr {
+                position: relative;
+                cursor: help;
+                text-decoration: underline dotted #ef4444;
+            }
+            .corr::after {
+                content: "Origineel: " attr(data-orig);
+                position: absolute;
+                bottom: calc(100% + 5px);
+                left: 50%;
+                transform: translateX(-50%);
+                background: #1e293b;
+                color: #f1f5f9;
+                padding: 4px 10px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: normal;
+                font-style: normal;
+                white-space: nowrap;
+                max-width: 320px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.15s;
+                z-index: 200;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+            }
+            .corr:hover::after { opacity: 1; }
+
             details summary::-webkit-details-marker {
                 display: none;
             }
@@ -876,6 +907,23 @@
                             Template flow
                         </a>
                     </div>
+
+                    <!-- Hovering mode -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="hovering-mode-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Hovering mode
+                            <span class="text-neutral-400 dark:text-neutral-500 font-normal"> — tooltip bij rode correcties</span>
+                        </label>
+                        <button
+                            id="hovering-mode-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="true"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-blue-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[19px]"></span>
+                        </button>
+                    </div>
                 </div>
             </details>
         </div>
@@ -1363,9 +1411,18 @@
             }
 
             function renderMarkdown(rawText) {
+                const corrSpan = (orig, corr) => hoveringMode
+                    ? `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`
+                    : `<span style="color:#ef4444;font-weight:bold;font-style:italic">${corr}</span>`;
+
                 // Whitelist and convert known safe HTML tags, strip the rest
                 const html = rawText
-                    // Nested bold+italic+red combinations
+                    // Nested bold+italic+red WITH tooltip (title attribute)
+                    .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s+title=['"]([^'"]+)['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
+                        (_, orig, corr) => corrSpan(orig, corr))
+                    .replace(/<font\s+color=['"]red['"]\s+title=['"]([^'"]+)['"]\s*>(.*?)<\/font>/gis,
+                        (_, orig, corr) => corrSpan(orig, corr))
+                    // Nested bold+italic+red combinations (no title)
                     .replace(/<b>\s*<i>\s*<font\s+color=['"]red['"]\s*>(.*?)<\/font>\s*<\/i>\s*<\/b>/gis,
                         '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
                     .replace(/<font\s+color=['"]red['"]\s*>(.*?)<\/font>/gis,
@@ -1735,11 +1792,11 @@ Controleer actief op de volgende foutcategorieën:
 INSTRUCTIES VOOR UITVOER:
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
-- Markeer elke correctie als: <b><i><font color='red'>correctie</font></i></b>
+- Markeer elke correctie als: <b><i><font color='red' title="ORIGINELE_TEKST">correctie</font></i></b>
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "3";
+            const VERSLAG_CHECK_VERSION = "4";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
@@ -1753,6 +1810,21 @@ INSTRUCTIES VOOR UITVOER:
 
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+
+            // Hovering mode toggle
+            let hoveringMode = localStorage.getItem("hoveringMode") !== "false";
+            const hoveringToggle = document.getElementById("hovering-mode-toggle");
+            function updateHoveringToggle() {
+                hoveringToggle.setAttribute("aria-checked", String(hoveringMode));
+                hoveringToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${hoveringMode ? "bg-blue-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
+                hoveringToggle.querySelector("span").className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${hoveringMode ? "translate-x-[19px]" : "translate-x-[3px]"}`;
+            }
+            hoveringToggle.addEventListener("click", () => {
+                hoveringMode = !hoveringMode;
+                localStorage.setItem("hoveringMode", String(hoveringMode));
+                updateHoveringToggle();
+            });
+            updateHoveringToggle();
 
             let verslagCheckActive = false;
 
