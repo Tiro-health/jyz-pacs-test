@@ -905,6 +905,17 @@
                                 </svg>
                                 Patient letter
                             </a>
+                            <a
+                                id="prompts-btn"
+                                href="prompts.html"
+                                target="_blank"
+                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                                </svg>
+                                Prompting
+                            </a>
                             <button
                                 id="demo-patient-btn"
                                 type="button"
@@ -926,17 +937,6 @@
                                 </svg>
                                 Demo patiënt
                             </button>
-                            <a
-                                id="prompts-btn"
-                                href="prompts.html"
-                                target="_blank"
-                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                                </svg>
-                                Prompting
-                            </a>
                         </div>
                     </div>
 
@@ -1085,6 +1085,12 @@
                 ];
                 demoContext.forEach(([label, value]) => deepFillByLabel(contextForm, label, value));
                 demoClinical.forEach(([label, value]) => deepFillByLabel(clinicalForm, label, value));
+                setDictationText(
+                    "Klein avulsiefragmentje aan het acetabulum links.\n" +
+                    "Normaal botpatroon.\n" +
+                    "Normale coxofemorale verhoudingen.\n" +
+                    "Schuin fractuur doorheen de hals van de humerus links zonder belangrijke verplaatsingen."
+                );
                 // Dropdown fields — need to open the control and click the option
                 await deepFillDropdownByLabel(contextForm, "lateralisatie", "Rechts");
                 await deepFillDropdownByLabel(previousStudiesForm, "overige relevante onderzoeken", "RX HEUP RECHTS 01/02/2000");
@@ -1761,6 +1767,21 @@
                     if (block.nextSibling) block.after("\n");
                 });
                 return clone.textContent.replace(/\n{3,}/g, "\n\n").trim();
+            }
+
+            function setDictationText(text) {
+                // Try light DOM first, then shadow DOM
+                const el = clipboard.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']")
+                    || clipboard.shadowRoot?.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']");
+                if (el) {
+                    if ("value" in el) {
+                        setNativeValue(el, text);
+                    } else {
+                        el.innerText = text;
+                        el.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true }));
+                    }
+                }
+                latestDictationText = text;
             }
 
             function readDictationText() {
