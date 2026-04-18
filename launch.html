@@ -533,6 +533,17 @@
                         </svg>
                         Verslag check
                     </button>
+                    <button
+                        id="snomed-ct-btn"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
+                            <path d="M12 8v4l3 3"/>
+                        </svg>
+                        SNOMED CT
+                    </button>
                     <svg
                         class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
@@ -555,6 +566,7 @@
                     >
                         <div class="flex gap-2 mt-2 flex-wrap">
                             <button
+                                id="autofill-btn"
                                 type="submit"
                                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
                             >
@@ -624,74 +636,7 @@
                 </div>
             </details>
 
-            <!-- SNOMED CT Form -->
-            <details
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
-            >
-                <summary
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
-                >
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
-                        <path d="M12 8v4l3 3"/>
-                    </svg>
-                    SNOMED CT<span id="snomed-ct-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
-                    <button
-                        id="snomed-ct-generate-btn"
-                        type="button"
-                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M5 3l14 9-14 9V3z"/>
-                        </svg>
-                        Generate
-                    </button>
-                    <svg
-                        class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="m6 9 6 6 6-6" />
-                    </svg>
-                </summary>
-                <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="snomed-ct-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
-                    <!-- Fallback result panel — shown only when shadow DOM fill fails -->
-                    <div id="snomed-ct-result" class="hidden border-t border-neutral-200 dark:border-neutral-800 px-3 py-2.5">
-                        <div class="flex items-center justify-between mb-2">
-                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">Gegenereerde codes</span>
-                            <div class="flex gap-1.5">
-                                <button id="snomed-copy-btn" type="button" class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                                    Kopieer
-                                </button>
-                                <button id="snomed-clear-btn" type="button" class="text-xs px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-500 dark:text-neutral-400 transition-colors">✕</button>
-                            </div>
-                        </div>
-                        <div id="snomed-ct-result-content" class="text-xs leading-relaxed space-y-0.5 text-neutral-700 dark:text-neutral-300"></div>
-                        <p class="text-xs text-amber-600 dark:text-amber-400 mt-2.5">⚠ SNOMED database nog toe te voegen — codes zijn niet gevalideerd</p>
-                    </div>
-                </div>
-            </details>
+            <!-- SNOMED CT Form removed — template now loaded via Active template list -->
 
             <!-- Active Template Selector -->
             <details
@@ -1025,7 +970,7 @@
             };
 
             document.querySelectorAll(".template-checkbox").forEach(cb => {
-                cb.addEventListener("change", createTemplateForms);
+                cb.addEventListener("change", () => { createTemplateForms(); updateSnomedCtBtn(); });
             });
 
             // ============================================
@@ -1101,6 +1046,7 @@
                 params.get("accessionNumber") || "example-accession-number";
             // createTemplateForms() will set launch-context and questionnaire on each form filler
             createTemplateForms();
+            // updateSnomedCtBtn() runs after BTN_OFF_CLASS / BTN_ON_CLASS are defined (called later at init)
 
             // Template flow button — opens this page with a fixed template in a new tab
             const templateFlowBtn = document.getElementById("template-flow-btn");
@@ -1128,12 +1074,6 @@
             const PREVIOUS_STUDIES_QUESTIONNAIRE = "http://templates.tiro.health/templates/70998e77562b4be9af36de8ae3c1422f|1.0.1";
             previousStudiesForm.setAttribute("launch-context", JSON.stringify(launchContext));
             previousStudiesForm.setAttribute("questionnaire", PREVIOUS_STUDIES_QUESTIONNAIRE);
-
-            // Initialize SNOMED CT form
-            const snomedCtForm = document.getElementById("snomed-ct-form");
-            const SNOMED_CT_QUESTIONNAIRE = "http://templates.tiro.health/templates/646640d97a2c4285a881af8f8adc1c2b|1.0.0";
-            snomedCtForm.setAttribute("launch-context", JSON.stringify(launchContext));
-            snomedCtForm.setAttribute("questionnaire", SNOMED_CT_QUESTIONNAIRE);
 
             // ============================================
             // Dynamic panel titles
@@ -1178,14 +1118,6 @@
                 }
                 walkItems(r?.item);
                 previousStudiesTitleSuffix.textContent = values.length ? values.join(" - ") : "";
-            });
-
-            const snomedCtTitleSuffix = document.getElementById("snomed-ct-title-suffix");
-            let latestSnomedCtResponse = null;
-            snomedCtForm.addEventListener("tiro-update", (event) => {
-                latestSnomedCtResponse = event.detail?.response || null;
-                const hoofddiagnose = extractClinicalField(latestSnomedCtResponse, "hoofddiagnose", "main diagnosis", "diagnose");
-                snomedCtTitleSuffix.textContent = hoofddiagnose || "";
             });
 
             function updateActiveTemplateSuffix() {
@@ -2033,6 +1965,8 @@ INSTRUCTIES VOOR UITVOER:
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
 
+            updateSnomedCtBtn(); // initialize now that BTN classes are defined
+
             // Hovering mode toggle
             let hoveringMode = localStorage.getItem("hoveringMode") !== "false";
             const hoveringToggle = document.getElementById("hovering-mode-toggle");
@@ -2214,12 +2148,20 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 return search(rootEl.shadowRoot || rootEl);
             }
 
+            // Find the SNOMED CT tiro-form-filler inside the template forms container
+            function findSnomedCtTemplateForm() {
+                const container = document.getElementById("template-forms-container");
+                for (const ff of container.querySelectorAll("tiro-form-filler")) {
+                    if ((ff.getAttribute("questionnaire") || "").includes("646640d97a2c4285a881af8f8adc1c2b")) return ff;
+                }
+                return null;
+            }
+
             function parseSnomedResult(rawText) {
                 const plain = rawText.replace(/<b>(.*?)<\/b>/gi, "$1").replace(/<[^>]+>/g, "").trim();
                 const lines = plain.split("\n").map(l => l.trim()).filter(Boolean);
                 if (!lines.length) return;
 
-                // Partition lines into hoofddiagnose / bijdiagnose
                 const hoofdLines = [], bijLines = [];
                 let section = "";
                 for (const line of lines) {
@@ -2230,61 +2172,33 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     else if (section === "bij") bijLines.push(line);
                 }
 
-                // Try shadow DOM fill first
-                const filledHoofd = hoofdLines.length
-                    ? deepFillByLabel(snomedCtForm, "hoofddiagnose", hoofdLines.join("\n"))
-                    : false;
-                const filledBij = bijLines.length
-                    ? deepFillByLabel(snomedCtForm, "bijdiagnose", bijLines.join("\n"))
-                    : false;
-
-                // Show fallback panel only if shadow DOM filling failed
-                if (!filledHoofd && !filledBij) {
-                    const resultPanel = document.getElementById("snomed-ct-result");
-                    const resultContent = document.getElementById("snomed-ct-result-content");
-                    let html = "";
-                    let sec = "";
-                    for (const line of lines) {
-                        const lower = line.toLowerCase();
-                        if (lower === "hoofddiagnose") {
-                            sec = "hoofd";
-                            html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-0.5 pb-0.5">Hoofddiagnose</div>`;
-                        } else if (lower === "bijdiagnose") {
-                            sec = "bij";
-                            html += `<div class="font-semibold text-neutral-900 dark:text-neutral-100 pt-2 pb-0.5">Bijdiagnose</div>`;
-                        } else {
-                            const m = line.match(/^(\d+)\s+\((.+)\)$/);
-                            if (m) {
-                                const c = sec === "hoofd" ? "text-blue-700 dark:text-blue-400" : "text-neutral-500 dark:text-neutral-400";
-                                html += `<div class="flex gap-2 font-mono"><span class="${c} shrink-0">${m[1]}</span><span class="font-sans">(${m[2]})</span></div>`;
-                            } else {
-                                html += `<div>${line}</div>`;
-                            }
-                        }
-                    }
-                    resultContent.innerHTML = html;
-                    resultPanel.classList.remove("hidden");
+                const snomedForm = findSnomedCtTemplateForm();
+                if (snomedForm) {
+                    if (hoofdLines.length) deepFillByLabel(snomedForm, "hoofddiagnose", hoofdLines.join("\n"));
+                    if (bijLines.length)   deepFillByLabel(snomedForm, "bijdiagnose",   bijLines.join("\n"));
+                    document.getElementById("template-accordion")?.setAttribute("open", "");
                 }
-
-                // Auto-expand section and update title suffix
-                snomedCtForm.closest("details").setAttribute("open", "");
-                const first = plain.match(/^(\d+)\s+\((.+)\)$/m);
-                if (first) snomedCtTitleSuffix.textContent = first[2];
             }
 
-            const snomedResultPanel = document.getElementById("snomed-ct-result");
-            document.getElementById("snomed-copy-btn").addEventListener("click", () => {
-                const plain = document.getElementById("snomed-ct-result-content").innerText;
-                navigator.clipboard.writeText(plain).catch(() => {});
-            });
-            document.getElementById("snomed-clear-btn").addEventListener("click", () => {
-                snomedResultPanel.classList.add("hidden");
-                snomedCtTitleSuffix.textContent = "";
+            // SNOMED CT button — synced two-way with Active template checkbox
+            const snomedCtBtn = document.getElementById("snomed-ct-btn");
+            let snomedCtActive = false;
+
+            function updateSnomedCtBtn() {
+                const cb = document.querySelector('.template-checkbox[value="SNOMED CT"]');
+                snomedCtActive = cb?.checked || false;
+                snomedCtBtn.className = (snomedCtActive ? BTN_ON_CLASS : BTN_OFF_CLASS).replace("ml-auto ", "");
+            }
+
+            snomedCtBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const cb = document.querySelector('.template-checkbox[value="SNOMED CT"]');
+                if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); }
             });
 
-            snomedCtGenerateBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
+            function runSnomedCtGeneration() {
                 const tekst = readDictationText();
+                if (!tekst.trim()) return;
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
@@ -2306,6 +2220,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 } else {
                     openChatGPT(prompt);
                 }
+            }
+
+            // Trigger SNOMED CT generation when Autofill Template is clicked and button is active
+            document.getElementById("autofill-btn").addEventListener("click", () => {
+                if (snomedCtActive) runSnomedCtGeneration();
             });
 
             // ============================================
