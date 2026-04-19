@@ -2221,34 +2221,72 @@ INSTRUCTIES VOOR UITVOER:
             });
             updateDarkModeToggle();
 
-            // Always on top — refocus this window when it loses focus (keeps Dragon dictation target active)
+            // Always on top — Document Picture-in-Picture panel for Dragon dictation
             const alwaysOnTopToggle = document.getElementById('always-on-top-toggle');
-            let alwaysOnTop = localStorage.getItem('alwaysOnTop') !== 'false'; // default true
-            let _aotBlurHandler = null;
+            let alwaysOnTop = false; // PiP requires user gesture; always start off
+            let _pipWindow = null;
+            let _lastFocusedInput = null;
 
-            function applyAlwaysOnTop(enabled) {
-                if (_aotBlurHandler) {
-                    window.removeEventListener('blur', _aotBlurHandler);
-                    _aotBlurHandler = null;
+            // Track the last focused text field so we can restore it
+            document.addEventListener('focusin', (e) => {
+                if (e.target.matches('input:not([type=checkbox]):not([type=radio]), textarea, [contenteditable="true"]')) {
+                    _lastFocusedInput = e.target;
                 }
-                if (enabled) {
-                    _aotBlurHandler = () => setTimeout(() => window.focus(), 150);
-                    window.addEventListener('blur', _aotBlurHandler);
-                }
+            });
+
+            function buildPipContent(pip) {
+                const bg = '#161f27', panel = '#1f2c36', border = '#2d3f4d';
+                const text = '#d1d9e1', muted = '#8896a8', teal = '#105750';
+                pip.document.documentElement.style.cssText = `background:${bg};height:100%;margin:0`;
+                pip.document.body.style.cssText = `margin:0;padding:10px;background:${bg};font-family:Inter,system-ui,sans-serif;box-sizing:border-box;height:calc(100% - 20px)`;
+                pip.document.body.innerHTML = `
+                    <div style="display:flex;flex-direction:column;gap:6px;height:100%">
+                        <div style="font-size:10px;font-weight:600;color:${muted};letter-spacing:.07em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid ${border}">Dragon Medical</div>
+                        <button id="pp-act" style="padding:7px 10px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;text-align:left">
+                            ⌨ Activeer rapport venster
+                        </button>
+                        <div style="border-top:1px solid ${border}"></div>
+                        <button id="pp-fill" style="padding:7px 10px;background:${teal};color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Autofill Template</button>
+                        <button id="pp-tr"   style="padding:7px 10px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Translate</button>
+                        <button id="pp-vc"   style="padding:7px 10px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Verslag check</button>
+                    </div>`;
+                const act = (fn) => { window.focus(); if (_lastFocusedInput) _lastFocusedInput.focus(); fn && fn(); };
+                pip.document.getElementById('pp-act') .addEventListener('click', () => act());
+                pip.document.getElementById('pp-fill').addEventListener('click', () => act(() => document.getElementById('autofill-btn')?.click()));
+                pip.document.getElementById('pp-tr')  .addEventListener('click', () => act(() => document.getElementById('translate-btn')?.click()));
+                pip.document.getElementById('pp-vc')  .addEventListener('click', () => act(() => document.getElementById('verslag-check-btn')?.click()));
             }
+
+            async function openPip() {
+                if (!window.documentPictureInPicture) {
+                    alert('Always on top vereist Chrome of Edge 116+.\nUpdate uw browser en probeer opnieuw.');
+                    alwaysOnTop = false; updateAlwaysOnTopToggle(); return;
+                }
+                try {
+                    _pipWindow = await window.documentPictureInPicture.requestWindow({ width: 260, height: 240 });
+                    buildPipContent(_pipWindow);
+                    _pipWindow.addEventListener('pagehide', () => {
+                        _pipWindow = null; alwaysOnTop = false;
+                        localStorage.setItem('alwaysOnTop', 'false');
+                        updateAlwaysOnTopToggle();
+                    });
+                } catch { alwaysOnTop = false; updateAlwaysOnTopToggle(); }
+            }
+
+            function closePip() { _pipWindow?.close(); _pipWindow = null; }
+
             function updateAlwaysOnTopToggle() {
                 alwaysOnTopToggle.setAttribute('aria-checked', String(alwaysOnTop));
                 alwaysOnTopToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${alwaysOnTop ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 alwaysOnTopToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${alwaysOnTop ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
             }
-            alwaysOnTopToggle.addEventListener('click', () => {
+            alwaysOnTopToggle.addEventListener('click', async () => {
                 alwaysOnTop = !alwaysOnTop;
                 localStorage.setItem('alwaysOnTop', String(alwaysOnTop));
-                applyAlwaysOnTop(alwaysOnTop);
                 updateAlwaysOnTopToggle();
+                alwaysOnTop ? await openPip() : closePip();
             });
             updateAlwaysOnTopToggle();
-            applyAlwaysOnTop(alwaysOnTop);
 
             // Split View
             const mainPanels = document.getElementById('main-panels');
