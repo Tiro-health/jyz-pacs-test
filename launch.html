@@ -1075,8 +1075,46 @@
             const flowParams = new URLSearchParams(window.location.search);
             templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
 
-            // Patient letter button — passes URL params to patient_letter.html
-            document.getElementById("patient-letter-btn").href = `patient_letter.html?${flowParams.toString()}`;
+            // Patient letter button — builds URL from current form values
+            document.getElementById("patient-letter-btn").addEventListener("click", (e) => {
+                e.preventDefault();
+                const lp = new URLSearchParams();
+                lp.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
+
+                const field = (...terms) => extractAnyField(...terms);
+                lp.set("Naam",                    field("naam", "name", "patiënt"));
+                lp.set("Geboortedatum",           field("geboortedatum", "birthdate", "date of birth"));
+                lp.set("Datum_onderzoek",         field("datum onderzoek", "onderzoeksdatum"));
+                lp.set("Uur_onderzoek",           field("uur onderzoek", "time", "uur"));
+                lp.set("Referentie",              field("referentie", "reference", "accession") || params.get("accessionNumber") || "");
+                lp.set("Klinische_informatie",    field("klinische inlichtingen", "clinical information", "klinisch"));
+                lp.set("Diagnostische_vraagstelling", field("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"));
+                lp.set("Type_onderzoek",          field("type onderzoek", "type of examination"));
+                lp.set("Lateralisatie",           field("lateralisatie", "laterality"));
+                lp.set("Sequentie",               field("sequentie", "serie", "sequence", "series"));
+                lp.set("Gebruikte_medicatie",     field("gebruikte medicatie", "medicatie", "medication"));
+                lp.set("verslag",                 readDictationText());
+
+                // Previous studies — collect all answered values
+                const prevValues = [];
+                function walkPrev(items) {
+                    if (!items) return;
+                    for (const item of items) {
+                        for (const ans of (item.answer || [])) {
+                            const v = ans.valueString || ans.valueCoding?.display || ans.valueDate || "";
+                            if (v) prevValues.push(v);
+                        }
+                        walkPrev(item.item);
+                    }
+                }
+                walkPrev(latestPreviousStudiesResponse?.item);
+                lp.set("Voorgaande_onderzoeken", prevValues.join(", "));
+
+                lp.set("Radioloog", params.get("username") || params.get("user") || params.get("radioloog") || "");
+                lp.set("Geboorte_datum",          field("geboortedatum", "birthdate"));
+
+                window.open(`patient_letter.html?${lp.toString()}`, "_blank");
+            });
 
             // Prompts button — passes theme param
             document.getElementById("prompts-btn").href = `prompts.html?theme=${document.documentElement.classList.contains("dark") ? "dark" : "light"}`;
@@ -1158,6 +1196,7 @@
             const previousStudiesTitleSuffix = document.getElementById("previous-studies-title-suffix");
             previousStudiesForm.addEventListener("tiro-update", (event) => {
                 const r = event.detail?.response;
+                latestPreviousStudiesResponse = r || null;
                 const values = [];
                 function walkItems(items) {
                     if (!items) return;
@@ -1872,6 +1911,7 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             // Cache the latest clinical form response via tiro-update
             let latestClinicalResponse = null;
             let latestContextResponse = null;
+            let latestPreviousStudiesResponse = null;
             clinicalForm.addEventListener("tiro-update", (event) => {
                 latestClinicalResponse = event.detail?.response || null;
             });
