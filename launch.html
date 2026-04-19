@@ -36,6 +36,14 @@
         <!-- Theme detection script (runs before render to prevent flash) -->
         <script>
             (function () {
+                // One-time reset: clear saved toggle prefs so defaults take effect
+                if (!localStorage.getItem('defaultsReset_v1')) {
+                    localStorage.removeItem('darkMode');
+                    localStorage.removeItem('alwaysOnTop');
+                    localStorage.removeItem('splitView');
+                    localStorage.setItem('defaultsReset_v1', '1');
+                }
+
                 const params = new URLSearchParams(window.location.search);
                 const themeParam = params.get("theme");
 
@@ -44,6 +52,8 @@
                     isDark = true;
                 } else if (themeParam === "light") {
                     isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
                 } else {
                     isDark = true;
                 }
@@ -2127,7 +2137,7 @@ INSTRUCTIES VOOR UITVOER:
 
             // Always on top — Document PiP moves tiro-magic-clipboard there so Dragon stays active
             const alwaysOnTopToggle = document.getElementById('always-on-top-toggle');
-            let alwaysOnTop = true;
+            let alwaysOnTop = localStorage.getItem('alwaysOnTop') !== 'false';
             let _pipWindow = null;
             let _lastFocusedInput = null;
             let _mcAnchor = null; // comment node marking original position of magic-clipboard
@@ -2227,7 +2237,7 @@ INSTRUCTIES VOOR UITVOER:
             const SPLIT_RIGHT = ['autofill-accordion', 'template-accordion'];
             const mainPanels = document.getElementById('main-panels');
             const splitViewToggle = document.getElementById('split-view-toggle');
-            let splitView = true;
+            let splitView = localStorage.getItem('splitView') !== 'false';
 
             function applySplitView(enabled) {
                 if (enabled) {
