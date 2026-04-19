@@ -44,10 +44,10 @@
                     isDark = true;
                 } else if (themeParam === "light") {
                     isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
                 } else {
-                    isDark = window.matchMedia(
-                        "(prefers-color-scheme: dark)",
-                    ).matches;
+                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 }
 
                 if (isDark) {

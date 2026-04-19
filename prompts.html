@@ -26,7 +26,11 @@
             (function () {
                 const p = new URLSearchParams(window.location.search);
                 const t = p.get("theme");
-                const dark = t === "dark" ? true : t === "light" ? false : window.matchMedia("(prefers-color-scheme: dark)").matches;
+                let dark;
+                if (t === "dark") dark = true;
+                else if (t === "light") dark = false;
+                else if (localStorage.getItem("darkMode") !== null) dark = localStorage.getItem("darkMode") === "true";
+                else dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 if (dark) document.documentElement.classList.add("dark");
             })();
         </script>

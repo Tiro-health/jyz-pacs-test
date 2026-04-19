@@ -37,6 +37,7 @@
                 let isDark;
                 if (themeParam === "dark") isDark = true;
                 else if (themeParam === "light") isDark = false;
+                else if (localStorage.getItem("darkMode") !== null) isDark = localStorage.getItem("darkMode") === "true";
                 else isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 if (isDark) document.documentElement.classList.add("dark");
             })();
