@@ -1087,7 +1087,7 @@
                     <!-- Real time -->
                     <div class="flex items-center justify-between py-0.5">
                         <label for="realtime-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            Real time
+                            Real time verslag check
                         </label>
                         <button
                             id="realtime-toggle"
@@ -2385,7 +2385,18 @@ INSTRUCTIES VOOR UITVOER:
                 realtimeToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${realtimeEnabled ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 realtimeToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${realtimeEnabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
                 realtimePanel.classList.toggle('hidden', !realtimeEnabled);
-                if (!realtimeEnabled) {
+                if (realtimeEnabled) {
+                    // Force verslag check button to active/green and disable it
+                    verslagCheckActive = true;
+                    verslagCheckBtn.className = BTN_ON_CLASS.replace("ml-auto ", "");
+                    verslagCheckBtn.disabled = true;
+                    verslagCheckBtn.style.opacity = '1';
+                } else {
+                    // Restore verslag check button to normal clickable state
+                    verslagCheckActive = false;
+                    verslagCheckBtn.className = BTN_OFF_CLASS.replace("ml-auto ", "");
+                    verslagCheckBtn.disabled = false;
+                    verslagCheckBtn.style.opacity = '';
                     _realtimeAbort?.abort();
                     realtimeContent.innerHTML = '';
                     realtimeStatus.textContent = '';
