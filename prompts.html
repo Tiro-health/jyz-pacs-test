@@ -47,10 +47,43 @@
                 --accent: 210 40% 90%;
             }
             :root.dark {
-                --background: 222 47% 5%;
-                --muted: 220 40% 10%;
-                --muted-foreground: 215 20% 60%;
-                --accent: 220 40% 15%;
+                --background: 206 27% 17%;   /* #1f2c36 — panels and form fields */
+                --foreground: 215 20% 85%;
+                --card: 206 27% 17%;
+                --card-foreground: 215 20% 85%;
+                --popover: 206 27% 17%;
+                --popover-foreground: 215 20% 85%;
+                --primary: 174 69% 20%;       /* #105750 — teal primary */
+                --primary-foreground: 0 0% 100%;
+                --secondary: 0 0% 24%;
+                --secondary-foreground: 215 20% 85%;
+                --muted: 0 0% 24%;            /* #3D3D3D — inactive buttons and secondary surfaces */
+                --muted-foreground: 215 15% 55%;
+                --accent: 210 30% 20%;        /* #243342 — hover states */
+                --accent-foreground: 215 20% 85%;
+                --input: 206 27% 17%;         /* #1f2c36 — input field backgrounds */
+                --border: 206 26% 24%;        /* #2d3f4d — borders */
+                --ring: 174 69% 20%;          /* #105750 — focus rings */
+            }
+
+            /* PACSonWeb dark mode: exact color overrides */
+            :root.dark body {
+                background-color: #161f27 !important;
+            }
+            :root.dark input:not([type="checkbox"]):not([type="radio"]),
+            :root.dark select,
+            :root.dark textarea {
+                background-color: #1f2c36 !important;
+                border-color: #2d3f4d !important;
+            }
+            :root.dark .bg-cyan-600 {
+                background-color: #105750 !important;
+            }
+            :root.dark .hover\:bg-cyan-700:hover {
+                background-color: #0b3e39 !important;
+            }
+            :root.dark .border-slate-700 {
+                border-color: #2d3f4d !important;
             }
         </style>
     </head>
