@@ -103,23 +103,23 @@
             }
 
             :root.dark {
-                --background: 222.2 84% 4.9%;
-                --muted: 217.2 32.6% 17.5%;
-                --muted-foreground: 215 20.2% 65.1%;
-                --accent: 217.2 32.6% 25%;
-                --dropdown-bg: #121212;
-                --dropdown-text: #e5e7eb;
-                --dropdown-text-muted: #9ca3af;
-                --dropdown-border: #4b5563;
-                --dropdown-border-hover: #6b7280;
-                --dropdown-hover: #374151;
-                --dropdown-disabled-bg: #374151;
-                --dropdown-disabled-text: #6b7280;
-                --dropdown-disabled-border: #4b5563;
-                --dropdown-multi-value-bg: #4b5563;
-                --dropdown-multi-value-hover: #6b7280;
-                --dropdown-focus-ring: #3d8eff;
-                --dropdown-indicator-color: #e5e7eb;
+                --background: 222 47% 5%;
+                --muted: 220 40% 10%;
+                --muted-foreground: 215 20% 60%;
+                --accent: 220 40% 15%;
+                --dropdown-bg: #0c1424;
+                --dropdown-text: #e2e8f0;
+                --dropdown-text-muted: #8896b0;
+                --dropdown-border: #1e3050;
+                --dropdown-border-hover: #2a4272;
+                --dropdown-hover: #0f1e35;
+                --dropdown-disabled-bg: #162035;
+                --dropdown-disabled-text: #4b6080;
+                --dropdown-disabled-border: #1e3050;
+                --dropdown-multi-value-bg: #1e3050;
+                --dropdown-multi-value-hover: #2a4272;
+                --dropdown-focus-ring: #06b6d4;
+                --dropdown-indicator-color: #e2e8f0;
             }
         </style>
     </head>
@@ -130,7 +130,7 @@
             <div class="bg-white dark:bg-neutral-900 rounded-lg shadow-xl p-5 w-64 flex flex-col gap-3">
                 <label class="text-sm font-medium text-neutral-700 dark:text-neutral-200">Code</label>
                 <input id="pin-input" type="password" inputmode="numeric"
-                    class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-neutral-600 bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     autocomplete="off" />
                 <p id="pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
                 <div class="flex gap-2 justify-end">
@@ -139,7 +139,7 @@
                         Annuleer
                     </button>
                     <button id="pin-ok" type="button"
-                        class="px-3 py-1.5 text-xs rounded-md bg-blue-600 hover:bg-blue-700 text-white">
+                        class="px-3 py-1.5 text-xs rounded-md bg-cyan-600 hover:bg-cyan-700 text-white">
                         OK
                     </button>
                 </div>
@@ -168,7 +168,7 @@
             <button
                 id="save-and-send-btn"
                 type="button"
-                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors shadow-lg"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors shadow-lg"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M22 2 11 13"/>
