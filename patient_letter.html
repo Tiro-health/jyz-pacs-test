@@ -59,10 +59,10 @@
                 --accent: 210 40% 90%;
             }
             :root.dark {
-                --background: 222.2 84% 4.9%;
-                --muted: 217.2 32.6% 17.5%;
-                --muted-foreground: 215 20.2% 65.1%;
-                --accent: 217.2 32.6% 25%;
+                --background: 222 47% 5%;
+                --muted: 220 40% 10%;
+                --muted-foreground: 215 20% 60%;
+                --accent: 220 40% 15%;
             }
 
             /* Print styles */
@@ -117,7 +117,7 @@
                     <button
                         id="print-btn"
                         type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="6 9 6 2 18 2 18 9"/>
@@ -151,7 +151,7 @@
                             <textarea
                                 id="template-input"
                                 rows="18"
-                                class="w-full text-sm font-mono bg-neutral-50 dark:bg-muted border border-neutral-200 dark:border-neutral-700 rounded-md p-2 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-neutral-800 dark:text-neutral-200"
+                                class="w-full text-sm font-mono bg-neutral-50 dark:bg-muted border border-neutral-200 dark:border-neutral-700 rounded-md p-2 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-blue-400 text-neutral-800 dark:text-neutral-200"
                                 placeholder="Enter letter template with {Variable} placeholders…"
                             ></textarea>
                             <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
@@ -307,7 +307,7 @@ Met collegiale groeten en dank voor uw verwijzing,
                     ? document.createElement("textarea")
                     : document.createElement("input");
 
-                input.className = "text-sm bg-neutral-50 dark:bg-muted border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-neutral-800 dark:text-neutral-200";
+                input.className = "text-sm bg-neutral-50 dark:bg-muted border border-neutral-200 dark:border-neutral-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-blue-400 text-neutral-800 dark:text-neutral-200";
                 input.value = initial;
                 if (def.key === "verslag") {
                     input.rows = 6;
