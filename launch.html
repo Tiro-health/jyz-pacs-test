@@ -522,9 +522,19 @@
                     </svg>
                     Dictation
                     <button
-                        id="snomed-ct-btn"
+                        id="ai-resultaten-btn"
                         type="button"
                         class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                        </svg>
+                        AI resultaten
+                    </button>
+                    <button
+                        id="snomed-ct-btn"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z"/>
@@ -998,7 +1008,7 @@
             };
 
             document.querySelectorAll(".template-checkbox").forEach(cb => {
-                cb.addEventListener("change", () => { createTemplateForms(); updateSnomedCtBtn(); });
+                cb.addEventListener("change", () => { createTemplateForms(); updateSnomedCtBtn(); updateAiResultatenBtn(); });
             });
 
             // ============================================
@@ -2088,11 +2098,14 @@ INSTRUCTIES VOOR UITVOER:
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
 
-            // Declare here so updateSnomedCtBtn() can reference them when called below
+            // Declare here so update functions can reference them when called below
+            const aiResultatenBtn = document.getElementById("ai-resultaten-btn");
+            let aiResultatenActive = false;
             const snomedCtBtn = document.getElementById("snomed-ct-btn");
             let snomedCtActive = false;
 
-            updateSnomedCtBtn(); // initialize now that BTN classes are defined
+            updateAiResultatenBtn(); // initialize now that BTN classes are defined
+            updateSnomedCtBtn();
 
             // Hovering mode toggle
             let hoveringMode = localStorage.getItem("hoveringMode") !== "false";
@@ -2389,11 +2402,24 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 }
             }
 
+            // AI resultaten button — synced two-way with Active template checkbox
+            function updateAiResultatenBtn() {
+                const cb = document.querySelector('.template-checkbox[value="AI resultaten"]');
+                aiResultatenActive = cb?.checked || false;
+                aiResultatenBtn.className = aiResultatenActive ? BTN_ON_CLASS : BTN_OFF_CLASS;
+            }
+
+            aiResultatenBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                const cb = document.querySelector('.template-checkbox[value="AI resultaten"]');
+                if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); }
+            });
+
             // SNOMED CT button — synced two-way with Active template checkbox
             function updateSnomedCtBtn() {
                 const cb = document.querySelector('.template-checkbox[value="SNOMED CT"]');
                 snomedCtActive = cb?.checked || false;
-                snomedCtBtn.className = snomedCtActive ? BTN_ON_CLASS : BTN_OFF_CLASS;
+                snomedCtBtn.className = (snomedCtActive ? BTN_ON_CLASS : BTN_OFF_CLASS).replace("ml-auto ", "");
             }
 
             snomedCtBtn.addEventListener("click", (e) => {
