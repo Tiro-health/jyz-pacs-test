@@ -47,7 +47,7 @@
                 } else if (localStorage.getItem("darkMode") !== null) {
                     isDark = localStorage.getItem("darkMode") === "true";
                 } else {
-                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                    isDark = true;
                 }
 
                 if (isDark) {
@@ -2129,7 +2129,7 @@ INSTRUCTIES VOOR UITVOER:
 
             // Always on top — Document PiP moves tiro-magic-clipboard there so Dragon stays active
             const alwaysOnTopToggle = document.getElementById('always-on-top-toggle');
-            let alwaysOnTop = false;
+            let alwaysOnTop = localStorage.getItem('alwaysOnTop') !== 'false';
             let _pipWindow = null;
             let _lastFocusedInput = null;
             let _mcAnchor = null; // comment node marking original position of magic-clipboard
@@ -2229,7 +2229,7 @@ INSTRUCTIES VOOR UITVOER:
             const SPLIT_RIGHT = ['autofill-accordion', 'template-accordion'];
             const mainPanels = document.getElementById('main-panels');
             const splitViewToggle = document.getElementById('split-view-toggle');
-            let splitView = localStorage.getItem('splitView') === 'true';
+            let splitView = localStorage.getItem('splitView') !== 'false';
 
             function applySplitView(enabled) {
                 if (enabled) {
