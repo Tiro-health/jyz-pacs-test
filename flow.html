@@ -44,10 +44,10 @@
                     isDark = true;
                 } else if (themeParam === "light") {
                     isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
                 } else {
-                    isDark = window.matchMedia(
-                        "(prefers-color-scheme: dark)",
-                    ).matches;
+                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 }
 
                 if (isDark) {
@@ -164,10 +164,16 @@
                 </div>
             </div>
 
-            <!-- Form filler -->
-            <div class="flex-1 min-h-0 overflow-auto">
+            <!-- Form fillers -->
+            <div class="flex-1 min-h-0 overflow-auto flex flex-col gap-4">
                 <tiro-form-filler
-                    id="flow-form"
+                    id="flow-form-1"
+                    sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                    compact-grouping
+                />
+                <div class="border-t border-neutral-200 dark:border-neutral-700"></div>
+                <tiro-form-filler
+                    id="flow-form-2"
                     sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
                     compact-grouping
                 />
@@ -178,45 +184,60 @@
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
 
         <script>
-            const FLOW_QUESTIONNAIRE = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|1.0.0";
+            const FLOW_QUESTIONNAIRE_1 = "http://templates.tiro.health/templates/63d5c46d4d9342ba93f698e5afec7ee6|1.0.0";
+            const FLOW_QUESTIONNAIRE_2 = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|2.0.0";
 
             const params = new URLSearchParams(window.location.search);
             const loadingOverlay = document.getElementById("loading-overlay");
-            const form = document.getElementById("flow-form");
+            const form1 = document.getElementById("flow-form-1");
+            const form2 = document.getElementById("flow-form-2");
 
             // Back button: return to launch.html preserving all URL params
-            const backBtn = document.getElementById("back-btn");
-            backBtn.addEventListener("click", () => {
+            document.getElementById("back-btn").addEventListener("click", () => {
                 window.location.href = `launch.html?${params.toString()}`;
             });
 
-            const launchContext = {
-                custom: {
-                    resourceType: "Parameters",
-                    parameter: [
-                        ...Array.from(params.entries()).map(([name, value]) => ({
-                            name,
-                            valueString: value,
-                        })),
-                        { name: "questionnaire", valueString: FLOW_QUESTIONNAIRE },
-                    ],
-                },
-                patient: {
-                    resourceType: "Patient",
-                    identifier: [
-                        { value: params.get("patientId") || "example-patient-id" },
-                    ],
-                },
-            };
+            function makeLaunchContext(questionnaire) {
+                return {
+                    custom: {
+                        resourceType: "Parameters",
+                        parameter: [
+                            ...Array.from(params.entries()).map(([name, value]) => ({
+                                name,
+                                valueString: value,
+                            })),
+                            { name: "questionnaire", valueString: questionnaire },
+                        ],
+                    },
+                    patient: {
+                        resourceType: "Patient",
+                        identifier: [
+                            { value: params.get("patientId") || "example-patient-id" },
+                        ],
+                    },
+                };
+            }
 
-            form.setAttribute("launch-context", JSON.stringify(launchContext));
-            form.setAttribute("questionnaire", FLOW_QUESTIONNAIRE);
+            form1.setAttribute("launch-context", JSON.stringify(makeLaunchContext(FLOW_QUESTIONNAIRE_1)));
+            form1.setAttribute("questionnaire", FLOW_QUESTIONNAIRE_1);
+
+            form2.setAttribute("launch-context", JSON.stringify(makeLaunchContext(FLOW_QUESTIONNAIRE_2)));
+            form2.setAttribute("questionnaire", FLOW_QUESTIONNAIRE_2);
 
             document.getElementById("save-btn").addEventListener("click", () => {
-                form.requestSubmit();
+                form1.requestSubmit();
+                form2.requestSubmit();
             });
 
-            form.addEventListener("tiro-submit", async (event) => {
+            // form1: silent save only
+            form1.addEventListener("tiro-submit", (event) => {
+                if (event.detail.response.status === "in-progress") {
+                    // saved silently alongside form2
+                }
+            });
+
+            // form2: drives PDF generation
+            form2.addEventListener("tiro-submit", async (event) => {
                 const response = event.detail.response;
                 if (response.status === "in-progress") {
                     alert("Progress saved!");
@@ -225,11 +246,9 @@
                 try {
                     loadingOverlay.classList.remove("hidden");
                     loadingOverlay.classList.add("flex");
-                    const scriptTag = document.querySelector(
-                        'tiro-form-filler script[type="application/fhir+json"]',
-                    );
+                    const scriptTag = form2.querySelector('script[type="application/fhir+json"]');
                     const questionnaire = scriptTag ? JSON.parse(scriptTag.textContent) : null;
-                    const { pdfData, title } = await form.sdcClient.extract({
+                    const { pdfData, title } = await form2.sdcClient.extract({
                         questionnaireResponse: response,
                         questionnaire,
                     });
