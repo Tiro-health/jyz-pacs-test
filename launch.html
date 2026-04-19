@@ -2140,12 +2140,14 @@ INSTRUCTIES VOOR UITVOER:
                 if (enabled) {
                     mainPanels.classList.remove('flex-col','pb-40');
                     mainPanels.classList.add('flex-row','gap-3');
+                    mainPanels.style.height = '100dvh';
+                    mainPanels.style.overflow = 'hidden';
                     const leftCol = document.createElement('div');
                     leftCol.id = 'split-left-col';
-                    leftCol.className = 'w-1/2 flex flex-col overflow-y-auto pb-40';
+                    leftCol.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
                     const rightCol = document.createElement('div');
                     rightCol.id = 'split-right-col';
-                    rightCol.className = 'w-1/2 flex flex-col overflow-y-auto pb-40';
+                    rightCol.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
                     SPLIT_LEFT.forEach(id => { const el = document.getElementById(id); el.removeAttribute('open'); leftCol.appendChild(el); });
                     SPLIT_RIGHT.forEach(id => { const el = document.getElementById(id); if (id === 'autofill-accordion') el.setAttribute('open',''); else el.removeAttribute('open'); rightCol.appendChild(el); });
                     mainPanels.appendChild(leftCol);
@@ -2158,6 +2160,8 @@ INSTRUCTIES VOOR UITVOER:
                         leftCol.remove();
                         rightCol.remove();
                     }
+                    mainPanels.style.height = '';
+                    mainPanels.style.overflow = '';
                     mainPanels.classList.add('flex-col','pb-40');
                     mainPanels.classList.remove('flex-row','gap-3');
                 }
