@@ -36,6 +36,14 @@
         <!-- Theme detection script (runs before render to prevent flash) -->
         <script>
             (function () {
+                // One-time reset: clear saved toggle prefs so defaults take effect
+                if (!localStorage.getItem('defaultsReset_v1')) {
+                    localStorage.removeItem('darkMode');
+                    localStorage.removeItem('alwaysOnTop');
+                    localStorage.removeItem('splitView');
+                    localStorage.setItem('defaultsReset_v1', '1');
+                }
+
                 const params = new URLSearchParams(window.location.search);
                 const themeParam = params.get("theme");
 
@@ -47,7 +55,7 @@
                 } else if (localStorage.getItem("darkMode") !== null) {
                     isDark = localStorage.getItem("darkMode") === "true";
                 } else {
-                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                    isDark = true;
                 }
 
                 if (isDark) {
@@ -65,35 +73,6 @@
         />
 
         <style>
-            /* Split view: independent flex columns — no shared row heights, no gaps */
-            #main-panels.split-active {
-                display: flex !important;
-                flex-direction: row !important;
-                gap: 0.75rem;
-                height: 100dvh;
-                overflow: hidden;
-            }
-            #main-panels.split-active #left-panels {
-                flex: 1;
-                min-height: 0;
-                display: flex !important;
-                flex-direction: column;
-                overflow-y: auto;
-                padding-bottom: 8rem;
-            }
-            #main-panels.split-active #right-panels {
-                flex: 1;
-                min-height: 0;
-                display: flex !important;
-                flex-direction: column;
-                overflow-y: auto;
-                padding-bottom: 8rem;
-            }
-            #main-panels.split-active #template-accordion {
-                flex: none !important;
-                min-height: auto !important;
-            }
-
             tiro-form-filler {
                 display: block;
             }
@@ -142,23 +121,10 @@
             }
 
             :root.dark {
-                --background: 206 27% 17%;   /* #1f2c36 — panels and form fields */
-                --foreground: 215 20% 85%;
-                --card: 206 27% 17%;
-                --card-foreground: 215 20% 85%;
-                --popover: 206 27% 17%;
-                --popover-foreground: 215 20% 85%;
-                --primary: 174 69% 20%;       /* #105750 — teal primary */
-                --primary-foreground: 0 0% 100%;
-                --secondary: 0 0% 24%;
-                --secondary-foreground: 215 20% 85%;
-                --muted: 0 0% 24%;            /* #3D3D3D — inactive buttons and secondary surfaces */
-                --muted-foreground: 215 15% 55%;
-                --accent: 210 30% 20%;        /* #243342 — hover states */
-                --accent-foreground: 215 20% 85%;
-                --input: 206 27% 17%;         /* #1f2c36 — input field backgrounds */
-                --border: 206 26% 24%;        /* #2d3f4d — borders */
-                --ring: 174 69% 20%;          /* #105750 — focus rings */
+                --background: 222 47% 5%;
+                --muted: 220 40% 10%;
+                --muted-foreground: 215 20% 60%;
+                --accent: 220 40% 15%;
             }
 
             :root {
@@ -180,51 +146,24 @@
 
             :root.dark {
                 /* Dropdown-specific variables for dark mode */
-                --dropdown-bg: #1f2c36;
-                --dropdown-text: #d1d9e1;
-                --dropdown-text-muted: #8896a8;
-                --dropdown-border: #2d3f4d;
-                --dropdown-border-hover: #3a5068;
-                --dropdown-hover: #243342;
-                --dropdown-disabled-bg: #1a2530;
+                --dropdown-bg: #0c1424;
+                --dropdown-text: #e2e8f0;
+                --dropdown-text-muted: #8896b0;
+                --dropdown-border: #1e3050;
+                --dropdown-border-hover: #2a4272;
+                --dropdown-hover: #0f1e35;
+                --dropdown-disabled-bg: #162035;
                 --dropdown-disabled-text: #4b6080;
-                --dropdown-disabled-border: #2d3f4d;
-                --dropdown-multi-value-bg: #243342;
-                --dropdown-multi-value-hover: #2d3f4d;
-                --dropdown-focus-ring: #105750;
-                --dropdown-indicator-color: #d1d9e1;
-            }
-
-            /* PACSonWeb dark mode: exact color overrides */
-            :root.dark body {
-                background-color: #161f27 !important;
-            }
-            :root.dark input:not([type="checkbox"]):not([type="radio"]),
-            :root.dark select,
-            :root.dark textarea {
-                background-color: #1f2c36 !important;
-                border-color: #2d3f4d !important;
-            }
-            :root.dark input:not([type="checkbox"]):not([type="radio"]):focus,
-            :root.dark select:focus,
-            :root.dark textarea:focus {
-                border-color: #105750 !important;
-                box-shadow: 0 0 0 2px rgba(16, 87, 80, 0.4) !important;
-                outline: none !important;
-            }
-            :root.dark .bg-cyan-600 {
-                background-color: #105750 !important;
-            }
-            :root.dark .hover\:bg-cyan-700:hover {
-                background-color: #0b3e39 !important;
-            }
-            :root.dark .border-slate-700 {
-                border-color: #2d3f4d !important;
+                --dropdown-disabled-border: #1e3050;
+                --dropdown-multi-value-bg: #1e3050;
+                --dropdown-multi-value-hover: #2a4272;
+                --dropdown-focus-ring: #06b6d4;
+                --dropdown-indicator-color: #e2e8f0;
             }
         </style>
     </head>
     <body
-        class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200"
+        class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200"
     >
         <!-- QC floating button -->
         <a
@@ -413,8 +352,6 @@
 
         <div id="main-panels" class="h-full flex flex-col p-4 pb-40 font-sans">
 
-            <div id="left-panels" style="display:contents">
-
             <!-- Context Form -->
             <details
                 id="context-accordion"
@@ -563,10 +500,6 @@
                 </div>
             </details>
 
-            </div><!-- /left-panels -->
-
-            <div id="right-panels" style="display:contents">
-
             <!-- Autofill Accordion -->
             <details
                 id="autofill-accordion"
@@ -653,6 +586,7 @@
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
                     <tiro-magic-clipboard
+                        hidden
                         for="report-form"
                         dictation-language="nl"
                     >
@@ -728,8 +662,6 @@
                 </div>
             </details>
 
-            </div><!-- /right-panels -->
-
             <!-- SNOMED CT Form removed — template now loaded via Active template list -->
 
             <!-- Active Template Selector -->
@@ -801,7 +733,6 @@
 
             <!-- Settings -->
             <details
-                id="settings-accordion"
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-6"
             >
                 <summary
@@ -1066,22 +997,6 @@
                             class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
                         >
                             <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
-                        </button>
-                    </div>
-
-                    <!-- Always on top -->
-                    <div class="flex items-center justify-between py-0.5">
-                        <label for="always-on-top-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            Always on top
-                        </label>
-                        <button
-                            id="always-on-top-toggle"
-                            type="button"
-                            role="switch"
-                            aria-checked="true"
-                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-cyan-600 transition-colors focus:outline-none"
-                        >
-                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[19px]"></span>
                         </button>
                     </div>
                     <div class="h-8"></div>
@@ -2221,101 +2136,149 @@ INSTRUCTIES VOOR UITVOER:
             });
             updateDarkModeToggle();
 
-            // Always on top — Document Picture-in-Picture panel for Dragon dictation
+            // Always on top — Document PiP moves tiro-magic-clipboard there so Dragon stays active
             const alwaysOnTopToggle = document.getElementById('always-on-top-toggle');
-            let alwaysOnTop = false; // PiP requires user gesture; always start off
+            let alwaysOnTop = true;
             let _pipWindow = null;
             let _lastFocusedInput = null;
+            let _mcAnchor = null; // comment node marking original position of magic-clipboard
 
-            // Track the last focused text field so we can restore it
             document.addEventListener('focusin', (e) => {
                 if (e.target.matches('input:not([type=checkbox]):not([type=radio]), textarea, [contenteditable="true"]')) {
                     _lastFocusedInput = e.target;
                 }
             });
 
-            function buildPipContent(pip) {
-                const bg = '#161f27', panel = '#1f2c36', border = '#2d3f4d';
-                const text = '#d1d9e1', muted = '#8896a8', teal = '#105750';
-                pip.document.documentElement.style.cssText = `background:${bg};height:100%;margin:0`;
-                pip.document.body.style.cssText = `margin:0;padding:10px;background:${bg};font-family:Inter,system-ui,sans-serif;box-sizing:border-box;height:calc(100% - 20px)`;
-                pip.document.body.innerHTML = `
-                    <div style="display:flex;flex-direction:column;gap:6px;height:100%">
-                        <div style="font-size:10px;font-weight:600;color:${muted};letter-spacing:.07em;text-transform:uppercase;padding-bottom:6px;border-bottom:1px solid ${border}">Dragon Medical</div>
-                        <button id="pp-act" style="padding:7px 10px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;text-align:left">
-                            ⌨ Activeer rapport venster
-                        </button>
-                        <div style="border-top:1px solid ${border}"></div>
-                        <button id="pp-fill" style="padding:7px 10px;background:${teal};color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Autofill Template</button>
-                        <button id="pp-tr"   style="padding:7px 10px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Translate</button>
-                        <button id="pp-vc"   style="padding:7px 10px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">Verslag check</button>
-                    </div>`;
-                const act = (fn) => { window.focus(); if (_lastFocusedInput) _lastFocusedInput.focus(); fn && fn(); };
-                pip.document.getElementById('pp-act') .addEventListener('click', () => act());
-                pip.document.getElementById('pp-fill').addEventListener('click', () => act(() => document.getElementById('autofill-btn')?.click()));
-                pip.document.getElementById('pp-tr')  .addEventListener('click', () => act(() => document.getElementById('translate-btn')?.click()));
-                pip.document.getElementById('pp-vc')  .addEventListener('click', () => act(() => document.getElementById('verslag-check-btn')?.click()));
-            }
-
             async function openPip() {
-                if (!window.documentPictureInPicture) {
-                    alert('Always on top vereist Chrome of Edge 116+.\nUpdate uw browser en probeer opnieuw.');
-                    alwaysOnTop = false; updateAlwaysOnTopToggle(); return;
-                }
+                if (_pipWindow || !window.documentPictureInPicture) return;
                 try {
-                    _pipWindow = await window.documentPictureInPicture.requestWindow({ width: 260, height: 240 });
-                    buildPipContent(_pipWindow);
-                    _pipWindow.addEventListener('pagehide', () => {
-                        _pipWindow = null; alwaysOnTop = false;
-                        localStorage.setItem('alwaysOnTop', 'false');
+                    _pipWindow = await window.documentPictureInPicture.requestWindow({ width: 300, height: 320 });
+                    const pip = _pipWindow;
+
+                    // CSS variables so SDK components theme correctly in PiP
+                    const style = pip.document.createElement('style');
+                    style.textContent = `
+                        :root{--background:206 27% 17%;--foreground:215 20% 85%;--card:206 27% 17%;--card-foreground:215 20% 85%;--muted:0 0% 24%;--muted-foreground:215 15% 55%;--input:206 27% 17%;--border:206 26% 24%;--ring:174 69% 20%;--primary:174 69% 20%;--primary-foreground:0 0% 100%;--accent:210 30% 20%;--accent-foreground:215 20% 85%;--dropdown-bg:#1f2c36;--dropdown-text:#d1d9e1;--dropdown-border:#2d3f4d;--dropdown-hover:#243342;--dropdown-focus-ring:#105750;--dropdown-indicator-color:#d1d9e1;}
+                        *{box-sizing:border-box}
+                        tiro-magic-clipboard{display:block}
+                    `;
+                    pip.document.head.appendChild(style);
+                    pip.document.documentElement.style.background = '#161f27';
+                    pip.document.body.style.cssText = 'margin:0;padding:10px;background:#161f27;font-family:Inter,system-ui,sans-serif;color:#d1d9e1';
+
+                    // Patch DOM queries so magic-clipboard's for="report-form" finds the main window's element
+                    ['getElementById', 'querySelector'].forEach(fn => {
+                        const orig = pip.document[fn].bind(pip.document);
+                        pip.document[fn] = (...a) => orig(...a) ?? document[fn](...a) ?? null;
+                    });
+
+                    // Move tiro-magic-clipboard into PiP, leave an anchor to restore it later
+                    const mc = document.querySelector('tiro-magic-clipboard');
+                    if (mc) {
+                        _mcAnchor = document.createComment('mc-pip-anchor');
+                        mc.parentNode.insertBefore(_mcAnchor, mc);
+                        mc.removeAttribute('hidden'); // reveal so Dragon activates in PiP
+                        // Hide slotted light-DOM children (Autofill / Translate buttons)
+                        mc.querySelectorAll(':scope > *').forEach(el => { el.hidden = true; });
+                        pip.document.body.appendChild(mc);
+                    }
+
+                    // "Activeer rapport venster" — the only button needed
+                    const btn = pip.document.createElement('button');
+                    btn.textContent = '↑ Activeer rapport venster';
+                    btn.style.cssText = 'margin-top:8px;padding:8px 12px;background:#1f2c36;color:#d1d9e1;border:1px solid #2d3f4d;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;width:100%;text-align:left';
+                    btn.addEventListener('click', () => { window.focus(); _lastFocusedInput?.focus(); });
+                    pip.document.body.appendChild(btn);
+
+                    // On PiP close: restore magic-clipboard to its original place in main window
+                    pip.addEventListener('pagehide', () => {
+                        const movedMc = pip.document.querySelector('tiro-magic-clipboard');
+                        if (movedMc && _mcAnchor?.parentNode) {
+                            movedMc.querySelectorAll(':scope > *').forEach(el => { el.hidden = false; });
+                            movedMc.setAttribute('hidden', ''); // hide again in main window
+                            _mcAnchor.parentNode.insertBefore(movedMc, _mcAnchor);
+                            _mcAnchor.remove();
+                            _mcAnchor = null;
+                        }
+                        _pipWindow = null;
+                        alwaysOnTop = false;
                         updateAlwaysOnTopToggle();
                     });
-                } catch { alwaysOnTop = false; updateAlwaysOnTopToggle(); }
+
+                    alwaysOnTop = true;
+                    updateAlwaysOnTopToggle();
+                } catch {
+                    alwaysOnTop = false;
+                    updateAlwaysOnTopToggle();
+                }
             }
 
-            function closePip() { _pipWindow?.close(); _pipWindow = null; }
+            function closePip() { _pipWindow?.close(); }
 
             function updateAlwaysOnTopToggle() {
                 alwaysOnTopToggle.setAttribute('aria-checked', String(alwaysOnTop));
                 alwaysOnTopToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${alwaysOnTop ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 alwaysOnTopToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${alwaysOnTop ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
             }
+
             alwaysOnTopToggle.addEventListener('click', async () => {
-                alwaysOnTop = !alwaysOnTop;
-                localStorage.setItem('alwaysOnTop', String(alwaysOnTop));
-                updateAlwaysOnTopToggle();
-                alwaysOnTop ? await openPip() : closePip();
+                alwaysOnTop ? closePip() : await openPip();
             });
             updateAlwaysOnTopToggle();
 
+            // Auto-open PiP on first user interaction (PiP requires a user gesture)
+            const _autoOpenPip = async () => {
+                document.removeEventListener('pointerdown', _autoOpenPip, true);
+                await openPip();
+            };
+            document.addEventListener('pointerdown', _autoOpenPip, true);
+
+
             // Split View
+            const PANEL_ORDER = ['context-accordion', 'clinical-accordion', 'previous-studies-accordion', 'autofill-accordion', 'template-accordion', 'active-template-accordion'];
+            const SPLIT_LEFT  = ['context-accordion', 'clinical-accordion', 'previous-studies-accordion', 'active-template-accordion'];
+            const SPLIT_RIGHT = ['autofill-accordion', 'template-accordion'];
             const mainPanels = document.getElementById('main-panels');
             const splitViewToggle = document.getElementById('split-view-toggle');
-            let splitView = localStorage.getItem('splitView') === 'true';
+            let splitView = localStorage.getItem('splitView') !== 'false';
 
             function applySplitView(enabled) {
-                const leftPanels = document.getElementById('left-panels');
-                const templateEl = document.getElementById('template-accordion');
-                const activeTemplateEl = document.getElementById('active-template-accordion');
-                const settingsEl = document.getElementById('settings-accordion');
                 if (enabled) {
-                    // Move active-template and settings into left column (safe: no web components)
-                    leftPanels.appendChild(activeTemplateEl);
-                    leftPanels.appendChild(settingsEl);
-                    mainPanels.classList.add('split-active');
-                    mainPanels.classList.remove('flex-col','pb-40');
-                    templateEl.classList.remove('flex-1','min-h-0','flex','flex-col');
-                    ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion','settings-accordion']
-                        .forEach(id => document.getElementById(id).removeAttribute('open'));
-                    document.getElementById('autofill-accordion').setAttribute('open','');
-                    document.getElementById('template-accordion').removeAttribute('open');
+                    mainPanels.classList.remove('flex-col', 'pb-40');
+                    mainPanels.classList.add('flex-row', 'gap-3');
+
+                    const leftCol = document.createElement('div');
+                    leftCol.id = 'split-left-col';
+                    leftCol.className = 'w-1/2 flex flex-col overflow-y-auto pb-40';
+
+                    const rightCol = document.createElement('div');
+                    rightCol.id = 'split-right-col';
+                    rightCol.className = 'w-1/2 flex flex-col overflow-y-auto pb-40';
+
+                    SPLIT_LEFT.forEach(id => {
+                        const el = document.getElementById(id);
+                        el.removeAttribute('open');
+                        leftCol.appendChild(el);
+                    });
+                    SPLIT_RIGHT.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (id === 'autofill-accordion') el.setAttribute('open', '');
+                        else el.removeAttribute('open');
+                        rightCol.appendChild(el);
+                    });
+
+                    mainPanels.appendChild(leftCol);
+                    mainPanels.appendChild(rightCol);
                 } else {
-                    // Move active-template and settings back after right-panels
-                    mainPanels.appendChild(activeTemplateEl);
-                    mainPanels.appendChild(settingsEl);
-                    mainPanels.classList.remove('split-active');
-                    mainPanels.classList.add('flex-col','pb-40');
-                    templateEl.classList.add('flex-1','min-h-0','flex','flex-col');
+                    const leftCol = document.getElementById('split-left-col');
+                    const rightCol = document.getElementById('split-right-col');
+                    if (leftCol && rightCol) {
+                        PANEL_ORDER.forEach(id => mainPanels.insertBefore(document.getElementById(id), leftCol));
+                        leftCol.remove();
+                        rightCol.remove();
+                    }
+                    mainPanels.classList.add('flex-col', 'pb-40');
+                    mainPanels.classList.remove('flex-row', 'gap-3');
                 }
             }
 
