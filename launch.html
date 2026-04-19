@@ -691,6 +691,14 @@
                                 Tekst ontvangen
                             </span>
                         </div>
+                        <!-- Real-time verslag check panel -->
+                        <div id="realtime-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                            <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                                <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Real time — Verslag check</span>
+                                <span id="realtime-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                            </div>
+                            <div id="realtime-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
+                        </div>
                     </tiro-magic-clipboard>
                 </div>
             </details>
@@ -1067,6 +1075,22 @@
                         </label>
                         <button
                             id="dark-mode-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
+                        </button>
+                    </div>
+
+                    <!-- Real time -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="realtime-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Real time
+                        </label>
+                        <button
+                            id="realtime-toggle"
                             type="button"
                             role="switch"
                             aria-checked="false"
@@ -2343,6 +2367,78 @@ INSTRUCTIES VOOR UITVOER:
                     verslagCheckBtn.className = BTN_OFF_CLASS.replace("ml-auto ", "");
                 }
             });
+
+            // ============================================
+            // Real-time verslag check
+            // ============================================
+            const realtimeToggle = document.getElementById('realtime-toggle');
+            const realtimePanel = document.getElementById('realtime-panel');
+            const realtimeContent = document.getElementById('realtime-content');
+            const realtimeStatus = document.getElementById('realtime-status');
+            let realtimeEnabled = localStorage.getItem('realtimeEnabled') === 'true';
+            let _realtimeDebounce = null;
+            let _realtimeAbort = null;
+
+            function updateRealtimeToggle() {
+                realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
+                realtimeToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${realtimeEnabled ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
+                realtimeToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${realtimeEnabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+                realtimePanel.classList.toggle('hidden', !realtimeEnabled);
+                if (!realtimeEnabled) {
+                    _realtimeAbort?.abort();
+                    realtimeContent.innerHTML = '';
+                    realtimeStatus.textContent = '';
+                }
+            }
+
+            realtimeToggle.addEventListener('click', () => {
+                realtimeEnabled = !realtimeEnabled;
+                localStorage.setItem('realtimeEnabled', String(realtimeEnabled));
+                updateRealtimeToggle();
+                if (realtimeEnabled) scheduleRealtimeCheck();
+            });
+            updateRealtimeToggle();
+
+            async function runRealtimeCheck() {
+                if (!realtimeEnabled || !GEMINI_API_KEY) return;
+                const tekst = readDictationText().trim();
+                if (!tekst) { realtimeContent.innerHTML = ''; realtimeStatus.textContent = ''; return; }
+
+                _realtimeAbort?.abort();
+                _realtimeAbort = new AbortController();
+                realtimeStatus.textContent = 'Verwerken…';
+                realtimeContent.innerHTML = '';
+
+                const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                const patientInfo = extractPatientInfo();
+                const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
+
+                try {
+                    await callGeminiStream(prompt, (partial) => {
+                        realtimeContent.innerHTML = renderMarkdown(partial);
+                        realtimeStatus.textContent = '';
+                    }, _realtimeAbort.signal);
+                } catch (e) {
+                    if (e.name !== 'AbortError') {
+                        realtimeStatus.textContent = 'Fout: ' + e.message;
+                    }
+                }
+            }
+
+            function scheduleRealtimeCheck() {
+                clearTimeout(_realtimeDebounce);
+                _realtimeDebounce = setTimeout(runRealtimeCheck, 2000);
+            }
+
+            // Watch dictation text for changes
+            const _realtimeObserver = new MutationObserver(() => {
+                if (realtimeEnabled) scheduleRealtimeCheck();
+            });
+            _realtimeObserver.observe(clipboard, { childList: true, subtree: true, characterData: true, attributes: false });
+            clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
 
             // ============================================
             // SNOMED CT prompt settings + generation
