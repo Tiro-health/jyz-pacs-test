@@ -57,8 +57,8 @@
     <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200 font-sans min-h-screen">
 
         <!-- Toolbar -->
-        <div class="sticky top-0 z-10 flex items-center gap-3 px-4 py-2 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 shadow-sm">
-            <button id="back-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
+        <div class="sticky top-0 z-10 flex items-center gap-3 px-4 py-2 bg-white dark:bg-muted border-b border-neutral-200 dark:border-slate-700 shadow-sm">
+            <button id="back-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 Back
             </button>
@@ -68,50 +68,50 @@
         <div class="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
 
             <!-- Translate prompt -->
-            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
                     <span class="text-sm font-medium">Translate prompt</span>
                     <button data-reset="translate" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
                 </div>
                 <div class="p-4 flex flex-col gap-2">
-                    <textarea id="translate-prompt" rows="6" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholder: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{text}</code></p>
+                    <textarea id="translate-prompt" rows="6" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholder: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{text}</code></p>
                 </div>
             </div>
 
             <!-- Radiology check prompt -->
-            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
                     <span class="text-sm font-medium">Radiology check prompt</span>
                     <button data-reset="kidv" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
                 </div>
                 <div class="p-4 flex flex-col gap-2">
-                    <textarea id="kidv-prompt" rows="10" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                    <textarea id="kidv-prompt" rows="10" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
                 </div>
             </div>
 
             <!-- Verslag check prompt -->
-            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
                     <span class="text-sm font-medium">Verslag check prompt</span>
                     <button data-reset="verslag" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
                 </div>
                 <div class="p-4 flex flex-col gap-2">
-                    <textarea id="verslag-prompt" rows="14" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                    <textarea id="verslag-prompt" rows="14" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
                 </div>
             </div>
 
             <!-- SNOMED CT prompt -->
-            <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-neutral-700">
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
                     <span class="text-sm font-medium">SNOMED CT prompt</span>
                     <button data-reset="snomed" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
                 </div>
                 <div class="p-4 flex flex-col gap-2">
-                    <textarea id="snomed-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-neutral-800 px-1 rounded">{patient_info}</code></p>
+                    <textarea id="snomed-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
                 </div>
             </div>
 
