@@ -2148,6 +2148,8 @@ INSTRUCTIES VOOR UITVOER:
                     const rightCol = document.createElement('div');
                     rightCol.id = 'split-right-col';
                     rightCol.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
+                    const templateEl = document.getElementById('template-accordion');
+                    templateEl.classList.remove('flex-1','min-h-0','flex','flex-col');
                     SPLIT_LEFT.forEach(id => { const el = document.getElementById(id); el.removeAttribute('open'); leftCol.appendChild(el); });
                     SPLIT_RIGHT.forEach(id => { const el = document.getElementById(id); if (id === 'autofill-accordion') el.setAttribute('open',''); else el.removeAttribute('open'); rightCol.appendChild(el); });
                     mainPanels.appendChild(leftCol);
@@ -2160,6 +2162,7 @@ INSTRUCTIES VOOR UITVOER:
                         leftCol.remove();
                         rightCol.remove();
                     }
+                    document.getElementById('template-accordion').classList.add('flex-1','min-h-0','flex','flex-col');
                     mainPanels.style.height = '';
                     mainPanels.style.overflow = '';
                     mainPanels.classList.add('flex-col','pb-40');
