@@ -955,23 +955,6 @@
                         </div>
                     </div>
 
-                    <!-- Hovering mode -->
-                    <div class="flex items-center justify-between py-0.5">
-                        <label for="hovering-mode-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            Hovering mode
-                            <span class="text-neutral-400 dark:text-neutral-500 font-normal"> — tooltip bij rode correcties</span>
-                        </label>
-                        <button
-                            id="hovering-mode-toggle"
-                            type="button"
-                            role="switch"
-                            aria-checked="true"
-                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-cyan-600 transition-colors focus:outline-none"
-                        >
-                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[19px]"></span>
-                        </button>
-                    </div>
-
                     <!-- Dark mode -->
                     <div class="flex items-center justify-between py-0.5">
                         <label for="dark-mode-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
@@ -2107,20 +2090,7 @@ INSTRUCTIES VOOR UITVOER:
             updateAiResultatenBtn(); // initialize now that BTN classes are defined
             updateSnomedCtBtn();
 
-            // Hovering mode toggle
-            let hoveringMode = localStorage.getItem("hoveringMode") !== "false";
-            const hoveringToggle = document.getElementById("hovering-mode-toggle");
-            function updateHoveringToggle() {
-                hoveringToggle.setAttribute("aria-checked", String(hoveringMode));
-                hoveringToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${hoveringMode ? "bg-cyan-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
-                hoveringToggle.querySelector("span").className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${hoveringMode ? "translate-x-[19px]" : "translate-x-[3px]"}`;
-            }
-            hoveringToggle.addEventListener("click", () => {
-                hoveringMode = !hoveringMode;
-                localStorage.setItem("hoveringMode", String(hoveringMode));
-                updateHoveringToggle();
-            });
-            updateHoveringToggle();
+            const hoveringMode = true;
 
             const darkModeToggle = document.getElementById("dark-mode-toggle");
             let darkMode = document.documentElement.classList.contains("dark");
