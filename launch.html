@@ -344,6 +344,8 @@
 
         <div id="main-panels" class="h-full flex flex-col p-4 pb-40 font-sans">
 
+            <div id="left-panels" style="display:contents">
+
             <!-- Context Form -->
             <details
                 id="context-accordion"
@@ -491,6 +493,10 @@
                     />
                 </div>
             </details>
+
+            </div><!-- /left-panels -->
+
+            <div id="right-panels" style="display:contents">
 
             <!-- Autofill Accordion -->
             <details
@@ -652,6 +658,8 @@
                     <div id="template-forms-container" class="flex flex-col divide-y divide-neutral-200 dark:divide-neutral-700"></div>
                 </div>
             </details>
+
+            </div><!-- /right-panels -->
 
             <!-- SNOMED CT Form removed — template now loaded via Active template list -->
 
@@ -2129,44 +2137,39 @@ INSTRUCTIES VOOR UITVOER:
             updateDarkModeToggle();
 
             // Split View
-            const PANEL_ORDER = ['context-accordion','clinical-accordion','previous-studies-accordion','autofill-accordion','template-accordion','active-template-accordion','settings-accordion'];
-            const SPLIT_LEFT  = ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion','settings-accordion'];
-            const SPLIT_RIGHT = ['autofill-accordion','template-accordion'];
+            const SPLIT_LEFT = ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion','settings-accordion'];
             const mainPanels = document.getElementById('main-panels');
+            const leftPanels = document.getElementById('left-panels');
+            const rightPanels = document.getElementById('right-panels');
             const splitViewToggle = document.getElementById('split-view-toggle');
             let splitView = localStorage.getItem('splitView') === 'true';
 
             function applySplitView(enabled) {
+                const templateEl = document.getElementById('template-accordion');
                 if (enabled) {
                     mainPanels.classList.remove('flex-col','pb-40');
                     mainPanels.classList.add('flex-row','gap-3');
                     mainPanels.style.height = '100dvh';
                     mainPanels.style.overflow = 'hidden';
-                    const leftCol = document.createElement('div');
-                    leftCol.id = 'split-left-col';
-                    leftCol.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
-                    const rightCol = document.createElement('div');
-                    rightCol.id = 'split-right-col';
-                    rightCol.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
-                    const templateEl = document.getElementById('template-accordion');
+                    leftPanels.style.display = '';
+                    leftPanels.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
+                    rightPanels.style.display = '';
+                    rightPanels.className = 'w-1/2 min-h-0 flex flex-col overflow-y-auto pb-40';
                     templateEl.classList.remove('flex-1','min-h-0','flex','flex-col');
-                    SPLIT_LEFT.forEach(id => { const el = document.getElementById(id); el.removeAttribute('open'); leftCol.appendChild(el); });
-                    SPLIT_RIGHT.forEach(id => { const el = document.getElementById(id); if (id === 'autofill-accordion') el.setAttribute('open',''); else el.removeAttribute('open'); rightCol.appendChild(el); });
-                    mainPanels.appendChild(leftCol);
-                    mainPanels.appendChild(rightCol);
+                    // Collapse left panels, open dictation
+                    SPLIT_LEFT.forEach(id => document.getElementById(id).removeAttribute('open'));
+                    document.getElementById('autofill-accordion').setAttribute('open','');
+                    document.getElementById('template-accordion').removeAttribute('open');
                 } else {
-                    const leftCol = document.getElementById('split-left-col');
-                    const rightCol = document.getElementById('split-right-col');
-                    if (leftCol && rightCol) {
-                        PANEL_ORDER.forEach(id => mainPanels.insertBefore(document.getElementById(id), leftCol));
-                        leftCol.remove();
-                        rightCol.remove();
-                    }
-                    document.getElementById('template-accordion').classList.add('flex-1','min-h-0','flex','flex-col');
+                    leftPanels.className = '';
+                    leftPanels.style.display = 'contents';
+                    rightPanels.className = '';
+                    rightPanels.style.display = 'contents';
+                    templateEl.classList.add('flex-1','min-h-0','flex','flex-col');
                     mainPanels.style.height = '';
                     mainPanels.style.overflow = '';
-                    mainPanels.classList.add('flex-col','pb-40');
                     mainPanels.classList.remove('flex-row','gap-3');
+                    mainPanels.classList.add('flex-col','pb-40');
                 }
             }
 
