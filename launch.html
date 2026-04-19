@@ -2234,7 +2234,6 @@ INSTRUCTIES VOOR UITVOER:
             let alwaysOnTop = true;
             let _pipWindow = null;
             let _lastFocusedInput = null;
-            let _mcAnchor = null;
 
             document.addEventListener('focusin', (e) => {
                 if (e.target.matches('input:not([type=checkbox]):not([type=radio]), textarea, [contenteditable="true"]')) {
@@ -2245,45 +2244,20 @@ INSTRUCTIES VOOR UITVOER:
             async function openPip() {
                 if (_pipWindow || !window.documentPictureInPicture) return;
                 try {
-                    _pipWindow = await window.documentPictureInPicture.requestWindow({ width: 300, height: 320 });
+                    _pipWindow = await window.documentPictureInPicture.requestWindow({ width: 260, height: 80 });
                     const pip = _pipWindow;
+                    const bg = '#161f27', panel = '#1f2c36', border = '#2d3f4d', text = '#d1d9e1';
 
-                    const style = pip.document.createElement('style');
-                    style.textContent = `:root{--background:206 27% 17%;--foreground:215 20% 85%;--card:206 27% 17%;--card-foreground:215 20% 85%;--muted:0 0% 24%;--muted-foreground:215 15% 55%;--input:206 27% 17%;--border:206 26% 24%;--ring:174 69% 20%;--primary:174 69% 20%;--primary-foreground:0 0% 100%;--accent:210 30% 20%;--accent-foreground:215 20% 85%;--dropdown-bg:#1f2c36;--dropdown-text:#d1d9e1;--dropdown-border:#2d3f4d;--dropdown-hover:#243342;--dropdown-focus-ring:#105750;--dropdown-indicator-color:#d1d9e1;}*{box-sizing:border-box}tiro-magic-clipboard{display:block}`;
-                    pip.document.head.appendChild(style);
-                    pip.document.documentElement.style.background = '#161f27';
-                    pip.document.body.style.cssText = 'margin:0;padding:10px;background:#161f27;font-family:Inter,system-ui,sans-serif;color:#d1d9e1';
+                    pip.document.documentElement.style.background = bg;
+                    pip.document.body.style.cssText = `margin:0;padding:10px;background:${bg};font-family:Inter,system-ui,sans-serif`;
 
-                    // Patch DOM queries so magic-clipboard's for="report-form" finds the main window
-                    ['getElementById', 'querySelector'].forEach(fn => {
-                        const orig = pip.document[fn].bind(pip.document);
-                        pip.document[fn] = (...a) => orig(...a) ?? document[fn](...a) ?? null;
-                    });
-
-                    // Move tiro-magic-clipboard into PiP; hide slotted buttons
-                    const mc = document.querySelector('tiro-magic-clipboard');
-                    if (mc) {
-                        _mcAnchor = document.createComment('mc-pip-anchor');
-                        mc.parentNode.insertBefore(_mcAnchor, mc);
-                        mc.querySelectorAll(':scope > *').forEach(el => { el.hidden = true; });
-                        pip.document.body.appendChild(mc);
-                    }
-
-                    // Only one button in PiP
                     const btn = pip.document.createElement('button');
-                    btn.textContent = '↑ Activeer rapport venster';
-                    btn.style.cssText = 'margin-top:8px;padding:8px 12px;background:#1f2c36;color:#d1d9e1;border:1px solid #2d3f4d;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;width:100%;text-align:left';
+                    btn.textContent = '⌨ Activeer rapport venster';
+                    btn.style.cssText = `width:100%;padding:8px 12px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;text-align:left`;
                     btn.addEventListener('click', () => { window.focus(); _lastFocusedInput?.focus(); });
                     pip.document.body.appendChild(btn);
 
                     pip.addEventListener('pagehide', () => {
-                        const movedMc = pip.document.querySelector('tiro-magic-clipboard');
-                        if (movedMc && _mcAnchor?.parentNode) {
-                            movedMc.querySelectorAll(':scope > *').forEach(el => { el.hidden = false; });
-                            _mcAnchor.parentNode.insertBefore(movedMc, _mcAnchor);
-                            _mcAnchor.remove();
-                            _mcAnchor = null;
-                        }
                         _pipWindow = null;
                         alwaysOnTop = false;
                         updateAlwaysOnTopToggle();
