@@ -1017,9 +1017,7 @@
             const savedTemplateNames = JSON.parse(localStorage.getItem("savedTemplateNames") || "[]");
             const defaultNames = savedTemplateNames.length > 0
                 ? savedTemplateNames
-                : (Object.entries(TEMPLATES).find(([, url]) => url === questionnaire)?.[0]
-                    ? [Object.entries(TEMPLATES).find(([, url]) => url === questionnaire)[0]]
-                    : [Object.keys(TEMPLATES)[0]]);
+                : ["AI resultaten", "SNOMED CT"];
             document.querySelectorAll(".template-checkbox").forEach(cb => {
                 cb.checked = defaultNames.includes(cb.value);
             });
