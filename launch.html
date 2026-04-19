@@ -586,6 +586,7 @@
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
                     <tiro-magic-clipboard
+                        hidden
                         for="report-form"
                         dictation-language="nl"
                     >
@@ -2137,7 +2138,7 @@ INSTRUCTIES VOOR UITVOER:
 
             // Always on top — Document PiP moves tiro-magic-clipboard there so Dragon stays active
             const alwaysOnTopToggle = document.getElementById('always-on-top-toggle');
-            let alwaysOnTop = localStorage.getItem('alwaysOnTop') !== 'false';
+            let alwaysOnTop = true;
             let _pipWindow = null;
             let _lastFocusedInput = null;
             let _mcAnchor = null; // comment node marking original position of magic-clipboard
@@ -2176,6 +2177,7 @@ INSTRUCTIES VOOR UITVOER:
                     if (mc) {
                         _mcAnchor = document.createComment('mc-pip-anchor');
                         mc.parentNode.insertBefore(_mcAnchor, mc);
+                        mc.removeAttribute('hidden'); // reveal so Dragon activates in PiP
                         // Hide slotted light-DOM children (Autofill / Translate buttons)
                         mc.querySelectorAll(':scope > *').forEach(el => { el.hidden = true; });
                         pip.document.body.appendChild(mc);
@@ -2193,18 +2195,17 @@ INSTRUCTIES VOOR UITVOER:
                         const movedMc = pip.document.querySelector('tiro-magic-clipboard');
                         if (movedMc && _mcAnchor?.parentNode) {
                             movedMc.querySelectorAll(':scope > *').forEach(el => { el.hidden = false; });
+                            movedMc.setAttribute('hidden', ''); // hide again in main window
                             _mcAnchor.parentNode.insertBefore(movedMc, _mcAnchor);
                             _mcAnchor.remove();
                             _mcAnchor = null;
                         }
                         _pipWindow = null;
                         alwaysOnTop = false;
-                        localStorage.setItem('alwaysOnTop', 'false');
                         updateAlwaysOnTopToggle();
                     });
 
                     alwaysOnTop = true;
-                    localStorage.setItem('alwaysOnTop', 'true');
                     updateAlwaysOnTopToggle();
                 } catch {
                     alwaysOnTop = false;
