@@ -39,7 +39,6 @@
                 // One-time reset so all toggles default to ON on first visit
                 if (!localStorage.getItem('defaultsReset_v2')) {
                     localStorage.removeItem('darkMode');
-                    localStorage.removeItem('alwaysOnTop');
                     localStorage.removeItem('splitView');
                     localStorage.setItem('defaultsReset_v2', '1');
                 }
@@ -1077,21 +1076,7 @@
                         </button>
                     </div>
 
-                    <!-- Always on top -->
-                    <div class="flex items-center justify-between py-0.5">
-                        <label for="always-on-top-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            Always on top
-                        </label>
-                        <button
-                            id="always-on-top-toggle"
-                            type="button"
-                            role="switch"
-                            aria-checked="true"
-                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-cyan-600 transition-colors focus:outline-none"
-                        >
-                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[19px]"></span>
-                        </button>
-                    </div>
+
                     <div class="h-8"></div>
                 </div>
             </details>
@@ -2229,67 +2214,6 @@ INSTRUCTIES VOOR UITVOER:
             });
             updateDarkModeToggle();
 
-            // Always on top — moves tiro-magic-clipboard into PiP so Dragon activates there
-            const alwaysOnTopToggle = document.getElementById('always-on-top-toggle');
-            let alwaysOnTop = true;
-            let _pipWindow = null;
-            let _lastFocusedInput = null;
-
-            document.addEventListener('focusin', (e) => {
-                if (e.target.matches('input:not([type=checkbox]):not([type=radio]), textarea, [contenteditable="true"]')) {
-                    _lastFocusedInput = e.target;
-                }
-            });
-
-            async function openPip() {
-                if (_pipWindow || !window.documentPictureInPicture) return;
-                try {
-                    _pipWindow = await window.documentPictureInPicture.requestWindow({ width: 260, height: 80 });
-                    const pip = _pipWindow;
-                    const bg = '#161f27', panel = '#1f2c36', border = '#2d3f4d', text = '#d1d9e1';
-
-                    pip.document.documentElement.style.background = bg;
-                    pip.document.body.style.cssText = `margin:0;padding:10px;background:${bg};font-family:Inter,system-ui,sans-serif`;
-
-                    const btn = pip.document.createElement('button');
-                    btn.textContent = '⌨ Activeer rapport venster';
-                    btn.style.cssText = `width:100%;padding:8px 12px;background:${panel};color:${text};border:1px solid ${border};border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;text-align:left`;
-                    btn.addEventListener('click', () => { window.focus(); _lastFocusedInput?.focus(); });
-                    pip.document.body.appendChild(btn);
-
-                    pip.addEventListener('pagehide', () => {
-                        _pipWindow = null;
-                        alwaysOnTop = false;
-                        updateAlwaysOnTopToggle();
-                    });
-
-                    alwaysOnTop = true;
-                    updateAlwaysOnTopToggle();
-                } catch {
-                    alwaysOnTop = false;
-                    updateAlwaysOnTopToggle();
-                }
-            }
-
-            function closePip() { _pipWindow?.close(); }
-
-            function updateAlwaysOnTopToggle() {
-                alwaysOnTopToggle.setAttribute('aria-checked', String(alwaysOnTop));
-                alwaysOnTopToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${alwaysOnTop ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
-                alwaysOnTopToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${alwaysOnTop ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
-            }
-
-            alwaysOnTopToggle.addEventListener('click', async () => {
-                alwaysOnTop ? closePip() : await openPip();
-            });
-            updateAlwaysOnTopToggle();
-
-            // Auto-open PiP on first user interaction (requires a user gesture)
-            const _autoOpenPip = async () => {
-                document.removeEventListener('pointerdown', _autoOpenPip, true);
-                await openPip();
-            };
-            document.addEventListener('pointerdown', _autoOpenPip, true);
 
             // Split View
             const mainPanels = document.getElementById('main-panels');
