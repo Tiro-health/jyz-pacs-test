@@ -724,6 +724,7 @@
 
             <!-- Settings -->
             <details
+                id="settings-accordion"
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-6"
             >
                 <summary
@@ -2128,9 +2129,9 @@ INSTRUCTIES VOOR UITVOER:
             updateDarkModeToggle();
 
             // Split View
-            const PANEL_ORDER = ['context-accordion','clinical-accordion','previous-studies-accordion','autofill-accordion','template-accordion','active-template-accordion'];
-            const SPLIT_LEFT  = ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion'];
-            const SPLIT_RIGHT = ['autofill-accordion','template-accordion'];
+            const PANEL_ORDER = ['context-accordion','clinical-accordion','previous-studies-accordion','autofill-accordion','template-accordion','active-template-accordion','settings-accordion'];
+            const SPLIT_LEFT  = ['context-accordion','clinical-accordion','previous-studies-accordion'];
+            const SPLIT_RIGHT = ['autofill-accordion','template-accordion','active-template-accordion','settings-accordion'];
             const mainPanels = document.getElementById('main-panels');
             const splitViewToggle = document.getElementById('split-view-toggle');
             let splitView = localStorage.getItem('splitView') === 'true';
