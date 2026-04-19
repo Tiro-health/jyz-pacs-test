@@ -65,23 +65,34 @@
         />
 
         <style>
-            /* Split view: CSS Grid layout — no DOM movement, panels stay in place */
+            /* Split view: independent flex columns — no shared row heights, no gaps */
             #main-panels.split-active {
-                display: grid !important;
-                grid-template-columns: 1fr 1fr;
-                column-gap: 0.75rem;
-                align-items: start;
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 0.75rem;
                 height: 100dvh;
-                overflow-y: auto;
-                padding-bottom: 10rem;
+                overflow: hidden;
             }
-            #main-panels.split-active #context-accordion          { grid-column: 1; grid-row: 1; }
-            #main-panels.split-active #clinical-accordion         { grid-column: 1; grid-row: 2; }
-            #main-panels.split-active #previous-studies-accordion { grid-column: 1; grid-row: 3; }
-            #main-panels.split-active #active-template-accordion  { grid-column: 1; grid-row: 4; }
-            #main-panels.split-active #settings-accordion         { grid-column: 1; grid-row: 5; }
-            #main-panels.split-active #autofill-accordion         { grid-column: 2; grid-row: 1; }
-            #main-panels.split-active #template-accordion         { grid-column: 2; grid-row: 2; flex: none !important; min-height: auto !important; }
+            #main-panels.split-active #left-panels {
+                flex: 1;
+                min-height: 0;
+                display: flex !important;
+                flex-direction: column;
+                overflow-y: auto;
+                padding-bottom: 8rem;
+            }
+            #main-panels.split-active #right-panels {
+                flex: 1;
+                min-height: 0;
+                display: flex !important;
+                flex-direction: column;
+                overflow-y: auto;
+                padding-bottom: 8rem;
+            }
+            #main-panels.split-active #template-accordion {
+                flex: none !important;
+                min-height: auto !important;
+            }
 
             tiro-form-filler {
                 display: block;
@@ -2155,21 +2166,30 @@ INSTRUCTIES VOOR UITVOER:
             updateDarkModeToggle();
 
             // Split View
-            const SPLIT_LEFT = ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion','settings-accordion'];
             const mainPanels = document.getElementById('main-panels');
             const splitViewToggle = document.getElementById('split-view-toggle');
             let splitView = localStorage.getItem('splitView') === 'true';
 
             function applySplitView(enabled) {
+                const leftPanels = document.getElementById('left-panels');
                 const templateEl = document.getElementById('template-accordion');
+                const activeTemplateEl = document.getElementById('active-template-accordion');
+                const settingsEl = document.getElementById('settings-accordion');
                 if (enabled) {
+                    // Move active-template and settings into left column (safe: no web components)
+                    leftPanels.appendChild(activeTemplateEl);
+                    leftPanels.appendChild(settingsEl);
                     mainPanels.classList.add('split-active');
                     mainPanels.classList.remove('flex-col','pb-40');
                     templateEl.classList.remove('flex-1','min-h-0','flex','flex-col');
-                    SPLIT_LEFT.forEach(id => document.getElementById(id).removeAttribute('open'));
+                    ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion','settings-accordion']
+                        .forEach(id => document.getElementById(id).removeAttribute('open'));
                     document.getElementById('autofill-accordion').setAttribute('open','');
                     document.getElementById('template-accordion').removeAttribute('open');
                 } else {
+                    // Move active-template and settings back after right-panels
+                    mainPanels.appendChild(activeTemplateEl);
+                    mainPanels.appendChild(settingsEl);
                     mainPanels.classList.remove('split-active');
                     mainPanels.classList.add('flex-col','pb-40');
                     templateEl.classList.add('flex-1','min-h-0','flex','flex-col');
