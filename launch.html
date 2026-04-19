@@ -1127,9 +1127,9 @@
                     ["geboortedatum", "09/11/2000"],
                     ["geslacht", "Men"],
                     ["datum onderzoek", "01/01/2026"],
-                    ["uur onderzoek", "11U30"],
+                    ["uur onderzoek", "11u30"],
                     ["referentie", "PACS0000000"],
-                    ["type onderzoek", "RX HEUP"],
+                    ["type onderzoek", "RX HEUP RECHTS"],
                     ["sequentie", "X-RAY"],
                     ["gebruikte medicatie", "None"],
                 ];
@@ -1143,7 +1143,8 @@
                     "Klein avulsiefragmentje aan het acetabulum links.\n" +
                     "Normaal botpatroon.\n" +
                     "Normale coxofemorale verhoudingen.\n" +
-                    "Schuin fractuur doorheen de hals van de humerus links zonder belangrijke verplaatsingen.";
+                    "Schuin fractuur doorheen de hals van de humerus links zonder belangrijke verplaatsingen.\n\n" +
+                    "AI metingen en resultaten in het PACS systeem beschikbaar.";
                 navigator.clipboard.writeText(demoVerslag).catch(() => {});
                 // Dropdown fields — need to open the control and click the option
                 await deepFillDropdownByLabel(contextForm, "lateralisatie", "Rechts");
