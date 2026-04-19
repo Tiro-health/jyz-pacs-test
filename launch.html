@@ -37,11 +37,11 @@
         <script>
             (function () {
                 // One-time reset so all toggles default to ON on first visit
-                if (!localStorage.getItem('defaultsReset_v1')) {
+                if (!localStorage.getItem('defaultsReset_v2')) {
                     localStorage.removeItem('darkMode');
                     localStorage.removeItem('alwaysOnTop');
                     localStorage.removeItem('splitView');
-                    localStorage.setItem('defaultsReset_v1', '1');
+                    localStorage.setItem('defaultsReset_v2', '1');
                 }
 
                 const params = new URLSearchParams(window.location.search);
@@ -661,7 +661,6 @@
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
                     <tiro-magic-clipboard
-                        hidden
                         for="report-form"
                         dictation-language="nl"
                     >
@@ -2261,12 +2260,11 @@ INSTRUCTIES VOOR UITVOER:
                         pip.document[fn] = (...a) => orig(...a) ?? document[fn](...a) ?? null;
                     });
 
-                    // Move tiro-magic-clipboard into PiP; reveal it and hide slotted buttons
+                    // Move tiro-magic-clipboard into PiP; hide slotted buttons
                     const mc = document.querySelector('tiro-magic-clipboard');
                     if (mc) {
                         _mcAnchor = document.createComment('mc-pip-anchor');
                         mc.parentNode.insertBefore(_mcAnchor, mc);
-                        mc.removeAttribute('hidden');
                         mc.querySelectorAll(':scope > *').forEach(el => { el.hidden = true; });
                         pip.document.body.appendChild(mc);
                     }
@@ -2282,7 +2280,6 @@ INSTRUCTIES VOOR UITVOER:
                         const movedMc = pip.document.querySelector('tiro-magic-clipboard');
                         if (movedMc && _mcAnchor?.parentNode) {
                             movedMc.querySelectorAll(':scope > *').forEach(el => { el.hidden = false; });
-                            movedMc.setAttribute('hidden', '');
                             _mcAnchor.parentNode.insertBefore(movedMc, _mcAnchor);
                             _mcAnchor.remove();
                             _mcAnchor = null;
