@@ -2378,6 +2378,7 @@ INSTRUCTIES VOOR UITVOER:
             let realtimeEnabled = localStorage.getItem('realtimeEnabled') === 'true';
             let _realtimeDebounce = null;
             let _realtimeAbort = null;
+            let _realtimeLastText = ''; // only trigger when text actually changes
 
             function updateRealtimeToggle() {
                 realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
@@ -2388,6 +2389,7 @@ INSTRUCTIES VOOR UITVOER:
                     _realtimeAbort?.abort();
                     realtimeContent.innerHTML = '';
                     realtimeStatus.textContent = '';
+                    _realtimeLastText = '';
                 }
             }
 
@@ -2399,15 +2401,13 @@ INSTRUCTIES VOOR UITVOER:
             });
             updateRealtimeToggle();
 
-            async function runRealtimeCheck() {
+            async function runRealtimeCheck(tekst) {
                 if (!realtimeEnabled || !GEMINI_API_KEY) return;
-                const tekst = readDictationText().trim();
-                if (!tekst) { realtimeContent.innerHTML = ''; realtimeStatus.textContent = ''; return; }
 
                 _realtimeAbort?.abort();
                 _realtimeAbort = new AbortController();
                 realtimeStatus.textContent = 'Verwerken…';
-                realtimeContent.innerHTML = '';
+                // Keep previous result visible until first new chunk arrives
 
                 const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
@@ -2416,8 +2416,10 @@ INSTRUCTIES VOOR UITVOER:
                 const patientInfo = extractPatientInfo();
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
 
+                let firstChunk = true;
                 try {
                     await callGeminiStream(prompt, (partial) => {
+                        if (firstChunk) { realtimeContent.innerHTML = ''; firstChunk = false; }
                         realtimeContent.innerHTML = renderMarkdown(partial);
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
@@ -2430,7 +2432,13 @@ INSTRUCTIES VOOR UITVOER:
 
             function scheduleRealtimeCheck() {
                 clearTimeout(_realtimeDebounce);
-                _realtimeDebounce = setTimeout(runRealtimeCheck, 2000);
+                _realtimeDebounce = setTimeout(() => {
+                    const tekst = readDictationText().trim();
+                    if (tekst && tekst !== _realtimeLastText) {
+                        _realtimeLastText = tekst;
+                        runRealtimeCheck(tekst);
+                    }
+                }, 2000);
             }
 
             // Watch dictation text for changes
