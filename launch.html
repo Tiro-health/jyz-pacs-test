@@ -342,10 +342,11 @@
                 </button>
         </div>
 
-        <div class="h-full flex flex-col p-4 pb-40 font-sans">
+        <div id="main-panels" class="h-full flex flex-col p-4 pb-40 font-sans">
 
             <!-- Context Form -->
             <details
+                id="context-accordion"
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
@@ -393,6 +394,7 @@
 
             <!-- Clinical Information Form -->
             <details
+                id="clinical-accordion"
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
@@ -447,6 +449,7 @@
 
             <!-- Previous Studies Form -->
             <details
+                id="previous-studies-accordion"
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
@@ -654,6 +657,7 @@
 
             <!-- Active Template Selector -->
             <details
+                id="active-template-accordion"
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
@@ -953,6 +957,22 @@
                                 Demo patiënt
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Split View mode -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="split-view-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Split View
+                        </label>
+                        <button
+                            id="split-view-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
+                        </button>
                     </div>
 
                     <!-- Dark mode -->
@@ -2106,6 +2126,70 @@ INSTRUCTIES VOOR UITVOER:
                 updateDarkModeToggle();
             });
             updateDarkModeToggle();
+
+            // Split View
+            const PANEL_ORDER = ['context-accordion', 'clinical-accordion', 'previous-studies-accordion', 'autofill-accordion', 'template-accordion', 'active-template-accordion'];
+            const SPLIT_LEFT  = ['context-accordion', 'clinical-accordion', 'previous-studies-accordion', 'active-template-accordion'];
+            const SPLIT_RIGHT = ['autofill-accordion', 'template-accordion'];
+            const mainPanels = document.getElementById('main-panels');
+            const splitViewToggle = document.getElementById('split-view-toggle');
+            let splitView = localStorage.getItem('splitView') === 'true';
+
+            function applySplitView(enabled) {
+                if (enabled) {
+                    mainPanels.classList.remove('flex-col', 'pb-40');
+                    mainPanels.classList.add('flex-row', 'gap-3');
+
+                    const leftCol = document.createElement('div');
+                    leftCol.id = 'split-left-col';
+                    leftCol.className = 'w-1/2 flex flex-col overflow-y-auto pb-40';
+
+                    const rightCol = document.createElement('div');
+                    rightCol.id = 'split-right-col';
+                    rightCol.className = 'w-1/2 flex flex-col overflow-y-auto pb-40';
+
+                    SPLIT_LEFT.forEach(id => {
+                        const el = document.getElementById(id);
+                        el.removeAttribute('open');
+                        leftCol.appendChild(el);
+                    });
+                    SPLIT_RIGHT.forEach(id => {
+                        const el = document.getElementById(id);
+                        if (id === 'autofill-accordion') el.setAttribute('open', '');
+                        else el.removeAttribute('open');
+                        rightCol.appendChild(el);
+                    });
+
+                    mainPanels.appendChild(leftCol);
+                    mainPanels.appendChild(rightCol);
+                } else {
+                    const leftCol = document.getElementById('split-left-col');
+                    const rightCol = document.getElementById('split-right-col');
+                    if (leftCol && rightCol) {
+                        PANEL_ORDER.forEach(id => mainPanels.insertBefore(document.getElementById(id), leftCol));
+                        leftCol.remove();
+                        rightCol.remove();
+                    }
+                    mainPanels.classList.add('flex-col', 'pb-40');
+                    mainPanels.classList.remove('flex-row', 'gap-3');
+                }
+            }
+
+            function updateSplitViewToggle() {
+                splitViewToggle.setAttribute('aria-checked', String(splitView));
+                splitViewToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${splitView ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
+                splitViewToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${splitView ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+            }
+
+            splitViewToggle.addEventListener('click', () => {
+                splitView = !splitView;
+                localStorage.setItem('splitView', String(splitView));
+                applySplitView(splitView);
+                updateSplitViewToggle();
+            });
+
+            updateSplitViewToggle();
+            applySplitView(splitView);
 
             let verslagCheckActive = false;
 
