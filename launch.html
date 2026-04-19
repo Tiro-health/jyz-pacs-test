@@ -2160,7 +2160,6 @@ INSTRUCTIES VOOR UITVOER:
                         :root{--background:206 27% 17%;--foreground:215 20% 85%;--card:206 27% 17%;--card-foreground:215 20% 85%;--muted:0 0% 24%;--muted-foreground:215 15% 55%;--input:206 27% 17%;--border:206 26% 24%;--ring:174 69% 20%;--primary:174 69% 20%;--primary-foreground:0 0% 100%;--accent:210 30% 20%;--accent-foreground:215 20% 85%;--dropdown-bg:#1f2c36;--dropdown-text:#d1d9e1;--dropdown-border:#2d3f4d;--dropdown-hover:#243342;--dropdown-focus-ring:#105750;--dropdown-indicator-color:#d1d9e1;}
                         *{box-sizing:border-box}
                         tiro-magic-clipboard{display:block}
-                        tiro-magic-clipboard>div{display:none!important}
                     `;
                     pip.document.head.appendChild(style);
                     pip.document.documentElement.style.background = '#161f27';
@@ -2177,6 +2176,8 @@ INSTRUCTIES VOOR UITVOER:
                     if (mc) {
                         _mcAnchor = document.createComment('mc-pip-anchor');
                         mc.parentNode.insertBefore(_mcAnchor, mc);
+                        // Hide slotted light-DOM children (Autofill / Translate buttons)
+                        mc.querySelectorAll(':scope > *').forEach(el => { el.hidden = true; });
                         pip.document.body.appendChild(mc);
                     }
 
@@ -2191,6 +2192,7 @@ INSTRUCTIES VOOR UITVOER:
                     pip.addEventListener('pagehide', () => {
                         const movedMc = pip.document.querySelector('tiro-magic-clipboard');
                         if (movedMc && _mcAnchor?.parentNode) {
+                            movedMc.querySelectorAll(':scope > *').forEach(el => { el.hidden = false; });
                             _mcAnchor.parentNode.insertBefore(movedMc, _mcAnchor);
                             _mcAnchor.remove();
                             _mcAnchor = null;
