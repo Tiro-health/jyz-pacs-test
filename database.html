@@ -43,6 +43,8 @@
                     isDark = true;
                 } else if (themeParam === "light") {
                     isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
                 } else {
                     isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 }
@@ -88,27 +90,60 @@
                 --dropdown-indicator-color: #374151;
             }
             :root.dark {
-                --background: 222.2 84% 4.9%;
-                --muted: 217.2 32.6% 17.5%;
-                --muted-foreground: 215 20.2% 65.1%;
-                --accent: 217.2 32.6% 25%;
-                --dropdown-bg: #121212;
-                --dropdown-text: #e5e7eb;
-                --dropdown-text-muted: #9ca3af;
-                --dropdown-border: #4b5563;
-                --dropdown-border-hover: #6b7280;
-                --dropdown-hover: #374151;
-                --dropdown-disabled-bg: #374151;
-                --dropdown-disabled-text: #6b7280;
-                --dropdown-disabled-border: #4b5563;
-                --dropdown-multi-value-bg: #4b5563;
-                --dropdown-multi-value-hover: #6b7280;
-                --dropdown-focus-ring: #3d8eff;
-                --dropdown-indicator-color: #e5e7eb;
+                --background: 206 27% 17%;   /* #1f2c36 — panels and form fields */
+                --foreground: 215 20% 85%;
+                --card: 206 27% 17%;
+                --card-foreground: 215 20% 85%;
+                --popover: 206 27% 17%;
+                --popover-foreground: 215 20% 85%;
+                --primary: 174 69% 20%;       /* #105750 — teal primary */
+                --primary-foreground: 0 0% 100%;
+                --secondary: 0 0% 24%;
+                --secondary-foreground: 215 20% 85%;
+                --muted: 0 0% 24%;            /* #3D3D3D — inactive buttons and secondary surfaces */
+                --muted-foreground: 215 15% 55%;
+                --accent: 210 30% 20%;        /* #243342 — hover states */
+                --accent-foreground: 215 20% 85%;
+                --input: 206 27% 17%;         /* #1f2c36 — input field backgrounds */
+                --border: 206 26% 24%;        /* #2d3f4d — borders */
+                --ring: 174 69% 20%;          /* #105750 — focus rings */
+                --dropdown-bg: #1f2c36;
+                --dropdown-text: #d1d9e1;
+                --dropdown-text-muted: #8896a8;
+                --dropdown-border: #2d3f4d;
+                --dropdown-border-hover: #3a5068;
+                --dropdown-hover: #243342;
+                --dropdown-disabled-bg: #1a2530;
+                --dropdown-disabled-text: #4b6080;
+                --dropdown-disabled-border: #2d3f4d;
+                --dropdown-multi-value-bg: #243342;
+                --dropdown-multi-value-hover: #2d3f4d;
+                --dropdown-focus-ring: #105750;
+                --dropdown-indicator-color: #d1d9e1;
+            }
+
+            /* PACSonWeb dark mode: exact color overrides */
+            :root.dark body {
+                background-color: #161f27 !important;
+            }
+            :root.dark input:not([type="checkbox"]):not([type="radio"]),
+            :root.dark select,
+            :root.dark textarea {
+                background-color: #1f2c36 !important;
+                border-color: #2d3f4d !important;
+            }
+            :root.dark .bg-cyan-600 {
+                background-color: #105750 !important;
+            }
+            :root.dark .hover\:bg-cyan-700:hover {
+                background-color: #0b3e39 !important;
+            }
+            :root.dark .border-slate-700 {
+                border-color: #2d3f4d !important;
             }
         </style>
     </head>
-    <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200">
+    <body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200">
 
         <div class="h-full flex flex-col p-4 font-sans">
 
@@ -118,7 +153,7 @@
                     <button
                         id="back-btn"
                         type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m15 18-6-6 6-6"/>
@@ -126,11 +161,11 @@
                         Back
                     </button>
                 </div>
-                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 shadow-sm">
+                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
                     <button
                         id="save-btn"
                         type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
                     >
                         Save
                     </button>
@@ -139,7 +174,7 @@
 
             <!-- Study and patient information (collapsed by default) -->
             <details
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
@@ -168,7 +203,7 @@
             <!-- Database (open by default) -->
             <details
                 open
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-gray-700 rounded-lg mb-3"
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
@@ -198,8 +233,8 @@
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
 
         <script>
-            const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|1.0.0";
-            const DATABASE_QUESTIONNAIRE = "http://templates.tiro.health/templates/69bd126892b44111bc3d7ec5fb712b00|1.0.0";
+            const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
+            const DATABASE_QUESTIONNAIRE = "http://templates.tiro.health/templates/69bd126892b44111bc3d7ec5fb712b00|1.0.1";
 
             const params = new URLSearchParams(window.location.search);
 

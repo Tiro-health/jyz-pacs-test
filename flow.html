@@ -44,10 +44,10 @@
                     isDark = true;
                 } else if (themeParam === "light") {
                     isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
                 } else {
-                    isDark = window.matchMedia(
-                        "(prefers-color-scheme: dark)",
-                    ).matches;
+                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
                 }
 
                 if (isDark) {
@@ -103,27 +103,60 @@
             }
 
             :root.dark {
-                --background: 222.2 84% 4.9%;
-                --muted: 217.2 32.6% 17.5%;
-                --muted-foreground: 215 20.2% 65.1%;
-                --accent: 217.2 32.6% 25%;
-                --dropdown-bg: #121212;
-                --dropdown-text: #e5e7eb;
-                --dropdown-text-muted: #9ca3af;
-                --dropdown-border: #4b5563;
-                --dropdown-border-hover: #6b7280;
-                --dropdown-hover: #374151;
-                --dropdown-disabled-bg: #374151;
-                --dropdown-disabled-text: #6b7280;
-                --dropdown-disabled-border: #4b5563;
-                --dropdown-multi-value-bg: #4b5563;
-                --dropdown-multi-value-hover: #6b7280;
-                --dropdown-focus-ring: #3d8eff;
-                --dropdown-indicator-color: #e5e7eb;
+                --background: 206 27% 17%;   /* #1f2c36 — panels and form fields */
+                --foreground: 215 20% 85%;
+                --card: 206 27% 17%;
+                --card-foreground: 215 20% 85%;
+                --popover: 206 27% 17%;
+                --popover-foreground: 215 20% 85%;
+                --primary: 174 69% 20%;       /* #105750 — teal primary */
+                --primary-foreground: 0 0% 100%;
+                --secondary: 0 0% 24%;
+                --secondary-foreground: 215 20% 85%;
+                --muted: 0 0% 24%;            /* #3D3D3D — inactive buttons and secondary surfaces */
+                --muted-foreground: 215 15% 55%;
+                --accent: 210 30% 20%;        /* #243342 — hover states */
+                --accent-foreground: 215 20% 85%;
+                --input: 206 27% 17%;         /* #1f2c36 — input field backgrounds */
+                --border: 206 26% 24%;        /* #2d3f4d — borders */
+                --ring: 174 69% 20%;          /* #105750 — focus rings */
+                --dropdown-bg: #1f2c36;
+                --dropdown-text: #d1d9e1;
+                --dropdown-text-muted: #8896a8;
+                --dropdown-border: #2d3f4d;
+                --dropdown-border-hover: #3a5068;
+                --dropdown-hover: #243342;
+                --dropdown-disabled-bg: #1a2530;
+                --dropdown-disabled-text: #4b6080;
+                --dropdown-disabled-border: #2d3f4d;
+                --dropdown-multi-value-bg: #243342;
+                --dropdown-multi-value-hover: #2d3f4d;
+                --dropdown-focus-ring: #105750;
+                --dropdown-indicator-color: #d1d9e1;
+            }
+
+            /* PACSonWeb dark mode: exact color overrides */
+            :root.dark body {
+                background-color: #161f27 !important;
+            }
+            :root.dark input:not([type="checkbox"]):not([type="radio"]),
+            :root.dark select,
+            :root.dark textarea {
+                background-color: #1f2c36 !important;
+                border-color: #2d3f4d !important;
+            }
+            :root.dark .bg-cyan-600 {
+                background-color: #105750 !important;
+            }
+            :root.dark .hover\:bg-cyan-700:hover {
+                background-color: #0b3e39 !important;
+            }
+            :root.dark .border-slate-700 {
+                border-color: #2d3f4d !important;
             }
         </style>
     </head>
-    <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200">
+    <body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200">
 
         <!-- Loading overlay -->
         <div
@@ -131,7 +164,7 @@
             class="fixed inset-0 bg-white/95 dark:bg-background/95 items-center justify-center z-50 hidden"
         >
             <div class="text-center">
-                <div class="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                <div class="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                 <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Generating PDF...</p>
                 <p class="text-neutral-500 text-sm mt-2">This may take a few seconds</p>
             </div>
@@ -145,7 +178,7 @@
                     <button
                         id="back-btn"
                         type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="m15 18-6-6 6-6"/>
@@ -153,21 +186,27 @@
                         Back
                     </button>
                 </div>
-                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-lg px-2 py-1 shadow-sm">
+                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
                     <button
                         id="save-btn"
                         type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
                     >
                         Save
                     </button>
                 </div>
             </div>
 
-            <!-- Form filler -->
-            <div class="flex-1 min-h-0 overflow-auto">
+            <!-- Form fillers -->
+            <div class="flex-1 min-h-0 overflow-auto flex flex-col gap-4">
                 <tiro-form-filler
-                    id="flow-form"
+                    id="flow-form-1"
+                    sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                    compact-grouping
+                />
+                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+                <tiro-form-filler
+                    id="flow-form-2"
                     sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
                     compact-grouping
                 />
@@ -178,45 +217,60 @@
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
 
         <script>
-            const FLOW_QUESTIONNAIRE = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|1.0.0";
+            const FLOW_QUESTIONNAIRE_1 = "http://templates.tiro.health/templates/63d5c46d4d9342ba93f698e5afec7ee6|1.0.0";
+            const FLOW_QUESTIONNAIRE_2 = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|2.0.0";
 
             const params = new URLSearchParams(window.location.search);
             const loadingOverlay = document.getElementById("loading-overlay");
-            const form = document.getElementById("flow-form");
+            const form1 = document.getElementById("flow-form-1");
+            const form2 = document.getElementById("flow-form-2");
 
             // Back button: return to launch.html preserving all URL params
-            const backBtn = document.getElementById("back-btn");
-            backBtn.addEventListener("click", () => {
+            document.getElementById("back-btn").addEventListener("click", () => {
                 window.location.href = `launch.html?${params.toString()}`;
             });
 
-            const launchContext = {
-                custom: {
-                    resourceType: "Parameters",
-                    parameter: [
-                        ...Array.from(params.entries()).map(([name, value]) => ({
-                            name,
-                            valueString: value,
-                        })),
-                        { name: "questionnaire", valueString: FLOW_QUESTIONNAIRE },
-                    ],
-                },
-                patient: {
-                    resourceType: "Patient",
-                    identifier: [
-                        { value: params.get("patientId") || "example-patient-id" },
-                    ],
-                },
-            };
+            function makeLaunchContext(questionnaire) {
+                return {
+                    custom: {
+                        resourceType: "Parameters",
+                        parameter: [
+                            ...Array.from(params.entries()).map(([name, value]) => ({
+                                name,
+                                valueString: value,
+                            })),
+                            { name: "questionnaire", valueString: questionnaire },
+                        ],
+                    },
+                    patient: {
+                        resourceType: "Patient",
+                        identifier: [
+                            { value: params.get("patientId") || "example-patient-id" },
+                        ],
+                    },
+                };
+            }
 
-            form.setAttribute("launch-context", JSON.stringify(launchContext));
-            form.setAttribute("questionnaire", FLOW_QUESTIONNAIRE);
+            form1.setAttribute("launch-context", JSON.stringify(makeLaunchContext(FLOW_QUESTIONNAIRE_1)));
+            form1.setAttribute("questionnaire", FLOW_QUESTIONNAIRE_1);
+
+            form2.setAttribute("launch-context", JSON.stringify(makeLaunchContext(FLOW_QUESTIONNAIRE_2)));
+            form2.setAttribute("questionnaire", FLOW_QUESTIONNAIRE_2);
 
             document.getElementById("save-btn").addEventListener("click", () => {
-                form.requestSubmit();
+                form1.requestSubmit();
+                form2.requestSubmit();
             });
 
-            form.addEventListener("tiro-submit", async (event) => {
+            // form1: silent save only
+            form1.addEventListener("tiro-submit", (event) => {
+                if (event.detail.response.status === "in-progress") {
+                    // saved silently alongside form2
+                }
+            });
+
+            // form2: drives PDF generation
+            form2.addEventListener("tiro-submit", async (event) => {
                 const response = event.detail.response;
                 if (response.status === "in-progress") {
                     alert("Progress saved!");
@@ -225,11 +279,9 @@
                 try {
                     loadingOverlay.classList.remove("hidden");
                     loadingOverlay.classList.add("flex");
-                    const scriptTag = document.querySelector(
-                        'tiro-form-filler script[type="application/fhir+json"]',
-                    );
+                    const scriptTag = form2.querySelector('script[type="application/fhir+json"]');
                     const questionnaire = scriptTag ? JSON.parse(scriptTag.textContent) : null;
-                    const { pdfData, title } = await form.sdcClient.extract({
+                    const { pdfData, title } = await form2.sdcClient.extract({
                         questionnaireResponse: response,
                         questionnaire,
                     });

@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Patient Letter</title>
+
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+                            mono: ["Fira Mono", "monospace"],
+                        },
+                        colors: {
+                            background: "hsl(var(--background))",
+                            muted: {
+                                DEFAULT: "hsl(var(--muted))",
+                                foreground: "hsl(var(--muted-foreground))",
+                            },
+                            accent: "hsl(var(--accent))",
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <!-- Theme detection script -->
+        <script>
+            (function () {
+                const params = new URLSearchParams(window.location.search);
+                const themeParam = params.get("theme");
+                let isDark;
+                if (themeParam === "dark") isDark = true;
+                else if (themeParam === "light") isDark = false;
+                else if (localStorage.getItem("darkMode") !== null) isDark = localStorage.getItem("darkMode") === "true";
+                else isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                if (isDark) document.documentElement.classList.add("dark");
+            })();
+        </script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lexend:wght@100..900&family=Fira+Mono:wght@400;500;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            :root {
+                --background: 0 0% 100%;
+                --muted: 210 40% 96.1%;
+                --muted-foreground: 215.4 16.3% 46.9%;
+                --accent: 210 40% 90%;
+            }
+            :root.dark {
+                --background: 206 27% 17%;   /* #1f2c36 — panels and form fields */
+                --foreground: 215 20% 85%;
+                --card: 206 27% 17%;
+                --card-foreground: 215 20% 85%;
+                --popover: 206 27% 17%;
+                --popover-foreground: 215 20% 85%;
+                --primary: 174 69% 20%;       /* #105750 — teal primary */
+                --primary-foreground: 0 0% 100%;
+                --secondary: 0 0% 24%;
+                --secondary-foreground: 215 20% 85%;
+                --muted: 0 0% 24%;            /* #3D3D3D — inactive buttons and secondary surfaces */
+                --muted-foreground: 215 15% 55%;
+                --accent: 210 30% 20%;        /* #243342 — hover states */
+                --accent-foreground: 215 20% 85%;
+                --input: 206 27% 17%;         /* #1f2c36 — input field backgrounds */
+                --border: 206 26% 24%;        /* #2d3f4d — borders */
+                --ring: 174 69% 20%;          /* #105750 — focus rings */
+            }
+
+            /* Print styles */
+            @media print {
+                body { background: white !important; color: black !important; }
+                .no-print { display: none !important; }
+                #preview-panel {
+                    border: none !important;
+                    box-shadow: none !important;
+                    padding: 0 !important;
+                }
+                #preview-output {
+                    white-space: pre-wrap;
+                    font-family: serif;
+                    font-size: 12pt;
+                    line-height: 1.6;
+                }
+            }
+
+            /* PACSonWeb dark mode: exact color overrides */
+            :root.dark body {
+                background-color: #161f27 !important;
+            }
+            :root.dark input:not([type="checkbox"]):not([type="radio"]),
+            :root.dark select,
+            :root.dark textarea {
+                background-color: #1f2c36 !important;
+                border-color: #2d3f4d !important;
+            }
+            :root.dark .bg-cyan-600 {
+                background-color: #105750 !important;
+            }
+            :root.dark .hover\:bg-cyan-700:hover {
+                background-color: #0b3e39 !important;
+            }
+            :root.dark .border-slate-700 {
+                border-color: #2d3f4d !important;
+            }
+        </style>
+    </head>
+    <body class="bg-neutral-50 text-neutral-800 dark:bg-background dark:text-neutral-200 font-sans min-h-screen">
+
+        <div class="flex flex-col h-screen">
+
+            <!-- Toolbar -->
+            <div class="no-print sticky top-0 z-10 flex items-center gap-2 px-4 py-2 bg-white dark:bg-muted border-b border-neutral-200 dark:border-slate-700 shadow-sm">
+                <button
+                    id="back-btn"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                    Back
+                </button>
+
+                <span class="text-sm font-medium text-neutral-700 dark:text-neutral-200">Patient Letter</span>
+
+                <div class="ml-auto flex gap-2">
+                    <button
+                        id="copy-btn"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                        Copy
+                    </button>
+                    <button
+                        id="print-btn"
+                        type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 6 2 18 2 18 9"/>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                            <rect x="6" y="14" width="12" height="8"/>
+                        </svg>
+                        Print
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main content: two-column on desktop -->
+            <div class="flex flex-1 overflow-hidden gap-0 md:gap-4 flex-col md:flex-row p-4">
+
+                <!-- Left: Template editor + variable overrides -->
+                <div class="no-print flex flex-col gap-3 w-full md:w-1/2 overflow-y-auto">
+
+                    <!-- Template editor -->
+                    <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                        <div class="flex items-center justify-between px-3 py-2 border-b border-neutral-200 dark:border-slate-700">
+                            <span class="text-sm font-medium">Letter template</span>
+                            <button
+                                id="reset-template-btn"
+                                type="button"
+                                class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors"
+                            >
+                                Reset to default
+                            </button>
+                        </div>
+                        <div class="p-3">
+                            <textarea
+                                id="template-input"
+                                rows="18"
+                                class="w-full text-sm font-mono bg-neutral-50 dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-md p-2 resize-y focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-blue-400 text-neutral-800 dark:text-neutral-200"
+                                placeholder="Enter letter template with {Variable} placeholders…"
+                            ></textarea>
+                            <p class="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                Use <code class="bg-neutral-100 dark:bg-muted px-1 rounded">{Variable}</code> placeholders. Entire lines with empty values are removed.
+                                Add <code class="bg-neutral-100 dark:bg-muted px-1 rounded">Capslock</code> to uppercase: <code class="bg-neutral-100 dark:bg-muted px-1 rounded">{Variable, Capslock}</code>.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Variable overrides -->
+                    <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                        <div class="px-3 py-2 border-b border-neutral-200 dark:border-slate-700">
+                            <span class="text-sm font-medium">Variables</span>
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Auto-filled from URL parameters. Edit to override.</p>
+                        </div>
+                        <div id="variables-container" class="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right: Preview -->
+                <div class="flex flex-col w-full md:w-1/2 overflow-y-auto" id="preview-panel">
+                    <div class="no-print px-3 py-2 border-b border-neutral-200 dark:border-slate-700 bg-white dark:bg-muted rounded-t-lg border border-b-0">
+                        <span class="text-sm font-medium">Preview</span>
+                    </div>
+                    <div class="flex-1 bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-b-lg p-4 md:p-6 overflow-y-auto">
+                        <pre
+                            id="preview-output"
+                            class="whitespace-pre-wrap font-sans text-sm leading-relaxed text-neutral-800 dark:text-neutral-200"
+                        ></pre>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <script>
+            // ============================================
+            // Default template
+            // ============================================
+            const DEFAULT_TEMPLATE = `Hierbij vindt U het verslag betreffende uw patiënt(e) {Naam} geboren op {Geboortedatum}.
+Datum onderzoek: {Datum_onderzoek} {Uur_onderzoek}
+Referentie: {Referentie}
+
+Klinische informatie: {Klinische_informatie}
+Diagnostische vraagstelling: {Diagnostische_vraagstelling}
+
+{Type_onderzoek, Capslock}:
+Lateralisatie: {Lateralisatie}
+Sequentie/serie: {Sequentie/serie}
+Gebruikte medicatie: {Gebruikte_medicatie}
+
+Bevindingen:
+In vergelijking met {Voorgaande_onderzoeken}
+
+{verslag}
+
+De beelden zijn ook beschikbaar op http://pacsonweb.yperman.net/ met referentienummer {Referentie} en geboortedatum {Geboorte_datum}.
+
+Met collegiale groeten en dank voor uw verwijzing,
+
+{Radioloog}`;
+
+            const TEMPLATE_VERSION = "1";
+
+            // ============================================
+            // Variable definitions (order determines display order)
+            // ============================================
+            const VARIABLE_DEFS = [
+                { key: "Naam",                    label: "Naam",                    paramKeys: ["Naam", "naam", "patientname"] },
+                { key: "Geboortedatum",           label: "Geboortedatum",           paramKeys: ["Geboortedatum", "geboortedatum", "birthdate"] },
+                { key: "Datum_onderzoek",         label: "Datum onderzoek",         paramKeys: ["Datum_onderzoek", "datum_onderzoek", "studydate"] },
+                { key: "Uur_onderzoek",           label: "Uur onderzoek",           paramKeys: ["Uur_onderzoek", "uur_onderzoek", "studytime"] },
+                { key: "Referentie",              label: "Referentie",              paramKeys: ["Referentie", "referentie", "reference", "accessionNumber"] },
+                { key: "Klinische_informatie",    label: "Klinische informatie",    paramKeys: ["Klinische_informatie", "klinische_informatie", "clinicalinfo"] },
+                { key: "Diagnostische_vraagstelling", label: "Diagnostische vraagstelling", paramKeys: ["Diagnostische_vraagstelling", "diagnostische_vraagstelling"] },
+                { key: "Type_onderzoek",          label: "Type onderzoek",          paramKeys: ["Type_onderzoek", "type_onderzoek", "modality"] },
+                { key: "Lateralisatie",           label: "Lateralisatie",           paramKeys: ["Lateralisatie", "lateralisatie", "laterality"] },
+                { key: "Sequentie/serie",         label: "Sequentie / serie",       paramKeys: ["Sequentie", "sequentie", "serie", "series"] },
+                { key: "Gebruikte_medicatie",     label: "Gebruikte medicatie",     paramKeys: ["Gebruikte_medicatie", "gebruikte_medicatie", "medicatie"] },
+                { key: "Voorgaande_onderzoeken",  label: "Voorgaande onderzoeken",  paramKeys: ["Voorgaande_onderzoeken", "voorgaande_onderzoeken"] },
+                { key: "verslag",                 label: "Verslag",                 paramKeys: ["verslag", "report"] },
+                { key: "Radioloog",               label: "Radioloog / gebruiker",   paramKeys: ["Radioloog", "radioloog", "username", "user"] },
+                { key: "Geboorte_datum",          label: "Geboorte datum (ref)",    paramKeys: ["Geboorte_datum", "geboorte_datum", "geboortedatum"] },
+            ];
+
+            // ============================================
+            // State
+            // ============================================
+            const params = new URLSearchParams(window.location.search);
+            const variables = {};
+
+            // ============================================
+            // Init template from localStorage
+            // ============================================
+            const templateInput = document.getElementById("template-input");
+
+            function loadTemplate() {
+                const savedVersion = localStorage.getItem("patientLetterTemplateVersion");
+                const saved = savedVersion === TEMPLATE_VERSION ? localStorage.getItem("patientLetterTemplate") : null;
+                templateInput.value = saved || DEFAULT_TEMPLATE;
+            }
+
+            function saveTemplate() {
+                localStorage.setItem("patientLetterTemplate", templateInput.value);
+                localStorage.setItem("patientLetterTemplateVersion", TEMPLATE_VERSION);
+            }
+
+            loadTemplate();
+
+            document.getElementById("reset-template-btn").addEventListener("click", () => {
+                templateInput.value = DEFAULT_TEMPLATE;
+                saveTemplate();
+                renderPreview();
+            });
+
+            templateInput.addEventListener("input", () => {
+                saveTemplate();
+                renderPreview();
+            });
+
+            // ============================================
+            // Build variable fields
+            // ============================================
+            function resolveParamValue(def) {
+                for (const k of def.paramKeys) {
+                    const v = params.get(k);
+                    if (v && v.trim()) return v.trim();
+                }
+                // Also try exact key (case-insensitive)
+                for (const [pk, pv] of params.entries()) {
+                    if (pk.toLowerCase() === def.key.toLowerCase() && pv.trim()) return pv.trim();
+                }
+                return "";
+            }
+
+            const container = document.getElementById("variables-container");
+
+            VARIABLE_DEFS.forEach(def => {
+                const initial = resolveParamValue(def);
+                variables[def.key] = initial;
+
+                const wrapper = document.createElement("div");
+                wrapper.className = "flex flex-col gap-0.5";
+
+                const label = document.createElement("label");
+                label.className = "text-xs font-medium text-neutral-600 dark:text-neutral-400";
+                label.textContent = def.label;
+
+                const input = def.key === "verslag"
+                    ? document.createElement("textarea")
+                    : document.createElement("input");
+
+                input.className = "text-sm bg-neutral-50 dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-cyan-500 dark:focus:ring-blue-400 text-neutral-800 dark:text-neutral-200";
+                input.value = initial;
+                if (def.key === "verslag") {
+                    input.rows = 6;
+                    input.className += " resize-y font-mono";
+                } else {
+                    input.type = "text";
+                }
+
+                input.addEventListener("input", () => {
+                    variables[def.key] = input.value;
+                    renderPreview();
+                });
+
+                wrapper.appendChild(label);
+                wrapper.appendChild(input);
+                container.appendChild(wrapper);
+            });
+
+            // ============================================
+            // Template rendering
+            // ============================================
+            function fillTemplate(template, vars) {
+                let result = template;
+                for (const [key, value] of Object.entries(vars)) {
+                    // Handle {Key, Capslock} placeholders
+                    const capsPattern = new RegExp(`\\{${escapeRegex(key)},\\s*Capslock\\}`, "g");
+                    const capsValue = value ? value.toUpperCase() : "";
+                    result = result.replace(capsPattern, capsValue);
+
+                    // Handle plain {Key} placeholders
+                    const plainPattern = new RegExp(`\\{${escapeRegex(key)}\\}`, "g");
+                    result = result.replace(plainPattern, value || "");
+                }
+                // Remove lines that are entirely empty after substitution (were placeholder-only lines)
+                result = result.replace(/^[ \t]*\n/gm, match => match); // keep as-is for now
+                // Remove lines that still contain unfilled {placeholders} — leave them visible
+                // Strip lines where every non-space character was a placeholder that resolved to empty
+                result = result.replace(/^[^\S\n]*[^{}\n]*\{\w[^}\n]*\}[^\n]*\n?/gm, (line) => {
+                    // If the line has a remaining {placeholder}, keep it as-is
+                    return line;
+                });
+                return result;
+            }
+
+            function escapeRegex(s) {
+                return s.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&");
+            }
+
+            function renderPreview() {
+                const template = templateInput.value;
+                let result = template;
+
+                for (const def of VARIABLE_DEFS) {
+                    const value = variables[def.key] || "";
+                    const key = def.key;
+
+                    // {Key, Capslock}
+                    const capsPattern = new RegExp(`\\{${escapeRegex(key)},\\s*[Cc]apslock\\}`, "g");
+                    result = result.replace(capsPattern, value ? value.toUpperCase() : "");
+
+                    // {Key}
+                    const plainPattern = new RegExp(`\\{${escapeRegex(key)}\\}`, "g");
+                    result = result.replace(plainPattern, value);
+                }
+
+                // Remove lines where the entire non-whitespace content resolves to empty
+                // i.e. lines that only contained placeholders that all resolved to ""
+                result = result.replace(/^[ \t]*\n/gm, "\n");
+                // Remove lines that became blank because all their placeholders were empty
+                // Strategy: any line whose visible content (after substitution) is only whitespace/empty gets removed
+                const lines = result.split("\n");
+                const filtered = lines.filter((line, i) => {
+                    const trimmed = line.trim();
+                    if (trimmed === "") {
+                        // Keep at most one consecutive blank line
+                        const prev = i > 0 ? lines[i - 1].trim() : "x";
+                        return prev !== "";
+                    }
+                    return true;
+                });
+                result = filtered.join("\n");
+
+                document.getElementById("preview-output").textContent = result;
+            }
+
+            // Initial render
+            renderPreview();
+
+            // ============================================
+            // Toolbar actions
+            // ============================================
+            document.getElementById("back-btn").addEventListener("click", () => {
+                window.location.href = `launch.html?${params.toString()}`;
+            });
+
+            document.getElementById("print-btn").addEventListener("click", () => {
+                window.print();
+            });
+
+            document.getElementById("copy-btn").addEventListener("click", async () => {
+                const text = document.getElementById("preview-output").textContent;
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const btn = document.getElementById("copy-btn");
+                    const original = btn.innerHTML;
+                    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 12 4 10"/></svg> Copied!`;
+                    setTimeout(() => { btn.innerHTML = original; }, 1500);
+                } catch {
+                    alert("Could not copy to clipboard.");
+                }
+            });
+        </script>
+    </body>
+</html>
