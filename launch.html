@@ -2967,8 +2967,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             });
             document.addEventListener("paste", (e) => {
                 if (medgemmaAccordion.classList.contains("hidden")) return;
+                if (!medgemmaAccordion.open) return;
+                // Don't intercept when a text field or web component (e.g. tiro-form-filler) is active
+                const tag = document.activeElement?.tagName?.toUpperCase() ?? "";
+                if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable || tag.includes("-")) return;
                 const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith("image/"));
-                if (item) handleMedgemmaFile(item.getAsFile());
+                if (item) { e.preventDefault(); handleMedgemmaFile(item.getAsFile()); }
             });
             medgemmaClearBtn.addEventListener("click", () => {
                 medgemmaImageBase64 = null;
