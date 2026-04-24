@@ -615,15 +615,6 @@
                         <img id="medgemma-preview-img" src="" alt="Preview" class="w-full max-h-64 object-contain rounded-lg border border-neutral-200 dark:border-slate-700 bg-black" />
                         <button id="medgemma-clear-btn" type="button" class="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-800/70 text-white hover:bg-neutral-900 text-xs">✕</button>
                     </div>
-                    <!-- Prompt -->
-                    <div>
-                        <label for="medgemma-prompt" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Vraag / prompt</label>
-                        <textarea
-                            id="medgemma-prompt"
-                            rows="2"
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
-                        >Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.</textarea>
-                    </div>
                 </div>
             </details>
 
@@ -1048,6 +1039,7 @@
                         <textarea id="kidv-action-url"></textarea>
                         <textarea id="verslag-check-url"></textarea>
                         <textarea id="snomed-ct-action-url"></textarea>
+                        <textarea id="medgemma-action-url"></textarea>
                     </div>
 
                     <!-- Template Flow -->
@@ -2925,13 +2917,19 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 applyMedgemmaVisibility(medgemmaVisibleChk.checked);
             });
 
-            const medgemmaDropzone   = document.getElementById("medgemma-dropzone");
-            const medgemmaFileInput  = document.getElementById("medgemma-file-input");
-            const medgemmaPreview    = document.getElementById("medgemma-preview");
-            const medgemmaPreviewImg = document.getElementById("medgemma-preview-img");
-            const medgemmaClearBtn   = document.getElementById("medgemma-clear-btn");
-            const medgemmaAnalyseBtn = document.getElementById("medgemma-analyse-btn");
-            const medgemmaPrompt     = document.getElementById("medgemma-prompt");
+            const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
+            const medgemmaFileInput     = document.getElementById("medgemma-file-input");
+            const medgemmaPreview       = document.getElementById("medgemma-preview");
+            const medgemmaPreviewImg    = document.getElementById("medgemma-preview-img");
+            const medgemmaClearBtn      = document.getElementById("medgemma-clear-btn");
+            const medgemmaAnalyseBtn    = document.getElementById("medgemma-analyse-btn");
+            const medgemmaActionUrlInput = document.getElementById("medgemma-action-url");
+
+            const DEFAULT_MEDGEMMA_PROMPT = "Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.";
+            medgemmaActionUrlInput.value = localStorage.getItem("medgemmaActionUrl") || DEFAULT_MEDGEMMA_PROMPT;
+            medgemmaActionUrlInput.addEventListener("input", () => {
+                localStorage.setItem("medgemmaActionUrl", medgemmaActionUrlInput.value);
+            });
 
             let medgemmaImageBase64 = null;
             let medgemmaImageMime   = null;
@@ -3025,7 +3023,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     alert("Upload eerst een afbeelding in het MedGemma-paneel.");
                     return;
                 }
-                const prompt = medgemmaPrompt.value.trim() || "Beschrijf de bevindingen in dit medisch beeld.";
+                const prompt = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
                 openGeminiModal("MedGemma beeldanalyse");
                 try {
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);

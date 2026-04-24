@@ -148,6 +148,18 @@
                 </div>
             </div>
 
+            <!-- MedGemma prompt -->
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-sm font-medium">MedGemma beeldanalyse prompt</span>
+                    <button data-reset="medgemma" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="medgemma-prompt" rows="4" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Vrije prompt die naar MedGemma gestuurd wordt samen met de geüploade afbeelding. Geen placeholders.</p>
+                </div>
+            </div>
+
             <!-- SNOMED database note -->
             <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3">
                 <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen</p>
@@ -293,6 +305,14 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     versionKey: "snomedCtPromptVersion",
                     version: "1",
                     defaultPrompt: DEFAULT_SNOMED,
+                },
+                {
+                    id: "medgemma-prompt",
+                    resetKey: "medgemma",
+                    storageKey: "medgemmaActionUrl",
+                    versionKey: null,
+                    version: null,
+                    defaultPrompt: "Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.",
                 },
             ];
 
