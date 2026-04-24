@@ -989,6 +989,18 @@
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Vereist voor MedGemma beeldanalyse. Maak een token aan op <a href="https://huggingface.co/settings/tokens" target="_blank" class="underline hover:text-neutral-600">huggingface.co/settings/tokens</a> en accepteer de <a href="https://huggingface.co/google/medgemma-4b-it" target="_blank" class="underline hover:text-neutral-600">MedGemma-gebruiksvoorwaarden</a>.</p>
                     </div>
 
+                    <!-- MedGemma visibility toggle -->
+                    <div class="flex items-center gap-2">
+                        <input
+                            id="medgemma-visible"
+                            type="checkbox"
+                            class="w-4 h-4 rounded border-neutral-300 dark:border-slate-600 accent-cyan-600 cursor-pointer"
+                        />
+                        <label for="medgemma-visible" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            MedGemma beeldanalyse-paneel tonen
+                        </label>
+                    </div>
+
                     <!-- Dictation Provider -->
                     <div>
                         <label
@@ -2899,6 +2911,18 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             hfTokenInput.addEventListener("input", () => {
                 HF_TOKEN = hfTokenInput.value.trim();
                 localStorage.setItem("hfToken", HF_TOKEN);
+            });
+
+            const medgemmaVisibleChk = document.getElementById("medgemma-visible");
+            const medgemmaAccordion  = document.getElementById("medgemma-accordion");
+            function applyMedgemmaVisibility(visible) {
+                medgemmaAccordion.classList.toggle("hidden", !visible);
+            }
+            medgemmaVisibleChk.checked = localStorage.getItem("medgemmaVisible") !== "false";
+            applyMedgemmaVisibility(medgemmaVisibleChk.checked);
+            medgemmaVisibleChk.addEventListener("change", () => {
+                localStorage.setItem("medgemmaVisible", medgemmaVisibleChk.checked);
+                applyMedgemmaVisibility(medgemmaVisibleChk.checked);
             });
 
             const medgemmaDropzone   = document.getElementById("medgemma-dropzone");
