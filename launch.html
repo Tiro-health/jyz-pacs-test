@@ -570,6 +570,63 @@
                 </div>
             </details>
 
+            <!-- MedGemma Image Analysis -->
+            <details
+                id="medgemma-accordion"
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
+            >
+                <summary
+                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+                    </svg>
+                    MedGemma beeldanalyse
+                    <button
+                        id="medgemma-analyse-btn"
+                        type="button"
+                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
+                        </svg>
+                        Analyseer
+                    </button>
+                    <svg
+                        class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
+                        xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    ><path d="m6 9 6 6 6-6"/></svg>
+                </summary>
+                <div class="px-3 py-3 border-t border-neutral-200 dark:border-neutral-800 space-y-3">
+                    <!-- Drop zone -->
+                    <div
+                        id="medgemma-dropzone"
+                        class="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 dark:border-slate-600 bg-neutral-50 dark:bg-muted/40 py-6 px-4 cursor-pointer hover:border-cyan-500 dark:hover:border-cyan-500 transition-colors text-center"
+                    >
+                        <input type="file" id="medgemma-file-input" accept="image/*" class="hidden" />
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 dark:text-neutral-500">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                        </svg>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400">Sleep een röntgenfoto of ander medisch beeld hierheen,<br>of <span class="text-cyan-600 dark:text-cyan-400 underline">klik om te uploaden</span></p>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">JPEG, PNG, WEBP — max 10 MB</p>
+                    </div>
+                    <!-- Preview -->
+                    <div id="medgemma-preview" class="hidden relative">
+                        <img id="medgemma-preview-img" src="" alt="Preview" class="w-full max-h-64 object-contain rounded-lg border border-neutral-200 dark:border-slate-700 bg-black" />
+                        <button id="medgemma-clear-btn" type="button" class="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-800/70 text-white hover:bg-neutral-900 text-xs">✕</button>
+                    </div>
+                    <!-- Prompt -->
+                    <div>
+                        <label for="medgemma-prompt" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Vraag / prompt</label>
+                        <textarea
+                            id="medgemma-prompt"
+                            rows="2"
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                        >Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.</textarea>
+                    </div>
+                </div>
+            </details>
+
             </div><!-- /left-panels -->
 
             <div id="right-panels" style="display:contents">
@@ -914,6 +971,22 @@
                             >↺</button>
                         </div>
                         <p id="gemini-model-status" class="text-xs text-neutral-400 dark:text-neutral-500 mt-1"></p>
+                    </div>
+
+                    <!-- HuggingFace Token (MedGemma) -->
+                    <div>
+                        <label
+                            for="hf-token"
+                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
+                            >HuggingFace Token <span class="font-normal text-neutral-400">(MedGemma)</span></label
+                        >
+                        <input
+                            id="hf-token"
+                            type="password"
+                            placeholder="hf_..."
+                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                        />
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Vereist voor MedGemma beeldanalyse. Maak een token aan op <a href="https://huggingface.co/settings/tokens" target="_blank" class="underline hover:text-neutral-600">huggingface.co/settings/tokens</a> en accepteer de <a href="https://huggingface.co/google/medgemma-4b-it" target="_blank" class="underline hover:text-neutral-600">MedGemma-gebruiksvoorwaarden</a>.</p>
                     </div>
 
                     <!-- Dictation Provider -->
@@ -2816,6 +2889,118 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     dictationWarning.classList.replace("flex", "hidden");
                 }, 6000);
             }
+
+            // ============================================
+            // MedGemma image analysis
+            // ============================================
+            const hfTokenInput = document.getElementById("hf-token");
+            hfTokenInput.value = localStorage.getItem("hfToken") || "";
+            let HF_TOKEN = hfTokenInput.value;
+            hfTokenInput.addEventListener("input", () => {
+                HF_TOKEN = hfTokenInput.value.trim();
+                localStorage.setItem("hfToken", HF_TOKEN);
+            });
+
+            const medgemmaDropzone   = document.getElementById("medgemma-dropzone");
+            const medgemmaFileInput  = document.getElementById("medgemma-file-input");
+            const medgemmaPreview    = document.getElementById("medgemma-preview");
+            const medgemmaPreviewImg = document.getElementById("medgemma-preview-img");
+            const medgemmaClearBtn   = document.getElementById("medgemma-clear-btn");
+            const medgemmaAnalyseBtn = document.getElementById("medgemma-analyse-btn");
+            const medgemmaPrompt     = document.getElementById("medgemma-prompt");
+
+            let medgemmaImageBase64 = null;
+            let medgemmaImageMime   = null;
+
+            function handleMedgemmaFile(file) {
+                if (!file || !file.type.startsWith("image/")) return;
+                if (file.size > 10 * 1024 * 1024) { alert("Afbeelding is groter dan 10 MB. Kies een kleinere afbeelding."); return; }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const dataUrl = e.target.result;
+                    medgemmaImageBase64 = dataUrl.split(",")[1];
+                    medgemmaImageMime   = file.type;
+                    medgemmaPreviewImg.src = dataUrl;
+                    medgemmaPreview.classList.remove("hidden");
+                    medgemmaDropzone.classList.add("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+
+            medgemmaDropzone.addEventListener("click", () => medgemmaFileInput.click());
+            medgemmaFileInput.addEventListener("change", (e) => handleMedgemmaFile(e.target.files[0]));
+            medgemmaDropzone.addEventListener("dragover", (e) => {
+                e.preventDefault();
+                medgemmaDropzone.classList.add("ring-2", "ring-cyan-500");
+            });
+            medgemmaDropzone.addEventListener("dragleave", () => {
+                medgemmaDropzone.classList.remove("ring-2", "ring-cyan-500");
+            });
+            medgemmaDropzone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                medgemmaDropzone.classList.remove("ring-2", "ring-cyan-500");
+                handleMedgemmaFile(e.dataTransfer.files[0]);
+            });
+            medgemmaClearBtn.addEventListener("click", () => {
+                medgemmaImageBase64 = null;
+                medgemmaImageMime   = null;
+                medgemmaFileInput.value = "";
+                medgemmaPreview.classList.add("hidden");
+                medgemmaDropzone.classList.remove("hidden");
+            });
+
+            async function callMedGemma(imageBase64, mimeType, prompt) {
+                if (!HF_TOKEN) throw new Error("Geen HuggingFace token ingevuld. Vul een token in bij Settings.");
+                const res = await fetch(
+                    "https://api-inference.huggingface.co/models/google/medgemma-4b-it/v1/chat/completions",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${HF_TOKEN}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            model: "google/medgemma-4b-it",
+                            messages: [{
+                                role: "user",
+                                content: [
+                                    { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
+                                    { type: "text", text: prompt }
+                                ]
+                            }],
+                            max_tokens: 1024
+                        })
+                    }
+                );
+                if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    const msg = body?.error?.message || res.statusText;
+                    if (res.status === 401) throw new Error("HuggingFace token ongeldig of verlopen (401). Controleer je token op huggingface.co/settings/tokens.");
+                    if (res.status === 403) throw new Error("Toegang geweigerd (403). Accepteer de MedGemma-gebruiksvoorwaarden op huggingface.co/google/medgemma-4b-it.");
+                    if (res.status === 429) throw new Error("Quotum overschreden (429). Wacht even en probeer opnieuw.");
+                    if (res.status === 503) throw new Error("Model wordt geladen (503). Probeer over 30 seconden opnieuw.");
+                    throw new Error(`MedGemma fout ${res.status}: ${msg}`);
+                }
+                const data = await res.json();
+                return data.choices?.[0]?.message?.content ?? "(geen resultaat)";
+            }
+
+            medgemmaAnalyseBtn.addEventListener("click", async (e) => {
+                e.stopPropagation();
+                if (!medgemmaImageBase64) {
+                    document.getElementById("medgemma-accordion").open = true;
+                    alert("Upload eerst een afbeelding in het MedGemma-paneel.");
+                    return;
+                }
+                const prompt = medgemmaPrompt.value.trim() || "Beschrijf de bevindingen in dit medisch beeld.";
+                openGeminiModal("MedGemma beeldanalyse");
+                try {
+                    const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
+                    resolveGeminiModal(result);
+                } catch (e) {
+                    rejectGeminiModal(e.message);
+                }
+            });
         </script>
     </body>
 </html>
