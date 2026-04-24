@@ -2910,7 +2910,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             function applyMedgemmaVisibility(visible) {
                 medgemmaAccordion.classList.toggle("hidden", !visible);
             }
-            medgemmaVisibleChk.checked = localStorage.getItem("medgemmaVisible") !== "false";
+            medgemmaVisibleChk.checked = localStorage.getItem("medgemmaVisible") === "true";
             applyMedgemmaVisibility(medgemmaVisibleChk.checked);
             medgemmaVisibleChk.addEventListener("change", () => {
                 localStorage.setItem("medgemmaVisible", medgemmaVisibleChk.checked);
