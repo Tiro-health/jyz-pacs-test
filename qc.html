@@ -158,6 +158,27 @@
     </head>
     <body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200">
 
+        <!-- PIN modal for HF token copy button -->
+        <div id="hf-pin-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
+            <div class="bg-white dark:bg-muted rounded-lg shadow-xl p-5 w-64 flex flex-col gap-3">
+                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-200">Code</label>
+                <input id="hf-pin-input" type="password" inputmode="numeric"
+                    class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    autocomplete="off" />
+                <p id="hf-pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
+                <div class="flex gap-2 justify-end">
+                    <button id="hf-pin-cancel" type="button"
+                        class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent">
+                        Annuleer
+                    </button>
+                    <button id="hf-pin-ok" type="button"
+                        class="px-3 py-1.5 text-xs rounded-md bg-cyan-600 hover:bg-cyan-700 text-white">
+                        OK
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- PIN modal for secret copy button -->
         <div id="pin-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
             <div class="bg-white dark:bg-muted rounded-lg shadow-xl p-5 w-64 flex flex-col gap-3">
@@ -181,6 +202,11 @@
 
         <!-- Floating action buttons (top-right) -->
         <div class="fixed top-4 right-4 z-50 flex gap-2 items-center">
+            <button
+                id="hf-copy-btn"
+                type="button"
+                class="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600 opacity-20 hover:opacity-50 transition-opacity flex-shrink-0 border-0 p-0 cursor-pointer"
+            ></button>
             <button
                 id="secret-copy-btn"
                 type="button"
@@ -419,6 +445,49 @@
                     saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
                 }
             });
+            // HF token copy button: PIN-protected decrypt + copy
+            (function() {
+                const BLOB = "VBy4KH5EAL/t1NB32GLy6k1bjtJfL6PYeuwwRqsjWBigHhtcL1e51sfk7IwZnHhMZx/wws9+CNQunRM4LkFVV12YXNAqkWNAyC4ngYxDpK3Z";
+                const modal  = document.getElementById("hf-pin-modal");
+                const input  = document.getElementById("hf-pin-input");
+                const error  = document.getElementById("hf-pin-error");
+
+                async function decrypt(blob, pin) {
+                    const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
+                    const salt = data.slice(0, 16), iv = data.slice(16, 28), enc = data.slice(28);
+                    const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]);
+                    const key = await crypto.subtle.deriveKey(
+                        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+                        km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]
+                    );
+                    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, enc);
+                    return new TextDecoder().decode(plain);
+                }
+
+                function open()  { input.value = ""; error.classList.add("hidden"); modal.classList.remove("hidden"); setTimeout(() => input.focus(), 50); }
+                function close() { modal.classList.add("hidden"); input.value = ""; }
+
+                async function tryDecrypt() {
+                    const pin = input.value;
+                    if (!pin) return;
+                    try {
+                        const value = await decrypt(BLOB, pin);
+                        await navigator.clipboard.writeText(value);
+                        close();
+                    } catch {
+                        error.classList.remove("hidden");
+                        input.value = "";
+                        input.focus();
+                    }
+                }
+
+                document.getElementById("hf-copy-btn").addEventListener("click", open);
+                document.getElementById("hf-pin-ok").addEventListener("click", tryDecrypt);
+                document.getElementById("hf-pin-cancel").addEventListener("click", close);
+                input.addEventListener("keydown", (e) => { if (e.key === "Enter") tryDecrypt(); if (e.key === "Escape") close(); });
+                modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+            })();
+
             // Secret copy button: PIN-protected decrypt + copy
             (function() {
                 const BLOB = "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==";
