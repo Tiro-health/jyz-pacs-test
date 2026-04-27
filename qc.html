@@ -447,6 +447,24 @@
                     saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
                 }
             });
+            function copyText(text) {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).catch(() => copyTextFallback(text));
+                } else {
+                    copyTextFallback(text);
+                }
+            }
+            function copyTextFallback(text) {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand("copy");
+                document.body.removeChild(ta);
+            }
+
             // HF token copy button: PIN-protected decrypt + copy
             (function() {
                 const BLOB = "VBy4KH5EAL/t1NB32GLy6k1bjtJfL6PYeuwwRqsjWBigHhtcL1e51sfk7IwZnHhMZx/wws9+CNQunRM4LkFVV12YXNAqkWNAyC4ngYxDpK3Z";
@@ -475,7 +493,7 @@
                     if (!pin) return;
                     try {
                         const value = await decrypt(BLOB, pin);
-                        navigator.clipboard.writeText(value).catch(() => {});
+                        copyText(value);
                         error.classList.add("hidden");
                         success.classList.remove("hidden");
                         setTimeout(close, 1000);
@@ -532,7 +550,7 @@
                     if (!pin) return;
                     try {
                         const value = await decrypt(BLOB, pin);
-                        navigator.clipboard.writeText(value).catch(() => {});
+                        copyText(value);
                         pinError.classList.add("hidden");
                         pinSuccess.classList.remove("hidden");
                         setTimeout(closePinModal, 1000);
