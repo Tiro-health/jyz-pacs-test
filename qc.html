@@ -166,7 +166,6 @@
                     class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     autocomplete="off" />
                 <p id="hf-pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
-                <p id="hf-pin-success" class="hidden text-xs text-green-600">Juiste code.</p>
                 <div class="flex gap-2 justify-end">
                     <button id="hf-pin-cancel" type="button"
                         class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent">
@@ -188,7 +187,6 @@
                     class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     autocomplete="off" />
                 <p id="pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
-                <p id="pin-success" class="hidden text-xs text-green-600">Juiste code.</p>
                 <div class="flex gap-2 justify-end">
                     <button id="pin-cancel" type="button"
                         class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent">
@@ -447,78 +445,12 @@
                     saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
                 }
             });
-            function copyText(text) {
-                if (navigator.clipboard) {
-                    navigator.clipboard.writeText(text).catch(() => copyTextFallback(text));
-                } else {
-                    copyTextFallback(text);
-                }
-            }
-            function copyTextFallback(text) {
-                const ta = document.createElement("textarea");
-                ta.value = text;
-                ta.style.cssText = "position:fixed;opacity:0;top:0;left:0";
-                document.body.appendChild(ta);
-                ta.focus();
-                ta.select();
-                document.execCommand("copy");
-                document.body.removeChild(ta);
-            }
-
             // HF token copy button: PIN-protected decrypt + copy
             (function() {
                 const BLOB = "VBy4KH5EAL/t1NB32GLy6k1bjtJfL6PYeuwwRqsjWBigHhtcL1e51sfk7IwZnHhMZx/wws9+CNQunRM4LkFVV12YXNAqkWNAyC4ngYxDpK3Z";
-                const modal   = document.getElementById("hf-pin-modal");
-                const input   = document.getElementById("hf-pin-input");
-                const error   = document.getElementById("hf-pin-error");
-                const success = document.getElementById("hf-pin-success");
-
-                async function decrypt(blob, pin) {
-                    const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
-                    const salt = data.slice(0, 16), iv = data.slice(16, 28), enc = data.slice(28);
-                    const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]);
-                    const key = await crypto.subtle.deriveKey(
-                        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
-                        km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]
-                    );
-                    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, enc);
-                    return new TextDecoder().decode(plain);
-                }
-
-                function open()  { input.value = ""; error.classList.add("hidden"); success.classList.add("hidden"); modal.classList.remove("hidden"); setTimeout(() => input.focus(), 50); }
-                function close() { modal.classList.add("hidden"); input.value = ""; }
-
-                async function tryDecrypt() {
-                    const pin = input.value;
-                    if (!pin) return;
-                    try {
-                        const value = await decrypt(BLOB, pin);
-                        copyText(value);
-                        error.classList.add("hidden");
-                        success.classList.remove("hidden");
-                        setTimeout(close, 1000);
-                    } catch {
-                        error.classList.remove("hidden");
-                        success.classList.add("hidden");
-                        input.value = "";
-                        input.focus();
-                    }
-                }
-
-                document.getElementById("hf-copy-btn").addEventListener("click", open);
-                document.getElementById("hf-pin-ok").addEventListener("click", tryDecrypt);
-                document.getElementById("hf-pin-cancel").addEventListener("click", close);
-                input.addEventListener("keydown", (e) => { if (e.key === "Enter") tryDecrypt(); if (e.key === "Escape") close(); });
-                modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
-            })();
-
-            // Secret copy button: PIN-protected decrypt + copy
-            (function() {
-                const BLOB = "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==";
-                const pinModal   = document.getElementById("pin-modal");
-                const pinInput   = document.getElementById("pin-input");
-                const pinError   = document.getElementById("pin-error");
-                const pinSuccess = document.getElementById("pin-success");
+                const pinModal = document.getElementById("hf-pin-modal");
+                const pinInput = document.getElementById("hf-pin-input");
+                const pinError = document.getElementById("hf-pin-error");
 
                 async function decrypt(blob, pin) {
                     const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
@@ -535,7 +467,6 @@
                 function openPinModal() {
                     pinInput.value = "";
                     pinError.classList.add("hidden");
-                    pinSuccess.classList.add("hidden");
                     pinModal.classList.remove("hidden");
                     setTimeout(() => pinInput.focus(), 50);
                 }
@@ -550,13 +481,62 @@
                     if (!pin) return;
                     try {
                         const value = await decrypt(BLOB, pin);
-                        copyText(value);
-                        pinError.classList.add("hidden");
-                        pinSuccess.classList.remove("hidden");
-                        setTimeout(closePinModal, 1000);
+                        await navigator.clipboard.writeText(value);
+                        closePinModal();
                     } catch {
                         pinError.classList.remove("hidden");
-                        pinSuccess.classList.add("hidden");
+                        pinInput.value = "";
+                        pinInput.focus();
+                    }
+                }
+
+                document.getElementById("hf-copy-btn").addEventListener("click", openPinModal);
+                document.getElementById("hf-pin-ok").addEventListener("click", tryDecrypt);
+                document.getElementById("hf-pin-cancel").addEventListener("click", closePinModal);
+                pinInput.addEventListener("keydown", (e) => { if (e.key === "Enter") tryDecrypt(); if (e.key === "Escape") closePinModal(); });
+                pinModal.addEventListener("click", (e) => { if (e.target === pinModal) closePinModal(); });
+            })();
+
+            // Secret copy button: PIN-protected decrypt + copy
+            (function() {
+                const BLOB = "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==";
+                const pinModal = document.getElementById("pin-modal");
+                const pinInput = document.getElementById("pin-input");
+                const pinError = document.getElementById("pin-error");
+
+                async function decrypt(blob, pin) {
+                    const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
+                    const salt = data.slice(0, 16), iv = data.slice(16, 28), enc = data.slice(28);
+                    const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pin), "PBKDF2", false, ["deriveKey"]);
+                    const key = await crypto.subtle.deriveKey(
+                        { name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" },
+                        km, { name: "AES-GCM", length: 256 }, false, ["decrypt"]
+                    );
+                    const plain = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, enc);
+                    return new TextDecoder().decode(plain);
+                }
+
+                function openPinModal() {
+                    pinInput.value = "";
+                    pinError.classList.add("hidden");
+                    pinModal.classList.remove("hidden");
+                    setTimeout(() => pinInput.focus(), 50);
+                }
+
+                function closePinModal() {
+                    pinModal.classList.add("hidden");
+                    pinInput.value = "";
+                }
+
+                async function tryDecrypt() {
+                    const pin = pinInput.value;
+                    if (!pin) return;
+                    try {
+                        const value = await decrypt(BLOB, pin);
+                        await navigator.clipboard.writeText(value);
+                        closePinModal();
+                    } catch {
+                        pinError.classList.remove("hidden");
                         pinInput.value = "";
                         pinInput.focus();
                     }
