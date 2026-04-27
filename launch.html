@@ -3009,7 +3009,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer opnieuw. Details: ${msg}`);
                         if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
                         if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de Gemini API-sleutel.`);
-                        throw new Error(`Fout ${res.status}: ${msg}`);
+                        throw new Error(`${res.status}: ${msg}`);
                     }
                     const data = await res.json();
                     return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
