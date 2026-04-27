@@ -2984,31 +2984,36 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const model = geminiModelSelect.value;
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 if (!GEMINI_API_KEY) throw new Error("Geen Gemini API key ingevuld. Vul een sleutel in bij Settings.");
-                const res = await fetch(
-                    `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
-                    {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            contents: [{
-                                parts: [
-                                    { inline_data: { mime_type: mimeType, data: imageBase64 } },
-                                    { text: prompt }
-                                ]
-                            }]
-                        })
+                const body = JSON.stringify({
+                    contents: [{ parts: [
+                        { inline_data: { mime_type: mimeType, data: imageBase64 } },
+                        { text: prompt }
+                    ]}]
+                });
+                const MAX_ATTEMPTS = 3, RETRY_DELAY_MS = 3000;
+                for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                    const res = await fetch(
+                        `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+                        { method: "POST", headers: { "Content-Type": "application/json" }, body }
+                    );
+                    if (res.status === 503) {
+                        if (attempt < MAX_ATTEMPTS) {
+                            await new Promise(r => setTimeout(r, RETRY_DELAY_MS));
+                            continue;
+                        }
+                        throw new Error(`Model overbelast (503) na ${MAX_ATTEMPTS} pogingen. Probeer een ander model in Settings of wacht even.`);
                     }
-                );
-                if (!res.ok) {
-                    const body = await res.json().catch(() => ({}));
-                    const msg = body?.error?.message || res.statusText;
-                    if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer opnieuw. Details: ${msg}`);
-                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
-                    if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de Gemini API-sleutel.`);
-                    throw new Error(`Fout ${res.status}: ${msg}`);
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        const msg = err?.error?.message || res.statusText;
+                        if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer opnieuw. Details: ${msg}`);
+                        if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
+                        if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de Gemini API-sleutel.`);
+                        throw new Error(`Fout ${res.status}: ${msg}`);
+                    }
+                    const data = await res.json();
+                    return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
                 }
-                const data = await res.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
             medgemmaAnalyseBtn.addEventListener("click", async (e) => {
