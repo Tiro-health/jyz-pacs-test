@@ -2981,39 +2981,34 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             });
 
             async function callMedGemma(imageBase64, mimeType, prompt) {
-                if (!HF_TOKEN) throw new Error("Geen HuggingFace token ingevuld. Vul een token in bij Settings.");
+                const model = geminiModelSelect.value;
+                if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
+                if (!GEMINI_API_KEY) throw new Error("Geen Gemini API key ingevuld. Vul een sleutel in bij Settings.");
                 const res = await fetch(
-                    "https://api-inference.huggingface.co/models/google/medgemma-4b-it/v1/chat/completions",
+                    `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                     {
                         method: "POST",
-                        headers: {
-                            "Authorization": `Bearer ${HF_TOKEN}`,
-                            "Content-Type": "application/json"
-                        },
+                        headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            model: "google/medgemma-4b-it",
-                            messages: [{
-                                role: "user",
-                                content: [
-                                    { type: "image_url", image_url: { url: `data:${mimeType};base64,${imageBase64}` } },
-                                    { type: "text", text: prompt }
+                            contents: [{
+                                parts: [
+                                    { inline_data: { mime_type: mimeType, data: imageBase64 } },
+                                    { text: prompt }
                                 ]
-                            }],
-                            max_tokens: 1024
+                            }]
                         })
                     }
                 );
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
                     const msg = body?.error?.message || res.statusText;
-                    if (res.status === 401) throw new Error("HuggingFace token ongeldig of verlopen (401). Controleer je token op huggingface.co/settings/tokens.");
-                    if (res.status === 403) throw new Error("Toegang geweigerd (403). Accepteer de MedGemma-gebruiksvoorwaarden op huggingface.co/google/medgemma-4b-it.");
-                    if (res.status === 429) throw new Error("Quotum overschreden (429). Wacht even en probeer opnieuw.");
-                    if (res.status === 503) throw new Error("Model wordt geladen (503). Probeer over 30 seconden opnieuw.");
-                    throw new Error(`MedGemma fout ${res.status}: ${msg}`);
+                    if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer opnieuw. Details: ${msg}`);
+                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
+                    if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de Gemini API-sleutel.`);
+                    throw new Error(`Fout ${res.status}: ${msg}`);
                 }
                 const data = await res.json();
-                return data.choices?.[0]?.message?.content ?? "(geen resultaat)";
+                return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
             medgemmaAnalyseBtn.addEventListener("click", async (e) => {
