@@ -166,6 +166,7 @@
                     class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     autocomplete="off" />
                 <p id="hf-pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
+                <p id="hf-pin-success" class="hidden text-xs text-green-600">Juiste code.</p>
                 <div class="flex gap-2 justify-end">
                     <button id="hf-pin-cancel" type="button"
                         class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent">
@@ -187,6 +188,7 @@
                     class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     autocomplete="off" />
                 <p id="pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
+                <p id="pin-success" class="hidden text-xs text-green-600">Juiste code.</p>
                 <div class="flex gap-2 justify-end">
                     <button id="pin-cancel" type="button"
                         class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent">
@@ -448,9 +450,10 @@
             // HF token copy button: PIN-protected decrypt + copy
             (function() {
                 const BLOB = "VBy4KH5EAL/t1NB32GLy6k1bjtJfL6PYeuwwRqsjWBigHhtcL1e51sfk7IwZnHhMZx/wws9+CNQunRM4LkFVV12YXNAqkWNAyC4ngYxDpK3Z";
-                const modal  = document.getElementById("hf-pin-modal");
-                const input  = document.getElementById("hf-pin-input");
-                const error  = document.getElementById("hf-pin-error");
+                const modal   = document.getElementById("hf-pin-modal");
+                const input   = document.getElementById("hf-pin-input");
+                const error   = document.getElementById("hf-pin-error");
+                const success = document.getElementById("hf-pin-success");
 
                 async function decrypt(blob, pin) {
                     const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
@@ -464,26 +467,23 @@
                     return new TextDecoder().decode(plain);
                 }
 
-                function open()  { input.value = ""; error.classList.add("hidden"); modal.classList.remove("hidden"); setTimeout(() => input.focus(), 50); }
+                function open()  { input.value = ""; error.classList.add("hidden"); success.classList.add("hidden"); modal.classList.remove("hidden"); setTimeout(() => input.focus(), 50); }
                 function close() { modal.classList.add("hidden"); input.value = ""; }
 
                 async function tryDecrypt() {
                     const pin = input.value;
                     if (!pin) return;
-                    let value;
                     try {
-                        value = await decrypt(BLOB, pin);
+                        const value = await decrypt(BLOB, pin);
+                        navigator.clipboard.writeText(value).catch(() => {});
+                        error.classList.add("hidden");
+                        success.classList.remove("hidden");
+                        setTimeout(close, 1000);
                     } catch {
                         error.classList.remove("hidden");
+                        success.classList.add("hidden");
                         input.value = "";
                         input.focus();
-                        return;
-                    }
-                    close();
-                    try {
-                        await navigator.clipboard.writeText(value);
-                    } catch {
-                        window.prompt("Kopieer de token (Ctrl+C):", value);
                     }
                 }
 
@@ -497,9 +497,10 @@
             // Secret copy button: PIN-protected decrypt + copy
             (function() {
                 const BLOB = "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==";
-                const pinModal = document.getElementById("pin-modal");
-                const pinInput = document.getElementById("pin-input");
-                const pinError = document.getElementById("pin-error");
+                const pinModal   = document.getElementById("pin-modal");
+                const pinInput   = document.getElementById("pin-input");
+                const pinError   = document.getElementById("pin-error");
+                const pinSuccess = document.getElementById("pin-success");
 
                 async function decrypt(blob, pin) {
                     const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
@@ -516,6 +517,7 @@
                 function openPinModal() {
                     pinInput.value = "";
                     pinError.classList.add("hidden");
+                    pinSuccess.classList.add("hidden");
                     pinModal.classList.remove("hidden");
                     setTimeout(() => pinInput.focus(), 50);
                 }
@@ -528,20 +530,17 @@
                 async function tryDecrypt() {
                     const pin = pinInput.value;
                     if (!pin) return;
-                    let value;
                     try {
-                        value = await decrypt(BLOB, pin);
+                        const value = await decrypt(BLOB, pin);
+                        navigator.clipboard.writeText(value).catch(() => {});
+                        pinError.classList.add("hidden");
+                        pinSuccess.classList.remove("hidden");
+                        setTimeout(closePinModal, 1000);
                     } catch {
                         pinError.classList.remove("hidden");
+                        pinSuccess.classList.add("hidden");
                         pinInput.value = "";
                         pinInput.focus();
-                        return;
-                    }
-                    closePinModal();
-                    try {
-                        await navigator.clipboard.writeText(value);
-                    } catch {
-                        window.prompt("Kopieer de waarde (Ctrl+C):", value);
                     }
                 }
 
