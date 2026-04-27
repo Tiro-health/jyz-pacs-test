@@ -479,14 +479,25 @@
                 async function tryDecrypt() {
                     const pin = pinInput.value;
                     if (!pin) return;
+                    // Start decrypt and clipboard simultaneously to preserve user-gesture context
+                    const decryptPromise = decrypt(BLOB, pin);
                     try {
-                        const value = await decrypt(BLOB, pin);
-                        await navigator.clipboard.writeText(value);
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ "text/plain": decryptPromise.then(v => new Blob([v], { type: "text/plain" })) })
+                        ]);
+                        await decryptPromise;
                         closePinModal();
                     } catch {
-                        pinError.classList.remove("hidden");
-                        pinInput.value = "";
-                        pinInput.focus();
+                        // If ClipboardItem not supported, fall back to writeText
+                        try {
+                            const value = await decryptPromise;
+                            await navigator.clipboard.writeText(value);
+                            closePinModal();
+                        } catch {
+                            pinError.classList.remove("hidden");
+                            pinInput.value = "";
+                            pinInput.focus();
+                        }
                     }
                 }
 
@@ -531,14 +542,25 @@
                 async function tryDecrypt() {
                     const pin = pinInput.value;
                     if (!pin) return;
+                    // Start decrypt and clipboard simultaneously to preserve user-gesture context
+                    const decryptPromise = decrypt(BLOB, pin);
                     try {
-                        const value = await decrypt(BLOB, pin);
-                        await navigator.clipboard.writeText(value);
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ "text/plain": decryptPromise.then(v => new Blob([v], { type: "text/plain" })) })
+                        ]);
+                        await decryptPromise;
                         closePinModal();
                     } catch {
-                        pinError.classList.remove("hidden");
-                        pinInput.value = "";
-                        pinInput.focus();
+                        // If ClipboardItem not supported, fall back to writeText
+                        try {
+                            const value = await decryptPromise;
+                            await navigator.clipboard.writeText(value);
+                            closePinModal();
+                        } catch {
+                            pinError.classList.remove("hidden");
+                            pinInput.value = "";
+                            pinInput.focus();
+                        }
                     }
                 }
 
