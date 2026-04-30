@@ -1790,8 +1790,18 @@
                     ? `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`
                     : `<span style="color:#ef4444;font-weight:bold;font-style:italic">${corr}</span>`;
 
+                // Strip markdown code fences (models sometimes wrap output in ```lang...```)
+                let text = rawText.trim()
+                    .replace(/^```[^\n]*\n?/, '')
+                    .replace(/\n?```\s*$/, '');
+                // Unescape HTML entities (some models return &lt;del&gt; instead of <del>)
+                text = text
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&amp;/g, '&');
+
                 // Whitelist and convert known safe HTML tags, strip the rest
-                const html = rawText
+                const html = text
                     // Primary format: <del>original</del><ins>correction</ins> — explicit, reliable
                     .replace(/<del>(.*?)<\/del>\s*<ins>(.*?)<\/ins>/gis,
                         (_, orig, corr) => corrSpan(orig.trim(), corr.trim()))
