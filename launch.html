@@ -2012,6 +2012,26 @@
                 }
             }, { capture: true });
 
+            // Intercept copy from the dictation area: strip HTML markup and normalize
+            // whitespace so pasting into other apps gives clean plain text.
+            function _dictNodeToText(node) {
+                if (node.nodeType === Node.TEXT_NODE) return node.textContent;
+                if (node.nodeName === 'BR') return '\n';
+                const inner = Array.from(node.childNodes).map(_dictNodeToText).join('');
+                return /^(P|DIV|LI|H[1-6]|BLOCKQUOTE|TR)$/.test(node.nodeName) ? inner + '\n' : inner;
+            }
+            document.addEventListener('copy', (e) => {
+                const path = e.composedPath ? e.composedPath() : [];
+                if (!path.some(n => n === clipboard)) return;
+                const sel = window.getSelection();
+                if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+                const fragment = sel.getRangeAt(0).cloneContents();
+                const plain = _dictNodeToText(fragment).replace(/\n{3,}/g, '\n\n').trim();
+                if (!plain) return;
+                e.clipboardData.setData('text/plain', plain);
+                e.preventDefault();
+            });
+
             // Auto-intercept large pastes (>500 chars) into the dictation field to
             // bypass the SDK's AI processing and prevent UI freeze.
             const pasteTextIndicator = document.getElementById("paste-text-indicator");
