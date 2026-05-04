@@ -607,9 +607,23 @@
                     </svg>
                     Dictation
                     <button
+                        id="popout-clipboard-btn"
+                        type="button"
+                        title="Pop out clipboard"
+                        aria-pressed="false"
+                        class="ml-auto inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 3 21 3 21 9"/>
+                            <polyline points="9 21 3 21 3 15"/>
+                            <line x1="21" y1="3" x2="14" y2="10"/>
+                            <line x1="3" y1="21" x2="10" y2="14"/>
+                        </svg>
+                    </button>
+                    <button
                         id="ai-resultaten-btn"
                         type="button"
-                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
@@ -1193,6 +1207,34 @@
             </details>
         </div>
 
+        <!-- Floating Magic Clipboard popout -->
+        <div
+            id="clipboard-popout"
+            class="hidden fixed z-50 flex-col bg-white dark:bg-background border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-2xl"
+            style="top: 80px; right: 24px; width: 430px; height: 680px;"
+        >
+            <div
+                id="clipboard-popout-header"
+                class="flex items-center justify-between px-3 py-2 border-b border-neutral-200 dark:border-neutral-700 cursor-move select-none bg-neutral-50 dark:bg-muted rounded-t-lg"
+            >
+                <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100">Magic Clipboard</span>
+                <button
+                    id="clipboard-popout-close"
+                    type="button"
+                    title="Return to panel"
+                    class="inline-flex items-center justify-center w-6 h-6 rounded-md hover:bg-neutral-200 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="4 14 10 14 10 20"/>
+                        <polyline points="20 10 14 10 14 4"/>
+                        <line x1="14" y1="10" x2="21" y2="3"/>
+                        <line x1="3" y1="21" x2="10" y2="14"/>
+                    </svg>
+                </button>
+            </div>
+            <div id="clipboard-popout-body" class="flex-1 min-h-0 overflow-auto p-3"></div>
+        </div>
+
         <!-- Tiro Web SDK IIFE Bundle -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
 
@@ -1628,6 +1670,82 @@
             const clipboard = document.querySelector("tiro-magic-clipboard");
 
             const accordion = document.getElementById("autofill-accordion");
+
+            // ============================================
+            // Floating Magic Clipboard popout
+            // ============================================
+            const popoutBtn = document.getElementById("popout-clipboard-btn");
+            const popoutPanel = document.getElementById("clipboard-popout");
+            const popoutHeader = document.getElementById("clipboard-popout-header");
+            const popoutBody = document.getElementById("clipboard-popout-body");
+            const popoutClose = document.getElementById("clipboard-popout-close");
+
+            let clipboardHome = null;
+            let isPoppedOut = false;
+
+            function popOutClipboard() {
+                const cb = document.querySelector("tiro-magic-clipboard");
+                if (!cb || isPoppedOut) return;
+                clipboardHome = document.createComment("clipboard-home");
+                cb.parentNode.insertBefore(clipboardHome, cb);
+                popoutBody.appendChild(cb);
+                popoutPanel.classList.remove("hidden");
+                popoutPanel.classList.add("flex");
+                isPoppedOut = true;
+                popoutBtn.setAttribute("aria-pressed", "true");
+                popoutBtn.title = "Return clipboard to panel";
+            }
+
+            function popInClipboard() {
+                if (!isPoppedOut) return;
+                const cb = popoutBody.querySelector("tiro-magic-clipboard");
+                if (cb && clipboardHome && clipboardHome.parentNode) {
+                    clipboardHome.parentNode.insertBefore(cb, clipboardHome);
+                    clipboardHome.remove();
+                }
+                clipboardHome = null;
+                popoutPanel.classList.add("hidden");
+                popoutPanel.classList.remove("flex");
+                isPoppedOut = false;
+                popoutBtn.setAttribute("aria-pressed", "false");
+                popoutBtn.title = "Pop out clipboard";
+            }
+
+            popoutBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                if (isPoppedOut) popInClipboard();
+                else popOutClipboard();
+            });
+            popoutClose.addEventListener("click", () => popInClipboard());
+
+            let drag = null;
+            popoutHeader.addEventListener("pointerdown", (e) => {
+                if (e.target.closest("#clipboard-popout-close")) return;
+                const rect = popoutPanel.getBoundingClientRect();
+                drag = {
+                    pointerId: e.pointerId,
+                    offsetX: e.clientX - rect.left,
+                    offsetY: e.clientY - rect.top,
+                };
+                popoutHeader.setPointerCapture(e.pointerId);
+            });
+            popoutHeader.addEventListener("pointermove", (e) => {
+                if (!drag || drag.pointerId !== e.pointerId) return;
+                const x = Math.max(0, Math.min(window.innerWidth - popoutPanel.offsetWidth, e.clientX - drag.offsetX));
+                const y = Math.max(0, Math.min(window.innerHeight - popoutPanel.offsetHeight, e.clientY - drag.offsetY));
+                popoutPanel.style.left = x + "px";
+                popoutPanel.style.top = y + "px";
+                popoutPanel.style.right = "auto";
+            });
+            const endDrag = (e) => {
+                if (drag && drag.pointerId === e.pointerId) {
+                    try { popoutHeader.releasePointerCapture(e.pointerId); } catch {}
+                    drag = null;
+                }
+            };
+            popoutHeader.addEventListener("pointerup", endDrag);
+            popoutHeader.addEventListener("pointercancel", endDrag);
 
             // Sync dictation provider dropdown with magic clipboard
             const dictationSelect =
@@ -2345,8 +2463,8 @@ INSTRUCTIES VOOR UITVOER:
                 localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
             });
 
-            const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
-            const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+            const BTN_OFF_CLASS = "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
+            const BTN_ON_CLASS  = "inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
 
             // Declare here so update functions can reference them when called below
             const aiResultatenBtn = document.getElementById("ai-resultaten-btn");
