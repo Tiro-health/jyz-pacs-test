@@ -1664,13 +1664,13 @@
                 if (!GEMINI_API_KEY) { geminiModelStatus.textContent = "Vul eerst een API key in."; return; }
                 geminiModelStatus.textContent = "Modellen ophalen…";
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${GEMINI_API_KEY}&pageSize=50`);
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1/models?key=${GEMINI_API_KEY}&pageSize=100`);
                     if (!res.ok) { geminiModelStatus.textContent = `Fout ${res.status} bij ophalen modellen.`; return; }
                     const data = await res.json();
                     const models = (data.models || [])
-                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("flash"))
+                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
                         .map(m => ({ id: m.name.replace("models/", ""), display: m.displayName || m.name.replace("models/", "") }))
-                        .sort((a, b) => a.id.localeCompare(b.id));
+                        .sort((a, b) => b.id.localeCompare(a.id)); // nieuwste eerst
 
                     const stored = localStorage.getItem("geminiModel");
                     geminiModelSelect.innerHTML = models.map(m =>
@@ -1680,8 +1680,9 @@
                     if (stored && models.find(m => m.id === stored)) {
                         geminiModelSelect.value = stored;
                     } else if (models.length) {
-                        // Prefer newest capable flash: 2.5-flash > 2.0-flash > first available
+                        // Voorkeur: nieuwste stabiele flash (snel + multimodaal)
                         const preferred =
+                            models.find(m => /gemini-\d+\.\d+-flash$/.test(m.id) && parseFloat(m.id.match(/gemini-(\d+\.\d+)/)?.[1]) >= 2.5) ||
                             models.find(m => m.id === "gemini-2.5-flash") ||
                             models.find(m => m.id.includes("2.5-flash") && !m.id.includes("lite")) ||
                             models.find(m => m.id === "gemini-2.0-flash") ||
