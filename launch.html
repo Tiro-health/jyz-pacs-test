@@ -951,18 +951,6 @@
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gratis sleutel via <a href="https://aistudio.google.com/apikey" target="_blank" class="underline hover:text-neutral-600">aistudio.google.com/apikey</a>. Ingevuld → Translate, Radiology check en Verslag check werken inline.</p>
                     </div>
 
-                    <!-- MedGemma visibility toggle -->
-                    <div class="flex items-center gap-2">
-                        <input
-                            id="medgemma-visible"
-                            type="checkbox"
-                            class="w-4 h-4 rounded border-neutral-300 dark:border-slate-600 accent-cyan-600 cursor-pointer"
-                        />
-                        <label for="medgemma-visible" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            MedGemma beeldanalyse-paneel tonen
-                        </label>
-                    </div>
-
                     <!-- Dictation Provider -->
                     <div>
                         <label
@@ -1139,6 +1127,22 @@
                         </label>
                         <button
                             id="realtime-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
+                        </button>
+                    </div>
+
+                    <!-- MedGemma visibility -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="medgemma-visible" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            MedGemma beeldanalyse
+                        </label>
+                        <button
+                            id="medgemma-visible"
                             type="button"
                             role="switch"
                             aria-checked="false"
@@ -2875,17 +2879,21 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             // ============================================
             // MedGemma image analysis
             // ============================================
-            const medgemmaVisibleChk = document.getElementById("medgemma-visible");
-            const medgemmaAccordion  = document.getElementById("medgemma-accordion");
-            function applyMedgemmaVisibility(visible) {
-                medgemmaAccordion.classList.toggle("hidden", !visible);
+            const medgemmaVisibleToggle = document.getElementById("medgemma-visible");
+            const medgemmaAccordion     = document.getElementById("medgemma-accordion");
+            let medgemmaVisible = localStorage.getItem("medgemmaVisible") === "true";
+            function updateMedgemmaToggle() {
+                medgemmaAccordion.classList.toggle("hidden", !medgemmaVisible);
+                medgemmaVisibleToggle.setAttribute("aria-checked", String(medgemmaVisible));
+                medgemmaVisibleToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${medgemmaVisible ? "bg-cyan-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
+                medgemmaVisibleToggle.querySelector("span").className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${medgemmaVisible ? "translate-x-[19px]" : "translate-x-[3px]"}`;
             }
-            medgemmaVisibleChk.checked = localStorage.getItem("medgemmaVisible") === "true";
-            applyMedgemmaVisibility(medgemmaVisibleChk.checked);
-            medgemmaVisibleChk.addEventListener("change", () => {
-                localStorage.setItem("medgemmaVisible", medgemmaVisibleChk.checked);
-                applyMedgemmaVisibility(medgemmaVisibleChk.checked);
+            medgemmaVisibleToggle.addEventListener("click", () => {
+                medgemmaVisible = !medgemmaVisible;
+                localStorage.setItem("medgemmaVisible", String(medgemmaVisible));
+                updateMedgemmaToggle();
             });
+            updateMedgemmaToggle();
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
