@@ -951,22 +951,6 @@
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gratis sleutel via <a href="https://aistudio.google.com/apikey" target="_blank" class="underline hover:text-neutral-600">aistudio.google.com/apikey</a>. Ingevuld → Translate, Radiology check en Verslag check werken inline.</p>
                     </div>
 
-                    <!-- HuggingFace Token (MedGemma) -->
-                    <div>
-                        <label
-                            for="hf-token"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >HuggingFace Token <span class="font-normal text-neutral-400">(MedGemma)</span></label
-                        >
-                        <input
-                            id="hf-token"
-                            type="password"
-                            placeholder="hf_..."
-                            class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                        />
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Vereist voor MedGemma beeldanalyse. Maak een token aan op <a href="https://huggingface.co/settings/tokens" target="_blank" class="underline hover:text-neutral-600">huggingface.co/settings/tokens</a> en accepteer de <a href="https://huggingface.co/google/medgemma-4b-it" target="_blank" class="underline hover:text-neutral-600">MedGemma-gebruiksvoorwaarden</a>.</p>
-                    </div>
-
                     <!-- MedGemma visibility toggle -->
                     <div class="flex items-center gap-2">
                         <input
@@ -2891,14 +2875,6 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             // ============================================
             // MedGemma image analysis
             // ============================================
-            const hfTokenInput = document.getElementById("hf-token");
-            hfTokenInput.value = localStorage.getItem("hfToken") || "";
-            let HF_TOKEN = hfTokenInput.value;
-            hfTokenInput.addEventListener("input", () => {
-                HF_TOKEN = hfTokenInput.value.trim();
-                localStorage.setItem("hfToken", HF_TOKEN);
-            });
-
             const medgemmaVisibleChk = document.getElementById("medgemma-visible");
             const medgemmaAccordion  = document.getElementById("medgemma-accordion");
             function applyMedgemmaVisibility(visible) {
