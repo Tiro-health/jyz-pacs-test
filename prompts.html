@@ -109,6 +109,14 @@
                 <div class="p-4 flex flex-col gap-2">
                     <textarea id="translate-prompt" rows="6" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholder: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{text}</code></p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="translate-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        </select>
+                        <button id="reload-models-btn" type="button" class="px-1.5 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors shrink-0" title="Haal beschikbare modellen op">↺</button>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen · past alle modellen aan</span>
+                    </div>
                 </div>
             </div>
 
@@ -121,6 +129,13 @@
                 <div class="p-4 flex flex-col gap-2">
                     <textarea id="kidv-prompt" rows="10" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="kidv-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Pro aanbevolen</span>
+                    </div>
                 </div>
             </div>
 
@@ -133,6 +148,13 @@
                 <div class="p-4 flex flex-col gap-2">
                     <textarea id="verslag-prompt" rows="14" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="verslag-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Pro aanbevolen</span>
+                    </div>
                 </div>
             </div>
 
@@ -145,6 +167,13 @@
                 <div class="p-4 flex flex-col gap-2">
                     <textarea id="snomed-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="snomed-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                    </div>
                 </div>
             </div>
 
@@ -157,6 +186,13 @@
                 <div class="p-4 flex flex-col gap-2">
                     <textarea id="medgemma-prompt" rows="4" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500">Vrije prompt die naar MedGemma gestuurd wordt samen met de geüploade afbeelding. Geen placeholders.</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="medgemma-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                    </div>
                 </div>
             </div>
 
@@ -354,6 +390,58 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             document.getElementById("back-btn").addEventListener("click", () => {
                 window.location.href = `launch.html?${params.toString()}`;
             });
+
+            // ── Per-prompt model selectors ────────────────────────────────────
+            const MODEL_CONFIGS = [
+                { id: "translate-model", storageKey: "geminiModelTranslate", defaultModel: "gemini-2.5-flash" },
+                { id: "kidv-model",      storageKey: "geminiModelKidv",      defaultModel: "gemini-2.5-pro"  },
+                { id: "verslag-model",   storageKey: "geminiModelVerslag",   defaultModel: "gemini-2.5-pro"  },
+                { id: "snomed-model",    storageKey: "geminiModelSnomed",    defaultModel: "gemini-2.5-flash" },
+                { id: "medgemma-model",  storageKey: "geminiModelMedgemma",  defaultModel: "gemini-2.5-flash" },
+            ];
+
+            async function loadModels() {
+                const apiKey = localStorage.getItem("geminiApiKey");
+                if (!apiKey) {
+                    MODEL_CONFIGS.forEach(cfg => {
+                        const sel = document.getElementById(cfg.id);
+                        sel.innerHTML = `<option value="${cfg.defaultModel}">${cfg.defaultModel} (standaard)</option>`;
+                        sel.value = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
+                    });
+                    return;
+                }
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`);
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    const models = (data.models || [])
+                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
+                        .map(m => m.name.replace("models/", ""))
+                        .sort((a, b) => b.localeCompare(a));
+                    MODEL_CONFIGS.forEach(cfg => {
+                        const sel = document.getElementById(cfg.id);
+                        const saved = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
+                        sel.innerHTML = models.map(id => `<option value="${id}"${id === saved ? " selected" : ""}>${id}</option>`).join("");
+                        if (!models.includes(saved)) {
+                            sel.innerHTML = `<option value="${cfg.defaultModel}" selected>${cfg.defaultModel}</option>` + sel.innerHTML;
+                        }
+                    });
+                } catch {}
+            }
+
+            // Save model selection on change
+            MODEL_CONFIGS.forEach(cfg => {
+                const sel = document.getElementById(cfg.id);
+                // Initialize with saved or default
+                sel.value = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
+                sel.addEventListener("change", () => localStorage.setItem(cfg.storageKey, sel.value));
+            });
+
+            // Reload button
+            document.getElementById("reload-models-btn").addEventListener("click", loadModels);
+
+            // Auto-load on page start
+            loadModels();
         </script>
     </body>
 </html>

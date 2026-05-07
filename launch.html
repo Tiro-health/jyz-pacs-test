@@ -951,30 +951,6 @@
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Gratis sleutel via <a href="https://aistudio.google.com/apikey" target="_blank" class="underline hover:text-neutral-600">aistudio.google.com/apikey</a>. Ingevuld → Translate, Radiology check en Verslag check werken inline.</p>
                     </div>
 
-                    <!-- Gemini Model -->
-                    <div>
-                        <label
-                            for="gemini-model"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Gemini Model</label
-                        >
-                        <div class="flex gap-2">
-                            <select
-                                id="gemini-model"
-                                class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                            >
-                                <option value="">— vul eerst API key in —</option>
-                            </select>
-                            <button
-                                id="gemini-detect-models-btn"
-                                type="button"
-                                class="px-2 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                                title="Haal beschikbare modellen op"
-                            >↺</button>
-                        </div>
-                        <p id="gemini-model-status" class="text-xs text-neutral-400 dark:text-neutral-500 mt-1"></p>
-                    </div>
-
                     <!-- HuggingFace Token (MedGemma) -->
                     <div>
                         <label
@@ -1657,56 +1633,17 @@
                 GEMINI_API_KEY = _envKey || geminiApiKeyInput.value.trim();
             });
 
-            const geminiModelSelect = document.getElementById("gemini-model");
-            const geminiModelStatus = document.getElementById("gemini-model-status");
-
-            async function loadGeminiModels() {
-                if (!GEMINI_API_KEY) { geminiModelStatus.textContent = "Vul eerst een API key in."; return; }
-                geminiModelStatus.textContent = "Modellen ophalen…";
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}&pageSize=100`);
-                    if (!res.ok) { geminiModelStatus.textContent = `Fout ${res.status} bij ophalen modellen.`; return; }
-                    const data = await res.json();
-                    const models = (data.models || [])
-                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
-                        .map(m => ({ id: m.name.replace("models/", ""), display: m.displayName || m.name.replace("models/", "") }))
-                        .sort((a, b) => b.id.localeCompare(a.id)); // nieuwste eerst
-
-                    const stored = localStorage.getItem("geminiModel");
-                    geminiModelSelect.innerHTML = models.map(m =>
-                        `<option value="${m.id}">${m.id}</option>`
-                    ).join("");
-
-                    if (stored && models.find(m => m.id === stored)) {
-                        geminiModelSelect.value = stored;
-                    } else if (models.length) {
-                        // Voorkeur: nieuwste stabiele flash (snel + multimodaal)
-                        const preferred =
-                            models.find(m => /gemini-\d+\.\d+-flash$/.test(m.id) && parseFloat(m.id.match(/gemini-(\d+\.\d+)/)?.[1]) >= 2.5) ||
-                            models.find(m => m.id === "gemini-2.5-flash") ||
-                            models.find(m => m.id.includes("2.5-flash") && !m.id.includes("lite")) ||
-                            models.find(m => m.id === "gemini-2.0-flash") ||
-                            models.find(m => m.id.includes("2.0-flash") && !m.id.includes("lite")) ||
-                            models[0];
-                        geminiModelSelect.value = preferred.id;
-                        localStorage.setItem("geminiModel", preferred.id);
-                    }
-                    geminiModelStatus.textContent = `${models.length} model(len) gevonden.`;
-                } catch (e) {
-                    geminiModelStatus.textContent = `Fout: ${e.message}`;
-                }
+            const GEMINI_MODEL_DEFAULTS = {
+                geminiModelTranslate:  'gemini-2.5-flash',
+                geminiModelKidv:       'gemini-2.5-pro',
+                geminiModelVerslag:    'gemini-2.5-pro',
+                geminiModelSnomed:     'gemini-2.5-flash',
+                geminiModelMedgemma:   'gemini-2.5-flash',
+                geminiModelRealtime:   'gemini-2.5-flash',
+            };
+            function getModel(key) {
+                return localStorage.getItem(key) || GEMINI_MODEL_DEFAULTS[key] || 'gemini-2.5-flash';
             }
-
-            geminiModelSelect.addEventListener("change", () => {
-                localStorage.setItem("geminiModel", geminiModelSelect.value);
-            });
-            document.getElementById("gemini-detect-models-btn").addEventListener("click", loadGeminiModels);
-
-            // Auto-load models when API key is set
-            geminiApiKeyInput.addEventListener("input", () => {
-                if (GEMINI_API_KEY) loadGeminiModels();
-            });
-            if (GEMINI_API_KEY) loadGeminiModels();
 
             // Strip legacy ChatGPT URL wrapper from stored prompts
             function migratePrompt(stored) {
@@ -1732,9 +1669,7 @@
 
             const GEMINI_SYSTEM = "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <del> voor verwijderde tekst, <ins> voor ingevoegde/gecorrigeerde tekst. Combineer tags waar nodig.";
 
-            async function callGemini(prompt, signal) {
-                const model = geminiModelSelect.value;
-                if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
+            async function callGemini(model, prompt, signal) {
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
                 const res = await fetch(
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
@@ -1755,9 +1690,7 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
-            async function callGeminiStream(prompt, onChunk, signal) {
-                const model = geminiModelSelect.value;
-                if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
+            async function callGeminiStream(model, prompt, onChunk, signal) {
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
                 const body = { contents: [{ parts: [{ text: fullPrompt }] }] };
                 const res = await fetch(
@@ -2121,7 +2054,7 @@
                 const prompt = fillPrompt(template, { text: dictText });
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Vertaling");
-                    try { resolveGeminiModal(await callGemini(prompt, _newGeminiSignal())); }
+                    try { resolveGeminiModal(await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal())); }
                     catch (e) {
                         if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
                         else if (e.name !== "AbortError") rejectGeminiModal(e.message);
@@ -2235,7 +2168,7 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Radiology check");
                     try {
-                        const text = await callGeminiStream(prompt, (partial) => {
+                        const text = await callGeminiStream(getModel('geminiModelKidv'), prompt, (partial) => {
                             geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                             _geminiRawText = partial;
                             geminiContent.innerHTML = renderMarkdown(partial);
@@ -2439,7 +2372,7 @@ INSTRUCTIES VOOR UITVOER:
                     _verslagOriginalText = tekst;
                     openGeminiModal("Verslag check");
                     try {
-                        const text = await callGeminiStream(prompt, (partial) => {
+                        const text = await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
                             geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                             _geminiRawText = partial;
                             geminiContent.innerHTML = renderMarkdown(partial);
@@ -2567,7 +2500,7 @@ INSTRUCTIES VOOR UITVOER:
 
                 let firstChunk = true;
                 try {
-                    await callGeminiStream(prompt, (partial) => {
+                    await callGeminiStream(getModel('geminiModelRealtime'), prompt, (partial) => {
                         if (firstChunk) { realtimeContent.innerHTML = ''; firstChunk = false; }
                         realtimeContent.innerHTML = renderMarkdown(partial);
                         realtimeStatus.textContent = '';
@@ -2822,7 +2755,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 if (GEMINI_API_KEY) {
                     document.getElementById("snomed-error-banner").classList.add("hidden");
-                    callGemini(prompt)
+                    callGemini(getModel('geminiModelSnomed'), prompt)
                         .then(text => parseSnomedResult(text))
                         .catch(e => { if (e.name !== "AbortError") showSnomedError(e.message); });
                 } else {
@@ -3042,7 +2975,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             });
 
             async function callMedGemma(imageBase64, mimeType, prompt) {
-                const model = geminiModelSelect.value;
+                const model = getModel('geminiModelMedgemma');
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 if (!GEMINI_API_KEY) throw new Error("Geen Gemini API key ingevuld. Vul een sleutel in bij Settings.");
                 const body = JSON.stringify({
