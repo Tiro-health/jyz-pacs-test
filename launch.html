@@ -242,6 +242,7 @@
             QC
         </a>
 
+
         <!-- Radiology check modal -->
         <div id="radiology-check-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
             <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-xl shadow-xl w-full max-w-md mx-4 p-5">
@@ -1029,28 +1030,6 @@
                                 Template flow
                             </a>
                             <a
-                                id="flow-config-btn"
-                                href="flow-config.html"
-                                target="_blank"
-                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
-                            >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    stroke-width="2"
-                                    stroke-linecap="round"
-                                    stroke-linejoin="round"
-                                >
-                                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-                                    <circle cx="12" cy="12" r="3"/>
-                                </svg>
-                                Flow config
-                            </a>
-                            <a
                                 id="patient-letter-btn"
                                 href="/patient_letter"
                                 target="_blank"
@@ -1276,12 +1255,6 @@
             const flowParams = new URLSearchParams(window.location.search);
             templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
 
-            // Flow config button — passes theme param
-            const flowConfigBtn = document.getElementById("flow-config-btn");
-            const configParams = new URLSearchParams();
-            const themeVal = document.documentElement.classList.contains("dark") ? "dark" : "light";
-            configParams.set("theme", themeVal);
-            flowConfigBtn.href = `flow-config.html?${configParams.toString()}`;
 
             // Patient letter button — builds URL from current form values
             document.getElementById("patient-letter-btn").addEventListener("click", (e) => {
