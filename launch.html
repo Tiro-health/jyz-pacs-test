@@ -3129,6 +3129,20 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     return b;
                 };
 
+                // Copy plain text inside the PiP window using execCommand (clipboard API unavailable in PiP)
+                function pipCopy(text) {
+                    try {
+                        const el = pipWindow.document.createElement('textarea');
+                        el.value = text;
+                        el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none';
+                        pipWindow.document.body.appendChild(el);
+                        el.focus();
+                        el.select();
+                        pipWindow.document.execCommand('copy');
+                        pipWindow.document.body.removeChild(el);
+                    } catch(e) {}
+                }
+
                 const sentInd = mk('span', 'hidden text-xs text-green-600 dark:text-green-400 items-center gap-1', '✓ Verzonden');
 
                 // ── Translate result panel (hidden until used) ──────
@@ -3138,9 +3152,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const trTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Vertaling');
                 const trStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
                 const trCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', () => {
-                    pipWindow.navigator.clipboard.writeText(trContent.innerText || '').then(() => {
-                        trPanel.style.display = 'none';
-                    }).catch(() => { trPanel.style.display = 'none'; });
+                    pipCopy(trContent.innerText || '');
+                    trPanel.style.display = 'none';
                 });
                 trHead.append(trTitle, trStatus, trCopyBtn);
                 const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
@@ -3184,12 +3197,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
-                        pipWindow.navigator.clipboard.writeText(ta.value).then(() => {
-                            const orig = btn.textContent;
-                            btn.textContent = 'Gekopieerd ✓';
-                            btn.style.color = '#16a34a';
-                            setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
-                        }).catch(() => {});
+                        pipCopy(ta.value);
+                        const orig = btn.textContent;
+                        btn.textContent = 'Gekopieerd ✓';
+                        btn.style.color = '#16a34a';
+                        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
                     sentInd,
                 );
@@ -3223,12 +3235,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipWindow.navigator.clipboard.writeText(_rtShowingOrig ? (_rtOrigText || '') : (rtContent.innerText || '')).then(() => {
-                        const orig = btn.textContent;
-                        btn.textContent = 'Gekopieerd ✓';
-                        btn.style.color = '#16a34a';
-                        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
-                    }).catch(() => {});
+                    pipCopy(_rtShowingOrig ? (_rtOrigText || '') : (rtContent.innerText || ''));
+                    const orig = btn.textContent;
+                    btn.textContent = 'Gekopieerd ✓';
+                    btn.style.color = '#16a34a';
+                    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
                 rtActions.append(rtOrigBtn, rtCopyBtn);
