@@ -710,6 +710,10 @@
                                 <span id="realtime-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
                             </div>
                             <div id="realtime-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
+                            <div id="realtime-actions" class="hidden flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                                <button id="realtime-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
+                                <button id="realtime-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                            </div>
                         </div>
                     </tiro-magic-clipboard>
                 </div>
@@ -2527,10 +2531,15 @@ INSTRUCTIES VOOR UITVOER:
             const realtimePanel = document.getElementById('realtime-panel');
             const realtimeContent = document.getElementById('realtime-content');
             const realtimeStatus = document.getElementById('realtime-status');
+            const realtimeActions = document.getElementById('realtime-actions');
+            const realtimeToggleOrig = document.getElementById('realtime-toggle-orig');
+            const realtimeCopy = document.getElementById('realtime-copy');
             let realtimeEnabled = localStorage.getItem('realtimeEnabled') === 'true';
             let _realtimeDebounce = null;
             let _realtimeAbort = null;
             let _realtimeLastText = ''; // only trigger when text actually changes
+            let _realtimeOriginalText = null;
+            let _realtimeShowingOriginal = false;
 
             function updateRealtimeToggle() {
                 realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
@@ -2553,6 +2562,11 @@ INSTRUCTIES VOOR UITVOER:
                     realtimeContent.innerHTML = '';
                     realtimeStatus.textContent = '';
                     _realtimeLastText = '';
+                    _realtimeOriginalText = null;
+                    _realtimeShowingOriginal = false;
+                    _realtimeResultHTML = null;
+                    realtimeActions.classList.add('hidden');
+                    realtimeToggleOrig.classList.add('hidden');
                 }
             }
 
@@ -2570,6 +2584,11 @@ INSTRUCTIES VOOR UITVOER:
                 _realtimeAbort?.abort();
                 _realtimeAbort = new AbortController();
                 realtimeStatus.textContent = 'Verwerken…';
+                _realtimeOriginalText = tekst;
+                _realtimeShowingOriginal = false;
+                realtimeActions.classList.add('hidden');
+                realtimeToggleOrig.classList.add('hidden');
+                realtimeToggleOrig.textContent = '↩ Origineel';
                 // Keep previous result visible until first new chunk arrives
 
                 const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
@@ -2586,12 +2605,33 @@ INSTRUCTIES VOOR UITVOER:
                         realtimeContent.innerHTML = renderMarkdown(partial);
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
+                    realtimeActions.classList.remove('hidden');
+                    realtimeToggleOrig.classList.toggle('hidden', !_realtimeOriginalText);
                 } catch (e) {
                     if (e.name !== 'AbortError') {
                         realtimeStatus.textContent = 'Fout: ' + e.message;
                     }
                 }
             }
+
+            let _realtimeResultHTML = null;
+            realtimeToggleOrig.addEventListener('click', () => {
+                _realtimeShowingOriginal = !_realtimeShowingOriginal;
+                if (_realtimeShowingOriginal) {
+                    _realtimeResultHTML = realtimeContent.innerHTML;
+                    realtimeContent.innerHTML = _realtimeOriginalText.replace(/\n/g, '<br>');
+                    realtimeToggleOrig.textContent = '↩ Gecorrigeerd';
+                } else {
+                    realtimeContent.innerHTML = _realtimeResultHTML;
+                    realtimeToggleOrig.textContent = '↩ Origineel';
+                }
+            });
+
+            realtimeCopy.addEventListener('click', () => {
+                navigator.clipboard.writeText(
+                    _realtimeShowingOriginal ? _realtimeOriginalText : realtimeContent.innerText
+                ).catch(() => {});
+            });
 
             function scheduleRealtimeCheck() {
                 clearTimeout(_realtimeDebounce);
