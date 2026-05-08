@@ -1237,22 +1237,18 @@
                 if (match.deptTemplate) {
                     const key = "flow:dept:" + match.id;
                     TEMPLATES[key] = match.deptTemplate;
-                    const shortName = match.deptTemplate.split("/").pop() || match.deptTemplate;
-                    items.push({ name: key, label: "📄 " + shortName + " (afdeling)", checked: !match.userTemplate });
+                    items.push({ name: key, label: match.name + " - afdeling", checked: !match.userTemplate });
                 }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
                     TEMPLATES[key] = match.userTemplate;
-                    const shortName = match.userTemplate.split("/").pop() || match.userTemplate;
-                    items.push({ name: key, label: "👤 " + shortName + " (gebruiker)", checked: true });
+                    items.push({ name: key, label: match.name + " - gebruiker", checked: true });
                 }
                 (match.aiRules || []).forEach((rule, i) => {
                     if (!rule.template) return;
                     const key = "flow:ai:" + match.id + ":" + i;
                     TEMPLATES[key] = rule.template;
-                    const shortName = rule.template.split("/").pop() || rule.template;
-                    const cond = [rule.aiSource, rule.condition?.operator, rule.condition?.value].filter(Boolean).join(" ");
-                    items.push({ name: key, label: "🤖 " + shortName + " (" + cond + ")", checked: false });
+                    items.push({ name: key, label: match.name + " - AI", checked: false });
                 });
 
                 if (items.length === 0) {
