@@ -115,7 +115,7 @@
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
                         <button id="reload-models-btn" type="button" class="px-1.5 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors shrink-0" title="Haal beschikbare modellen op">↺</button>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen · past alle modellen aan</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen · past alle modellen aan</span>
                     </div>
                 </div>
             </div>
@@ -153,14 +153,14 @@
                         <select id="verslag-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
                     </div>
                     <div class="flex items-center gap-2">
                         <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Real time</label>
                         <select id="realtime-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
                     </div>
                 </div>
             </div>
@@ -179,7 +179,7 @@
                         <select id="snomed-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
                     </div>
                 </div>
             </div>
@@ -198,7 +198,7 @@
                         <select id="medgemma-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
                     </div>
                 </div>
             </div>
@@ -400,12 +400,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
             // ── Per-prompt model selectors ────────────────────────────────────
             const MODEL_CONFIGS = [
-                { id: "translate-model", storageKey: "geminiModelTranslate", defaultModel: "gemini-2.5-flash" },
-                { id: "kidv-model",      storageKey: "geminiModelKidv",      defaultModel: "gemini-2.5-pro"  },
-                { id: "verslag-model",   storageKey: "geminiModelVerslag",   defaultModel: "gemini-2.5-flash" },
-                { id: "realtime-model", storageKey: "geminiModelRealtime",  defaultModel: "gemini-2.5-flash" },
-                { id: "snomed-model",    storageKey: "geminiModelSnomed",    defaultModel: "gemini-2.5-flash" },
-                { id: "medgemma-model",  storageKey: "geminiModelMedgemma",  defaultModel: "gemini-2.5-flash" },
+                { id: "translate-model", storageKey: "geminiModelTranslate", defaultModel: "gemini-3.1-flash-lite" },
+                { id: "kidv-model",      storageKey: "geminiModelKidv",      defaultModel: "gemini-2.5-pro"        },
+                { id: "verslag-model",   storageKey: "geminiModelVerslag",   defaultModel: "gemini-3.1-flash-lite" },
+                { id: "realtime-model",  storageKey: "geminiModelRealtime",  defaultModel: "gemini-3.1-flash-lite" },
+                { id: "snomed-model",    storageKey: "geminiModelSnomed",    defaultModel: "gemini-3.1-flash-lite" },
+                { id: "medgemma-model",  storageKey: "geminiModelMedgemma",  defaultModel: "gemini-3.1-flash-lite" },
             ];
 
             async function loadModels() {
