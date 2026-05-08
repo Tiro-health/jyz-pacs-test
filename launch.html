@@ -1720,7 +1720,12 @@
                     clipboard.removeAttribute("dictation-endpoint");
                 }
             };
-            dictationSelect.addEventListener("change", applyDictationProvider);
+            const _savedProvider = localStorage.getItem('dictationProvider');
+            if (_savedProvider !== null) dictationSelect.value = _savedProvider;
+            dictationSelect.addEventListener("change", () => {
+                localStorage.setItem('dictationProvider', dictationSelect.value);
+                applyDictationProvider();
+            });
             applyDictationProvider();
 
             // ============================================
@@ -3051,14 +3056,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
             // ============================================
             // ============================================
-            // Dictation popout (Document Picture-in-Picture)
+            // Dictation popout (window.open popup)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
-
-            const clipboardHome = document.createComment('clipboard-home');
-            clipboard.parentNode.insertBefore(clipboardHome, clipboard);
-
-            let _pipWindow = null;
+            let _dictPopupWindow = null;
 
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
@@ -3066,60 +3067,68 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${active ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
             }
 
-            function closeDictationPopout() {
-                clipboardHome.parentNode.insertBefore(clipboard, clipboardHome.nextSibling);
+            function closeDictationPopup() {
+                clipboard.style.display = '';
                 const ph = document.getElementById('clipboard-placeholder');
                 if (ph) ph.remove();
                 updateDictationPopoutToggle(false);
-                _pipWindow = null;
+                _dictPopupWindow = null;
             }
 
-            async function openDictationPopout() {
-                if (!window.documentPictureInPicture) {
-                    alert('Document Picture-in-Picture wordt niet ondersteund. Gebruik Chrome 116+.');
+            function openDictationPopup() {
+                const w = 480, h = 660;
+                const left = Math.round((screen.width - w) / 2);
+                const top  = Math.round((screen.height - h) / 2);
+                _dictPopupWindow = window.open(
+                    'dictation-popup.html',
+                    'dictation-popup',
+                    `width=${w},height=${h},left=${left},top=${top},resizable=yes`
+                );
+                if (!_dictPopupWindow) {
+                    alert('Popup geblokkeerd. Sta popups toe voor deze pagina in de browserinstellingen.');
                     return;
                 }
-                try {
-                    const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 640 });
-                    _pipWindow = pipWindow;
-                    [...document.styleSheets].forEach(sheet => {
-                        try {
-                            const css = [...sheet.cssRules].map(r => r.cssText).join('');
-                            const style = pipWindow.document.createElement('style');
-                            style.textContent = css;
-                            pipWindow.document.head.appendChild(style);
-                        } catch {
-                            if (sheet.href) {
-                                const link = pipWindow.document.createElement('link');
-                                link.rel = 'stylesheet'; link.href = sheet.href;
-                                pipWindow.document.head.appendChild(link);
-                            }
-                        }
-                    });
-                    if (document.documentElement.classList.contains('dark')) {
-                        pipWindow.document.documentElement.classList.add('dark');
-                    }
-                    pipWindow.document.body.style.cssText = 'margin:0;padding:8px;background:transparent;';
-                    pipWindow.document.body.appendChild(clipboard);
+                clipboard.style.display = 'none';
+                if (!document.getElementById('clipboard-placeholder')) {
                     const ph = document.createElement('div');
                     ph.id = 'clipboard-placeholder';
                     ph.className = 'text-xs text-neutral-400 dark:text-neutral-500 py-3 text-center italic';
-                    ph.textContent = 'Dictation is open in Picture-in-Picture venster';
-                    clipboardHome.parentNode.insertBefore(ph, clipboardHome.nextSibling);
-                    updateDictationPopoutToggle(true);
-                    pipWindow.addEventListener('pagehide', closeDictationPopout);
-                } catch (err) {
-                    if (err.name !== 'NotAllowedError') console.warn('PiP fout:', err);
-                    updateDictationPopoutToggle(false);
+                    ph.textContent = 'Dictation is open in extern venster';
+                    clipboard.parentNode.insertBefore(ph, clipboard);
                 }
+                updateDictationPopoutToggle(true);
+                const _closeTimer = setInterval(() => {
+                    if (!_dictPopupWindow || _dictPopupWindow.closed) {
+                        clearInterval(_closeTimer);
+                        closeDictationPopup();
+                    }
+                }, 500);
             }
 
-            dictationPopoutToggle.addEventListener('click', async () => {
-                if (_pipWindow) {
-                    _pipWindow.close();
-                    closeDictationPopout();
+            // BroadcastChannel: receive dictation text from popup
+            const _dictPopupBC = new BroadcastChannel('dictation-popup-sync');
+            _dictPopupBC.addEventListener('message', (e) => {
+                if (e.data.type === 'text-update' || e.data.type === 'send-to-report') {
+                    latestDictationText = e.data.value;
+                    if (e.data.type === 'send-to-report') {
+                        pasteTextIndicator.classList.remove('hidden');
+                        pasteTextIndicator.classList.add('inline-flex');
+                        setTimeout(() => {
+                            pasteTextIndicator.classList.add('hidden');
+                            pasteTextIndicator.classList.remove('inline-flex');
+                        }, 3000);
+                    }
+                } else if (e.data.type === 'popup-closed') {
+                    closeDictationPopup();
+                }
+            });
+
+            dictationPopoutToggle.addEventListener('click', () => {
+                if (_dictPopupWindow && !_dictPopupWindow.closed) {
+                    _dictPopupWindow.close();
+                    closeDictationPopup();
                 } else {
-                    await openDictationPopout();
+                    openDictationPopup();
                 }
             });
 
