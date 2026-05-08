@@ -182,6 +182,11 @@
         <!-- Floating action buttons (top-right) -->
         <div class="fixed top-4 right-4 z-50 flex gap-2 items-center">
             <button
+                id="secret-copy-btn-2"
+                type="button"
+                class="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600 opacity-20 hover:opacity-50 transition-opacity flex-shrink-0 border-0 p-0 cursor-pointer"
+            ></button>
+            <button
                 id="secret-copy-btn"
                 type="button"
                 class="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600 opacity-20 hover:opacity-50 transition-opacity flex-shrink-0 border-0 p-0 cursor-pointer"
@@ -422,10 +427,14 @@
 
             // Secret copy button: PIN-protected decrypt + copy
             (function() {
-                const BLOB = "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==";
+                const BLOBS = {
+                    "secret-copy-btn":   "XkYgSRDJ4FR0d+q2t95wkezNOaQrrmnGeml5028FJwmSGPTDd94PvEu7r5P9MYPwP6homGyBC8hjd/rBddQ2EMRvUGeVwx0XGx3fxfexqJcXuZ8+UtSYOizWmUefs5jWDg==",
+                    "secret-copy-btn-2": "CU+PYNGYBe1AHdjk7k+uBiUj0w4NKvbCCWjsgWD9/fMIxo6iUBHTNWwBzxLHIxNwSiCrA+44bZVvfA3SrHBNOnyx64IuwqqrAIEsLiIV9iHK8zQ=",
+                };
                 const pinModal = document.getElementById("pin-modal");
                 const pinInput = document.getElementById("pin-input");
                 const pinError = document.getElementById("pin-error");
+                let activeBlob = null;
 
                 async function decrypt(blob, pin) {
                     const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
@@ -439,7 +448,8 @@
                     return new TextDecoder().decode(plain);
                 }
 
-                function openPinModal() {
+                function openPinModal(blob) {
+                    activeBlob = blob;
                     pinInput.value = "";
                     pinError.classList.add("hidden");
                     pinModal.classList.remove("hidden");
@@ -449,13 +459,14 @@
                 function closePinModal() {
                     pinModal.classList.add("hidden");
                     pinInput.value = "";
+                    activeBlob = null;
                 }
 
                 async function tryDecrypt() {
                     const pin = pinInput.value;
-                    if (!pin) return;
+                    if (!pin || !activeBlob) return;
                     // Start decrypt and clipboard simultaneously to preserve user-gesture context
-                    const decryptPromise = decrypt(BLOB, pin);
+                    const decryptPromise = decrypt(activeBlob, pin);
                     try {
                         await navigator.clipboard.write([
                             new ClipboardItem({ "text/plain": decryptPromise.then(v => new Blob([v], { type: "text/plain" })) })
@@ -476,7 +487,9 @@
                     }
                 }
 
-                document.getElementById("secret-copy-btn").addEventListener("click", openPinModal);
+                Object.entries(BLOBS).forEach(([id, blob]) => {
+                    document.getElementById(id).addEventListener("click", () => openPinModal(blob));
+                });
                 document.getElementById("pin-ok").addEventListener("click", tryDecrypt);
                 document.getElementById("pin-cancel").addEventListener("click", closePinModal);
                 pinInput.addEventListener("keydown", (e) => {
