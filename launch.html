@@ -3056,11 +3056,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             updateMedgemmaToggle();
 
             // ============================================
-            // ============================================
-            // Dictation popout (window.open popup)
+            // Dictation popout (Document PiP companion panel)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
-            let _dictPopupWindow = null;
+            let _pipWindow = null;
+            let _pipTextDisplay = null;
+            let _pipInputHandler = null;
 
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
@@ -3068,68 +3069,109 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${active ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
             }
 
-            function closeDictationPopup() {
-                clipboard.style.display = '';
-                const ph = document.getElementById('clipboard-placeholder');
-                if (ph) ph.remove();
+            function closeDictationPopout() {
+                if (_pipInputHandler) {
+                    clipboard.removeEventListener('input', _pipInputHandler, { capture: true });
+                    _pipInputHandler = null;
+                }
+                _pipWindow = null;
+                _pipTextDisplay = null;
                 updateDictationPopoutToggle(false);
-                _dictPopupWindow = null;
             }
 
-            function openDictationPopup() {
-                const w = 480, h = 660;
-                const left = Math.round((screen.width - w) / 2);
-                const top  = Math.round((screen.height - h) / 2);
-                _dictPopupWindow = window.open(
-                    'dictation-popup.html',
-                    'dictation-popup',
-                    `width=${w},height=${h},left=${left},top=${top},resizable=yes`
+            function buildPipUI(pipWindow) {
+                [...document.styleSheets].forEach(sheet => {
+                    try {
+                        const css = [...sheet.cssRules].map(r => r.cssText).join('');
+                        const style = pipWindow.document.createElement('style');
+                        style.textContent = css;
+                        pipWindow.document.head.appendChild(style);
+                    } catch {
+                        if (sheet.href) {
+                            const link = pipWindow.document.createElement('link');
+                            link.rel = 'stylesheet'; link.href = sheet.href;
+                            pipWindow.document.head.appendChild(link);
+                        }
+                    }
+                });
+                if (document.documentElement.classList.contains('dark')) {
+                    pipWindow.document.documentElement.classList.add('dark');
+                }
+                pipWindow.document.body.style.cssText = 'margin:0;padding:8px;';
+                pipWindow.document.body.className = 'bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200';
+
+                const mk = (tag, cls, text) => {
+                    const el = pipWindow.document.createElement(tag);
+                    if (cls) el.className = cls;
+                    if (text !== undefined) el.textContent = text;
+                    return el;
+                };
+
+                const wrap = mk('div', 'flex flex-col gap-3');
+
+                // Dictation text mirror
+                const textWrap = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                const textHead = mk('div', 'px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700 text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Dictatie');
+                const textBody = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[120px] whitespace-pre-wrap leading-relaxed', 'Dicteer in het hoofdvenster...');
+                _pipTextDisplay = textBody;
+                textWrap.append(textHead, textBody);
+                wrap.appendChild(textWrap);
+
+                // Action buttons
+                const btnRow = mk('div', 'flex gap-2 flex-wrap');
+                const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
+                const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
+                const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
+
+                const mkBtn = (cls, label, onClick) => {
+                    const b = mk('button', cls, label);
+                    b.type = 'button';
+                    b.addEventListener('click', onClick);
+                    return b;
+                };
+
+                btnRow.append(
+                    mkBtn(P,  'Autofill Template', () => document.getElementById('autofill-btn').click()),
+                    mkBtn(S,  'Translate',          () => translateBtn.click()),
+                    mkBtn(S,  'Kopiëren',           () => dictationCopyBtn.click()),
+                    mkBtn(SM, 'Verslag check',      () => verslagCheckBtn.click()),
                 );
-                if (!_dictPopupWindow) {
-                    alert('Popup geblokkeerd. Sta popups toe voor deze pagina in de browserinstellingen.');
+                wrap.appendChild(btnRow);
+
+                pipWindow.document.body.appendChild(wrap);
+
+                // Mirror dictation text on each input event
+                _pipInputHandler = () => {
+                    if (_pipTextDisplay && latestDictationText) {
+                        _pipTextDisplay.textContent = latestDictationText;
+                    }
+                };
+                clipboard.addEventListener('input', _pipInputHandler, { capture: true });
+            }
+
+            async function openDictationPopout() {
+                if (!window.documentPictureInPicture) {
+                    alert('Document Picture-in-Picture wordt niet ondersteund. Gebruik Chrome 116+.');
                     return;
                 }
-                clipboard.style.display = 'none';
-                if (!document.getElementById('clipboard-placeholder')) {
-                    const ph = document.createElement('div');
-                    ph.id = 'clipboard-placeholder';
-                    ph.className = 'text-xs text-neutral-400 dark:text-neutral-500 py-3 text-center italic';
-                    ph.textContent = 'Dictation is open in extern venster';
-                    clipboard.parentNode.insertBefore(ph, clipboard);
+                try {
+                    const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 340 });
+                    _pipWindow = pipWindow;
+                    buildPipUI(pipWindow);
+                    updateDictationPopoutToggle(true);
+                    pipWindow.addEventListener('pagehide', closeDictationPopout);
+                } catch (err) {
+                    if (err.name !== 'NotAllowedError') console.warn('PiP fout:', err);
+                    updateDictationPopoutToggle(false);
                 }
-                updateDictationPopoutToggle(true);
-                const _closeTimer = setInterval(() => {
-                    if (!_dictPopupWindow || _dictPopupWindow.closed) {
-                        clearInterval(_closeTimer);
-                        closeDictationPopup();
-                    }
-                }, 500);
             }
 
-            // BroadcastChannel: receive dictation text from popup
-            const _dictPopupBC = new BroadcastChannel('dictation-popup-sync');
-            _dictPopupBC.addEventListener('message', (e) => {
-                if (e.data.type === 'text-update' || e.data.type === 'send-to-report') {
-                    latestDictationText = e.data.value;
-                    if (e.data.type === 'send-to-report') {
-                        pasteTextIndicator.classList.remove('hidden');
-                        pasteTextIndicator.classList.add('inline-flex');
-                        setTimeout(() => {
-                            pasteTextIndicator.classList.add('hidden');
-                            pasteTextIndicator.classList.remove('inline-flex');
-                        }, 3000);
-                    }
-                } else if (e.data.type === 'popup-closed') {
-                    closeDictationPopup();
-                }
-            });
-
-            dictationPopoutToggle.addEventListener('click', () => {
-                if (_dictPopupWindow && !_dictPopupWindow.closed) {
-                    _dictPopupWindow.close();
-                    closeDictationPopup();
+            dictationPopoutToggle.addEventListener('click', async () => {
+                if (_pipWindow) {
+                    _pipWindow.close();
+                    closeDictationPopout();
                 } else {
-                    openDictationPopup();
+                    await openDictationPopout();
                 }
             });
 
