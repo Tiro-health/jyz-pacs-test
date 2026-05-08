@@ -710,7 +710,7 @@
                                 <span id="realtime-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
                             </div>
                             <div id="realtime-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
-                            <div id="realtime-actions" class="hidden flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                            <div id="realtime-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
                                 <button id="realtime-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                                 <button id="realtime-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                             </div>
@@ -2565,7 +2565,7 @@ INSTRUCTIES VOOR UITVOER:
                     _realtimeOriginalText = null;
                     _realtimeShowingOriginal = false;
                     _realtimeResultHTML = null;
-                    realtimeActions.classList.add('hidden');
+                    realtimeActions.classList.add('hidden'); realtimeActions.classList.remove('flex');
                     realtimeToggleOrig.classList.add('hidden');
                 }
             }
@@ -2586,7 +2586,7 @@ INSTRUCTIES VOOR UITVOER:
                 realtimeStatus.textContent = 'Verwerken…';
                 _realtimeOriginalText = tekst;
                 _realtimeShowingOriginal = false;
-                realtimeActions.classList.add('hidden');
+                realtimeActions.classList.add('hidden'); realtimeActions.classList.remove('flex');
                 realtimeToggleOrig.classList.add('hidden');
                 realtimeToggleOrig.textContent = '↩ Origineel';
                 // Keep previous result visible until first new chunk arrives
@@ -2605,7 +2605,7 @@ INSTRUCTIES VOOR UITVOER:
                         realtimeContent.innerHTML = renderMarkdown(partial);
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
-                    realtimeActions.classList.remove('hidden');
+                    realtimeActions.classList.remove('hidden'); realtimeActions.classList.add('flex');
                     realtimeToggleOrig.classList.toggle('hidden', !_realtimeOriginalText);
                 } catch (e) {
                     if (e.name !== 'AbortError') {
