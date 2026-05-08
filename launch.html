@@ -3131,6 +3131,19 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 const sentInd = mk('span', 'hidden text-xs text-green-600 dark:text-green-400 items-center gap-1', '✓ Verzonden');
 
+                // ── Translate result panel (hidden until used) ──────
+                const trPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                trPanel.style.display = 'none';
+                const trHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const trTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Vertaling');
+                const trStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
+                const trCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', () => {
+                    navigator.clipboard.writeText(trContent.innerText || '').catch(() => {});
+                });
+                trHead.append(trTitle, trStatus, trCopyBtn);
+                const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
+                trPanel.append(trHead, trContent);
+
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
                         const text = ta.value.trim();
@@ -3140,11 +3153,26 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
                         setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
                     }),
-                    mkBtn(S, 'Translate', () => {
+                    mkBtn(S, 'Translate', async () => {
                         const text = ta.value.trim();
-                        if (!text) return;
-                        latestDictationText = text;
-                        translateBtn.click();
+                        if (!text) { alert('Geen tekst om te vertalen.'); return; }
+                        const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
+                        const prompt = fillPrompt(template, { text });
+                        trPanel.style.display = '';
+                        trContent.innerHTML = '';
+                        trStatus.textContent = 'Bezig…';
+                        if (GEMINI_API_KEY) {
+                            try {
+                                const result = await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal());
+                                trContent.innerHTML = renderMarkdown(result);
+                                trStatus.textContent = '';
+                            } catch (e) {
+                                if (e.name !== 'AbortError') trStatus.textContent = 'Fout: ' + e.message;
+                            }
+                        } else {
+                            trStatus.textContent = '';
+                            openChatGPT(prompt);
+                        }
                     }),
                     mkBtn(S, 'Kopiëren', () => {
                         navigator.clipboard.writeText(ta.value).catch(() => {});
@@ -3152,6 +3180,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     sentInd,
                 );
                 wrap.appendChild(btnRow);
+                wrap.appendChild(trPanel);
 
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
