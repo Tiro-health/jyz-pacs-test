@@ -1213,13 +1213,19 @@
                 try { flowConfig = JSON.parse(localStorage.getItem("flowConfig_v1")); } catch (_) {}
 
                 const q = typeOnderzoek.toLowerCase().trim();
-                const match = flowConfig?.examTypes?.find(et =>
-                    et.name.toLowerCase() === q ||
-                    (et.dicom || []).some(d => d.toLowerCase() === q)
+                const examTypes = flowConfig?.examTypes || [];
+                const match = examTypes.find(et =>
+                    (et.name || "").toLowerCase().trim() === q ||
+                    (et.dicom || []).some(d => d.toLowerCase().trim() === q)
                 );
 
+                console.log("[flow] lookup:", JSON.stringify(q), "→", match ? match.name : "geen match", "| config geladen:", examTypes.length, "types");
+
                 if (!match) {
-                    showFlowStatus("Type onderzoek niet gevonden in de flow configuratie");
+                    const hint = examTypes.length === 0
+                        ? "Flow configuratie leeg – bezoek eerst de Flow pagina"
+                        : `"${typeOnderzoek}" niet gevonden (${examTypes.length} types geladen)`;
+                    showFlowStatus(hint);
                     setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
                     createTemplateForms();
                     return;
