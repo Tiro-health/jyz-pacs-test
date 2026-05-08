@@ -1,305 +1,661 @@
 <!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Template Flow</title>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Flow Manager</title>
 
-        <!-- Tailwind CSS CDN -->
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = {
-                darkMode: "class",
-                theme: {
-                    extend: {
-                        fontFamily: {
-                            sans: [
-                                "Inter",
-                                "system-ui",
-                                "-apple-system",
-                                "sans-serif",
-                            ],
-                        },
-                        colors: {
-                            background: "hsl(var(--background))",
-                            muted: {
-                                DEFAULT: "hsl(var(--muted))",
-                                foreground: "hsl(var(--muted-foreground))",
-                            },
-                            accent: "hsl(var(--accent))",
-                        },
-                    },
-                },
-            };
-        </script>
-
-        <!-- Theme detection script (runs before render to prevent flash) -->
-        <script>
-            (function () {
-                const params = new URLSearchParams(window.location.search);
-                const themeParam = params.get("theme");
-
-                let isDark;
-                if (themeParam === "dark") {
-                    isDark = true;
-                } else if (themeParam === "light") {
-                    isDark = false;
-                } else if (localStorage.getItem("darkMode") !== null) {
-                    isDark = localStorage.getItem("darkMode") === "true";
-                } else {
-                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    fontFamily: { sans: ["Inter", "system-ui", "-apple-system", "sans-serif"] },
+                    colors: {
+                        background: "hsl(var(--background))",
+                        muted: { DEFAULT: "hsl(var(--muted))", foreground: "hsl(var(--muted-foreground))" },
+                        accent: "hsl(var(--accent))",
+                    }
                 }
-
-                if (isDark) {
-                    document.documentElement.classList.add("dark");
-                }
-            })();
-        </script>
-
-        <!-- Google Fonts -->
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-        <link
-            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lexend:wght@100..900&family=Fira+Mono:wght@400;500;700&display=swap"
-            rel="stylesheet"
-        />
-
-        <style>
-            tiro-form-filler {
-                display: block;
-                height: 100%;
             }
+        };
+    </script>
 
-            details summary::-webkit-details-marker {
-                display: none;
-            }
-
-            details summary {
-                list-style: none;
-            }
-
-            details[open] .chevron {
-                transform: rotate(180deg);
-            }
-
-            :root {
-                --background: 0 0% 100%;
-                --muted: 210 40% 96.1%;
-                --muted-foreground: 215.4 16.3% 46.9%;
-                --accent: 210 40% 90%;
-                --dropdown-bg: #ffffff;
-                --dropdown-text: #374151;
-                --dropdown-text-muted: #6b7280;
-                --dropdown-border: #d1d5db;
-                --dropdown-border-hover: #9ca3af;
-                --dropdown-hover: #f3f4f6;
-                --dropdown-disabled-bg: #eceef0;
-                --dropdown-disabled-text: #9ca3af;
-                --dropdown-disabled-border: #d1d5db;
-                --dropdown-multi-value-bg: #e5e7eb;
-                --dropdown-multi-value-hover: #d1d5db;
-                --dropdown-focus-ring: #006cd9;
-                --dropdown-indicator-color: #374151;
-            }
-
-            :root.dark {
-                --background: 206 27% 17%;   /* #1f2c36 — panels and form fields */
-                --foreground: 215 20% 85%;
-                --card: 206 27% 17%;
-                --card-foreground: 215 20% 85%;
-                --popover: 206 27% 17%;
-                --popover-foreground: 215 20% 85%;
-                --primary: 174 69% 20%;       /* #105750 — teal primary */
-                --primary-foreground: 0 0% 100%;
-                --secondary: 0 0% 24%;
-                --secondary-foreground: 215 20% 85%;
-                --muted: 0 0% 24%;            /* #3D3D3D — inactive buttons and secondary surfaces */
-                --muted-foreground: 215 15% 55%;
-                --accent: 210 30% 20%;        /* #243342 — hover states */
-                --accent-foreground: 215 20% 85%;
-                --input: 206 27% 17%;         /* #1f2c36 — input field backgrounds */
-                --border: 206 26% 24%;        /* #2d3f4d — borders */
-                --ring: 174 69% 20%;          /* #105750 — focus rings */
-                --dropdown-bg: #1f2c36;
-                --dropdown-text: #d1d9e1;
-                --dropdown-text-muted: #8896a8;
-                --dropdown-border: #2d3f4d;
-                --dropdown-border-hover: #3a5068;
-                --dropdown-hover: #243342;
-                --dropdown-disabled-bg: #1a2530;
-                --dropdown-disabled-text: #4b6080;
-                --dropdown-disabled-border: #2d3f4d;
-                --dropdown-multi-value-bg: #243342;
-                --dropdown-multi-value-hover: #2d3f4d;
-                --dropdown-focus-ring: #105750;
-                --dropdown-indicator-color: #d1d9e1;
-            }
-
-            /* PACSonWeb dark mode: exact color overrides */
-            :root.dark body {
-                background-color: #161f27 !important;
-            }
-            :root.dark input:not([type="checkbox"]):not([type="radio"]),
-            :root.dark select,
-            :root.dark textarea {
-                background-color: #1f2c36 !important;
-                border-color: #2d3f4d !important;
-            }
-            :root.dark .bg-cyan-600 {
-                background-color: #105750 !important;
-            }
-            :root.dark .hover\:bg-cyan-700:hover {
-                background-color: #0b3e39 !important;
-            }
-            :root.dark .border-slate-700 {
-                border-color: #2d3f4d !important;
-            }
-        </style>
-    </head>
-    <body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200">
-
-        <!-- Loading overlay -->
-        <div
-            id="loading-overlay"
-            class="fixed inset-0 bg-white/95 dark:bg-background/95 items-center justify-center z-50 hidden"
-        >
-            <div class="text-center">
-                <div class="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                <p class="text-sm font-medium text-neutral-700 dark:text-neutral-300">Generating PDF...</p>
-                <p class="text-neutral-500 text-sm mt-2">This may take a few seconds</p>
-            </div>
-        </div>
-
-        <div class="h-full flex flex-col p-4 font-sans">
-
-            <!-- Toolbar -->
-            <div class="sticky top-0 z-10 flex justify-between mb-3 gap-2 py-2 pointer-events-none">
-                <div class="pointer-events-auto">
-                    <button
-                        id="back-btn"
-                        type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="m15 18-6-6 6-6"/>
-                        </svg>
-                        Back
-                    </button>
-                </div>
-                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
-                    <button
-                        id="save-btn"
-                        type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
-                    >
-                        Save
-                    </button>
-                </div>
-            </div>
-
-            <!-- Form fillers -->
-            <div class="flex-1 min-h-0 overflow-auto flex flex-col gap-4">
-                <tiro-form-filler
-                    id="flow-form-1"
-                    sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                    compact-grouping
-                />
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-                <tiro-form-filler
-                    id="flow-form-2"
-                    sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                    compact-grouping
-                />
-            </div>
-        </div>
-
-        <!-- Tiro Web SDK -->
-        <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
-
-        <script>
-            const FLOW_QUESTIONNAIRE_1 = "http://templates.tiro.health/templates/63d5c46d4d9342ba93f698e5afec7ee6|1.0.0";
-            const FLOW_QUESTIONNAIRE_2 = "http://templates.tiro.health/templates/8c994d8a1665490bb08614d3307211c9|2.0.0";
-
+    <script>
+        (function () {
             const params = new URLSearchParams(window.location.search);
-            const loadingOverlay = document.getElementById("loading-overlay");
-            const form1 = document.getElementById("flow-form-1");
-            const form2 = document.getElementById("flow-form-2");
+            const themeParam = params.get("theme");
+            let isDark;
+            if (themeParam === "dark") isDark = true;
+            else if (themeParam === "light") isDark = false;
+            else if (localStorage.getItem("darkMode") !== null) isDark = localStorage.getItem("darkMode") === "true";
+            else isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            if (isDark) document.documentElement.classList.add("dark");
+        })();
+    </script>
 
-            // Back button: return to launch.html preserving all URL params
-            document.getElementById("back-btn").addEventListener("click", () => {
-                window.location.href = `launch.html?${params.toString()}`;
-            });
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet" />
 
-            function makeLaunchContext(questionnaire) {
-                return {
-                    custom: {
-                        resourceType: "Parameters",
-                        parameter: [
-                            ...Array.from(params.entries()).map(([name, value]) => ({
-                                name,
-                                valueString: value,
-                            })),
-                            { name: "questionnaire", valueString: questionnaire },
-                        ],
-                    },
-                    patient: {
-                        resourceType: "Patient",
-                        identifier: [
-                            { value: params.get("patientId") || "example-patient-id" },
-                        ],
-                    },
-                };
-            }
+    <style>
+        :root {
+            --background: 0 0% 100%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 90%;
+        }
+        :root.dark {
+            --background: 206 27% 17%;
+            --foreground: 215 20% 85%;
+            --muted: 0 0% 24%;
+            --muted-foreground: 215 15% 55%;
+            --accent: 210 30% 20%;
+            --border: 206 26% 24%;
+        }
+        :root.dark body { background-color: #161f27 !important; }
 
-            form1.setAttribute("launch-context", JSON.stringify(makeLaunchContext(FLOW_QUESTIONNAIRE_1)));
-            form1.setAttribute("questionnaire", FLOW_QUESTIONNAIRE_1);
+        #slide-over {
+            transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateX(100%);
+        }
+        #slide-over.open { transform: translateX(0); }
 
-            form2.setAttribute("launch-context", JSON.stringify(makeLaunchContext(FLOW_QUESTIONNAIRE_2)));
-            form2.setAttribute("questionnaire", FLOW_QUESTIONNAIRE_2);
+        .card-body {
+            display: grid;
+            grid-template-rows: 0fr;
+            transition: grid-template-rows 0.25s ease;
+        }
+        .card-body.expanded { grid-template-rows: 1fr; }
+        .card-body-inner { overflow: hidden; }
 
-            document.getElementById("save-btn").addEventListener("click", () => {
-                form1.requestSubmit();
-                form2.requestSubmit();
-            });
+        .chevron { transition: transform 0.2s ease; }
+        .card.open .chevron { transform: rotate(180deg); }
 
-            // form1: silent save only
-            form1.addEventListener("tiro-submit", (event) => {
-                if (event.detail.response.status === "in-progress") {
-                    // saved silently alongside form2
-                }
-            });
+        .tab-btn { color: #6b7280; transition: background 0.15s, color 0.15s; }
+        .tab-btn:hover { background: rgba(0,0,0,0.06); color: #374151; }
+        .tab-btn.active { background: white; color: #111827; box-shadow: 0 1px 3px rgba(0,0,0,0.12); }
+        .dark .tab-btn { color: #9ca3af; }
+        .dark .tab-btn:hover { background: rgba(255,255,255,0.06); color: #d1d5db; }
+        .dark .tab-btn.active { background: #1f2c36; color: #f3f4f6; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
 
-            // form2: drives PDF generation
-            form2.addEventListener("tiro-submit", async (event) => {
-                const response = event.detail.response;
-                if (response.status === "in-progress") {
-                    alert("Progress saved!");
-                    return;
-                }
-                try {
-                    loadingOverlay.classList.remove("hidden");
-                    loadingOverlay.classList.add("flex");
-                    const scriptTag = form2.querySelector('script[type="application/fhir+json"]');
-                    const questionnaire = scriptTag ? JSON.parse(scriptTag.textContent) : null;
-                    const { pdfData, title } = await form2.sdcClient.extract({
-                        questionnaireResponse: response,
-                        questionnaire,
-                    });
-                    if (!pdfData) throw new Error("No PDF data in extract response");
-                    const pdfBlob = new Blob(
-                        [Uint8Array.from(atob(pdfData), (c) => c.charCodeAt(0))],
-                        { type: "application/pdf" },
-                    );
-                    const pdfUrl = URL.createObjectURL(pdfBlob);
-                    sessionStorage.setItem("pdfUrl", pdfUrl);
-                    sessionStorage.setItem("pdfTitle", title || "Report");
-                    window.location.href = "callback.html";
-                } catch (err) {
-                    loadingOverlay.classList.add("hidden");
-                    loadingOverlay.classList.remove("flex");
-                    alert("Error generating PDF: " + err.message);
-                }
-            });
-        </script>
-    </body>
+        input[type="search"]::-webkit-search-cancel-button { display: none; }
+
+        .dicom-chip {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-family: ui-monospace, monospace;
+            background: rgba(0,0,0,0.05);
+            color: #374151;
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+        .dark .dicom-chip {
+            background: rgba(255,255,255,0.06);
+            color: #cbd5e1;
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); }
+    </style>
+</head>
+<body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200 font-sans min-h-screen">
+
+<!-- Backdrop -->
+<div id="backdrop" class="fixed inset-0 bg-black/40 z-30 hidden" onclick="closeSlideOver()"></div>
+
+<!-- Slide-over editor -->
+<div id="slide-over" class="fixed top-0 right-0 h-full w-full max-w-lg bg-white dark:bg-[#1a2633] shadow-2xl z-40 flex flex-col border-l border-neutral-200 dark:border-slate-700">
+    <div class="flex items-center justify-between px-5 py-3.5 border-b border-neutral-200 dark:border-slate-700 shrink-0">
+        <h2 class="text-sm font-semibold text-neutral-800 dark:text-neutral-100" id="editor-title">Bewerken</h2>
+        <button onclick="closeSlideOver()" class="p-1.5 rounded-md hover:bg-neutral-100 dark:hover:bg-slate-700 text-neutral-400 dark:text-neutral-500 transition-colors">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5 space-y-4" id="editor-body"></div>
+    <div class="px-5 py-3.5 border-t border-neutral-200 dark:border-slate-700 flex items-center justify-between shrink-0">
+        <div id="editor-delete-zone"></div>
+        <div class="flex gap-2.5">
+            <button onclick="closeSlideOver()" class="px-3.5 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-slate-700 text-neutral-700 dark:text-neutral-200 transition-colors">
+                Annuleren
+            </button>
+            <button onclick="saveEditor()" class="px-3.5 py-1.5 text-sm font-medium rounded-md bg-[#105750] hover:bg-[#0b3e39] text-white transition-colors">
+                Opslaan
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main -->
+<div class="max-w-4xl mx-auto px-4 pb-16">
+
+    <!-- Sticky toolbar -->
+    <div class="sticky top-0 z-20 -mx-4 px-4 pt-3 pb-2 bg-neutral-50/95 dark:bg-[#161f27]/95 backdrop-blur-sm border-b border-neutral-200/60 dark:border-slate-700/50 mb-4">
+        <div class="flex items-center gap-2 flex-wrap">
+            <button id="back-btn" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-slate-700 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
+                Terug
+            </button>
+
+            <div class="flex gap-0.5 bg-neutral-100 dark:bg-slate-800/80 rounded-lg p-1 shrink-0">
+                <button class="tab-btn active px-2.5 py-1 text-xs font-medium rounded-md" data-modality="ALL">Alle</button>
+                <button class="tab-btn px-2.5 py-1 text-xs font-medium rounded-md" data-modality="RX">RX</button>
+                <button class="tab-btn px-2.5 py-1 text-xs font-medium rounded-md" data-modality="US">US</button>
+                <button class="tab-btn px-2.5 py-1 text-xs font-medium rounded-md" data-modality="CT">CT</button>
+                <button class="tab-btn px-2.5 py-1 text-xs font-medium rounded-md" data-modality="MRI">MRI</button>
+            </div>
+
+            <input type="search" id="search-input" placeholder="Zoeken op naam, code of DICOM..."
+                class="flex-1 min-w-[160px] px-2.5 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-[#1f2c36] text-neutral-800 dark:text-neutral-200 placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#105750]" />
+
+            <button onclick="openEditor(null)" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-md bg-[#105750] hover:bg-[#0b3e39] text-white transition-colors shrink-0">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                Nieuw
+            </button>
+        </div>
+        <p class="mt-1.5 text-xs text-neutral-400 dark:text-neutral-500" id="stats-text"></p>
+    </div>
+
+    <div id="cards-container" class="space-y-5"></div>
+    <div id="empty-state" class="hidden text-center py-20">
+        <svg class="mx-auto mb-3 text-neutral-300 dark:text-slate-600" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <p class="text-sm text-neutral-400 dark:text-neutral-500">Geen onderzoeken gevonden</p>
+    </div>
+</div>
+
+<script>
+const MC = {
+    RX:  { dot:'bg-blue-500',    badge:'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'   },
+    US:  { dot:'bg-violet-500',  badge:'bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300' },
+    CT:  { dot:'bg-amber-500',   badge:'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'  },
+    MRI: { dot:'bg-emerald-500', badge:'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' },
+};
+
+const DEFAULT_EXAM_TYPES = [
+    // ── RX ──
+    { id:'rxcwz',      name:'RX CERVICALE WERVELZUIL',       modality:'RX',  code:'rxcwz',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['cervicale wervelzuil'] },
+    { id:'rxdwz',      name:'RX DORSALE WERVELZUIL',         modality:'RX',  code:'rxdwz',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['dorsale wervelzuil','dorsolumbale wervelzuil'] },
+    { id:'rxlwz',      name:'RX LUMBALE WERVELZUIL',         modality:'RX',  code:'rxlwz',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['lumbale wervelzuil'] },
+    { id:'rxsche',     name:'RX SCHEDEL',                    modality:'RX',  code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['schedel'] },
+    { id:'rxneus',     name:'RX NEUSBEEN',                   modality:'RX',  code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['neusbeen'] },
+    { id:'rxthonl',    name:'RX THORAX FACE EN PROFIEL',     modality:'RX',  code:'rxthonl',      notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['thorax face','thorax face/profiel','tele'] },
+    { id:'rxthoanl',   name:'RX THORAX AAN BED',             modality:'RX',  code:'rxthoanl',     notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['thorax face bedfoto'] },
+    { id:'rxabd',      name:'RX ABDOMEN',                    modality:'RX',  code:'rxabd',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['abdomen'] },
+    { id:'rxbot',      name:'RX SKELET — NORMAAL',           modality:'RX',  code:'rxbot / gnfra',notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['sacrum + coccyx','sternum','ribbenrooster','scaniometrie','sacroiliacale gewrichten'] },
+    { id:'rxscho',     name:'RX SCHOUDER',                   modality:'RX',  code:'rxscho',       notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['schouder links','schouder rechts','schouders','schouderblad links','schouderblad rechts','schouderbladen','sleutelbeen links','sleutelbeen rechts','sleutelbeenderen','RX schouder - barbotage'] },
+    { id:'rxbovenarm', name:'RX BOVENARM',                   modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['bovenarm links','bovenarm rechts','bovenarmen'] },
+    { id:'rxell',      name:'RX ELLEBOOG',                   modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['elleboog links','elleboog rechts','ellebogen'] },
+    { id:'rxonderarm', name:'RX ONDERARM',                   modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['onderarm links','onderarm rechts','onderarmen'] },
+    { id:'rxpols',     name:'RX POLS',                       modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['pols links','pols rechts','polsen'] },
+    { id:'rxhand',     name:'RX HAND',                       modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['hand links','hand rechts','handen','vinger links','vinger rechts','vingers'] },
+    { id:'rxbek',      name:'RX BEKKEN EN HEUP',             modality:'RX',  code:'rxbek',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['bekken','heup links','heup rechts','femur links','femur rechts','bovenbenen'] },
+    { id:'rxkni',      name:'RX KNIE',                       modality:'RX',  code:'rxkni',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['knie links','knie rechts'] },
+    { id:'rxenk',      name:'RX ENKEL',                      modality:'RX',  code:'rxenk',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['enkel links','enkel rechts','enkels'] },
+    { id:'rxvoe',      name:'RX VOET',                       modality:'RX',  code:'rxvoe',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['voet links','voet rechts','voeten','teen links','teen rechts','tenen'] },
+    { id:'rxonderbeen',name:'RX ONDERBEEN',                  modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['onderbeen links','onderbeen rechts','onderbenen'] },
+    { id:'rxbovbeen',  name:'RX BOVENBEEN',                  modality:'RX',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'rxfulspi',   name:'RX FULL SPINE',                 modality:'RX',  code:'rxfulspi',     notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['full spine'] },
+    { id:'rxfulleg',   name:'RX FULL LEG',                   modality:'RX',  code:'rxfulleg',     notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['full leg beide'] },
+    { id:'rxmam',      name:'RX MAMMOGRAFIE',                modality:'RX',  code:'rxmam',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['screeningsmammografie','mammografie 1 borst','mammografie 2 borsten','mammo beide borsten hoog risico','VACUUMSYSTEEMSTEREOTACTISCH+MARKER','vacuum systeem stereotactisch','SCREENING KOMEN','harpoen','aanprikken letsel','aanprikken borstletsel FNAC','cytologische punctie van borstklier core','plaatsen clip links','plaatsen clip rechts'] },
+    { id:'rxbotden',   name:'BOTDENSITOMETRIE DEXA',         modality:'RX',  code:'rxbotden',     notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['botdensitometrie','botdensitometrie met terugbetaling'] },
+    // ── US / ECHO ──
+    { id:'ehersen',    name:'ECHO HERSENEN',                 modality:'US',  code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo hersenen via fontanel'] },
+    { id:'ehal',       name:'ECHO HALS',                     modality:'US',  code:'ehal',         notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo hals'] },
+    { id:'emam',       name:'ECHO MAMMO BILATERAAL',         modality:'US',  code:'emam',         notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:["echo één of beide borsten",'echo borsten hoog risico','VACUUMSYSTEEMONDERECHO+MARKEERDER','MAGSEED LINKS','MAGSEED RECHTS','vacuum systeem onder echo'] },
+    { id:'eabd',       name:'ECHO ABDOMEN',                  modality:'US',  code:'eabd',         notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo abdomen','echo lever en galblaas'] },
+    { id:'enie',       name:'ECHO NIEREN',                   modality:'US',  code:'enie',         notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo nieren','echo nieren en blaas','echo nieren + blaas + doppler'] },
+    { id:'escr',       name:'ECHO SCROTUM',                  modality:'US',  code:'escr',         notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo scrotum','transrectale echografie'] },
+    { id:'epro',       name:'ECHO PROSTAAT',                 modality:'US',  code:'epro',         notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo klein bekken man'] },
+    { id:'eschk',      name:'ECHO SCHILDKLIER',              modality:'US',  code:'eschk',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'escho',      name:'ECHO SCHOUDER',                 modality:'US',  code:'escho',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo schouder - barbotage','echo ledematen'] },
+    { id:'eell',       name:'ECHO ELLEBOOG',                 modality:'US',  code:'eell',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'euln',       name:'ECHO NERVUS ULNARIS',           modality:'US',  code:'euln',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'emed',       name:'ECHO NERVUS MEDIANUS',          modality:'US',  code:'emed',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'epol',       name:'ECHO POLS',                     modality:'US',  code:'epol',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'evin',       name:'ECHO VINGER',                   modality:'US',  code:'evin',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'eheu',       name:'ECHO HEUP',                     modality:'US',  code:'eheu',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['echo klein bekken vrouw'] },
+    { id:'eheudys',    name:'ECHO HEUP DYSPLASIE KIND',      modality:'US',  code:'eheudys',      notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'ekni',       name:'ECHO KNIE',                     modality:'US',  code:'ekni',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'eenk',       name:'ECHO ENKEL',                    modality:'US',  code:'eenk',         notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'edupartnie', name:'ECHO DUPLEX NIEREN',            modality:'US',  code:'edupartnie',   notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['doppl abdomen'] },
+    { id:'eduplev',    name:'ECHO DUPLEX LEVER',             modality:'US',  code:'eduplev',      notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'eduparthal', name:'ECHO DUPLEX ARTERIEEL HALS',    modality:'US',  code:'eduparthal',   notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['doppl carotiden + vertebralis'] },
+    { id:'edupartbee', name:'ECHO DUPLEX ARTERIEEL BEEN',    modality:'US',  code:'edupartbee',   notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['follow up arteriële bloedvaten','doppler beide ledematen','doppl lidmaat + andere echo'] },
+    { id:'edupvenbee', name:'ECHO DUPLEX VENEUS BEEN',       modality:'US',  code:'edupvenbee',   notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['follow up veneuse bloedvaten'] },
+    { id:'edupvenarm', name:'ECHO DUPLEX VENEUS ARM',        modality:'US',  code:'edupvenarm',   notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'echo2',      name:"ECHO 2 REGIO'S",               modality:'US',  code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:["echo 2 versch. anatom. regio's",'echo thorax','drainage met plaatsen catheter','echo ogen'] },
+    // ── CT ──
+    { id:'ctcwz',      name:'CT CERVICALE WERVELZUIL',       modality:'CT',  code:'ctcwz',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT cervicale wervelzuil'] },
+    { id:'ctdwz',      name:'CT DORSALE WERVELZUIL',         modality:'CT',  code:'ctdwz',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT dorsale wervelzuil','CT dorsale wervelzuil 1 niveau','CT combinatie 2 delen of volledige wervelzuil'] },
+    { id:'ctlwz',      name:'CT LUMBALE WERVELZUIL',         modality:'CT',  code:'ctlwz',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT lumbale wervelzuil'] },
+    { id:'cther',      name:'CT HERSENEN',                   modality:'CT',  code:'cther',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT schedel'] },
+    { id:'ctsin',      name:'CT SINUSSEN',                   modality:'CT',  code:'ctsin',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT sinussen op de CT scan','CT sinussen op conebeam','CT maxillo-faciaal massief','CT dental scan','conebeam ct dental','conebeamCT rotsbeenderen','CT rotsbeenderen'] },
+    { id:'ctbrughoek', name:'CT BRUGHOEK',                   modality:'CT',  code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'ctschk',     name:'CT SCHILDKLIER',                modality:'CT',  code:'ctschk',       notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'cthal',      name:'CT HALS',                       modality:'CT',  code:'cthal',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT hals','CT hals en thorax','CT hals, thorax en abdomen'] },
+    { id:'cttho',      name:'CT THORAX',                     modality:'CT',  code:'cttho',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT thorax','CT thorax en abdomen','CT full body','CT hals en thorax'] },
+    { id:'ctaorboo',   name:'CT AORTABOOG',                  modality:'CT',  code:'ctaorboo',     notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT aorta','CT angio carotiden','CT angio onderste ledematen','CT angio abdomen'] },
+    { id:'ctcor',      name:'CT CORONAIREN',                 modality:'CT',  code:'ctcor',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT coronarografie'] },
+    { id:'cttav',      name:'CT PRE-TAVI',                   modality:'CT',  code:'cttav',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT TAVI'] },
+    { id:'ctabd',      name:'CT ABDOMEN',                    modality:'CT',  code:'ctabd',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT abdomen','CT bekken','CT enteroclyse','CT virtuele coloscopie','Punctie lever','Punctie long'] },
+    { id:'cturo',      name:'CT UROLOGIE',                   modality:'CT',  code:'cturo',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT nieren'] },
+    { id:'ctscho',     name:'CT SCHOUDER',                   modality:'CT',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT schouder links','CT schouder rechts','CT schouder'] },
+    { id:'ctell',      name:'CT ELLEBOOG',                   modality:'CT',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT elleboog','CT elleboog links','CT elleboog rechts','CT hand of pols'] },
+    { id:'ctkni',      name:'CT KNIE',                       modality:'CT',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT knie','CT knie links','CT knie rechts','CT onderste ledematen (rotatiemeting)'] },
+    { id:'ctheu',      name:'CT HEUP',                       modality:'CT',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT heup'] },
+    { id:'ctenk',      name:'CT ENKEL / VOET',               modality:'CT',  code:'',             notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['CT enkel of voet','CT onderbeen','CT onderbeen links','CT onderbeen rechts','cone beam lidmaat','cone beam lidmaat artro'] },
+    // ── MRI ──
+    { id:'mrher',      name:'MRI HERSENEN',                  modality:'MRI', code:'mrher',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR hersenen','MR sella tursica','MR kaakkopjes','MR binnenoor','MR oog'] },
+    { id:'mrherdem',   name:'MRI HERSENEN DEMENTIE',         modality:'MRI', code:'mrherdem',     notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:[] },
+    { id:'mrabd',      name:'MRI ABDOMEN',                   modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR bovenbuik','MRentero','MR abdominale vaten','MR aorto thoracalis'] },
+    { id:'mrrec',      name:'MRI RECTUM',                    modality:'MRI', code:'mrrec',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR anale fistel','NMR defaecografie'] },
+    { id:'mrend',      name:'MRI ENDOMETRIOSE',              modality:'MRI', code:'mrend',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR onderbuik','MR urinewegen'] },
+    { id:'mrpro',      name:'MRI PROSTAAT',                  modality:'MRI', code:'mrpro',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR prostaat'] },
+    { id:'mrsch',      name:'MRI SCHOUDER',                  modality:'MRI', code:'mrsch',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR schouder links','MR schouder rechts','artro MR schouder rechts','artro MR schouder links','MR humerus links','MR humerus rechts'] },
+    { id:'mrell',      name:'MRI ELLEBOOG',                  modality:'MRI', code:'mrell',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR elleboog links','MR elleboog rechts'] },
+    { id:'mrpol',      name:'MRI POLS',                      modality:'MRI', code:'mrpol',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR pols links','MR pols rechts','MR hand links','MR hand rechts','MR vinger links','MR vinger rechts','MR middenvoet links','MR middenvoet rechts','MR voorvoet links','MR voorvoet rechts'] },
+    { id:'mrsig',      name:'MRI SACROILIACALE GEWRICHTEN',  modality:'MRI', code:'mrsig',        notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR sacrum'] },
+    { id:'mrheu',      name:'MRI HEUP',                      modality:'MRI', code:'mrheu',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR heup','artro MR bekken (heup)','MR femur links','MR femur rechts'] },
+    { id:'mrkni',      name:'MRI KNIE',                      modality:'MRI', code:'mrkni',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR knie links','MR knie rechts'] },
+    { id:'mrenk',      name:'MRI ENKEL',                     modality:'MRI', code:'mrenk',        notes:'{lat}', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR enkel links','MR enkel rechts','MR onderbeen links','MR onderbeen rechts'] },
+    { id:'mrcwz',      name:'MRI CERVICALE WERVELZUIL',      modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR cervicaal','MR plexus cervicobrachialis'] },
+    { id:'mrdwz',      name:'MRI DORSALE WERVELZUIL',        modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR dorsaal'] },
+    { id:'mrlwz',      name:'MRI LUMBALE WERVELZUIL',        modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR lumbaal','MR full spine','MR axiaal skelet','MR plexus lumbosacralis'] },
+    { id:'mrhal',      name:'MRI HALS',                      modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR hals','MR carotiden'] },
+    { id:'mrbekken',   name:'MRI BEKKEN',                    modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR bekken','MR venografie - bekken','MR angio perifeer','MR angio subclavia','MR nier arteris','MR peniele bloedvaten'] },
+    { id:'mrmam',      name:'MRI MAMMOGRAFIE',               modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR mammo','mr mammo hoog risico','PUNCTIE MAMMO ONDER MR'] },
+    { id:'mrhart',     name:'MRI HART',                      modality:'MRI', code:'',             notes:'', templateUrl:'', snomedCode:'', aiRules:[], dicomDescriptions:['MR hart'] },
+];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let examTypes   = loadData();
+let activeModal = 'ALL';
+let searchQuery = '';
+let editingId   = null;
+let openCards   = new Set();
+
+function loadData() {
+    try {
+        const s = localStorage.getItem('flowExamTypes_v2');
+        return s ? JSON.parse(s) : JSON.parse(JSON.stringify(DEFAULT_EXAM_TYPES));
+    } catch { return JSON.parse(JSON.stringify(DEFAULT_EXAM_TYPES)); }
+}
+function saveData() {
+    localStorage.setItem('flowExamTypes_v2', JSON.stringify(examTypes));
+}
+
+// ── Filtering ──────────────────────────────────────────────────────────────────
+function getFiltered() {
+    const q = searchQuery.toLowerCase();
+    return examTypes.filter(e => {
+        if (activeModal !== 'ALL' && e.modality !== activeModal) return false;
+        if (!q) return true;
+        return e.name.toLowerCase().includes(q)
+            || e.code.toLowerCase().includes(q)
+            || e.dicomDescriptions.some(d => d.toLowerCase().includes(q));
+    });
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────────
+const MODALITY_ORDER = ['RX','US','CT','MRI'];
+const MODALITY_LABEL = { RX:'Röntgen', US:'Echografie', CT:'CT Scan', MRI:'MRI' };
+
+function render() {
+    const filtered = getFiltered();
+    const container = document.getElementById('cards-container');
+    const empty     = document.getElementById('empty-state');
+    const stats     = document.getElementById('stats-text');
+
+    const total  = examTypes.length;
+    const mapped = examTypes.filter(e => e.dicomDescriptions.length > 0).length;
+    stats.textContent = `${total} onderzoekstypen · ${mapped} gekoppeld aan DICOM`;
+
+    if (filtered.length === 0) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+    }
+    empty.classList.add('hidden');
+
+    const groups = {};
+    MODALITY_ORDER.forEach(m => groups[m] = []);
+    filtered.forEach(e => { if (groups[e.modality]) groups[e.modality].push(e); });
+
+    container.innerHTML = MODALITY_ORDER
+        .filter(m => groups[m].length > 0)
+        .map(mod => {
+            const mc    = MC[mod];
+            const cards = groups[mod].map(e => renderCard(e, mc)).join('');
+            return `
+            <div>
+                <div class="flex items-center gap-2 mb-2 px-1">
+                    <span class="w-2 h-2 rounded-full ${mc.dot} shrink-0"></span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">${mod}</span>
+                    <span class="text-xs text-neutral-400 dark:text-neutral-500">— ${MODALITY_LABEL[mod]}</span>
+                    <span class="ml-auto text-xs text-neutral-400 dark:text-neutral-500">${groups[mod].length}</span>
+                </div>
+                <div class="space-y-1">${cards}</div>
+            </div>`;
+        }).join('');
+}
+
+function renderCard(e, mc) {
+    const isOpen      = openCards.has(e.id);
+    const dc          = e.dicomDescriptions.length;
+    const hasTemplate = !!e.templateUrl;
+    const aiCnt       = (e.aiRules||[]).length;
+
+    const expandedHtml = isOpen ? renderExpanded(e, mc) : '';
+
+    return `
+    <div class="card ${isOpen?'open':''} rounded-lg border border-neutral-200 dark:border-slate-700/70 bg-white dark:bg-[#1a2633] overflow-hidden" data-id="${e.id}">
+        <div class="flex items-center gap-2 px-3 py-2 cursor-pointer select-none hover:bg-neutral-50/80 dark:hover:bg-slate-800/40 transition-colors"
+             onclick="toggleCard('${e.id}')">
+            <div class="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+                <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100">${escHtml(e.name)}</span>
+                ${e.code ? `<span class="text-[11px] font-mono px-1.5 py-px rounded ${mc.badge} shrink-0">${escHtml(e.code)}</span>` : ''}
+                ${e.notes ? `<span class="text-xs text-neutral-400 dark:text-neutral-500 italic shrink-0">${escHtml(e.notes)}</span>` : ''}
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                ${dc > 0
+                    ? `<span class="text-[11px] text-neutral-400 dark:text-neutral-500 hidden sm:inline">${dc} DICOM</span>`
+                    : `<span class="text-[11px] text-neutral-300 dark:text-slate-600 hidden sm:inline">geen DICOM</span>`}
+                ${hasTemplate ? `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" title="Template gekoppeld"></span>` : ''}
+                ${aiCnt > 0  ? `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" title="${aiCnt} AI regel(s)"></span>` : ''}
+                <button onclick="event.stopPropagation();openEditor('${e.id}')"
+                    class="px-2 py-0.5 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-slate-700 text-neutral-600 dark:text-neutral-300 transition-colors">
+                    Bewerken
+                </button>
+                <svg class="chevron w-3.5 h-3.5 text-neutral-400 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </div>
+        </div>
+        <div class="card-body ${isOpen?'expanded':''}">
+            <div class="card-body-inner">${expandedHtml}</div>
+        </div>
+    </div>`;
+}
+
+function renderExpanded(e, mc) {
+    const dc          = e.dicomDescriptions.length;
+    const hasTemplate = !!e.templateUrl;
+    const aiCnt       = (e.aiRules||[]).length;
+
+    const dicomSection = dc > 0
+        ? `<div class="flex flex-wrap gap-1.5">${e.dicomDescriptions.map(d=>`<span class="dicom-chip">${escHtml(d)}</span>`).join('')}</div>`
+        : `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic">Geen DICOM beschrijvingen gekoppeld</p>`;
+
+    return `
+    <div class="px-4 py-4 border-t border-neutral-100 dark:border-slate-700/50 bg-neutral-50/40 dark:bg-slate-800/20">
+        <div class="flex items-stretch gap-4 flex-wrap md:flex-nowrap">
+
+            <!-- DICOM -->
+            <div class="flex-1 min-w-0">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-2">DICOM StudyDescription</p>
+                ${dicomSection}
+            </div>
+
+            <!-- Arrow -->
+            <div class="hidden md:flex flex-col items-center justify-center text-neutral-300 dark:text-slate-600 shrink-0 pt-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <!-- ExamType pill -->
+            <div class="hidden md:flex flex-col items-center justify-center shrink-0 pt-5">
+                <div class="px-3 py-2 rounded-lg border ${mc.badge} text-center min-w-[120px]">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider mb-1 opacity-60">Onderzoekstype</p>
+                    <p class="text-xs font-semibold leading-tight">${escHtml(e.name)}</p>
+                    ${e.code ? `<p class="text-[10px] font-mono mt-0.5 opacity-70">${escHtml(e.code)}</p>` : ''}
+                </div>
+            </div>
+
+            <!-- Arrow -->
+            <div class="hidden md:flex flex-col items-center justify-center text-neutral-300 dark:text-slate-600 shrink-0 pt-5">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+
+            <!-- Templates -->
+            <div class="w-full md:w-40 shrink-0">
+                <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 mb-2">Templates & Regels</p>
+                <div class="space-y-1.5">
+                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0 ${hasTemplate ? 'bg-emerald-400' : 'bg-neutral-300 dark:bg-slate-600'}"></span>
+                        <span class="text-[11px] text-neutral-600 dark:text-neutral-300">${hasTemplate ? 'Template ✓' : 'Geen template'}</span>
+                    </div>
+                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0 ${aiCnt > 0 ? 'bg-amber-400' : 'bg-neutral-300 dark:bg-slate-600'}"></span>
+                        <span class="text-[11px] text-neutral-600 dark:text-neutral-300">AI regels: ${aiCnt}</span>
+                    </div>
+                    ${e.snomedCode ? `
+                    <div class="flex items-center gap-2 px-2 py-1.5 rounded-md bg-white dark:bg-slate-800 border border-neutral-200 dark:border-slate-700">
+                        <span class="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-400"></span>
+                        <span class="text-[11px] font-mono text-neutral-600 dark:text-neutral-300 truncate">${escHtml(e.snomedCode)}</span>
+                    </div>` : ''}
+                </div>
+            </div>
+        </div>
+        ${e.notes ? `<p class="mt-3 text-xs text-neutral-400 dark:text-neutral-500 italic">${escHtml(e.notes)}</p>` : ''}
+    </div>`;
+}
+
+function toggleCard(id) {
+    if (openCards.has(id)) openCards.delete(id);
+    else openCards.add(id);
+    render();
+}
+
+// ── Editor ─────────────────────────────────────────────────────────────────────
+function openEditor(id) {
+    editingId = id;
+    const e = id ? examTypes.find(x => x.id === id) : null;
+
+    document.getElementById('editor-title').textContent =
+        e ? `Bewerken — ${e.name}` : 'Nieuw onderzoekstype';
+
+    document.getElementById('editor-delete-zone').innerHTML = id
+        ? `<button type="button" onclick="deleteExam('${id}')"
+               class="text-xs text-red-500 hover:text-red-600 dark:text-red-400 transition-colors">
+               Verwijderen
+           </button>`
+        : '';
+
+    const field = (id, val, ph, cls='') =>
+        `<input type="text" id="${id}" value="${escHtml(val||'')}" placeholder="${ph}"
+            class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700
+                   bg-white dark:bg-[#1f2c36] text-neutral-800 dark:text-neutral-100
+                   focus:outline-none focus:ring-1 focus:ring-[#105750] ${cls}" />`;
+
+    document.getElementById('editor-body').innerHTML = `
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Naam</label>
+            ${field('ed-name', e?.name, 'RX CERVICALE WERVELZUIL')}
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Code</label>
+                ${field('ed-code', e?.code, 'rxcwz', 'font-mono text-xs')}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Modaliteit</label>
+                <select id="ed-modality"
+                    class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700
+                           bg-white dark:bg-[#1f2c36] text-neutral-800 dark:text-neutral-100
+                           focus:outline-none focus:ring-1 focus:ring-[#105750]">
+                    ${['RX','US','CT','MRI'].map(m =>
+                        `<option value="${m}" ${e?.modality===m?'selected':''}>${m}</option>`
+                    ).join('')}
+                </select>
+            </div>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+                DICOM StudyDescriptions
+                <span class="font-normal text-neutral-400 dark:text-neutral-500">(één per regel)</span>
+            </label>
+            <textarea id="ed-dicom" rows="6"
+                placeholder="cervicale wervelzuil&#10;CWZ&#10;..."
+                class="w-full px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700
+                       bg-white dark:bg-[#1f2c36] text-neutral-800 dark:text-neutral-100 font-mono
+                       focus:outline-none focus:ring-1 focus:ring-[#105750] resize-y">${e ? e.dicomDescriptions.join('\n') : ''}</textarea>
+            <p class="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+                Wordt case-insensitief vergeleken met StudyDescription uit PACS.
+            </p>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Template URL</label>
+            ${field('ed-template', e?.templateUrl, 'http://templates.tiro.health/...', 'font-mono text-xs')}
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">SNOMED Code</label>
+                ${field('ed-snomed', e?.snomedCode, 'SCTID: ...', 'font-mono text-xs')}
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Notities</label>
+                ${field('ed-notes', e?.notes, '{lat}')}
+            </div>
+        </div>
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-xs font-medium text-neutral-600 dark:text-neutral-400">AI Regels</label>
+                <button type="button" onclick="addAiRule()"
+                    class="text-xs px-2 py-1 rounded border border-neutral-300 dark:border-slate-700
+                           bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-slate-700
+                           text-neutral-600 dark:text-neutral-300 transition-colors">
+                    + Toevoegen
+                </button>
+            </div>
+            <div id="ai-list" class="space-y-2">
+                ${(e?.aiRules||[]).map(r => aiRuleRow(r.trigger, r.action)).join('')}
+            </div>
+            ${!(e?.aiRules?.length) ? `<p id="ai-empty" class="text-xs text-neutral-400 dark:text-neutral-500 italic">Geen AI regels</p>` : ''}
+        </div>`;
+
+    document.getElementById('slide-over').classList.add('open');
+    document.getElementById('backdrop').classList.remove('hidden');
+    document.getElementById('ed-name').focus();
+}
+
+function aiRuleRow(trigger, action) {
+    return `
+    <div class="ai-rule flex gap-2 items-start">
+        <div class="flex-1 space-y-1">
+            <input type="text" value="${escHtml(trigger)}" placeholder="Trigger (bv. fractuur aanwezig)"
+                class="ai-trigger w-full px-2.5 py-1.5 text-xs rounded border border-neutral-300 dark:border-slate-700
+                       bg-white dark:bg-[#1f2c36] text-neutral-800 dark:text-neutral-100
+                       focus:outline-none focus:ring-1 focus:ring-[#105750]" />
+            <input type="text" value="${escHtml(action)}" placeholder="Actie (bv. voeg conclusie toe: ...)"
+                class="ai-action w-full px-2.5 py-1.5 text-xs rounded border border-neutral-300 dark:border-slate-700
+                       bg-white dark:bg-[#1f2c36] text-neutral-800 dark:text-neutral-100
+                       focus:outline-none focus:ring-1 focus:ring-[#105750]" />
+        </div>
+        <button type="button" onclick="this.closest('.ai-rule').remove()"
+            class="mt-1 p-1 rounded hover:bg-neutral-100 dark:hover:bg-slate-700 text-neutral-400 hover:text-red-500 transition-colors">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+    </div>`;
+}
+
+function addAiRule() {
+    const list  = document.getElementById('ai-list');
+    const empty = document.getElementById('ai-empty');
+    if (empty) empty.remove();
+    list.insertAdjacentHTML('beforeend', aiRuleRow('',''));
+}
+
+function saveEditor() {
+    const name = document.getElementById('ed-name').value.trim();
+    if (!name) { document.getElementById('ed-name').focus(); return; }
+
+    const dicomDescriptions = document.getElementById('ed-dicom').value
+        .split('\n').map(s => s.trim()).filter(Boolean);
+
+    const aiRules = [];
+    document.querySelectorAll('.ai-rule').forEach(row => {
+        const t = row.querySelector('.ai-trigger').value.trim();
+        const a = row.querySelector('.ai-action').value.trim();
+        if (t||a) aiRules.push({ trigger:t, action:a });
+    });
+
+    const data = {
+        id:          editingId || ('exam_'+Date.now()),
+        name,
+        modality:    document.getElementById('ed-modality').value,
+        code:        document.getElementById('ed-code').value.trim(),
+        dicomDescriptions,
+        templateUrl: document.getElementById('ed-template').value.trim(),
+        snomedCode:  document.getElementById('ed-snomed').value.trim(),
+        notes:       document.getElementById('ed-notes').value.trim(),
+        aiRules,
+    };
+
+    if (editingId) {
+        const idx = examTypes.findIndex(x => x.id === editingId);
+        if (idx >= 0) examTypes[idx] = data;
+    } else {
+        examTypes.push(data);
+        openCards.add(data.id);
+    }
+
+    saveData();
+    closeSlideOver();
+    render();
+}
+
+function deleteExam(id) {
+    if (!confirm('Weet u zeker dat u dit onderzoekstype wilt verwijderen?')) return;
+    examTypes = examTypes.filter(x => x.id !== id);
+    openCards.delete(id);
+    saveData();
+    closeSlideOver();
+    render();
+}
+
+function closeSlideOver() {
+    document.getElementById('slide-over').classList.remove('open');
+    document.getElementById('backdrop').classList.add('hidden');
+    editingId = null;
+}
+
+// ── Tabs & search ──────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeModal = btn.dataset.modality;
+        render();
+    });
+});
+
+document.getElementById('search-input').addEventListener('input', e => {
+    searchQuery = e.target.value.trim();
+    render();
+});
+
+document.getElementById('back-btn').addEventListener('click', () => {
+    const params = new URLSearchParams(window.location.search);
+    window.location.href = `launch.html?${params.toString()}`;
+});
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('slide-over').classList.contains('open'))
+        closeSlideOver();
+});
+
+// ── Util ───────────────────────────────────────────────────────────────────────
+function escHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+render();
+</script>
+</body>
 </html>
