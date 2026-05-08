@@ -3138,7 +3138,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const trTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Vertaling');
                 const trStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
                 const trCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', () => {
-                    navigator.clipboard.writeText(trContent.innerText || '').catch(() => {});
+                    pipWindow.navigator.clipboard.writeText(trContent.innerText || '').then(() => {
+                        trPanel.style.display = 'none';
+                    }).catch(() => { trPanel.style.display = 'none'; });
                 });
                 trHead.append(trTitle, trStatus, trCopyBtn);
                 const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
@@ -3149,7 +3151,13 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         const text = ta.value.trim();
                         if (!text) return;
                         setDictationText(text);
-                        setTimeout(() => document.getElementById('autofill-btn').click(), 50);
+                        try {
+                            const dt = new DataTransfer();
+                            dt.setData('text/plain', text);
+                            clipboard.focus();
+                            clipboard.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, composed: true, clipboardData: dt }));
+                        } catch(e) {}
+                        setTimeout(() => document.getElementById('autofill-btn').click(), 100);
                         sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
                         setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
                     }),
@@ -3174,8 +3182,14 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                             openChatGPT(prompt);
                         }
                     }),
-                    mkBtn(S, 'Kopiëren', () => {
-                        navigator.clipboard.writeText(ta.value).catch(() => {});
+                    mkBtn(S, 'Kopiëren', (e) => {
+                        const btn = e.currentTarget;
+                        pipWindow.navigator.clipboard.writeText(ta.value).then(() => {
+                            const orig = btn.textContent;
+                            btn.textContent = 'Gekopieerd ✓';
+                            btn.style.color = '#16a34a';
+                            setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                        }).catch(() => {});
                     }),
                     sentInd,
                 );
@@ -3207,8 +3221,14 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 });
                 rtOrigBtn.style.display = 'none';
 
-                const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', () => {
-                    navigator.clipboard.writeText(_rtShowingOrig ? (_rtOrigText || '') : (rtContent.innerText || '')).catch(() => {});
+                const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
+                    const btn = e.currentTarget;
+                    pipWindow.navigator.clipboard.writeText(_rtShowingOrig ? (_rtOrigText || '') : (rtContent.innerText || '')).then(() => {
+                        const orig = btn.textContent;
+                        btn.textContent = 'Gekopieerd ✓';
+                        btn.style.color = '#16a34a';
+                        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                    }).catch(() => {});
                 });
 
                 rtActions.append(rtOrigBtn, rtCopyBtn);
