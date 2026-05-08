@@ -1237,7 +1237,7 @@
                 if (match.deptTemplate) {
                     const key = "flow:dept:" + match.id;
                     TEMPLATES[key] = match.deptTemplate;
-                    items.push({ name: key, label: match.name + " - afdeling", checked: !match.userTemplate });
+                    items.push({ name: key, label: match.name + " - afdeling", checked: true });
                 }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
