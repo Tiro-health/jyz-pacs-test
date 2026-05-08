@@ -1116,6 +1116,22 @@
                         </button>
                     </div>
 
+                    <!-- Dictation popout -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="dictation-popout-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Dictation zwevend venster
+                        </label>
+                        <button
+                            id="dictation-popout-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
+                        </button>
+                    </div>
+
                     <!-- Real time -->
                     <div class="flex items-center justify-between py-0.5">
                         <label for="realtime-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
@@ -1151,6 +1167,19 @@
                     <div class="h-8"></div>
                 </div>
             </details>
+        </div>
+
+        <!-- Floating clipboard popout panel -->
+        <div id="clipboard-popout" class="hidden fixed z-[60] bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg shadow-2xl flex-col" style="top:80px;right:24px;width:440px;min-height:200px;max-height:90vh;">
+            <div id="clipboard-popout-header" class="flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700 rounded-t-lg cursor-grab select-none shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 shrink-0"><circle cx="9" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                <span class="text-xs font-medium text-neutral-600 dark:text-neutral-300">Dictation</span>
+                <button id="clipboard-popin-btn" type="button" title="Terugplaatsen" class="ml-auto inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9V4.5M9 9H4.5M9 9 3.5 3.5"/><path d="M15 15v4.5M15 15h4.5M15 15l5.5 5.5"/></svg>
+                    Terugplaatsen
+                </button>
+            </div>
+            <div id="clipboard-popout-body" class="overflow-y-auto p-3 flex-1"></div>
         </div>
 
         <!-- Tiro Web SDK IIFE Bundle -->
@@ -3031,6 +3060,86 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 updateMedgemmaToggle();
             });
             updateMedgemmaToggle();
+
+            // ============================================
+            // Dictation popout (floating panel)
+            // ============================================
+            const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
+            const clipboardPopout       = document.getElementById('clipboard-popout');
+            const clipboardPopoutBody   = document.getElementById('clipboard-popout-body');
+            const clipboardPopoutHeader = document.getElementById('clipboard-popout-header');
+            const clipboardPopinBtn     = document.getElementById('clipboard-popin-btn');
+            const autofillAccordion     = document.getElementById('autofill-accordion');
+
+            // Marker: remembers where tiro-magic-clipboard lives in the DOM
+            const clipboardHome = document.createComment('clipboard-home');
+            clipboard.parentNode.insertBefore(clipboardHome, clipboard);
+
+            let dictationPopout = localStorage.getItem('dictationPopout') === 'true';
+
+            function applyDictationPopout(enabled) {
+                dictationPopoutToggle.setAttribute('aria-checked', String(enabled));
+                dictationPopoutToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${enabled ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
+                dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+
+                if (enabled) {
+                    clipboardPopoutBody.appendChild(clipboard);
+                    clipboardPopout.style.display = 'flex';
+                    // Placeholder in accordion
+                    if (!document.getElementById('clipboard-placeholder')) {
+                        const ph = document.createElement('div');
+                        ph.id = 'clipboard-placeholder';
+                        ph.className = 'text-xs text-neutral-400 dark:text-neutral-500 py-3 text-center italic';
+                        ph.textContent = 'Dictation is open in zwevend venster';
+                        clipboardHome.parentNode.insertBefore(ph, clipboardHome.nextSibling);
+                    }
+                } else {
+                    clipboardHome.parentNode.insertBefore(clipboard, clipboardHome.nextSibling);
+                    clipboardPopout.style.display = 'none';
+                    const ph = document.getElementById('clipboard-placeholder');
+                    if (ph) ph.remove();
+                }
+            }
+
+            dictationPopoutToggle.addEventListener('click', () => {
+                dictationPopout = !dictationPopout;
+                localStorage.setItem('dictationPopout', String(dictationPopout));
+                applyDictationPopout(dictationPopout);
+            });
+
+            clipboardPopinBtn.addEventListener('click', () => {
+                dictationPopout = false;
+                localStorage.setItem('dictationPopout', 'false');
+                applyDictationPopout(false);
+            });
+
+            applyDictationPopout(dictationPopout);
+
+            // Drag logic for floating panel
+            (function () {
+                let dragging = false, ox = 0, oy = 0;
+                clipboardPopoutHeader.addEventListener('pointerdown', (e) => {
+                    if (e.target.closest('button')) return;
+                    dragging = true;
+                    const rect = clipboardPopout.getBoundingClientRect();
+                    ox = e.clientX - rect.left;
+                    oy = e.clientY - rect.top;
+                    clipboardPopoutHeader.style.cursor = 'grabbing';
+                    clipboardPopoutHeader.setPointerCapture(e.pointerId);
+                });
+                clipboardPopoutHeader.addEventListener('pointermove', (e) => {
+                    if (!dragging) return;
+                    const x = Math.max(0, Math.min(window.innerWidth  - clipboardPopout.offsetWidth,  e.clientX - ox));
+                    const y = Math.max(0, Math.min(window.innerHeight - clipboardPopout.offsetHeight, e.clientY - oy));
+                    clipboardPopout.style.left = x + 'px';
+                    clipboardPopout.style.top  = y + 'px';
+                    clipboardPopout.style.right = 'auto';
+                });
+                clipboardPopoutHeader.addEventListener('pointerup', () => {
+                    dragging = false;
+                    clipboardPopoutHeader.style.cursor = 'grab';
+                });
+            })();
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
