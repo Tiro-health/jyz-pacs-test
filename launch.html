@@ -3056,12 +3056,13 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             updateMedgemmaToggle();
 
             // ============================================
-            // Dictation popout (Document PiP companion panel)
+            // Dictation popout (Document PiP — textarea + realtime check)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
             let _pipWindow = null;
-            let _pipTextDisplay = null;
-            let _pipInputHandler = null;
+            let _pipRealtimeAbort = null;
+            let _pipRealtimeDebounce = null;
+            let _pipRealtimeLastText = '';
 
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
@@ -3070,16 +3071,15 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             }
 
             function closeDictationPopout() {
-                if (_pipInputHandler) {
-                    clipboard.removeEventListener('input', _pipInputHandler, { capture: true });
-                    _pipInputHandler = null;
-                }
+                _pipRealtimeAbort?.abort();
+                clearTimeout(_pipRealtimeDebounce);
                 _pipWindow = null;
-                _pipTextDisplay = null;
+                _pipRealtimeLastText = '';
                 updateDictationPopoutToggle(false);
             }
 
             function buildPipUI(pipWindow) {
+                // Copy styles from main page
                 [...document.styleSheets].forEach(sheet => {
                     try {
                         const css = [...sheet.cssRules].map(r => r.cssText).join('');
@@ -3097,7 +3097,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 if (document.documentElement.classList.contains('dark')) {
                     pipWindow.document.documentElement.classList.add('dark');
                 }
-                pipWindow.document.body.style.cssText = 'margin:0;padding:8px;';
+                pipWindow.document.body.style.cssText = 'margin:0;padding:8px;overflow-y:auto;';
                 pipWindow.document.body.className = 'bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200';
 
                 const mk = (tag, cls, text) => {
@@ -3109,15 +3109,14 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 const wrap = mk('div', 'flex flex-col gap-3');
 
-                // Dictation text mirror
-                const textWrap = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
-                const textHead = mk('div', 'px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700 text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Dictatie');
-                const textBody = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[120px] whitespace-pre-wrap leading-relaxed', 'Dicteer in het hoofdvenster...');
-                _pipTextDisplay = textBody;
-                textWrap.append(textHead, textBody);
-                wrap.appendChild(textWrap);
+                // ── Dictation textarea (DMO input) ──────────────────
+                const ta = pipWindow.document.createElement('textarea');
+                ta.rows = 5;
+                ta.placeholder = 'Dicteer hier via DMO…';
+                ta.className = 'w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
+                wrap.appendChild(ta);
 
-                // Action buttons
+                // ── Action buttons ──────────────────────────────────
                 const btnRow = mk('div', 'flex gap-2 flex-wrap');
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -3130,23 +3129,104 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     return b;
                 };
 
+                const sentInd = mk('span', 'hidden text-xs text-green-600 dark:text-green-400 items-center gap-1', '✓ Verzonden');
+
                 btnRow.append(
-                    mkBtn(P,  'Autofill Template', () => document.getElementById('autofill-btn').click()),
-                    mkBtn(S,  'Translate',          () => translateBtn.click()),
-                    mkBtn(S,  'Kopiëren',           () => dictationCopyBtn.click()),
-                    mkBtn(SM, 'Verslag check',      () => verslagCheckBtn.click()),
+                    mkBtn(P, 'Autofill Template', () => {
+                        const text = ta.value.trim();
+                        if (!text) return;
+                        setDictationText(text);
+                        setTimeout(() => document.getElementById('autofill-btn').click(), 50);
+                        sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
+                        setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
+                    }),
+                    mkBtn(S, 'Translate', () => {
+                        const text = ta.value.trim();
+                        if (!text) return;
+                        latestDictationText = text;
+                        translateBtn.click();
+                    }),
+                    mkBtn(S, 'Kopiëren', () => {
+                        navigator.clipboard.writeText(ta.value).catch(() => {});
+                    }),
+                    sentInd,
                 );
                 wrap.appendChild(btnRow);
 
+                // ── Real-time verslag check panel ───────────────────
+                const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                const rtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const rtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Real time — Verslag check');
+                const rtStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
+                rtHead.append(rtTitle, rtStatus);
+                const rtContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] leading-relaxed');
+                const rtActions = mk('div', 'items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
+                rtActions.style.display = 'none';
+
+                let _rtOrigText = null, _rtShowingOrig = false, _rtResultHTML = null;
+
+                const rtOrigBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '↩ Origineel', () => {
+                    _rtShowingOrig = !_rtShowingOrig;
+                    if (_rtShowingOrig) {
+                        _rtResultHTML = rtContent.innerHTML;
+                        rtContent.innerHTML = (_rtOrigText || '').replace(/\n/g, '<br>');
+                        rtOrigBtn.textContent = '↩ Gecorrigeerd';
+                    } else {
+                        rtContent.innerHTML = _rtResultHTML;
+                        rtOrigBtn.textContent = '↩ Origineel';
+                    }
+                });
+                rtOrigBtn.style.display = 'none';
+
+                const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', () => {
+                    navigator.clipboard.writeText(_rtShowingOrig ? (_rtOrigText || '') : (rtContent.innerText || '')).catch(() => {});
+                });
+
+                rtActions.append(rtOrigBtn, rtCopyBtn);
+                rtPanel.append(rtHead, rtContent, rtActions);
+                wrap.appendChild(rtPanel);
                 pipWindow.document.body.appendChild(wrap);
 
-                // Mirror dictation text on each input event
-                _pipInputHandler = () => {
-                    if (_pipTextDisplay && latestDictationText) {
-                        _pipTextDisplay.textContent = latestDictationText;
-                    }
-                };
-                clipboard.addEventListener('input', _pipInputHandler, { capture: true });
+                // Auto-run realtime check on textarea input (2s debounce)
+                ta.addEventListener('input', () => {
+                    clearTimeout(_pipRealtimeDebounce);
+                    _pipRealtimeDebounce = setTimeout(async () => {
+                        const tekst = ta.value.trim();
+                        if (!tekst || tekst === _pipRealtimeLastText) return;
+                        _pipRealtimeLastText = tekst;
+
+                        _pipRealtimeAbort?.abort();
+                        _pipRealtimeAbort = new AbortController();
+                        rtStatus.textContent = 'Verwerken…';
+                        rtActions.style.display = 'none';
+                        rtOrigBtn.style.display = 'none';
+                        _rtOrigText = tekst;
+                        _rtShowingOrig = false;
+                        _rtResultHTML = null;
+                        rtOrigBtn.textContent = '↩ Origineel';
+
+                        const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                        const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                        const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
+                        const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
+                        const pat = extractPatientInfo();
+                        const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat });
+
+                        if (!GEMINI_API_KEY) { rtStatus.textContent = 'Geen API-sleutel ingesteld.'; return; }
+                        try {
+                            let first = true;
+                            await callGeminiStream(getModel('geminiModelRealtime'), prompt, (partial) => {
+                                if (first) { rtContent.innerHTML = ''; first = false; }
+                                rtContent.innerHTML = renderMarkdown(partial);
+                                rtStatus.textContent = '';
+                            }, _pipRealtimeAbort.signal);
+                            rtActions.style.display = 'flex';
+                            rtOrigBtn.style.display = _rtOrigText ? '' : 'none';
+                        } catch (e) {
+                            if (e.name !== 'AbortError') rtStatus.textContent = 'Fout: ' + e.message;
+                        }
+                    }, 2000);
+                });
             }
 
             async function openDictationPopout() {
@@ -3155,7 +3235,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     return;
                 }
                 try {
-                    const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 340 });
+                    const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 560 });
                     _pipWindow = pipWindow;
                     buildPipUI(pipWindow);
                     updateDictationPopoutToggle(true);
