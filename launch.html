@@ -3187,6 +3187,44 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 wrap.appendChild(rtPanel);
                 pipWindow.document.body.appendChild(wrap);
 
+                // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
+                const pipCorrTooltip = mk('div', '');
+                pipCorrTooltip.style.cssText = 'position:fixed;z-index:999;display:none;pointer-events:none;padding:2px 8px;border-radius:6px;font-size:12px;color:#f1f5f9;background:#1e293b;box-shadow:0 2px 6px rgba(0,0,0,.3);white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis';
+                pipWindow.document.body.appendChild(pipCorrTooltip);
+
+                pipWindow.document.addEventListener('mouseover', (e) => {
+                    const el = e.target.closest('.corr, .corr-reverted');
+                    if (!el) { pipCorrTooltip.style.display = 'none'; return; }
+                    pipCorrTooltip.textContent = el.classList.contains('corr-reverted')
+                        ? 'Klik om correctie te herstellen: ' + el.dataset.corr
+                        : 'Origineel: ' + (el.getAttribute('data-orig') || '') + ' — klik om te herstellen';
+                    pipCorrTooltip.style.display = 'block';
+                });
+                pipWindow.document.addEventListener('mousemove', (e) => {
+                    pipCorrTooltip.style.left = (e.clientX + 12) + 'px';
+                    pipCorrTooltip.style.top  = (e.clientY - 28) + 'px';
+                });
+                pipWindow.document.addEventListener('mouseout', (e) => {
+                    if (!e.target.closest('.corr, .corr-reverted')) pipCorrTooltip.style.display = 'none';
+                });
+                pipWindow.document.addEventListener('click', (e) => {
+                    const el = e.target.closest('.corr, .corr-reverted');
+                    if (!el) return;
+                    pipCorrTooltip.style.display = 'none';
+                    if (el.classList.contains('corr-reverted')) {
+                        el.textContent = el.dataset.corr;
+                        el.className = 'corr';
+                        el.style.cssText = 'color:#ef4444;font-weight:bold;font-style:italic';
+                    } else {
+                        const orig = el.getAttribute('data-orig');
+                        if (!orig) return;
+                        el.dataset.corr = el.textContent;
+                        el.textContent = orig;
+                        el.className = 'corr-reverted';
+                        el.style.cssText = '';
+                    }
+                });
+
                 // Auto-run realtime check on textarea input (2s debounce)
                 ta.addEventListener('input', () => {
                     clearTimeout(_pipRealtimeDebounce);
