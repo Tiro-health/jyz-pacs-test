@@ -518,7 +518,10 @@
                 const raw = localStorage.getItem(STORAGE_KEY);
                 if (raw) return JSON.parse(raw);
             } catch (_) {}
-            return { examTypes: JSON.parse(JSON.stringify(DEFAULT_EXAM_TYPES)) };
+            // First visit: persist defaults immediately so other pages can read them
+            const defaults = { examTypes: JSON.parse(JSON.stringify(DEFAULT_EXAM_TYPES)) };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+            return defaults;
         }
 
         function saveData() {
