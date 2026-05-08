@@ -492,7 +492,7 @@
               dicom:['MR prostaat'], deptTemplate:'', userTemplate:'', aiRules:[] },
             // ── ECHO ────────────────────────────────────────────────────────────
             { id:'ech-abd', name:'ECHO ABDOMEN',               code:'echabd',   modality:'ECHO',
-              dicom:['echo abdomen'], deptTemplate:'http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0', userTemplate:'', aiRules:[] },
+              dicom:['echo abdomen'], deptTemplate:'http://templates.tiro.health/templates/5d64d451149e4507aa7477b06e141bf3|1.0.0', userTemplate:'http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0', aiRules:[] },
             { id:'ech-hls', name:'ECHO HALS',                  code:'echhls',   modality:'ECHO',
               dicom:['echo hals'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'ech-nie', name:'ECHO NIEREN',                code:'echnier',  modality:'ECHO',
@@ -531,14 +531,18 @@
         // ── App state ────────────────────────────────────────────────────────────
         let state = loadData();
 
-        // Migrate: apply DEFAULT_EXAM_TYPES deptTemplate if still empty in localStorage
+        // Migrate: sync deptTemplate and userTemplate from DEFAULT_EXAM_TYPES
         (function migrate() {
             let changed = false;
             DEFAULT_EXAM_TYPES.forEach(def => {
-                if (!def.deptTemplate) return;
                 const et = state.examTypes.find(t => t.id === def.id);
-                if (et && !et.deptTemplate) {
+                if (!et) return;
+                if (def.deptTemplate && et.deptTemplate !== def.deptTemplate) {
                     et.deptTemplate = def.deptTemplate;
+                    changed = true;
+                }
+                if (def.userTemplate && et.userTemplate !== def.userTemplate) {
+                    et.userTemplate = def.userTemplate;
                     changed = true;
                 }
             });
