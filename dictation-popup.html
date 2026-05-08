@@ -39,7 +39,9 @@
             --border: 206 26% 24%;
         }
         :root.dark body { background-color: #161f27 !important; }
-        :root.dark input, :root.dark select, :root.dark textarea {
+        :root.dark input:not([type=checkbox]):not([type=radio]),
+        :root.dark select,
+        :root.dark textarea {
             background-color: #1f2c36 !important;
             border-color: #2d3f4d !important;
         }
@@ -47,6 +49,9 @@
         :root.dark .hover\:bg-cyan-700:hover { background-color: #0b3e39 !important; }
         :root.dark .border-slate-700 { border-color: #2d3f4d !important; }
         tiro-magic-clipboard { display: block; }
+        .corr { cursor: pointer; text-decoration: underline dotted #ef4444; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
     </style>
     <script>
         (function () {
@@ -56,31 +61,102 @@
         })();
     </script>
 </head>
-<body class="bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200 p-3 min-h-screen">
+<body class="bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200 p-3">
 
-    <!-- Always on Top info -->
-    <div class="mb-3 px-3 py-2 text-xs text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-muted rounded-md flex items-start gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-        <span>Voor altijd-bovenaan: installeer de <a href="https://chromewebstore.google.com/detail/companion-window-always-o/hhneckfekhpegclkfhefepcjmcnmnpae" target="_blank" class="underline hover:text-neutral-700 dark:hover:text-neutral-300">"Always on Top"</a> extensie in Brave/Chrome.</span>
+    <!-- Gemini result modal -->
+    <div id="gemini-result-modal" class="fixed inset-0 z-50 hidden items-start justify-center bg-black/40 backdrop-blur-sm overflow-y-auto py-10">
+        <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-xl shadow-xl w-full max-w-2xl mx-4 p-5 flex flex-col my-auto">
+            <div class="flex items-center justify-between mb-3">
+                <h2 id="gemini-result-title" class="text-sm font-semibold text-neutral-900 dark:text-neutral-100"></h2>
+                <div class="flex gap-2">
+                    <button id="gemini-result-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
+                    <button id="gemini-result-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                    <button id="gemini-result-close" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">✕</button>
+                </div>
+            </div>
+            <div id="gemini-result-loading" class="hidden items-center justify-center gap-3 py-8">
+                <div class="w-5 h-5 border-2 border-neutral-300 border-t-blue-500 rounded-full animate-spin"></div>
+                <span class="text-sm text-neutral-500">Bezig met analyseren...</span>
+            </div>
+            <div id="gemini-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed"></div>
+        </div>
     </div>
 
+    <!-- Verslag check modal -->
+    <div id="verslag-check-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-xl shadow-xl w-full max-w-md mx-4 p-5">
+            <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-1">Verslag check</h2>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mb-4">Vul de ontbrekende gegevens in om verder te gaan.</p>
+            <div class="space-y-3">
+                <div>
+                    <label for="modal-vc-tekst" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Verslag tekst</label>
+                    <textarea id="modal-vc-tekst" rows="4" class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="Verslag tekst..."></textarea>
+                </div>
+                <div>
+                    <label for="modal-vc-type" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Type onderzoek</label>
+                    <textarea id="modal-vc-type" rows="1" class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="Type onderzoek..."></textarea>
+                </div>
+                <div>
+                    <label for="modal-vc-ki" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Klinische inlichtingen</label>
+                    <textarea id="modal-vc-ki" rows="2" class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="Klinische inlichtingen..."></textarea>
+                </div>
+                <div>
+                    <label for="modal-vc-dv" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Diagnostische vraagstelling</label>
+                    <textarea id="modal-vc-dv" rows="2" class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none" placeholder="Diagnostische vraagstelling..."></textarea>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-4">
+                <button id="verslag-check-modal-cancel" type="button" class="px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Annuleren</button>
+                <button id="verslag-check-modal-go" type="button" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">GO</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Correction tooltip -->
+    <div id="corr-tooltip" class="fixed z-[999] hidden pointer-events-none px-2.5 py-1 rounded-md text-xs text-[#f1f5f9] bg-[#1e293b] shadow-lg" style="white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis;transition:opacity 0.1s"></div>
+
+    <!-- Dictation component -->
     <tiro-magic-clipboard dictation-language="nl" id="popup-clipboard">
-        <div class="flex gap-2 mt-2 flex-wrap items-center">
+        <div class="flex gap-2 mt-2 flex-wrap">
             <button
                 id="popup-send-btn"
                 type="button"
                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 Stuur naar verslag
             </button>
             <button
-                id="popup-copy-btn"
+                id="translate-btn"
                 type="button"
                 class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/>
+                    <path d="m22 22-5-10-5 10"/><path d="M14 18h6"/>
+                </svg>
+                Translate
+            </button>
+            <button
+                id="dictation-copy-btn"
+                type="button"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
+                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
+                </svg>
                 Kopiëren
+            </button>
+            <button
+                id="verslag-check-btn"
+                type="button"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                Verslag check
             </button>
             <span id="popup-sent-indicator" style="display:none" class="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -89,18 +165,214 @@
         </div>
     </tiro-magic-clipboard>
 
+    <!-- Always on Top info -->
+    <p class="mt-3 text-xs text-neutral-400 dark:text-neutral-500">
+        Voor altijd-bovenaan: installeer de <a href="https://chromewebstore.google.com/detail/companion-window-always-o/hhneckfekhpegclkfhefepcjmcnmnpae" target="_blank" class="underline hover:text-neutral-600 dark:hover:text-neutral-300">"Always on Top"</a> extensie.
+    </p>
+
     <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
     <script>
+        // ── Gemini setup ─────────────────────────────────────────────
+        const GEMINI_API_KEY = localStorage.getItem('geminiApiKey') || '';
+        const GEMINI_MODEL_DEFAULTS = {
+            geminiModelTranslate: 'gemini-3.1-flash-lite',
+            geminiModelVerslag:   'gemini-3.1-flash-lite',
+        };
+        function getModel(key) {
+            return localStorage.getItem(key) || GEMINI_MODEL_DEFAULTS[key] || 'gemini-3.1-flash-lite';
+        }
+
+        const GEMINI_SYSTEM = "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <del> voor verwijderde tekst, <ins> voor ingevoegde/gecorrigeerde tekst. Combineer tags waar nodig.";
+
+        async function callGemini(model, prompt, signal) {
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
+                { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contents: [{ parts: [{ text: GEMINI_SYSTEM + '\n\n' + prompt }] }] }), signal }
+            );
+            if (!res.ok) {
+                const b = await res.json().catch(() => ({}));
+                const msg = b?.error?.message || res.statusText;
+                if (res.status === 429) throw new Error(`Quotum overschreden (429). Details: ${msg}`);
+                if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de API-sleutel.`);
+                throw new Error(`Gemini fout ${res.status}: ${msg}`);
+            }
+            const data = await res.json();
+            return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '(geen resultaat)';
+        }
+
+        async function callGeminiStream(model, prompt, onChunk, signal) {
+            const res = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
+                { method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ contents: [{ parts: [{ text: GEMINI_SYSTEM + '\n\n' + prompt }] }] }), signal }
+            );
+            if (!res.ok) {
+                const b = await res.json().catch(() => ({}));
+                const msg = b?.error?.message || res.statusText;
+                if (res.status === 429) throw new Error(`Quotum overschreden (429). Details: ${msg}`);
+                if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de API-sleutel.`);
+                throw new Error(`Gemini fout ${res.status}: ${msg}`);
+            }
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '', fullText = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+                for (const line of lines) {
+                    if (!line.startsWith('data: ')) continue;
+                    const jsonStr = line.slice(6).trim();
+                    if (jsonStr === '[DONE]') continue;
+                    try {
+                        const chunk = JSON.parse(jsonStr);
+                        const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+                        if (text) { fullText += text; onChunk(fullText); }
+                    } catch {}
+                }
+            }
+            return fullText;
+        }
+
+        function fillPrompt(template, vars) {
+            let p = template;
+            for (const [k, v] of Object.entries(vars)) {
+                if (!v) p = p.replace(new RegExp(`^[^\n]*\\{${k}\\}[^\n]*\n?`, 'm'), '');
+                else p = p.replaceAll(`{${k}}`, v);
+            }
+            return p;
+        }
+
+        function openChatGPT(prompt) {
+            window.open('https://chatgpt.com/?q=' + encodeURIComponent(prompt), '_blank', 'noopener,noreferrer');
+        }
+
+        // ── renderMarkdown ────────────────────────────────────────────
+        const hoveringMode = true;
+        function renderMarkdown(rawText) {
+            const corrSpan = (orig, corr) => hoveringMode
+                ? `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${orig.replace(/"/g,'&quot;')}">${corr}</span>`
+                : `<span style="color:#ef4444;font-weight:bold;font-style:italic">${corr}</span>`;
+            let text = rawText.trim().replace(/^```[^\n]*\n?/, '').replace(/\n?```\s*$/, '');
+            text = text.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+            const html = text
+                .replace(/<del>(.*?)<\/del>\s*<ins>(.*?)<\/ins>/gis, (_, orig, corr) => corrSpan(orig.trim(), corr.trim()))
+                .replace(/<b>(.*?)<\/b>/gis, '<strong>$1</strong>')
+                .replace(/<strong>(.*?)<\/strong>/gis, '<strong>$1</strong>')
+                .replace(/<i>(.*?)<\/i>/gis, '<em>$1</em>')
+                .replace(/<em>(.*?)<\/em>/gis, '<em>$1</em>')
+                .replace(/\*\*\*(.*?)\*\*\*/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
+                .replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/gs, '<em>$1</em>')
+                .replace(/<(?!\\/?(strong|em|span|br)\\b)[^>]+>/gi, '')
+                .replace(/\n/g, '<br>');
+            return html;
+        }
+
+        // ── Gemini modal ──────────────────────────────────────────────
+        const geminiModal   = document.getElementById('gemini-result-modal');
+        const geminiTitle   = document.getElementById('gemini-result-title');
+        const geminiLoading = document.getElementById('gemini-result-loading');
+        const geminiContent = document.getElementById('gemini-result-content');
+        const geminiToggleOrig = document.getElementById('gemini-result-toggle-orig');
+
+        let _geminiRawText = '';
+        let _verslagOriginalText = null;
+        let _showingOriginal = false;
+        let _workingHTML = null;
+        let _currentAbort = null;
+        let _abortedByUser = false;
+
+        function _abortGemini(byUser = false) {
+            _abortedByUser = byUser;
+            if (_currentAbort) { _currentAbort.abort(); _currentAbort = null; }
+        }
+        function _newGeminiSignal(timeoutMs = 60000) {
+            _abortedByUser = false;
+            _abortGemini();
+            const ctrl = new AbortController();
+            _currentAbort = ctrl;
+            const id = setTimeout(() => { if (_currentAbort === ctrl) { _currentAbort = null; ctrl.abort(); } }, timeoutMs);
+            ctrl.signal.addEventListener('abort', () => clearTimeout(id), { once: true });
+            return ctrl.signal;
+        }
+        function openGeminiModal(title) {
+            _geminiRawText = '';
+            geminiTitle.textContent = title;
+            geminiContent.innerHTML = '';
+            geminiLoading.classList.remove('hidden'); geminiLoading.classList.add('flex');
+            geminiModal.classList.remove('hidden');   geminiModal.classList.add('flex');
+        }
+        function resolveGeminiModal(text) {
+            _geminiRawText = text;
+            _showingOriginal = false;
+            _workingHTML = null;
+            geminiLoading.classList.add('hidden'); geminiLoading.classList.remove('flex');
+            geminiContent.innerHTML = renderMarkdown(text);
+            geminiToggleOrig.classList.toggle('hidden', !_verslagOriginalText);
+            geminiToggleOrig.textContent = '↩ Origineel';
+        }
+        function rejectGeminiModal(err) {
+            geminiLoading.classList.add('hidden'); geminiLoading.classList.remove('flex');
+            geminiContent.innerHTML = `<span class="text-red-500">Fout: ${err}</span>`;
+            geminiToggleOrig.classList.add('hidden');
+        }
+        function _closeGeminiModal() {
+            geminiModal.classList.add('hidden'); geminiModal.classList.remove('flex');
+            _abortGemini(true);
+            _verslagOriginalText = null;
+            _showingOriginal = false;
+            _workingHTML = null;
+            geminiToggleOrig.classList.add('hidden');
+            verslagCheckActive = false;
+            verslagCheckBtn.className = BTN_VC_OFF;
+        }
+        geminiToggleOrig.addEventListener('click', () => {
+            _showingOriginal = !_showingOriginal;
+            if (_showingOriginal) {
+                _workingHTML = geminiContent.innerHTML;
+                geminiContent.innerHTML = _verslagOriginalText.replace(/\n/g, '<br>');
+                geminiToggleOrig.textContent = '↩ Gecorrigeerd';
+            } else {
+                geminiContent.innerHTML = _workingHTML;
+                geminiToggleOrig.textContent = '↩ Origineel';
+            }
+        });
+        document.getElementById('gemini-result-close').addEventListener('click', _closeGeminiModal);
+        geminiModal.addEventListener('click', (e) => { if (e.target === geminiModal) _closeGeminiModal(); });
+        document.getElementById('gemini-result-copy').addEventListener('click', () => {
+            const text = _geminiRawText || geminiContent.innerText || '';
+            navigator.clipboard.writeText(text.replace(/<[^>]+>/g, '')).catch(() => {});
+        });
+
+        // ── Correction tooltip ────────────────────────────────────────
+        const corrTooltip = document.getElementById('corr-tooltip');
+        document.addEventListener('mouseover', (e) => {
+            const t = e.target.closest('.corr');
+            if (!t) { corrTooltip.classList.add('hidden'); return; }
+            corrTooltip.textContent = 'Origineel: ' + (t.dataset.orig || '');
+            corrTooltip.classList.remove('hidden');
+        });
+        document.addEventListener('mousemove', (e) => {
+            corrTooltip.style.left = (e.clientX + 12) + 'px';
+            corrTooltip.style.top  = (e.clientY - 28) + 'px';
+        });
+        document.addEventListener('mouseout', (e) => {
+            if (!e.target.closest('.corr')) corrTooltip.classList.add('hidden');
+        });
+
+        // ── Dictation text capture ────────────────────────────────────
         const popupClipboard = document.getElementById('popup-clipboard');
         const bc = new BroadcastChannel('dictation-popup-sync');
 
-        // Apply dictation provider from localStorage
         const provider = localStorage.getItem('dictationProvider');
         if (provider) popupClipboard.setAttribute('dictation-endpoint', provider);
 
         let latestPopupText = '';
 
-        // Capture dictation text from shadow DOM input events
         popupClipboard.addEventListener('input', (e) => {
             const path = e.composedPath?.() ?? [];
             const src = path[0];
@@ -110,7 +382,7 @@
             }
         }, { capture: true });
 
-        // Stuur naar verslag
+        // ── Stuur naar verslag ────────────────────────────────────────
         document.getElementById('popup-send-btn').addEventListener('click', () => {
             bc.postMessage({ type: 'send-to-report', value: latestPopupText });
             const ind = document.getElementById('popup-sent-indicator');
@@ -118,12 +390,109 @@
             setTimeout(() => { ind.style.display = 'none'; }, 2000);
         });
 
-        // Kopiëren
-        document.getElementById('popup-copy-btn').addEventListener('click', () => {
-            navigator.clipboard.writeText(latestPopupText);
+        // ── Kopiëren ──────────────────────────────────────────────────
+        const dictationCopyBtn = document.getElementById('dictation-copy-btn');
+        dictationCopyBtn.addEventListener('click', () => {
+            if (!latestPopupText) return;
+            navigator.clipboard.writeText(latestPopupText).then(() => {
+                const icon = dictationCopyBtn.querySelector('svg').outerHTML;
+                dictationCopyBtn.innerHTML = icon + ' Gekopieerd';
+                dictationCopyBtn.classList.add('text-green-600', 'border-green-400');
+                setTimeout(() => {
+                    dictationCopyBtn.innerHTML = icon + ' Kopiëren';
+                    dictationCopyBtn.classList.remove('text-green-600', 'border-green-400');
+                }, 2000);
+            }).catch(() => {});
         });
 
-        // Notify main window on close
+        // ── Translate ─────────────────────────────────────────────────
+        const DEFAULT_TRANSLATE_PROMPT = `Vertaal onderstaand medisch radiologisch verslag naar het Frans.\n\n- Behoud de volledige opmaak en structuur (koppen, alinea\'s, witregels) ongewijzigd\n- Vertaal medische termen naar het correcte Frans medisch equivalent\n- Behoud getallen, eenheden, metingen en afkortingen exact zoals ze zijn\n\n{text}`;
+
+        document.getElementById('translate-btn').addEventListener('click', async () => {
+            const dictText = latestPopupText.trim();
+            if (!dictText) { alert('Geen dictatietekst gevonden. Dicteer eerst een verslag.'); return; }
+            const template = localStorage.getItem('dictationActionUrl') || DEFAULT_TRANSLATE_PROMPT;
+            const prompt = fillPrompt(template, { text: dictText });
+            if (GEMINI_API_KEY) {
+                openGeminiModal('Vertaling');
+                try { resolveGeminiModal(await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal())); }
+                catch (e) {
+                    if (e.name === 'AbortError' && !_abortedByUser) rejectGeminiModal('Tijdslimiet overschreden. Probeer opnieuw.');
+                    else if (e.name !== 'AbortError') rejectGeminiModal(e.message);
+                }
+            } else {
+                openChatGPT(prompt);
+            }
+        });
+
+        // ── Verslag check ─────────────────────────────────────────────
+        const DEFAULT_VERSLAG_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten.\n\n=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\n=== EINDE CONTEXT ===\n\n=== TE CONTROLEREN VERSLAG ===\n{tekst}\n=== EINDE VERSLAG ===\n\nControleer actief op de volgende foutcategorieën:\n\n**KRITIEK (altijd controleren):**\n- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren\n- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"\n- Klinisch-logische fouten: bevindingen die anatomisch onmogelijk zijn voor dit type onderzoek\n\n**SPEECH-TO-TEXT FOUTEN:**\n- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname\n- Cijfer- en maatfouten: verwisselde decimalen, mm↔cm verwisseling\n\nINSTRUCTIES VOOR UITVOER:\n- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen labels\n- Markeer elke correctie als: <del>originele tekst</del><ins>gecorrigeerde tekst</ins>\n- Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
+
+        const BTN_VC_OFF = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors';
+        const BTN_VC_ON  = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors';
+
+        const verslagCheckBtn = document.getElementById('verslag-check-btn');
+        const verslagModal    = document.getElementById('verslag-check-modal');
+        const modalVcTekst    = document.getElementById('modal-vc-tekst');
+        const modalVcType     = document.getElementById('modal-vc-type');
+        const modalVcKi       = document.getElementById('modal-vc-ki');
+        const modalVcDv       = document.getElementById('modal-vc-dv');
+        let verslagCheckActive = false;
+
+        async function runVerslagCheck(tekst, typeOnderzoek, ki, dv) {
+            const template = localStorage.getItem('verslagCheckUrl') || DEFAULT_VERSLAG_CHECK_PROMPT;
+            const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+            if (GEMINI_API_KEY) {
+                _verslagOriginalText = tekst;
+                openGeminiModal('Verslag check');
+                try {
+                    const text = await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                        geminiLoading.classList.add('hidden'); geminiLoading.classList.remove('flex');
+                        _geminiRawText = partial;
+                        geminiContent.innerHTML = renderMarkdown(partial);
+                    }, _newGeminiSignal());
+                    resolveGeminiModal(text);
+                } catch (e) {
+                    if (e.name === 'AbortError' && !_abortedByUser) rejectGeminiModal('Tijdslimiet overschreden. Probeer opnieuw.');
+                    else if (e.name !== 'AbortError') rejectGeminiModal(e.message);
+                }
+            } else {
+                const fullPrompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                openChatGPT(fullPrompt);
+            }
+        }
+
+        verslagCheckBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            verslagCheckActive = !verslagCheckActive;
+            verslagCheckBtn.className = verslagCheckActive ? BTN_VC_ON : BTN_VC_OFF;
+            if (verslagCheckActive) {
+                modalVcTekst.value = latestPopupText;
+                modalVcType.value = '';
+                modalVcKi.value = '';
+                modalVcDv.value = '';
+                verslagModal.classList.remove('hidden');
+                verslagModal.classList.add('flex');
+                [modalVcTekst, modalVcType, modalVcKi, modalVcDv].find(el => !el.value)?.focus();
+            }
+        });
+
+        document.getElementById('verslag-check-modal-cancel').addEventListener('click', () => {
+            verslagModal.classList.add('hidden'); verslagModal.classList.remove('flex');
+            verslagCheckActive = false;
+            verslagCheckBtn.className = BTN_VC_OFF;
+        });
+
+        document.getElementById('verslag-check-modal-go').addEventListener('click', async () => {
+            const tekst = modalVcTekst.value.trim();
+            const type  = modalVcType.value.trim();
+            const ki    = modalVcKi.value.trim();
+            const dv    = modalVcDv.value.trim();
+            verslagModal.classList.add('hidden'); verslagModal.classList.remove('flex');
+            await runVerslagCheck(tekst, type, ki, dv);
+        });
+
+        // ── BroadcastChannel close notification ───────────────────────
         window.addEventListener('beforeunload', () => {
             bc.postMessage({ type: 'popup-closed' });
         });
