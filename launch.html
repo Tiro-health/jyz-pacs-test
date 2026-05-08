@@ -1494,7 +1494,8 @@
 
             function updateActiveTemplateSuffix() {
                 const suffix = document.getElementById("active-template-suffix");
-                const checked = Array.from(document.querySelectorAll(".template-checkbox:checked")).map(cb => cb.value);
+                const checked = Array.from(document.querySelectorAll(".template-checkbox:checked"))
+                    .map(cb => cb.closest("label")?.textContent?.trim() || cb.value);
                 suffix.textContent = checked.length ? checked.join(", ") : "";
             }
             document.querySelectorAll(".template-checkbox").forEach(cb => {
