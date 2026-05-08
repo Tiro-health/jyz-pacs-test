@@ -2540,6 +2540,7 @@ INSTRUCTIES VOOR UITVOER:
             let _realtimeLastText = ''; // only trigger when text actually changes
             let _realtimeOriginalText = null;
             let _realtimeShowingOriginal = false;
+            let _realtimeResultHTML = null;
 
             function updateRealtimeToggle() {
                 realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
@@ -2565,8 +2566,8 @@ INSTRUCTIES VOOR UITVOER:
                     _realtimeOriginalText = null;
                     _realtimeShowingOriginal = false;
                     _realtimeResultHTML = null;
-                    realtimeActions.classList.add('hidden'); realtimeActions.classList.remove('flex');
-                    realtimeToggleOrig.classList.add('hidden');
+                    realtimeActions.style.display = 'none';
+                    realtimeToggleOrig.style.display = 'none';
                 }
             }
 
@@ -2586,8 +2587,9 @@ INSTRUCTIES VOOR UITVOER:
                 realtimeStatus.textContent = 'Verwerken…';
                 _realtimeOriginalText = tekst;
                 _realtimeShowingOriginal = false;
-                realtimeActions.classList.add('hidden'); realtimeActions.classList.remove('flex');
-                realtimeToggleOrig.classList.add('hidden');
+                _realtimeResultHTML = null;
+                realtimeActions.style.display = 'none';
+                realtimeToggleOrig.style.display = 'none';
                 realtimeToggleOrig.textContent = '↩ Origineel';
                 // Keep previous result visible until first new chunk arrives
 
@@ -2605,8 +2607,8 @@ INSTRUCTIES VOOR UITVOER:
                         realtimeContent.innerHTML = renderMarkdown(partial);
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
-                    realtimeActions.classList.remove('hidden'); realtimeActions.classList.add('flex');
-                    realtimeToggleOrig.classList.toggle('hidden', !_realtimeOriginalText);
+                    realtimeActions.style.display = 'flex';
+                    realtimeToggleOrig.style.display = _realtimeOriginalText ? '' : 'none';
                 } catch (e) {
                     if (e.name !== 'AbortError') {
                         realtimeStatus.textContent = 'Fout: ' + e.message;
@@ -2614,7 +2616,6 @@ INSTRUCTIES VOOR UITVOER:
                 }
             }
 
-            let _realtimeResultHTML = null;
             realtimeToggleOrig.addEventListener('click', () => {
                 _realtimeShowingOriginal = !_realtimeShowingOriginal;
                 if (_realtimeShowingOriginal) {
@@ -2644,9 +2645,11 @@ INSTRUCTIES VOOR UITVOER:
                 }, 2000);
             }
 
-            // Watch dictation text for changes
-            const _realtimeObserver = new MutationObserver(() => {
-                if (realtimeEnabled) scheduleRealtimeCheck();
+            // Watch dictation text for changes — exclude realtime-panel mutations to avoid debounce loop
+            const _realtimeObserver = new MutationObserver((mutations) => {
+                if (!realtimeEnabled) return;
+                const outsidePanel = mutations.some(m => !realtimePanel.contains(m.target) && m.target !== realtimePanel);
+                if (outsidePanel) scheduleRealtimeCheck();
             });
             _realtimeObserver.observe(clipboard, { childList: true, subtree: true, characterData: true, attributes: false });
             clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
