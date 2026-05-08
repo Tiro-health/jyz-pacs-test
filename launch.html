@@ -844,19 +844,10 @@
                 </summary>
                 <div class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800">
                     <div id="template-checkboxes" class="flex flex-col gap-1.5">
-                        <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
-                            <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="MR Rectum" />
-                            MR Rectum
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
-                            <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="ECHO Schouder (auto SNOMED)" />
-                            ECHO Schouder (auto SNOMED)
-                        </label>
-                        <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
-                            <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="Echo Abdomen" />
-                            Echo Abdomen
-                        </label>
-                        <!-- nieuwe templates toevoegen BOVEN deze lijn, ONDER Echo Abdomen -->
+                        <!-- Flow status message -->
+                        <div id="flow-status-msg" class="hidden text-xs rounded px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/30 text-amber-700 dark:text-amber-400"></div>
+                        <!-- Dynamic templates — rebuilt from flow config when study type is known -->
+                        <div id="dynamic-templates" class="flex flex-col gap-1.5"></div>
                         <div class="flex items-center gap-2 my-1">
                             <div class="flex-1 border-t border-dashed border-neutral-300 dark:border-slate-700"></div>
                             <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">AI</span>
@@ -1173,9 +1164,104 @@
                 "SNOMED CT": "http://templates.tiro.health/templates/646640d97a2c4285a881af8f8adc1c2b|2.0.0",
             };
 
-            document.querySelectorAll(".template-checkbox").forEach(cb => {
-                cb.addEventListener("change", () => { createTemplateForms(); updateSnomedCtBtn(); updateAiResultatenBtn(); });
+            // Event delegation — covers both static and dynamically-added checkboxes
+            document.getElementById("template-checkboxes").addEventListener("change", (e) => {
+                if (e.target.matches(".template-checkbox")) {
+                    createTemplateForms();
+                    updateActiveTemplateSuffix();
+                    updateSnomedCtBtn();
+                    updateAiResultatenBtn();
+                }
             });
+
+            // ── Default templates shown when no flow match ──────────────────────
+            const DEFAULT_FLOW_TEMPLATES = [
+                { name: "MR Rectum",                   label: "MR Rectum" },
+                { name: "ECHO Schouder (auto SNOMED)",  label: "ECHO Schouder (auto SNOMED)" },
+                { name: "Echo Abdomen",                 label: "Echo Abdomen" },
+            ];
+
+            function renderFlowCheckboxItem(name, label, checked) {
+                const v = name.replace(/"/g, "&quot;");
+                const l = label.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                return `<label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
+                    <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="${v}"${checked ? " checked" : ""}>
+                    ${l}
+                </label>`;
+            }
+
+            function setDynamicTemplates(items) {
+                document.getElementById("dynamic-templates").innerHTML =
+                    items.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked)).join("");
+                updateActiveTemplateSuffix();
+            }
+
+            function showFlowStatus(msg) {
+                const el = document.getElementById("flow-status-msg");
+                if (msg) { el.textContent = "⚠ " + msg; el.classList.remove("hidden"); }
+                else      { el.textContent = ""; el.classList.add("hidden"); }
+            }
+
+            function updateTemplatesFromFlow(typeOnderzoek) {
+                if (!typeOnderzoek || !typeOnderzoek.trim()) {
+                    showFlowStatus(null);
+                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    createTemplateForms();
+                    return;
+                }
+                let flowConfig;
+                try { flowConfig = JSON.parse(localStorage.getItem("flowConfig_v1")); } catch (_) {}
+
+                const q = typeOnderzoek.toLowerCase().trim();
+                const match = flowConfig?.examTypes?.find(et =>
+                    et.name.toLowerCase() === q ||
+                    (et.dicom || []).some(d => d.toLowerCase() === q)
+                );
+
+                if (!match) {
+                    showFlowStatus("Type onderzoek niet gevonden in de flow configuratie");
+                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    createTemplateForms();
+                    return;
+                }
+
+                showFlowStatus(null);
+                const items = [];
+
+                if (match.deptTemplate) {
+                    const key = "flow:dept:" + match.id;
+                    TEMPLATES[key] = match.deptTemplate;
+                    const shortName = match.deptTemplate.split("/").pop() || match.deptTemplate;
+                    items.push({ name: key, label: "📄 " + shortName + " (afdeling)", checked: !match.userTemplate });
+                }
+                if (match.userTemplate) {
+                    const key = "flow:user:" + match.id;
+                    TEMPLATES[key] = match.userTemplate;
+                    const shortName = match.userTemplate.split("/").pop() || match.userTemplate;
+                    items.push({ name: key, label: "👤 " + shortName + " (gebruiker)", checked: true });
+                }
+                (match.aiRules || []).forEach((rule, i) => {
+                    if (!rule.template) return;
+                    const key = "flow:ai:" + match.id + ":" + i;
+                    TEMPLATES[key] = rule.template;
+                    const shortName = rule.template.split("/").pop() || rule.template;
+                    const cond = [rule.aiSource, rule.condition?.operator, rule.condition?.value].filter(Boolean).join(" ");
+                    items.push({ name: key, label: "🤖 " + shortName + " (" + cond + ")", checked: false });
+                });
+
+                if (items.length === 0) {
+                    showFlowStatus("Onderzoekstype gevonden maar nog geen templates ingesteld");
+                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    createTemplateForms();
+                    return;
+                }
+
+                setDynamicTemplates(items);
+                createTemplateForms();
+            }
+
+            // Initialise with defaults
+            setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
 
             // ============================================
             // URL Parameters
@@ -1368,6 +1454,7 @@
                 const lateralisatie = extractClinicalField(r, "lateralisatie", "laterality", "lateralisation");
                 const parts = [naam, datum, typeOnderzoek, lateralisatie].filter(Boolean);
                 studyTitleSuffix.textContent = parts.length ? parts.join(" - ") : "";
+                updateTemplatesFromFlow(typeOnderzoek);
             });
 
             const clinicalTitleSuffix = document.getElementById("clinical-title-suffix");
@@ -1505,7 +1592,8 @@
             // ============================================
             function createTemplateForms() {
                 const selected = Array.from(document.querySelectorAll(".template-checkbox:checked")).map(cb => cb.value);
-                localStorage.setItem("savedTemplateNames", JSON.stringify(selected));
+                // Don't persist flow: keys — they're rebuilt from flow config on each context update
+                localStorage.setItem("savedTemplateNames", JSON.stringify(selected.filter(n => !n.startsWith("flow:"))));
 
                 const container = document.getElementById("template-forms-container");
                 container.innerHTML = "";
