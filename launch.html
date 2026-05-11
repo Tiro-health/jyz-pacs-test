@@ -3550,18 +3550,17 @@ Verslag protocol: {Procedure template}
 
 VERSLAGREGELS:
 - Schrijf uitsluitend een VERSLAG en een BESLUIT — geen inleiding, geen uitleg, geen commentaar achteraf
-- VERSLAG: gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek; indien het type niet beschikbaar is, gebruik een beknopt standaard radiologisch verslagformaat; zet elke bevinding op een nieuwe lijn
+
+- VERSLAG: gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek; indien het {Procedure template} gekend is maak je jouw verslag volgens deze opmaak, als deze niet gekend is , gebruik een beknopt standaard radiologisch verslagformaat; zet elke bevinding op een nieuwe lijn
 - BESLUIT: gerangschikt naar klinische belangrijkheid van de pathologie; beantwoord altijd expliciet de diagnostische vraagstelling indien opgegeven
 - Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief
-
 UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 <b>Verslag</b>
 [bevindingen, elke bevinding op een nieuwe lijn]
-
 <b>Besluit</b>
 [besluit gerangschikt naar ernst; antwoord op klinische vraag indien van toepassing]`;
 
-            const MEDGEMMA_PROMPT_VERSION = "3";
+            const MEDGEMMA_PROMPT_VERSION = "4";
             const savedMedgemmaVersion = localStorage.getItem("medgemmaPromptVersion");
             const savedMedgemma = savedMedgemmaVersion === MEDGEMMA_PROMPT_VERSION
                 ? localStorage.getItem("medgemmaActionUrl")
