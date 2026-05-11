@@ -1267,10 +1267,13 @@
                 showFlowStatus(null);
                 const items = [];
 
+                // Priority logic: gebruiker replaces afdeling; both remain visible
+                // but only the highest available level is checked by default.
+                const hasUser = !!match.userTemplate;
                 if (match.deptTemplate) {
                     const key = "flow:dept:" + match.id;
                     TEMPLATES[key] = match.deptTemplate;
-                    items.push({ name: key, label: match.name + " - afdeling", checked: true });
+                    items.push({ name: key, label: match.name + " - afdeling", checked: !hasUser });
                 }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
