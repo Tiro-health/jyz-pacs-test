@@ -3399,7 +3399,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 });
                 pmAnalyseBtn.addEventListener('click', async () => {
                     if (!medgemmaImageBase64) { pipWindow.alert('Upload eerst een afbeelding.'); return; }
-                    const prompt = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
+                    const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
+                    const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                    const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                    const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                     openGeminiModal('MedGemma beeldanalyse');
                     try {
                         resolveGeminiModal(await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt));
@@ -3534,7 +3538,21 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             const medgemmaAnalyseBtn    = document.getElementById("medgemma-analyse-btn");
             const medgemmaActionUrlInput = document.getElementById("medgemma-action-url");
 
-            const DEFAULT_MEDGEMMA_PROMPT = "Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.";
+            const DEFAULT_MEDGEMMA_PROMPT = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf uitsluitend een VERSLAG en een BESLUIT — geen inleiding, geen uitleg, geen commentaar.
+
+Klinische context (gebruik indien beschikbaar):
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+
+VERSLAG:
+Beschrijf alle relevante bevindingen gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek. Is het type onderzoek niet beschikbaar, gebruik dan een gestructureerd maar beknopt standaard radiologisch verslagformaat. Zet elke bevinding op een nieuwe regel.
+
+BESLUIT:
+Formuleer het besluit gerangschikt naar klinische belangrijkheid van de pathologie. Indien klinische inlichtingen en/of een diagnostische vraagstelling opgegeven zijn, beantwoord altijd expliciet de klinische vraag.`;
+            // Migrate old single-line default so existing users get the new prompt
+            const _OLD_MG_PROMPT = "Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.";
+            if (localStorage.getItem("medgemmaActionUrl") === _OLD_MG_PROMPT) localStorage.removeItem("medgemmaActionUrl");
             medgemmaActionUrlInput.value = localStorage.getItem("medgemmaActionUrl") || DEFAULT_MEDGEMMA_PROMPT;
             medgemmaActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("medgemmaActionUrl", medgemmaActionUrlInput.value);
@@ -3632,7 +3650,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     alert("Upload eerst een afbeelding in het MedGemma-paneel.");
                     return;
                 }
-                const prompt = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
+                const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
+                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
                 openGeminiModal("MedGemma beeldanalyse");
                 try {
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
