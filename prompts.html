@@ -205,8 +205,9 @@
 
             <!-- SNOMED database note -->
             <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3">
-                <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen</p>
+                <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen &nbsp;·&nbsp; Procedure template injectie nog uit te werken</p>
                 <p class="text-xs text-amber-700 dark:text-amber-400">Gegenereerde codes worden momenteel <b>niet</b> gevalideerd tegen een officiële SNOMED CT-database. Validatie via de admin-interface wordt in een latere fase toegevoegd.</p>
+                <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">De <b>{Procedure template}</b> placeholder in de MedGemma-prompt injecteert de actieve tiro-template structuur — koppeling met de externe template-server (<code>templates.tiro.health</code>) is nog in onderzoek.</p>
             </div>
 
         </div>
@@ -294,7 +295,7 @@ Verslag protocol: {Procedure template}
 VERSLAGREGELS:
 - Schrijf uitsluitend een VERSLAG en een BESLUIT — geen inleiding, geen uitleg, geen commentaar achteraf
 
-- VERSLAG: gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek; indien het {Procedure template} gekend is maak je jouw verslag volgens deze opmaak, als deze niet gekend is , gebruik een beknopt standaard radiologisch verslagformaat; zet elke bevinding op een nieuwe lijn
+- VERSLAG: gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek; indien het {Procedure template} gekend is maak je jouw verslag volgens deze opmaak, als deze niet gekend is , gebruik een beknopt standaard radiologisch verslagformaat met beknopte zinnen waarbij het gebruik van volzinnen niet noodzakelijk is en je mag met puntjes werken; zet elke bevinding op een nieuwe lijn
 - BESLUIT: gerangschikt naar klinische belangrijkheid van de pathologie; beantwoord altijd expliciet de diagnostische vraagstelling indien opgegeven
 - Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief
 UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
@@ -375,7 +376,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     resetKey: "medgemma",
                     storageKey: "medgemmaActionUrl",
                     versionKey: "medgemmaPromptVersion",
-                    version: "4",
+                    version: "5",
                     defaultPrompt: DEFAULT_MEDGEMMA,
                 },
             ];
