@@ -2404,8 +2404,8 @@ INSTRUCTIES VOOR UITVOER:
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
             const CAM_BTN_OFF   = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const CAM_BTN_ON    = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
-            const PIP_CAM_OFF   = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer font-bold leading-none";
-            const PIP_CAM_ON    = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors cursor-pointer font-bold leading-none";
+            const PIP_CAM_OFF   = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer leading-none";
+            const PIP_CAM_ON    = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors cursor-pointer leading-none";
 
             // Declare here so update functions can reference them when called below
             const aiResultatenBtn = document.getElementById("ai-resultaten-btn");
@@ -3068,13 +3068,17 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
             function toggleMedgemmaAccordion() {
                 medgemmaAccordionActive = !medgemmaAccordionActive;
-                medgemmaAccordion.classList.toggle("hidden", !medgemmaAccordionActive);
-                if (medgemmaAccordionActive) medgemmaAccordion.open = true;
-                medgemmaQuickBtn.className = medgemmaAccordionActive ? CAM_BTN_ON : CAM_BTN_OFF;
                 if (_pipWindow && !_pipWindow.closed) {
+                    // PiP is open — control PiP panel instead of main accordion
+                    const pipPanel = _pipWindow.document.getElementById("pip-medgemma-panel");
+                    if (pipPanel) pipPanel.style.display = medgemmaAccordionActive ? "" : "none";
                     const pipCamBtn = _pipWindow.document.getElementById("pip-medgemma-btn");
                     if (pipCamBtn) pipCamBtn.className = medgemmaAccordionActive ? PIP_CAM_ON : PIP_CAM_OFF;
+                } else {
+                    medgemmaAccordion.classList.toggle("hidden", !medgemmaAccordionActive);
+                    if (medgemmaAccordionActive) medgemmaAccordion.open = true;
                 }
+                medgemmaQuickBtn.className = medgemmaAccordionActive ? CAM_BTN_ON : CAM_BTN_OFF;
             }
 
             medgemmaQuickBtn.addEventListener("click", toggleMedgemmaAccordion);
@@ -3094,6 +3098,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         pipCamBtn.style.display = medgemmaVisible ? "" : "none";
                         pipCamBtn.className = medgemmaAccordionActive ? PIP_CAM_ON : PIP_CAM_OFF;
                     }
+                    const pipPanel = _pipWindow.document.getElementById("pip-medgemma-panel");
+                    if (pipPanel && !medgemmaVisible) pipPanel.style.display = "none";
                 }
                 medgemmaVisibleToggle.setAttribute("aria-checked", String(medgemmaVisible));
                 medgemmaVisibleToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${medgemmaVisible ? "bg-cyan-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
@@ -3319,6 +3325,89 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 rtActions.append(rtOrigBtn, rtCopyBtn);
                 rtPanel.append(rtHead, rtContent, rtActions);
                 wrap.appendChild(rtPanel);
+
+                // ── MedGemma beeldanalyse panel ─────────────────────
+                const pipMedgemmaPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-background overflow-hidden');
+                pipMedgemmaPanel.id = 'pip-medgemma-panel';
+                pipMedgemmaPanel.style.display = medgemmaAccordionActive ? '' : 'none';
+
+                const pmHeader = mk('div', 'flex items-center gap-2 px-3 py-2 text-sm font-medium text-neutral-900 dark:text-neutral-100 border-b border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
+                pmHeader.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> MedGemma beeldanalyse';
+
+                const pmBody = mk('div', 'px-3 py-3 space-y-2');
+
+                const pmDropzone = mk('div', 'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 dark:border-slate-600 bg-neutral-50 dark:bg-muted/40 py-4 px-3 cursor-pointer hover:border-cyan-500 transition-colors text-center');
+                pmDropzone.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color:#9ca3af"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><p style="font-size:11px;color:#6b7280;margin:0">Sleep beeld hierheen of <span style="color:#0891b2;text-decoration:underline">klik om te uploaden</span><br>of plak met <kbd style="padding:1px 4px;border-radius:3px;background:#e5e7eb;font-family:monospace;font-size:10px">Ctrl+V</kbd></p>';
+
+                const pmFileInput = pipWindow.document.createElement('input');
+                pmFileInput.type = 'file';
+                pmFileInput.accept = 'image/*';
+                pmFileInput.style.display = 'none';
+                pipWindow.document.body.appendChild(pmFileInput);
+
+                const pmPreview = mk('div', 'hidden relative');
+                const pmImg = pipWindow.document.createElement('img');
+                pmImg.className = 'w-full object-contain rounded-lg border border-neutral-200 dark:border-slate-700 bg-black';
+                pmImg.style.maxHeight = '200px';
+                pmImg.alt = 'Preview';
+                const pmClearBtn = mk('button', 'absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs', '✕');
+                pmClearBtn.type = 'button';
+                pmClearBtn.style.cssText = 'background:rgba(30,30,30,.7)';
+                pmPreview.append(pmImg, pmClearBtn);
+
+                const pmAnalyseBtn = mk('button', 'w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer', '');
+                pmAnalyseBtn.type = 'button';
+                pmAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
+
+                pmBody.append(pmDropzone, pmPreview, pmAnalyseBtn);
+                pipMedgemmaPanel.append(pmHeader, pmBody);
+                wrap.appendChild(pipMedgemmaPanel);
+
+                // File handling for PiP MedGemma panel — updates shared medgemmaImageBase64/Mime
+                function handlePipMedgemmaFile(file) {
+                    if (!file || !file.type.startsWith('image/')) return;
+                    if (file.size > 10 * 1024 * 1024) { pipWindow.alert('Afbeelding is groter dan 10 MB.'); return; }
+                    const reader = new pipWindow.FileReader();
+                    reader.onload = (e) => {
+                        const dataUrl = e.target.result;
+                        medgemmaImageBase64 = dataUrl.split(',')[1];
+                        medgemmaImageMime   = file.type;
+                        pmImg.src = dataUrl;
+                        pmPreview.classList.remove('hidden');
+                        pmDropzone.classList.add('hidden');
+                    };
+                    reader.readAsDataURL(file);
+                }
+
+                pmDropzone.addEventListener('click', () => pmFileInput.click());
+                pmFileInput.addEventListener('change', (e) => handlePipMedgemmaFile(e.target.files[0]));
+                pmDropzone.addEventListener('dragover', (e) => { e.preventDefault(); pmDropzone.style.outline = '2px solid #06b6d4'; });
+                pmDropzone.addEventListener('dragleave', () => { pmDropzone.style.outline = ''; });
+                pmDropzone.addEventListener('drop', (e) => { e.preventDefault(); pmDropzone.style.outline = ''; handlePipMedgemmaFile(e.dataTransfer.files[0]); });
+                pipWindow.document.addEventListener('paste', (e) => {
+                    if (pipMedgemmaPanel.style.display === 'none') return;
+                    const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'));
+                    if (item) { e.preventDefault(); handlePipMedgemmaFile(item.getAsFile()); }
+                });
+                pmClearBtn.addEventListener('click', () => {
+                    medgemmaImageBase64 = null;
+                    medgemmaImageMime   = null;
+                    pmFileInput.value   = '';
+                    pmImg.src           = '';
+                    pmPreview.classList.add('hidden');
+                    pmDropzone.classList.remove('hidden');
+                });
+                pmAnalyseBtn.addEventListener('click', async () => {
+                    if (!medgemmaImageBase64) { pipWindow.alert('Upload eerst een afbeelding.'); return; }
+                    const prompt = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
+                    openGeminiModal('MedGemma beeldanalyse');
+                    try {
+                        resolveGeminiModal(await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt));
+                    } catch (err) {
+                        rejectGeminiModal(err.message);
+                    }
+                });
+
                 pipWindow.document.body.appendChild(wrap);
 
                 // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
