@@ -3125,7 +3125,18 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 wrap.appendChild(ta);
 
                 // ── Action buttons ──────────────────────────────────
-                const btnRow = mk('div', 'flex gap-2 flex-wrap');
+                const btnRow = mk('div', 'flex items-center gap-2 flex-wrap');
+                let _pipFontSize = 14; // px, default matches text-sm
+                const _applyFontSize = () => { pipWindow.document.body.style.fontSize = _pipFontSize + 'px'; };
+                const SZ = 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer font-bold leading-none';
+                const fontBtns = mk('div', 'flex gap-1 ml-auto');
+                const btnFontDown = mk('button', SZ, 'A−'); btnFontDown.type = 'button';
+                const btnFontUp   = mk('button', SZ, 'A+'); btnFontUp.type   = 'button';
+                btnFontDown.style.fontSize = '11px';
+                btnFontUp.style.fontSize   = '13px';
+                btnFontDown.addEventListener('click', () => { _pipFontSize = Math.max(10, _pipFontSize - 1); _applyFontSize(); });
+                btnFontUp.addEventListener('click',   () => { _pipFontSize = Math.min(24, _pipFontSize + 1); _applyFontSize(); });
+                fontBtns.append(btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -3206,6 +3217,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
                     sentInd,
+                    fontBtns,
                 );
                 wrap.appendChild(btnRow);
                 wrap.appendChild(trPanel);
