@@ -3212,6 +3212,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                rtPanel.style.display = realtimeEnabled ? '' : 'none';
+                // Keep PiP realtime panel in sync with the main toggle
+                realtimeToggle.addEventListener('click', () => {
+                    rtPanel.style.display = realtimeEnabled ? '' : 'none';
+                });
                 const rtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const rtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Real time — Verslag check');
                 const rtStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
@@ -3287,7 +3292,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     }
                 });
 
-                // Auto-run realtime check on textarea input (2s debounce)
+                // 2-second debounce on textarea input:
+                //   - always sync text to PSK dictation field
+                //   - only run realtime verslag check when realtimeEnabled
                 ta.addEventListener('input', () => {
                     clearTimeout(_pipRealtimeDebounce);
                     _pipRealtimeDebounce = setTimeout(async () => {
@@ -3295,8 +3302,17 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!tekst || tekst === _pipRealtimeLastText) return;
                         _pipRealtimeLastText = tekst;
 
-                        // Sync PiP textarea → PSK dictation field so it's already populated
+                        // Always: push text to PSK dictation field on the main page
                         setDictationText(tekst);
+                        try {
+                            const dt = new DataTransfer();
+                            dt.setData('text/plain', tekst);
+                            clipboard.focus();
+                            clipboard.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, composed: true, clipboardData: dt }));
+                        } catch(_) {}
+
+                        // Only run realtime check when the toggle is on
+                        if (!realtimeEnabled) return;
 
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
