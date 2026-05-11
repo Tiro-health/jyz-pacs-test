@@ -1353,6 +1353,7 @@
             // DOM Elements
             // ============================================
             let form = null; // set by createTemplateForms(), always points to the primary (first) form filler
+            let latestReportQuestionnaire = null;
             const loadingOverlay = document.getElementById("loading-overlay");
             const questionnaireForm = document.getElementById("questionnaire-form");
             const questionnaireInput = document.getElementById("questionnaire-input");
@@ -2249,7 +2250,6 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             let latestClinicalResponse = null;
             let latestContextResponse = null;
             let latestPreviousStudiesResponse = null;
-            let latestReportQuestionnaire = null;
             clinicalForm.addEventListener("tiro-update", (event) => {
                 latestClinicalResponse = event.detail?.response || null;
             });
