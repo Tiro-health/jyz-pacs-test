@@ -3169,10 +3169,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!text) return;
                         setDictationText(text);
                         try {
-                            const dt = new DataTransfer();
-                            dt.setData('text/plain', text);
                             clipboard.focus();
-                            clipboard.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, composed: true, clipboardData: dt }));
+                            document.execCommand('selectAll', false, null);
+                            document.execCommand('insertText', false, text);
                         } catch(e) {}
                         setTimeout(() => document.getElementById('autofill-btn').click(), 100);
                         sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
@@ -3304,14 +3303,23 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!tekst || tekst === _pipRealtimeLastText) return;
                         _pipRealtimeLastText = tekst;
 
-                        // Always: push text to PSK dictation field on the main page
+                        // Always: push text to PSK dictation field on the main page.
+                        // setDictationText sets latestDictationText (used by autofill/translate).
+                        // execCommand reaches the focused inner editor without needing a user gesture.
                         setDictationText(tekst);
                         try {
-                            const dt = new DataTransfer();
-                            dt.setData('text/plain', tekst);
                             clipboard.focus();
-                            clipboard.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, composed: true, clipboardData: dt }));
+                            document.execCommand('selectAll', false, null);
+                            document.execCommand('insertText', false, tekst);
                         } catch(_) {}
+                        // Show visual confirmation in the dictation panel
+                        pasteTextIndicator.classList.remove('hidden');
+                        pasteTextIndicator.classList.add('inline-flex');
+                        clearTimeout(pasteTextIndicator._hideTimer);
+                        pasteTextIndicator._hideTimer = setTimeout(() => {
+                            pasteTextIndicator.classList.add('hidden');
+                            pasteTextIndicator.classList.remove('inline-flex');
+                        }, 2500);
 
                         // Only run realtime check when the toggle is on
                         if (!realtimeEnabled) return;
