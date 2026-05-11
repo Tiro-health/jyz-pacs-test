@@ -1914,6 +1914,7 @@
                     .replace(/<i>(.*?)<\/i>/gis,      '<em>$1</em>')
                     .replace(/<em>(.*?)<\/em>/gis,    '<em>$1</em>')
                     // Markdown fallback
+                    .replace(/^#{1,3}\s+(.+)$/gm,    '<strong>$1</strong>')
                     .replace(/\*\*\*(.*?)\*\*\*/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
                     .replace(/\*\*(.*?)\*\*/gs,      '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/gs,           '<em>$1</em>')
@@ -3463,8 +3464,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 pmCloseResultBtn.addEventListener('click', () => {
                     pmResult.classList.add('hidden');
                     pmResultContent.innerHTML = '';
+                    medgemmaImageBase64 = null;
+                    medgemmaImageMime   = null;
+                    pmFileInput.value   = '';
+                    pmImg.src           = '';
+                    pmPreview.classList.add('hidden');
                     pmDropzone.classList.remove('hidden');
-                    if (medgemmaImageBase64) pmPreview.classList.remove('hidden');
                     if (medgemmaAccordionActive) toggleMedgemmaAccordion();
                 });
 
@@ -3482,7 +3487,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
                         pmDropzone.classList.add('hidden');
                         pmPreview.classList.add('hidden');
-                        pmResultContent.innerHTML = result;
+                        pmResultContent.innerHTML = renderMarkdown(result);
                         pmResult.classList.remove('hidden');
                     } catch (err) {
                         pipWindow.alert('MedGemma fout: ' + err.message);
@@ -3622,18 +3627,22 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             const medgemmaCopyBtn       = document.getElementById("medgemma-copy-btn");
             const medgemmaCloseBtn      = document.getElementById("medgemma-close-btn");
 
-            function showMedgemmaResult(html) {
+            function showMedgemmaResult(raw) {
                 medgemmaDropzone.classList.add("hidden");
                 medgemmaPreview.classList.add("hidden");
-                medgemmaResultContent.innerHTML = html;
+                medgemmaResultContent.innerHTML = renderMarkdown(raw);
                 medgemmaResult.classList.remove("hidden");
             }
 
             function resetMedgemmaPanel() {
                 medgemmaResult.classList.add("hidden");
                 medgemmaResultContent.innerHTML = "";
+                medgemmaImageBase64 = null;
+                medgemmaImageMime   = null;
+                medgemmaFileInput.value = "";
+                medgemmaPreviewImg.src  = "";
+                medgemmaPreview.classList.add("hidden");
                 medgemmaDropzone.classList.remove("hidden");
-                if (medgemmaImageBase64) medgemmaPreview.classList.remove("hidden");
             }
 
             medgemmaCopyBtn.addEventListener("click", () => {
