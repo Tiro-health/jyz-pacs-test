@@ -1267,24 +1267,34 @@
                 showFlowStatus(null);
                 const items = [];
 
-                // Priority logic: gebruiker replaces afdeling; both remain visible
-                // but only the highest available level is checked by default.
+                // Priority logic:
+                // - gebruiker replaces afdeling (afdeling unchecked when gebruiker exists)
+                // - first AI replace_template unchecks gebruiker and is checked instead
+                // - additional AI add_template rules are always checked (stack on top)
+                const aiRules = match.aiRules || [];
+                const hasReplaceAI = aiRules.some(r => r.action === 'replace_template' && r.template);
                 const hasUser = !!match.userTemplate;
+
                 if (match.deptTemplate) {
                     const key = "flow:dept:" + match.id;
                     TEMPLATES[key] = match.deptTemplate;
-                    items.push({ name: key, label: match.name + " - afdeling", checked: !hasUser });
+                    items.push({ name: key, label: match.name + " - afdeling", checked: !hasUser && !hasReplaceAI });
                 }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
                     TEMPLATES[key] = match.userTemplate;
-                    items.push({ name: key, label: match.name + " - gebruiker", checked: true });
+                    items.push({ name: key, label: match.name + " - gebruiker", checked: !hasReplaceAI });
                 }
-                (match.aiRules || []).forEach((rule, i) => {
+                let replaceUsed = false;
+                aiRules.forEach((rule, i) => {
                     if (!rule.template) return;
                     const key = "flow:ai:" + match.id + ":" + i;
                     TEMPLATES[key] = rule.template;
-                    items.push({ name: key, label: match.name + " - AI", checked: false });
+                    const isReplace = rule.action === 'replace_template';
+                    const checked = isReplace ? !replaceUsed : true;
+                    if (isReplace) replaceUsed = true;
+                    const suffix = isReplace ? ' (vervangen)' : ' (toevoegen)';
+                    items.push({ name: key, label: match.name + " - AI" + suffix, checked });
                 });
 
                 if (items.length === 0) {

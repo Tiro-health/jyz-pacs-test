@@ -819,7 +819,11 @@
                 el.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-1">Geen AI-regels ingesteld.</p>`;
                 return;
             }
-            el.innerHTML = editAiRules.map((r, i) => `
+            // Only one rule may have action="replace_template"
+            const replaceIdx = editAiRules.findIndex(r => r.action === 'replace_template');
+            el.innerHTML = editAiRules.map((r, i) => {
+                const replaceDisabled = replaceIdx !== -1 && replaceIdx !== i;
+                return `
 <div class="ai-rule border border-neutral-200 dark:border-slate-700 rounded-lg p-3 space-y-2 bg-neutral-50/60 dark:bg-[#161f27]/50" data-i="${i}">
   <div class="flex items-center justify-between">
     <span class="text-[10px] font-bold uppercase tracking-wide text-amber-600 dark:text-amber-500">Regel ${i+1}</span>
@@ -845,7 +849,7 @@
     <div>
       <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Actie</label>
       <select class="ai-act w-full text-xs rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" data-i="${i}">
-        <option value="replace_template" ${r.action==='replace_template'?'selected':''}>Vervang template</option>
+        <option value="replace_template" ${r.action==='replace_template'?'selected':''} ${replaceDisabled?'disabled':''}>Vervang template${replaceDisabled?' (al in gebruik)':''}</option>
         <option value="add_template"     ${r.action==='add_template'?'selected':''}>Voeg template toe</option>
       </select>
     </div>
@@ -854,7 +858,8 @@
     <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template URL</label>
     <input type="text" class="ai-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/…" value="${esc(r.template||'')}" data-i="${i}">
   </div>
-</div>`).join('');
+</div>`;
+            }).join('');
 
             el.querySelectorAll('.rm-rule').forEach(btn =>
                 btn.addEventListener('click', () => {
@@ -880,7 +885,8 @@
         }
 
         document.getElementById('add-ai-rule-btn').addEventListener('click', () => {
-            editAiRules.push({ aiSource:'', condition:{ operator:'positive', value:'' }, action:'replace_template', template:'' });
+            const replaceExists = editAiRules.some(r => r.action === 'replace_template');
+            editAiRules.push({ aiSource:'', condition:{ operator:'positive', value:'' }, action: replaceExists ? 'add_template' : 'replace_template', template:'' });
             renderAiRules();
             const body = document.getElementById('panel-body');
             setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior:'smooth' }), 60);
@@ -900,6 +906,8 @@
 
             const name = document.getElementById('edit-name').value.trim();
             if (!name) { alert('Naam is verplicht.'); return; }
+            const replaceCount = editAiRules.filter(r => r.action === 'replace_template' && r.template).length;
+            if (replaceCount > 1) { alert('Er kan maximaal één AI-regel zijn met de actie "Vervang template". Pas de regels aan.'); return; }
 
             const updated = {
                 id:           currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
