@@ -3403,7 +3403,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                    const patientInfo = extractPatientInfo();
+                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                     openGeminiModal('MedGemma beeldanalyse');
                     try {
                         resolveGeminiModal(await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt));
@@ -3538,24 +3539,38 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             const medgemmaAnalyseBtn    = document.getElementById("medgemma-analyse-btn");
             const medgemmaActionUrlInput = document.getElementById("medgemma-action-url");
 
-            const DEFAULT_MEDGEMMA_PROMPT = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf uitsluitend een VERSLAG en een BESLUIT — geen inleiding, geen uitleg, geen commentaar.
+            const DEFAULT_MEDGEMMA_PROMPT = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.
 
-Klinische context (gebruik indien beschikbaar):
+=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+=== EINDE CONTEXT ===
 
-VERSLAG:
-Beschrijf alle relevante bevindingen gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek. Is het type onderzoek niet beschikbaar, gebruik dan een gestructureerd maar beknopt standaard radiologisch verslagformaat. Zet elke bevinding op een nieuwe regel.
+VERSLAGREGELS:
+- Schrijf uitsluitend een VERSLAG en een BESLUIT — geen inleiding, geen uitleg, geen commentaar achteraf
+- VERSLAG: gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek; indien het type niet beschikbaar is, gebruik een beknopt standaard radiologisch verslagformaat; zet elke bevinding op een nieuwe lijn
+- BESLUIT: gerangschikt naar klinische belangrijkheid van de pathologie; beantwoord altijd expliciet de diagnostische vraagstelling indien opgegeven
+- Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief
 
-BESLUIT:
-Formuleer het besluit gerangschikt naar klinische belangrijkheid van de pathologie. Indien klinische inlichtingen en/of een diagnostische vraagstelling opgegeven zijn, beantwoord altijd expliciet de klinische vraag.`;
-            // Migrate old single-line default so existing users get the new prompt
-            const _OLD_MG_PROMPT = "Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.";
-            if (localStorage.getItem("medgemmaActionUrl") === _OLD_MG_PROMPT) localStorage.removeItem("medgemmaActionUrl");
-            medgemmaActionUrlInput.value = localStorage.getItem("medgemmaActionUrl") || DEFAULT_MEDGEMMA_PROMPT;
+UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
+<b>Verslag</b>
+[bevindingen, elke bevinding op een nieuwe lijn]
+
+<b>Besluit</b>
+[besluit gerangschikt naar ernst; antwoord op klinische vraag indien van toepassing]`;
+
+            const MEDGEMMA_PROMPT_VERSION = "2";
+            const savedMedgemmaVersion = localStorage.getItem("medgemmaPromptVersion");
+            const savedMedgemma = savedMedgemmaVersion === MEDGEMMA_PROMPT_VERSION
+                ? localStorage.getItem("medgemmaActionUrl")
+                : "";
+            medgemmaActionUrlInput.value = savedMedgemma || DEFAULT_MEDGEMMA_PROMPT;
+            if (!savedMedgemma) localStorage.setItem("medgemmaPromptVersion", MEDGEMMA_PROMPT_VERSION);
             medgemmaActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("medgemmaActionUrl", medgemmaActionUrlInput.value);
+                localStorage.setItem("medgemmaPromptVersion", MEDGEMMA_PROMPT_VERSION);
             });
 
             let medgemmaImageBase64 = null;
@@ -3654,7 +3669,8 @@ Formuleer het besluit gerangschikt naar klinische belangrijkheid van de patholog
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv });
+                const patientInfo = extractPatientInfo();
+                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 openGeminiModal("MedGemma beeldanalyse");
                 try {
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
