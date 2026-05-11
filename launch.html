@@ -3295,6 +3295,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!tekst || tekst === _pipRealtimeLastText) return;
                         _pipRealtimeLastText = tekst;
 
+                        // Sync PiP textarea → PSK dictation field so it's already populated
+                        setDictationText(tekst);
+
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
                         rtStatus.textContent = 'Verwerken…';
