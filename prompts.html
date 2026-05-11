@@ -282,6 +282,27 @@ INSTRUCTIES VOOR UITVOER:
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
+            const DEFAULT_MEDGEMMA = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.
+
+=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Verslag protocol: {Procedure template}
+=== EINDE CONTEXT ===
+
+VERSLAGREGELS:
+- Schrijf uitsluitend een VERSLAG en een BESLUIT — geen inleiding, geen uitleg, geen commentaar achteraf
+
+- VERSLAG: gestructureerd volgens het standaard radiologisch protocol voor het opgegeven type onderzoek; indien het {Procedure template} gekend is maak je jouw verslag volgens deze opmaak, als deze niet gekend is , gebruik een beknopt standaard radiologisch verslagformaat; zet elke bevinding op een nieuwe lijn
+- BESLUIT: gerangschikt naar klinische belangrijkheid van de pathologie; beantwoord altijd expliciet de diagnostische vraagstelling indien opgegeven
+- Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief
+UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
+<b>Verslag</b>
+[bevindingen, elke bevinding op een nieuwe lijn]
+<b>Besluit</b>
+[besluit gerangschikt naar ernst; antwoord op klinische vraag indien van toepassing]`;
+
             const DEFAULT_SNOMED = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
 
 === CONTEXT (uitsluitend ter referentie — niet weergeven in output) ===
@@ -353,9 +374,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     id: "medgemma-prompt",
                     resetKey: "medgemma",
                     storageKey: "medgemmaActionUrl",
-                    versionKey: null,
-                    version: null,
-                    defaultPrompt: "Beschrijf de bevindingen in dit medisch beeld. Geef een gestructureerd radiologieverslag met secties Bevindingen en Conclusie.",
+                    versionKey: "medgemmaPromptVersion",
+                    version: "4",
+                    defaultPrompt: DEFAULT_MEDGEMMA,
                 },
             ];
 
