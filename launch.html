@@ -3055,6 +3055,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             // ============================================
             // MedGemma image analysis
             // ============================================
+            let _pipWindow = null; // declared here so updateMedgemmaToggle() can reference it safely
             const medgemmaVisibleToggle = document.getElementById("medgemma-visible");
             const medgemmaAccordion     = document.getElementById("medgemma-accordion");
             let medgemmaVisible = localStorage.getItem("medgemmaVisible") === "true";
@@ -3086,7 +3087,6 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             // Dictation popout (Document PiP — textarea + realtime check)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
-            let _pipWindow = null;
             let _pipRealtimeAbort = null;
             let _pipRealtimeDebounce = null;
             let _pipRealtimeLastText = '';
