@@ -664,7 +664,6 @@
                         for="report-form"
                         dictation-language="nl"
                     >
-                        <button id="pip-psk-paste" type="button" style="display:none" aria-hidden="true"></button>
                         <div class="flex gap-2 mt-2 flex-wrap">
                             <button
                                 id="autofill-btn"
@@ -2091,12 +2090,6 @@
             // bypass the SDK's AI processing and prevent UI freeze.
             const pasteTextIndicator = document.getElementById("paste-text-indicator");
 
-            // Hidden paste button used by PiP sync: clipboard is already written via execCommand('copy'),
-            // clicking this button pastes it into the PSK dictation field.
-            document.getElementById('pip-psk-paste').addEventListener('click', () => {
-                clipboard.focus();
-                document.execCommand('paste');
-            });
             document.addEventListener("paste", (e) => {
                 const text = e.clipboardData?.getData("text/plain") || "";
                 if (text.length <= 500) return;
@@ -3176,16 +3169,6 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         const text = ta.value.trim();
                         if (!text) return;
                         setDictationText(text);
-                        try {
-                            const tmp = document.createElement('textarea');
-                            tmp.style.cssText = 'position:fixed;top:-9999px;opacity:0;pointer-events:none';
-                            tmp.value = text;
-                            document.body.appendChild(tmp);
-                            tmp.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(tmp);
-                        } catch(e) {}
-                        document.getElementById('pip-psk-paste').click();
                         setTimeout(() => document.getElementById('autofill-btn').click(), 100);
                         sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
                         setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
@@ -3316,22 +3299,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!tekst || tekst === _pipRealtimeLastText) return;
                         _pipRealtimeLastText = tekst;
 
-                        // Always: push text to PSK dictation field on the main page.
-                        // 1. setDictationText keeps latestDictationText in sync (autofill/translate fallback).
-                        // 2. Copy to real clipboard via temp textarea + execCommand('copy').
-                        // 3. Click the hidden #pip-psk-paste button whose handler calls
-                        //    clipboard.focus() + execCommand('paste') — paste into PSK editor.
+                        // Keep latestDictationText in sync for autofill/translate/verslag check.
+                        // Visual update of tiro-magic-clipboard is not possible from a setTimeout
+                        // context (browser blocks paste without a trusted user gesture in this window).
                         setDictationText(tekst);
-                        try {
-                            const tmp = document.createElement('textarea');
-                            tmp.style.cssText = 'position:fixed;top:-9999px;opacity:0;pointer-events:none';
-                            tmp.value = tekst;
-                            document.body.appendChild(tmp);
-                            tmp.select();
-                            document.execCommand('copy');
-                            document.body.removeChild(tmp);
-                        } catch(_) {}
-                        document.getElementById('pip-psk-paste').click();
 
                         // Only run realtime check when the toggle is on
                         if (!realtimeEnabled) return;
