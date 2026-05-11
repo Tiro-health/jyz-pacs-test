@@ -1634,6 +1634,7 @@
                 const container = document.getElementById("template-forms-container");
                 container.innerHTML = "";
                 form = null;
+                latestReportQuestionnaire = null; // reset when templates change
 
                 selected.forEach((name, index) => {
                     const url = TEMPLATES[name];
@@ -1659,7 +1660,7 @@
                         form = ff;
 
                         ff.addEventListener("tiro-ready", (event) => {
-                            console.log("Questionnaire loaded:", event.detail.questionnaire);
+                            latestReportQuestionnaire = event.detail?.questionnaire || null;
                         });
                         ff.addEventListener("tiro-update", (event) => {
                             console.log("Form updated:", event.detail.response);
@@ -2235,6 +2236,7 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             let latestClinicalResponse = null;
             let latestContextResponse = null;
             let latestPreviousStudiesResponse = null;
+            let latestReportQuestionnaire = null;
             clinicalForm.addEventListener("tiro-update", (event) => {
                 latestClinicalResponse = event.detail?.response || null;
             });
@@ -2275,6 +2277,22 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                     return "";
                 }
                 return searchItems(response?.item) || "";
+            }
+
+            // Build a readable template structure string from a FHIR Questionnaire resource.
+            // Used to inject the active report template's sections into the MedGemma prompt.
+            function buildTemplateStructure(questionnaire) {
+                if (!questionnaire?.item) return "";
+                const lines = [];
+                function walk(items, depth) {
+                    for (const item of items || []) {
+                        if (!item.text) continue;
+                        lines.push("  ".repeat(depth) + (depth > 0 ? "- " : "") + item.text);
+                        if (item.item?.length && depth < 2) walk(item.item, depth + 1);
+                    }
+                }
+                walk(questionnaire.item, 0);
+                return lines.join("\n");
             }
 
             const radiologyModal = document.getElementById("radiology-check-modal");
@@ -3404,7 +3422,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                     const patientInfo = extractPatientInfo();
-                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": "" });
+                    const procedureTemplate = buildTemplateStructure(latestReportQuestionnaire);
+                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": procedureTemplate });
                     openGeminiModal('MedGemma beeldanalyse');
                     try {
                         resolveGeminiModal(await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt));
@@ -3668,7 +3687,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": "" });
+                const procedureTemplate = buildTemplateStructure(latestReportQuestionnaire);
+                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": procedureTemplate });
                 openGeminiModal("MedGemma beeldanalyse");
                 try {
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
