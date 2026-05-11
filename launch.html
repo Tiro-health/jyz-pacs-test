@@ -2659,6 +2659,8 @@ INSTRUCTIES VOOR UITVOER:
             });
 
             function scheduleRealtimeCheck() {
+                // When the PiP window is open, realtime check runs there instead
+                if (_pipWindow && !_pipWindow.closed) return;
                 clearTimeout(_realtimeDebounce);
                 _realtimeDebounce = setTimeout(() => {
                     const tekst = readDictationText().trim();
