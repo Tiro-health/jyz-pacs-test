@@ -3464,8 +3464,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 pmCloseResultBtn.addEventListener('click', () => {
                     pmResult.classList.add('hidden');
                     pmResultContent.innerHTML = '';
+                    medgemmaImageBase64 = null;
+                    medgemmaImageMime   = null;
+                    pmFileInput.value   = '';
+                    pmImg.src           = '';
+                    pmPreview.classList.add('hidden');
                     pmDropzone.classList.remove('hidden');
-                    if (medgemmaImageBase64) pmPreview.classList.remove('hidden');
                     if (medgemmaAccordionActive) toggleMedgemmaAccordion();
                 });
 
@@ -3633,8 +3637,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             function resetMedgemmaPanel() {
                 medgemmaResult.classList.add("hidden");
                 medgemmaResultContent.innerHTML = "";
+                medgemmaImageBase64 = null;
+                medgemmaImageMime   = null;
+                medgemmaFileInput.value = "";
+                medgemmaPreviewImg.src  = "";
+                medgemmaPreview.classList.add("hidden");
                 medgemmaDropzone.classList.remove("hidden");
-                if (medgemmaImageBase64) medgemmaPreview.classList.remove("hidden");
             }
 
             medgemmaCopyBtn.addEventListener("click", () => {
