@@ -3062,7 +3062,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             let _pipWindow = null; // declared here so updateMedgemmaToggle() can reference it safely
             const medgemmaVisibleToggle = document.getElementById("medgemma-visible");
             const medgemmaAccordion     = document.getElementById("medgemma-accordion");
-            let medgemmaVisible = localStorage.getItem("medgemmaVisible") === "true";
+            let medgemmaVisible = localStorage.getItem("medgemmaVisible") !== "false";
             let medgemmaAccordionActive = false;
             const medgemmaQuickBtn = document.getElementById("medgemma-quick-btn");
 
