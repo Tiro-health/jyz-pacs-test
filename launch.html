@@ -698,6 +698,17 @@
                                 </svg>
                                 Kopiëren
                             </button>
+                            <button
+                                id="medgemma-quick-btn"
+                                type="button"
+                                style="display:none"
+                                title="MedGemma beeldanalyse"
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+                                </svg>
+                            </button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 Tekst ontvangen
@@ -3047,8 +3058,19 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             const medgemmaVisibleToggle = document.getElementById("medgemma-visible");
             const medgemmaAccordion     = document.getElementById("medgemma-accordion");
             let medgemmaVisible = localStorage.getItem("medgemmaVisible") === "true";
+            const medgemmaQuickBtn = document.getElementById("medgemma-quick-btn");
+            medgemmaQuickBtn.addEventListener("click", () => {
+                medgemmaAccordion.open = true;
+                medgemmaAccordion.scrollIntoView({ behavior: "smooth", block: "start" });
+            });
+
             function updateMedgemmaToggle() {
                 medgemmaAccordion.classList.toggle("hidden", !medgemmaVisible);
+                medgemmaQuickBtn.style.display = medgemmaVisible ? "" : "none";
+                if (_pipWindow && !_pipWindow.closed) {
+                    const pipCamBtn = _pipWindow.document.getElementById("pip-medgemma-btn");
+                    if (pipCamBtn) pipCamBtn.style.display = medgemmaVisible ? "" : "none";
+                }
                 medgemmaVisibleToggle.setAttribute("aria-checked", String(medgemmaVisible));
                 medgemmaVisibleToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${medgemmaVisible ? "bg-cyan-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
                 medgemmaVisibleToggle.querySelector("span").className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${medgemmaVisible ? "translate-x-[19px]" : "translate-x-[3px]"}`;
@@ -3129,14 +3151,24 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 let _pipZoom = 1.0;
                 const _applyZoom = () => { pipWindow.document.body.style.zoom = _pipZoom; };
                 const SZ = 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer font-bold leading-none';
-                const fontBtns = mk('div', 'flex gap-1 ml-auto');
+                const fontBtns = mk('div', 'flex gap-1 ml-auto items-center');
+                const btnPipCam = mk('button', SZ, '');
+                btnPipCam.id = 'pip-medgemma-btn';
+                btnPipCam.type = 'button';
+                btnPipCam.title = 'MedGemma beeldanalyse';
+                btnPipCam.style.display = medgemmaVisible ? '' : 'none';
+                btnPipCam.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+                btnPipCam.addEventListener('click', () => {
+                    medgemmaAccordion.open = true;
+                    medgemmaAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
                 const btnFontDown = mk('button', SZ, 'A−'); btnFontDown.type = 'button';
                 const btnFontUp   = mk('button', SZ, 'A+'); btnFontUp.type   = 'button';
                 btnFontDown.style.fontSize = '11px';
                 btnFontUp.style.fontSize   = '13px';
                 btnFontDown.addEventListener('click', () => { _pipZoom = Math.max(0.5, +(_pipZoom - 0.1).toFixed(1)); _applyZoom(); });
                 btnFontUp.addEventListener('click',   () => { _pipZoom = Math.min(2.0, +(_pipZoom + 0.1).toFixed(1)); _applyZoom(); });
-                fontBtns.append(btnFontDown, btnFontUp);
+                fontBtns.append(btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
