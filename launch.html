@@ -3404,7 +3404,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                     const patientInfo = extractPatientInfo();
-                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
+                    const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": "" });
                     openGeminiModal('MedGemma beeldanalyse');
                     try {
                         resolveGeminiModal(await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt));
@@ -3545,7 +3545,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
-Patiënt: {patient_info}
+Verslag protocol: {Procedure template}
 === EINDE CONTEXT ===
 
 VERSLAGREGELS:
@@ -3561,7 +3561,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 <b>Besluit</b>
 [besluit gerangschikt naar ernst; antwoord op klinische vraag indien van toepassing]`;
 
-            const MEDGEMMA_PROMPT_VERSION = "2";
+            const MEDGEMMA_PROMPT_VERSION = "3";
             const savedMedgemmaVersion = localStorage.getItem("medgemmaPromptVersion");
             const savedMedgemma = savedMedgemmaVersion === MEDGEMMA_PROMPT_VERSION
                 ? localStorage.getItem("medgemmaActionUrl")
@@ -3669,8 +3669,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                const patientInfo = extractPatientInfo();
-                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
+                const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": "" });
                 openGeminiModal("MedGemma beeldanalyse");
                 try {
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
