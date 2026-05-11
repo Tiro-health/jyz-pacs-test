@@ -664,6 +664,7 @@
                         for="report-form"
                         dictation-language="nl"
                     >
+                        <button id="pip-psk-paste" type="button" style="display:none" aria-hidden="true"></button>
                         <div class="flex gap-2 mt-2 flex-wrap">
                             <button
                                 id="autofill-btn"
@@ -2089,6 +2090,13 @@
             // Auto-intercept large pastes (>500 chars) into the dictation field to
             // bypass the SDK's AI processing and prevent UI freeze.
             const pasteTextIndicator = document.getElementById("paste-text-indicator");
+
+            // Hidden paste button used by PiP sync: clipboard is already written via execCommand('copy'),
+            // clicking this button pastes it into the PSK dictation field.
+            document.getElementById('pip-psk-paste').addEventListener('click', () => {
+                clipboard.focus();
+                document.execCommand('paste');
+            });
             document.addEventListener("paste", (e) => {
                 const text = e.clipboardData?.getData("text/plain") || "";
                 if (text.length <= 500) return;
@@ -3169,10 +3177,15 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!text) return;
                         setDictationText(text);
                         try {
-                            clipboard.focus();
-                            document.execCommand('selectAll', false, null);
-                            document.execCommand('insertText', false, text);
+                            const tmp = document.createElement('textarea');
+                            tmp.style.cssText = 'position:fixed;top:-9999px;opacity:0;pointer-events:none';
+                            tmp.value = text;
+                            document.body.appendChild(tmp);
+                            tmp.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tmp);
                         } catch(e) {}
+                        document.getElementById('pip-psk-paste').click();
                         setTimeout(() => document.getElementById('autofill-btn').click(), 100);
                         sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
                         setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
@@ -3304,22 +3317,21 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         _pipRealtimeLastText = tekst;
 
                         // Always: push text to PSK dictation field on the main page.
-                        // setDictationText sets latestDictationText (used by autofill/translate).
-                        // execCommand reaches the focused inner editor without needing a user gesture.
+                        // 1. setDictationText keeps latestDictationText in sync (autofill/translate fallback).
+                        // 2. Copy to real clipboard via temp textarea + execCommand('copy').
+                        // 3. Click the hidden #pip-psk-paste button whose handler calls
+                        //    clipboard.focus() + execCommand('paste') — paste into PSK editor.
                         setDictationText(tekst);
                         try {
-                            clipboard.focus();
-                            document.execCommand('selectAll', false, null);
-                            document.execCommand('insertText', false, tekst);
+                            const tmp = document.createElement('textarea');
+                            tmp.style.cssText = 'position:fixed;top:-9999px;opacity:0;pointer-events:none';
+                            tmp.value = tekst;
+                            document.body.appendChild(tmp);
+                            tmp.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(tmp);
                         } catch(_) {}
-                        // Show visual confirmation in the dictation panel
-                        pasteTextIndicator.classList.remove('hidden');
-                        pasteTextIndicator.classList.add('inline-flex');
-                        clearTimeout(pasteTextIndicator._hideTimer);
-                        pasteTextIndicator._hideTimer = setTimeout(() => {
-                            pasteTextIndicator.classList.add('hidden');
-                            pasteTextIndicator.classList.remove('inline-flex');
-                        }, 2500);
+                        document.getElementById('pip-psk-paste').click();
 
                         // Only run realtime check when the toggle is on
                         if (!realtimeEnabled) return;
