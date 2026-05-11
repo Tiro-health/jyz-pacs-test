@@ -3084,6 +3084,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             }
 
             function buildPipUI(pipWindow) {
+                // Set PiP window title to "type onderzoek" field value
+                const _pipTitleFromField = () => extractAnyField('type onderzoek', 'type of examination', 'onderzoek').trim()
+                    || 'Type onderzoek niet gekend';
+                pipWindow.document.title = _pipTitleFromField();
+
                 // Copy styles from main page
                 [...document.styleSheets].forEach(sheet => {
                     try {
@@ -3300,9 +3305,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         _pipRealtimeLastText = tekst;
 
                         // Keep latestDictationText in sync for autofill/translate/verslag check.
-                        // Visual update of tiro-magic-clipboard is not possible from a setTimeout
-                        // context (browser blocks paste without a trusted user gesture in this window).
                         setDictationText(tekst);
+                        // Refresh PiP title in case type-onderzoek was filled after PiP opened
+                        pipWindow.document.title = _pipTitleFromField();
 
                         // Only run realtime check when the toggle is on
                         if (!realtimeEnabled) return;
