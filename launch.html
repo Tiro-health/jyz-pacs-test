@@ -698,21 +698,21 @@
                                 </svg>
                                 Kopiëren
                             </button>
+                            <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                Tekst ontvangen
+                            </span>
                             <button
                                 id="medgemma-quick-btn"
                                 type="button"
                                 style="display:none"
                                 title="MedGemma beeldanalyse"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                                class="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
                                 </svg>
                             </button>
-                            <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Tekst ontvangen
-                            </span>
                         </div>
                         <!-- Real-time verslag check panel -->
                         <div id="realtime-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
@@ -773,7 +773,7 @@
             <!-- MedGemma Image Analysis -->
             <details
                 id="medgemma-accordion"
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
+                class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
             >
                 <summary
                     class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg"
@@ -2402,6 +2402,10 @@ INSTRUCTIES VOOR UITVOER:
 
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+            const CAM_BTN_OFF   = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
+            const CAM_BTN_ON    = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+            const PIP_CAM_OFF   = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer font-bold leading-none";
+            const PIP_CAM_ON    = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors cursor-pointer font-bold leading-none";
 
             // Declare here so update functions can reference them when called below
             const aiResultatenBtn = document.getElementById("ai-resultaten-btn");
@@ -2886,7 +2890,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             aiResultatenBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const cb = document.querySelector('.template-checkbox[value="AI resultaten"]');
-                if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); }
+                if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change", { bubbles: true })); }
             });
 
             // SNOMED CT button — synced two-way with Active template checkbox
@@ -2899,7 +2903,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             snomedCtBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 const cb = document.querySelector('.template-checkbox[value="SNOMED CT"]');
-                if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change")); }
+                if (cb) { cb.checked = !cb.checked; cb.dispatchEvent(new Event("change", { bubbles: true })); }
             });
 
             function showSnomedError(msg) {
@@ -3059,18 +3063,37 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             const medgemmaVisibleToggle = document.getElementById("medgemma-visible");
             const medgemmaAccordion     = document.getElementById("medgemma-accordion");
             let medgemmaVisible = localStorage.getItem("medgemmaVisible") === "true";
+            let medgemmaAccordionActive = false;
             const medgemmaQuickBtn = document.getElementById("medgemma-quick-btn");
-            medgemmaQuickBtn.addEventListener("click", () => {
-                medgemmaAccordion.open = true;
-                medgemmaAccordion.scrollIntoView({ behavior: "smooth", block: "start" });
-            });
 
-            function updateMedgemmaToggle() {
-                medgemmaAccordion.classList.toggle("hidden", !medgemmaVisible);
-                medgemmaQuickBtn.style.display = medgemmaVisible ? "" : "none";
+            function toggleMedgemmaAccordion() {
+                medgemmaAccordionActive = !medgemmaAccordionActive;
+                medgemmaAccordion.classList.toggle("hidden", !medgemmaAccordionActive);
+                if (medgemmaAccordionActive) medgemmaAccordion.open = true;
+                medgemmaQuickBtn.className = medgemmaAccordionActive ? CAM_BTN_ON : CAM_BTN_OFF;
                 if (_pipWindow && !_pipWindow.closed) {
                     const pipCamBtn = _pipWindow.document.getElementById("pip-medgemma-btn");
-                    if (pipCamBtn) pipCamBtn.style.display = medgemmaVisible ? "" : "none";
+                    if (pipCamBtn) pipCamBtn.className = medgemmaAccordionActive ? PIP_CAM_ON : PIP_CAM_OFF;
+                }
+            }
+
+            medgemmaQuickBtn.addEventListener("click", toggleMedgemmaAccordion);
+
+            function updateMedgemmaToggle() {
+                // Settings toggle only shows/hides the camera button; accordion visibility is
+                // controlled by the camera button itself. If feature is disabled, reset accordion.
+                if (!medgemmaVisible && medgemmaAccordionActive) {
+                    medgemmaAccordionActive = false;
+                    medgemmaAccordion.classList.add("hidden");
+                }
+                medgemmaQuickBtn.style.display = medgemmaVisible ? "" : "none";
+                medgemmaQuickBtn.className = medgemmaAccordionActive ? CAM_BTN_ON : CAM_BTN_OFF;
+                if (_pipWindow && !_pipWindow.closed) {
+                    const pipCamBtn = _pipWindow.document.getElementById("pip-medgemma-btn");
+                    if (pipCamBtn) {
+                        pipCamBtn.style.display = medgemmaVisible ? "" : "none";
+                        pipCamBtn.className = medgemmaAccordionActive ? PIP_CAM_ON : PIP_CAM_OFF;
+                    }
                 }
                 medgemmaVisibleToggle.setAttribute("aria-checked", String(medgemmaVisible));
                 medgemmaVisibleToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${medgemmaVisible ? "bg-cyan-600" : "bg-neutral-300 dark:bg-neutral-600"}`;
@@ -3158,9 +3181,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 btnPipCam.title = 'MedGemma beeldanalyse';
                 btnPipCam.style.display = medgemmaVisible ? '' : 'none';
                 btnPipCam.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+                btnPipCam.className = medgemmaAccordionActive ? PIP_CAM_ON : PIP_CAM_OFF;
                 btnPipCam.addEventListener('click', () => {
-                    medgemmaAccordion.open = true;
-                    medgemmaAccordion.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    toggleMedgemmaAccordion();
                 });
                 const btnFontDown = mk('button', SZ, 'A−'); btnFontDown.type = 'button';
                 const btnFontUp   = mk('button', SZ, 'A+'); btnFontUp.type   = 'button';
