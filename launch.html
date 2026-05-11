@@ -815,6 +815,20 @@
                         <img id="medgemma-preview-img" src="" alt="Preview" class="w-full max-h-64 object-contain rounded-lg border border-neutral-200 dark:border-slate-700 bg-black" />
                         <button id="medgemma-clear-btn" type="button" class="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-800/70 text-white hover:bg-neutral-900 text-xs">✕</button>
                     </div>
+                    <!-- Inline result -->
+                    <div id="medgemma-result" class="hidden">
+                        <div id="medgemma-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed overflow-y-auto max-h-72 p-3 rounded-md bg-neutral-50 dark:bg-muted/40 border border-neutral-200 dark:border-slate-700"></div>
+                        <div class="flex gap-2 mt-2">
+                            <button id="medgemma-copy-btn" type="button" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                Kopiëren
+                            </button>
+                            <button id="medgemma-close-btn" type="button" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                Sluiten
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </details>
 
@@ -3390,7 +3404,20 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 pmAnalyseBtn.type = 'button';
                 pmAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
 
-                pmBody.append(pmDropzone, pmPreview, pmAnalyseBtn);
+                const pmResult = mk('div', 'hidden');
+                const pmResultContent = mk('div', 'text-sm leading-relaxed overflow-y-auto p-3 rounded-md border border-neutral-200 dark:border-slate-700');
+                pmResultContent.style.cssText = 'max-height:200px;background:#f9fafb;color:#1f2937;font-size:12px;line-height:1.5';
+                const pmResultActions = mk('div', 'flex gap-2 mt-2');
+                const pmCopyResultBtn = mk('button', 'flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Kopiëren');
+                pmCopyResultBtn.type = 'button';
+                pmCopyResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151';
+                const pmCloseResultBtn = mk('button', 'flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Sluiten');
+                pmCloseResultBtn.type = 'button';
+                pmCloseResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151';
+                pmResultActions.append(pmCopyResultBtn, pmCloseResultBtn);
+                pmResult.append(pmResultContent, pmResultActions);
+
+                pmBody.append(pmDropzone, pmPreview, pmAnalyseBtn, pmResult);
                 pipMedgemmaPanel.append(pmHeader, pmBody);
                 wrap.appendChild(pipMedgemmaPanel);
 
@@ -3428,20 +3455,40 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     pmPreview.classList.add('hidden');
                     pmDropzone.classList.remove('hidden');
                 });
+                pmCopyResultBtn.addEventListener('click', () => {
+                    const text = pmResultContent.innerText || pmResultContent.textContent;
+                    navigator.clipboard.writeText(text).catch(() => {});
+                });
+
+                pmCloseResultBtn.addEventListener('click', () => {
+                    pmResult.classList.add('hidden');
+                    pmResultContent.innerHTML = '';
+                    pmDropzone.classList.remove('hidden');
+                    if (medgemmaImageBase64) pmPreview.classList.remove('hidden');
+                    if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+                });
+
                 pmAnalyseBtn.addEventListener('click', async () => {
                     if (!medgemmaImageBase64) { pipWindow.alert('Upload eerst een afbeelding.'); return; }
                     const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
                     const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                    const patientInfo = extractPatientInfo();
                     const procedureTemplate = buildTemplateStructure(latestReportQuestionnaire);
                     const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": procedureTemplate });
-                    openGeminiModal('MedGemma beeldanalyse');
+                    pmAnalyseBtn.disabled = true;
+                    pmAnalyseBtn.textContent = 'Analyseren…';
                     try {
-                        resolveGeminiModal(await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt));
+                        const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
+                        pmDropzone.classList.add('hidden');
+                        pmPreview.classList.add('hidden');
+                        pmResultContent.innerHTML = result;
+                        pmResult.classList.remove('hidden');
                     } catch (err) {
-                        rejectGeminiModal(err.message);
+                        pipWindow.alert('MedGemma fout: ' + err.message);
+                    } finally {
+                        pmAnalyseBtn.disabled = false;
+                        pmAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
                     }
                 });
 
@@ -3570,6 +3617,34 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             const medgemmaClearBtn      = document.getElementById("medgemma-clear-btn");
             const medgemmaAnalyseBtn    = document.getElementById("medgemma-analyse-btn");
             const medgemmaActionUrlInput = document.getElementById("medgemma-action-url");
+            const medgemmaResult        = document.getElementById("medgemma-result");
+            const medgemmaResultContent = document.getElementById("medgemma-result-content");
+            const medgemmaCopyBtn       = document.getElementById("medgemma-copy-btn");
+            const medgemmaCloseBtn      = document.getElementById("medgemma-close-btn");
+
+            function showMedgemmaResult(html) {
+                medgemmaDropzone.classList.add("hidden");
+                medgemmaPreview.classList.add("hidden");
+                medgemmaResultContent.innerHTML = html;
+                medgemmaResult.classList.remove("hidden");
+            }
+
+            function resetMedgemmaPanel() {
+                medgemmaResult.classList.add("hidden");
+                medgemmaResultContent.innerHTML = "";
+                medgemmaDropzone.classList.remove("hidden");
+                if (medgemmaImageBase64) medgemmaPreview.classList.remove("hidden");
+            }
+
+            medgemmaCopyBtn.addEventListener("click", () => {
+                const text = medgemmaResultContent.innerText || medgemmaResultContent.textContent;
+                navigator.clipboard.writeText(text).catch(() => {});
+            });
+
+            medgemmaCloseBtn.addEventListener("click", () => {
+                resetMedgemmaPanel();
+                if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+            });
 
             const DEFAULT_MEDGEMMA_PROMPT = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.
 
@@ -3702,12 +3777,16 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const procedureTemplate = buildTemplateStructure(latestReportQuestionnaire);
                 const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": procedureTemplate });
-                openGeminiModal("MedGemma beeldanalyse");
+                medgemmaAnalyseBtn.disabled = true;
+                medgemmaAnalyseBtn.textContent = "Analyseren…";
                 try {
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
-                    resolveGeminiModal(result);
-                } catch (e) {
-                    rejectGeminiModal(e.message);
+                    showMedgemmaResult(result);
+                } catch (err) {
+                    alert("MedGemma fout: " + err.message);
+                } finally {
+                    medgemmaAnalyseBtn.disabled = false;
+                    medgemmaAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
                 }
             });
         </script>
