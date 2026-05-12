@@ -3167,8 +3167,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             // PACS URL display
             const pacsUrlDisplay  = document.getElementById("pacs-url-display");
             const pacsUrlCopyBtn  = document.getElementById("pacs-url-copy-btn");
-            const _pacsBaseUrl    = window.location.origin + window.location.pathname;
-            const _pacsExampleUrl = _pacsBaseUrl + "?type_onderzoek={TYPE_ONDERZOEK}&lateralisatie={LATERALISATIE}&klinische_inlichtingen={KLINISCHE_INLICHTINGEN}&diagnostische_vraagstelling={DIAGNOSTISCHE_VRAAGSTELLING}";
+            const _pacsExampleUrl = "https://radiology.tiro.health/launch.html?type_onderzoek={TYPE_ONDERZOEK}&lateralisatie={LATERALISATIE}&klinische_inlichtingen={KLINISCHE_INLICHTINGEN}&diagnostische_vraagstelling={DIAGNOSTISCHE_VRAAGSTELLING}";
             pacsUrlDisplay.value  = _pacsExampleUrl;
             pacsUrlCopyBtn.addEventListener("click", () => {
                 navigator.clipboard.writeText(_pacsExampleUrl).then(() => {
