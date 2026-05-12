@@ -3356,6 +3356,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
                 trPanel.append(trHead, trContent);
 
+                // "Verslag check" button — visible only when realtime is OFF
+                const vcBtn = mk('button', SM.replace('cursor-pointer','') + ' cursor-pointer', '');
+                vcBtn.type = 'button';
+                vcBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Verslag check';
+                vcBtn.style.display = realtimeEnabled ? 'none' : '';
+
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
                         const text = ta.value.trim();
@@ -3394,6 +3400,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         btn.style.color = '#16a34a';
                         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
+                    vcBtn,
                     sentInd,
                     fontBtns,
                 );
@@ -3403,9 +3410,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 rtPanel.style.display = realtimeEnabled ? '' : 'none';
-                // Keep PiP realtime panel in sync with the main toggle
+                // Keep PiP realtime panel and manual vcBtn in sync with the main toggle
                 realtimeToggle.addEventListener('click', () => {
                     rtPanel.style.display = realtimeEnabled ? '' : 'none';
+                    vcBtn.style.display   = realtimeEnabled ? 'none' : '';
                 });
                 const rtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const rtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Real time — Verslag check');
@@ -3442,6 +3450,88 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 rtActions.append(rtOrigBtn, rtCopyBtn);
                 rtPanel.append(rtHead, rtContent, rtActions);
                 wrap.appendChild(rtPanel);
+
+                // ── Handmatig verslag check panel (zichtbaar na klikken vcBtn) ──
+                const vcPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                vcPanel.style.display = 'none';
+                const vcHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const vcTitle  = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Verslag check');
+                const vcStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
+                vcHead.append(vcTitle, vcStatus);
+                const vcContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] leading-relaxed');
+                const vcActions = mk('div', 'flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
+                vcActions.style.display = 'none';
+
+                let _vcOrigText = null, _vcShowingOrig = false, _vcResultHTML = null, _vcAbort = null;
+
+                const vcOrigBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '↩ Origineel', () => {
+                    _vcShowingOrig = !_vcShowingOrig;
+                    if (_vcShowingOrig) {
+                        _vcResultHTML = vcContent.innerHTML;
+                        vcContent.innerHTML = (_vcOrigText || '').replace(/\n/g, '<br>');
+                        vcOrigBtn.textContent = '↩ Gecorrigeerd';
+                    } else {
+                        vcContent.innerHTML = _vcResultHTML;
+                        vcOrigBtn.textContent = '↩ Origineel';
+                    }
+                });
+                vcOrigBtn.style.display = 'none';
+
+                const vcCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
+                    const btn = e.currentTarget;
+                    pipCopy(_vcShowingOrig ? (_vcOrigText || '') : (vcContent.innerText || ''));
+                    const orig = btn.textContent;
+                    btn.textContent = 'Gekopieerd ✓';
+                    btn.style.color = '#16a34a';
+                    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                });
+
+                const vcCloseBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer ml-auto', 'Sluiten', () => {
+                    _vcAbort?.abort();
+                    vcPanel.style.display = 'none';
+                });
+
+                vcActions.append(vcOrigBtn, vcCopyBtn, vcCloseBtn);
+                vcPanel.append(vcHead, vcContent, vcActions);
+                wrap.appendChild(vcPanel);
+
+                vcBtn.addEventListener('click', async () => {
+                    const tekst = ta.value.trim();
+                    if (!tekst) { pipWindow.alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
+                    if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
+
+                    _vcAbort?.abort();
+                    _vcAbort = new AbortController();
+                    vcPanel.style.display = '';
+                    vcContent.innerHTML = '';
+                    vcStatus.textContent = 'Verwerken…';
+                    vcActions.style.display = 'none';
+                    vcOrigBtn.style.display = 'none';
+                    _vcOrigText = tekst;
+                    _vcShowingOrig = false;
+                    _vcResultHTML = null;
+                    vcOrigBtn.textContent = '↩ Origineel';
+
+                    const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                    const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
+                    const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
+                    const pat = extractPatientInfo();
+                    const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat });
+
+                    try {
+                        let first = true;
+                        await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                            if (first) { vcContent.innerHTML = ''; first = false; }
+                            vcContent.innerHTML = renderMarkdown(partial);
+                            vcStatus.textContent = '';
+                        }, _vcAbort.signal);
+                        vcActions.style.display = 'flex';
+                        vcOrigBtn.style.display = _vcOrigText ? '' : 'none';
+                    } catch (e) {
+                        if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
+                    }
+                });
 
                 // ── MedGemma beeldanalyse panel ─────────────────────
                 const pipMedgemmaPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-background overflow-hidden');
