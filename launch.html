@@ -1190,6 +1190,26 @@
                         </button>
                     </div>
 
+                    <!-- PACS integratie URL -->
+                    <div>
+                        <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">PACS integratie URL</label>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-1.5">Geef deze URL-structuur door aan de IT van uw PACS-systeem. De velden worden automatisch ingevuld wanneer de app via PACS wordt geopend.</p>
+                        <div class="flex gap-2">
+                            <input
+                                id="pacs-url-display"
+                                type="text"
+                                readonly
+                                value="https://radiology.tiro.health/launch.html?type_onderzoek={TYPE_ONDERZOEK}&lateralisatie={LATERALISATIE}&klinische_inlichtingen={KLINISCHE_INLICHTINGEN}&diagnostische_vraagstelling={DIAGNOSTISCHE_VRAAGSTELLING}"
+                                class="flex-1 min-w-0 px-2 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-100 dark:bg-muted/60 text-neutral-600 dark:text-neutral-400 font-mono cursor-text"
+                            />
+                            <button
+                                id="pacs-url-copy-btn"
+                                type="button"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors whitespace-nowrap"
+                            >Kopiëren</button>
+                        </div>
+                    </div>
+
                     <div class="h-8"></div>
                 </div>
             </details>
@@ -1329,6 +1349,13 @@
             // URL Parameters
             // ============================================
             const params = new URLSearchParams(window.location.search);
+
+            // PACS URL parameters — auto-fill clinical context fields
+            const pacsTypeOnderzoek            = params.get("type_onderzoek") || "";
+            const pacsLateralisatie            = params.get("lateralisatie") || "";
+            const pacsKlinischeInlichtingen    = params.get("klinische_inlichtingen") || "";
+            const pacsDiagnostischeVraagstelling = params.get("diagnostische_vraagstelling") || "";
+
             const DEFAULT_QUESTIONNAIRE =
                 "http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.5";
             // Priority: URL param → localStorage saved → default
@@ -1504,6 +1531,21 @@
             const PREVIOUS_STUDIES_QUESTIONNAIRE = "http://templates.tiro.health/templates/70998e77562b4be9af36de8ae3c1422f|1.0.2";
             previousStudiesForm.setAttribute("launch-context", JSON.stringify(launchContext));
             previousStudiesForm.setAttribute("questionnaire", PREVIOUS_STUDIES_QUESTIONNAIRE);
+
+            // Auto-fill Tiro forms from PACS URL parameters (fires once on first tiro-update)
+            if (pacsTypeOnderzoek || pacsLateralisatie || pacsKlinischeInlichtingen || pacsDiagnostischeVraagstelling) {
+                let _pacsFilled = false;
+                async function _autoFillPacsFields() {
+                    if (_pacsFilled) return;
+                    _pacsFilled = true;
+                    if (pacsTypeOnderzoek) deepFillByLabel(contextForm, "type onderzoek", pacsTypeOnderzoek);
+                    if (pacsKlinischeInlichtingen) deepFillByLabel(clinicalForm, "klinische inlichtingen", pacsKlinischeInlichtingen);
+                    if (pacsDiagnostischeVraagstelling) deepFillByLabel(clinicalForm, "diagnostische vraagstelling", pacsDiagnostischeVraagstelling);
+                    if (pacsLateralisatie) await deepFillDropdownByLabel(contextForm, "lateralisatie", pacsLateralisatie);
+                }
+                contextForm.addEventListener("tiro-update", _autoFillPacsFields, { once: true });
+                clinicalForm.addEventListener("tiro-update", _autoFillPacsFields, { once: true });
+            }
 
             // ============================================
             // Dynamic panel titles
@@ -2275,7 +2317,24 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             // Extract a field value from a QuestionnaireResponse by matching item text
             function extractAnyField(...searchTerms) {
                 return extractClinicalField(latestClinicalResponse, ...searchTerms)
-                    || extractClinicalField(latestContextResponse, ...searchTerms);
+                    || extractClinicalField(latestContextResponse, ...searchTerms)
+                    || _extractPacsParam(searchTerms);
+            }
+
+            function _extractPacsParam(searchTerms) {
+                const map = [
+                    [pacsTypeOnderzoek,             ["type onderzoek", "type of examination", "onderzoek"]],
+                    [pacsLateralisatie,              ["lateralisatie", "laterality", "lateralisation"]],
+                    [pacsKlinischeInlichtingen,      ["klinische inlichtingen", "clinical information", "klinisch"]],
+                    [pacsDiagnostischeVraagstelling, ["diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"]],
+                ];
+                for (const [val, keys] of map) {
+                    if (!val) continue;
+                    if (searchTerms.some(t => keys.some(k => k.includes(t.toLowerCase()) || t.toLowerCase().includes(k)))) {
+                        return val;
+                    }
+                }
+                return "";
             }
 
             function extractPatientInfo() {
@@ -3106,6 +3165,18 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             // MedGemma image analysis
             // ============================================
             let _pipWindow = null; // declared here so updateMedgemmaToggle() can reference it safely
+            // PACS URL display
+            const pacsUrlDisplay  = document.getElementById("pacs-url-display");
+            const pacsUrlCopyBtn  = document.getElementById("pacs-url-copy-btn");
+            const _pacsExampleUrl = "https://radiology.tiro.health/launch.html?type_onderzoek={TYPE_ONDERZOEK}&lateralisatie={LATERALISATIE}&klinische_inlichtingen={KLINISCHE_INLICHTINGEN}&diagnostische_vraagstelling={DIAGNOSTISCHE_VRAAGSTELLING}";
+            pacsUrlDisplay.value  = _pacsExampleUrl;
+            pacsUrlCopyBtn.addEventListener("click", () => {
+                navigator.clipboard.writeText(_pacsExampleUrl).then(() => {
+                    pacsUrlCopyBtn.textContent = "Gekopieerd!";
+                    setTimeout(() => { pacsUrlCopyBtn.textContent = "Kopiëren"; }, 2000);
+                }).catch(() => {});
+            });
+
             const medgemmaVisibleToggle = document.getElementById("medgemma-visible");
             const medgemmaAccordion     = document.getElementById("medgemma-accordion");
             let medgemmaVisible = localStorage.getItem("medgemmaVisible") !== "false";

@@ -364,6 +364,13 @@
             if (!e.target.closest('.corr')) corrTooltip.classList.add('hidden');
         });
 
+        // ── PACS URL parameters ───────────────────────────────────────
+        const _popupParams                     = new URLSearchParams(window.location.search);
+        const _pacsTypeOnderzoek               = _popupParams.get("type_onderzoek") || "";
+        const _pacsLateralisatie               = _popupParams.get("lateralisatie") || "";
+        const _pacsKlinischeInlichtingen       = _popupParams.get("klinische_inlichtingen") || "";
+        const _pacsDiagnostischeVraagstelling  = _popupParams.get("diagnostische_vraagstelling") || "";
+
         // ── Dictation text capture ────────────────────────────────────
         const popupClipboard = document.getElementById('popup-clipboard');
         const bc = new BroadcastChannel('dictation-popup-sync');
@@ -468,9 +475,9 @@
             verslagCheckBtn.className = verslagCheckActive ? BTN_VC_ON : BTN_VC_OFF;
             if (verslagCheckActive) {
                 modalVcTekst.value = latestPopupText;
-                modalVcType.value = '';
-                modalVcKi.value = '';
-                modalVcDv.value = '';
+                modalVcType.value = _pacsTypeOnderzoek;
+                modalVcKi.value   = _pacsKlinischeInlichtingen;
+                modalVcDv.value   = _pacsDiagnostischeVraagstelling;
                 verslagModal.classList.remove('hidden');
                 verslagModal.classList.add('flex');
                 [modalVcTekst, modalVcType, modalVcKi, modalVcDv].find(el => !el.value)?.focus();
