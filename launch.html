@@ -733,6 +733,7 @@
             <!-- Textuele back-up template (enkel zichtbaar wanneer geen echte Tiro-template actief) -->
             <details
                 id="text-template-accordion"
+                open
                 class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 hidden"
             >
                 <summary class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg">
@@ -741,8 +742,21 @@
                     <span id="text-template-suffix" class="ml-1 font-normal text-neutral-400 dark:text-neutral-500 text-xs truncate"></span>
                     <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </summary>
-                <div class="px-3 py-3 border-t border-neutral-200 dark:border-neutral-800">
-                    <pre id="text-template-content" class="text-xs font-mono text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"></pre>
+                <div class="border-t border-neutral-200 dark:border-neutral-800">
+                    <!-- Result panel (hidden until AI runs) -->
+                    <div id="tt-result-panel" class="hidden">
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Autofill — back-up template</span>
+                            <span id="tt-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                        </div>
+                        <div id="tt-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
+                        <div id="tt-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                            <button id="tt-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
+                            <button id="tt-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                        </div>
+                    </div>
+                    <!-- Template source (always visible) -->
+                    <pre id="text-template-content" class="px-3 py-3 text-xs font-mono text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"></pre>
                 </div>
             </details>
 
@@ -3144,6 +3158,35 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 }
             });
 
+            // ── Textuele back-up result panel ─────────────────────────────────────────
+            const ttResultPanel   = document.getElementById('tt-result-panel');
+            const ttContent       = document.getElementById('tt-content');
+            const ttStatus        = document.getElementById('tt-status');
+            const ttActions       = document.getElementById('tt-actions');
+            const ttToggleOrig    = document.getElementById('tt-toggle-orig');
+            const ttCopy          = document.getElementById('tt-copy');
+            let _ttOriginalText   = null;
+            let _ttResultHTML     = null;
+            let _ttShowingOrig    = false;
+            let _ttAbort          = null;
+
+            ttToggleOrig.addEventListener('click', () => {
+                _ttShowingOrig = !_ttShowingOrig;
+                if (_ttShowingOrig) {
+                    _ttResultHTML = ttContent.innerHTML;
+                    ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
+                    ttToggleOrig.textContent = '↩ Ingevuld';
+                } else {
+                    ttContent.innerHTML = _ttResultHTML;
+                    ttToggleOrig.textContent = '↩ Origineel';
+                }
+            });
+            ttCopy.addEventListener('click', () => {
+                navigator.clipboard.writeText(
+                    _ttShowingOrig ? (_ttOriginalText || '') : ttContent.innerText
+                ).catch(() => {});
+            });
+
             async function runAutofillBackup() {
                 const tekst = latestDictationText.trim();
                 if (!tekst) { alert("Geen dictatie gevonden. Dicteer eerst uw bevindingen."); return; }
@@ -3161,21 +3204,31 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     text_template: window._flowTextTemplate,
                     text_template_logic: logic,
                 });
-                if (GEMINI_API_KEY) {
-                    openGeminiModal("Autofill back-up template");
-                    try {
-                        const text = await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => {
-                            geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
-                            _geminiRawText = partial;
-                            geminiContent.innerHTML = renderMarkdown(partial);
-                        }, _newGeminiSignal());
-                        resolveGeminiModal(text);
-                    } catch (e) {
-                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
-                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
-                    }
-                } else {
-                    openChatGPT(prompt);
+                if (!GEMINI_API_KEY) { openChatGPT(prompt); return; }
+
+                // Show result panel inside accordion, open accordion
+                document.getElementById('text-template-accordion').setAttribute('open', '');
+                ttResultPanel.classList.remove('hidden');
+                ttActions.style.display = 'none';
+                ttToggleOrig.style.display = 'none';
+                ttToggleOrig.textContent = '↩ Origineel';
+                ttStatus.textContent = 'Verwerken…';
+                _ttOriginalText = tekst;
+                _ttShowingOrig = false;
+                _ttResultHTML = null;
+                _ttAbort?.abort();
+                _ttAbort = new AbortController();
+
+                let firstChunk = true;
+                try {
+                    await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => {
+                        if (firstChunk) { ttContent.innerHTML = ''; firstChunk = false; ttStatus.textContent = ''; }
+                        ttContent.innerHTML = renderMarkdown(partial);
+                    }, _ttAbort.signal);
+                    ttActions.style.display = 'flex';
+                    ttToggleOrig.style.display = _ttOriginalText ? '' : 'none';
+                } catch (e) {
+                    if (e.name !== 'AbortError') ttStatus.textContent = 'Fout: ' + e.message;
                 }
             }
 
