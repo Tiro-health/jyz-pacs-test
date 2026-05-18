@@ -2822,6 +2822,20 @@ INSTRUCTIES VOOR UITVOER:
                 }
             }
 
+            // Observer + sync declared here so they exist before the first _syncRealtimeObserver() call below
+            const _realtimeObserver = new MutationObserver((mutations) => {
+                const outsidePanel = mutations.some(m => !realtimePanel.contains(m.target) && m.target !== realtimePanel);
+                if (outsidePanel) scheduleRealtimeCheck();
+            });
+            function _syncRealtimeObserver() {
+                if (realtimeEnabled) {
+                    _realtimeObserver.observe(clipboard, { childList: true, subtree: true, attributes: false });
+                } else {
+                    _realtimeObserver.disconnect();
+                }
+            }
+            clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
+
             realtimeToggle.addEventListener('click', () => {
                 realtimeEnabled = !realtimeEnabled;
                 localStorage.setItem('realtimeEnabled', String(realtimeEnabled));
@@ -2900,19 +2914,6 @@ INSTRUCTIES VOOR UITVOER:
                 }, 2000);
             }
 
-            // Watch dictation text for changes — exclude realtime-panel mutations to avoid debounce loop
-            const _realtimeObserver = new MutationObserver((mutations) => {
-                const outsidePanel = mutations.some(m => !realtimePanel.contains(m.target) && m.target !== realtimePanel);
-                if (outsidePanel) scheduleRealtimeCheck();
-            });
-            function _syncRealtimeObserver() {
-                if (realtimeEnabled) {
-                    _realtimeObserver.observe(clipboard, { childList: true, subtree: true, attributes: false });
-                } else {
-                    _realtimeObserver.disconnect();
-                }
-            }
-            clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
 
 
 
