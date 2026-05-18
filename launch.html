@@ -1415,7 +1415,7 @@
             const savedTemplateNames = JSON.parse(localStorage.getItem("savedTemplateNames") || "[]");
             const defaultNames = savedTemplateNames.length > 0
                 ? savedTemplateNames
-                : [];
+                : ["AI resultaten"];
             document.querySelectorAll(".template-checkbox").forEach(cb => {
                 cb.checked = defaultNames.includes(cb.value);
             });
