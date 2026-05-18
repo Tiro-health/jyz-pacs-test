@@ -237,7 +237,7 @@
         <a
             href="qc.html"
             title="Quality Control"
-            class="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold shadow-lg transition-colors"
+            class="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold shadow-lg transition-colors" style="will-change:transform"
         >
             QC
         </a>
@@ -389,7 +389,7 @@
         </div>
 
         <!-- Toolbar (fixed bottom-right) -->
-        <div class="fixed bottom-4 right-4 z-10 flex gap-2 pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
+        <div class="fixed bottom-4 right-4 z-10 flex gap-2 pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm" style="will-change:transform">
                 <button
                     id="save-progress-btn"
                     type="submit"
@@ -1415,7 +1415,7 @@
             const savedTemplateNames = JSON.parse(localStorage.getItem("savedTemplateNames") || "[]");
             const defaultNames = savedTemplateNames.length > 0
                 ? savedTemplateNames
-                : ["AI resultaten", "SNOMED CT"];
+                : [];
             document.querySelectorAll(".template-checkbox").forEach(cb => {
                 cb.checked = defaultNames.includes(cb.value);
             });
@@ -2826,9 +2826,11 @@ INSTRUCTIES VOOR UITVOER:
                 realtimeEnabled = !realtimeEnabled;
                 localStorage.setItem('realtimeEnabled', String(realtimeEnabled));
                 updateRealtimeToggle();
+                _syncRealtimeObserver();
                 if (realtimeEnabled) scheduleRealtimeCheck();
             });
             updateRealtimeToggle();
+            _syncRealtimeObserver();
 
             async function runRealtimeCheck(tekst) {
                 if (!realtimeEnabled || !GEMINI_API_KEY) return;
@@ -2900,11 +2902,16 @@ INSTRUCTIES VOOR UITVOER:
 
             // Watch dictation text for changes — exclude realtime-panel mutations to avoid debounce loop
             const _realtimeObserver = new MutationObserver((mutations) => {
-                if (!realtimeEnabled) return;
                 const outsidePanel = mutations.some(m => !realtimePanel.contains(m.target) && m.target !== realtimePanel);
                 if (outsidePanel) scheduleRealtimeCheck();
             });
-            _realtimeObserver.observe(clipboard, { childList: true, subtree: true, characterData: true, attributes: false });
+            function _syncRealtimeObserver() {
+                if (realtimeEnabled) {
+                    _realtimeObserver.observe(clipboard, { childList: true, subtree: true, attributes: false });
+                } else {
+                    _realtimeObserver.disconnect();
+                }
+            }
             clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
 
 
