@@ -1825,7 +1825,7 @@
             const _EXCLUDED_TEMPLATE_NAMES = new Set(['AI resultaten', 'SNOMED CT']);
             function _hasRealTiroTemplate() {
                 return Array.from(document.querySelectorAll('.template-checkbox:checked'))
-                    .some(cb => !_EXCLUDED_TEMPLATE_NAMES.has(cb.value) && !cb.value.startsWith('flow:ai:'));
+                    .some(cb => !_EXCLUDED_TEMPLATE_NAMES.has(cb.value));
             }
             function _updateAutofillBtnType() {
                 const btn = document.getElementById('autofill-btn');
