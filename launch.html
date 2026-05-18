@@ -730,6 +730,22 @@
                 </div>
             </details>
 
+            <!-- Textuele back-up template (enkel zichtbaar wanneer geen echte Tiro-template actief) -->
+            <details
+                id="text-template-accordion"
+                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 hidden"
+            >
+                <summary class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Textuele back-up template
+                    <span id="text-template-suffix" class="ml-1 font-normal text-neutral-400 dark:text-neutral-500 text-xs truncate"></span>
+                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </summary>
+                <div class="px-3 py-3 border-t border-neutral-200 dark:border-neutral-800">
+                    <pre id="text-template-content" class="text-xs font-mono text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"></pre>
+                </div>
+            </details>
+
             <!-- Report Form -->
             <details
                 id="template-accordion"
@@ -829,22 +845,6 @@
                             </button>
                         </div>
                     </div>
-                </div>
-            </details>
-
-            <!-- Textuele back-up template -->
-            <details
-                id="text-template-accordion"
-                class="w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 hidden"
-            >
-                <summary class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Textuele back-up template
-                    <span id="text-template-suffix" class="ml-1 font-normal text-neutral-400 dark:text-neutral-500 text-xs truncate"></span>
-                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                </summary>
-                <div class="px-3 py-3 border-t border-neutral-200 dark:border-neutral-800">
-                    <pre id="text-template-content" class="text-xs font-mono text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"></pre>
                 </div>
             </details>
 
@@ -1829,6 +1829,7 @@
             function _updateAutofillBtnType() {
                 const btn = document.getElementById('autofill-btn');
                 if (btn) btn.type = _hasRealTiroTemplate() ? 'submit' : 'button';
+                updateTextTemplateBackup();
             }
 
             // ============================================
@@ -1897,10 +1898,10 @@
                 const pre  = document.getElementById('text-template-content');
                 const suf  = document.getElementById('text-template-suffix');
                 const tmpl = window._flowTextTemplate || '';
-                if (tmpl) {
+                if (tmpl && !_hasRealTiroTemplate()) {
                     acc.classList.remove('hidden');
                     pre.textContent = tmpl;
-                    suf.textContent = '(back-up beschikbaar)';
+                    suf.textContent = '';
                 } else {
                     acc.classList.add('hidden');
                     pre.textContent = '';
