@@ -162,6 +162,25 @@
 
         <!-- ── Card list ──────────────────────────────────────────────────────── -->
         <div class="p-4 max-w-4xl mx-auto">
+            <!-- ── Textuele template logica ──────────────────────────────────────────── -->
+            <details id="logic-accordion" class="mb-4 bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <summary class="flex items-center gap-2 px-4 py-3 text-sm font-medium cursor-pointer text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-accent rounded-lg select-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Algemene logica textuele back-up templates
+                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </summary>
+                <div class="px-4 py-3 border-t border-neutral-200 dark:border-slate-700">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Pas hier de syntaxisregels aan die gelden voor alle textuele back-up templates. Wordt mee opgenomen als context in AI-prompts.</p>
+                    <textarea
+                        id="logic-textarea"
+                        rows="14"
+                        class="w-full px-3 py-2 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
+                    ></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button id="logic-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                    </div>
+                </div>
+            </details>
             <div id="cards-container" class="space-y-1.5"></div>
             <div id="empty-state" class="hidden text-center py-20 text-neutral-400 dark:text-neutral-500">
                 <svg class="mx-auto mb-3 opacity-40" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -247,6 +266,23 @@
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
+                <!-- Text template backup -->
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span>📝</span>
+                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Textuele back-up template</label>
+                    </div>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Wordt gebruikt als back-up wanneer de Tiro-link niet beschikbaar is, en als structuurcontext voor AI-prompts.</p>
+                    <textarea
+                        id="edit-text-template"
+                        rows="8"
+                        placeholder="SECTIE:\n- [Veld:] 'Standaardtekst' // AI-context voor dit veld&#10;- [Ander veld:] XXX&#10;&#10;BESLUIT:&#10;XXX"
+                        class="w-full px-3 py-2 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
+                    ></textarea>
+                </div>
+
+                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+
                 <!-- AI Rules -->
                 <div>
                     <div class="flex items-center justify-between mb-1">
@@ -274,6 +310,21 @@
 
         <!-- ── Script ─────────────────────────────────────────────────────────── -->
         <script>
+        const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
+
+' '  of  " "  =  Invulveld waarbij de standaard invultekst overeenkomt met de tekst tussen de haakjes. Deze tekst is zichtbaar wanneer er geen andere bevindingen werden besproken.
+
+XXX  =  Invulveld zonder onderliggende standaard invultekst.
+
+//  =  Contextuele / informatieve tekst voor betere en accuratere AI-prompt met betrekking tot het gekoppelde invulveld.
+
+[ ]  =  Geeft de tekst weer gekoppeld aan het invulveld, maar maakt duidelijk dat de gekoppelde tekst NIET in het eindresultaat mag worden overgenomen.
+    Voorbeelden:
+      - [Botpatroon:] 'Normaal'   →   output:  - Normaal
+      - Botpatroon: 'Normaal'     →   output:  - Botpatroon: Normaal
+
+{ }  =  Maakt duidelijk dat de tekst tussen deze haakjes enkel in het eindresultaat zichtbaar is als het gekoppelde invulveld effectief werd ingevuld. Als het niet besproken werd, is deze niet zichtbaar.`;
+
         // ── Data: JYZ DICOM codes ────────────────────────────────────────────────
         const JYZ_DICOM_CODES = [
             // RX – skeletsysteem
@@ -492,7 +543,7 @@
               dicom:['MR prostaat'], deptTemplate:'', userTemplate:'', aiRules:[] },
             // ── ECHO ────────────────────────────────────────────────────────────
             { id:'ech-abd', name:'ECHO ABDOMEN',               code:'echabd',   modality:'ECHO',
-              dicom:['echo abdomen'], deptTemplate:'http://templates.tiro.health/templates/5d64d451149e4507aa7477b06e141bf3|1.0.0', userTemplate:'http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0', aiRules:[] },
+              dicom:['echo abdomen'], deptTemplate:'http://templates.tiro.health/templates/5d64d451149e4507aa7477b06e141bf3|1.0.0', userTemplate:'http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0', aiRules:[], textTemplate:`NIEREN:\n- {RECHTS:} "Normale grootte en reflectiviteit." // Beschrijf hier de bevinding mbt de rechter nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter. Als rechter en linker nier beiden normaal zijn moet je dit maar één keer bespreken.\n- {LINKS:} "Normale grootte en reflectiviteit." // Beschrijf hier de bevinding mbt de linker nier. Als beide nieren normaal zijn mag je dit maar één keer vermelden.\nMILT: "Normale grootte en reflectiviteit." // Beschrijf de bevindingen mbt de milt inclusief grootte (splenomegalie) en reflectiviteit.\nLEVER: "Normale aflijning en grootte. Normale reflectiviteit. Normale vascularisatie." // Beschrijf de leverbevindingen inclusief aflijning, grootte (hepatomegalie), vascularisatie en eventuele tekenen van cirrose.\nGALWEGEN: "Normaal." // Bevindingen mbt galwegen zoals choledocholithiasen of dilatatie van ductus hepaticus/choledochus.\nGALBLAAS: "Normaal." // Bevindingen mbt galblaas inclusief cholecystolithiasen, cholecystitis en adenomyosis.\nPANCREAS: "Normaal voorkomen van het gevisualiseerde pancreasparenchym, met reserve voor de pancreasstaart gezien darmgassuperpositie." // Maak steeds reserve voor onvolledige visualisatie.\nRETROPERITONEUM: "Normale diameter van de aorta abdominalis. Geen adenopathieën. Sequentiële visualisatie door gassuperpositie." // Bevindingen mbt aorta abdominalis, retroperitoneale vergrotingen of lymfeklieren. Maak reserve voor partiële visualisatie.\nDARMEN: "Normale anterieure darmwanden." // Bevindingen mbt darmen inclusief mesenteriële afwijkingen.\nONDERBUIK:\n- BLAAS: "Normaal." // Bevindingen mbt blaas en distale ureterolithiasen.\n- UTERUS EN ADNEXEN of PROSTAAT: "Normaal." // Uterus en adnexen bij vrouw, prostaat bij man.\n- VRIJ VOCHT: "Geen pathologisch vrij vocht." // Vrij vocht intra-abdominaal (douglas).\n\nBESLUIT:\nXXX` },
             { id:'ech-hls', name:'ECHO HALS',                  code:'echhls',   modality:'ECHO',
               dicom:['echo hals'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'ech-nie', name:'ECHO NIEREN',                code:'echnier',  modality:'ECHO',
@@ -725,6 +776,7 @@
             document.getElementById('edit-modality').value = et.modality || 'RX';
             document.getElementById('edit-dept-template').value = et.deptTemplate || '';
             document.getElementById('edit-user-template').value = et.userTemplate || '';
+            document.getElementById('edit-text-template').value = et.textTemplate || '';
             document.getElementById('dicom-input').value = '';
             document.getElementById('dicom-suggestions').classList.add('hidden');
 
@@ -915,9 +967,10 @@
                 code:         document.getElementById('edit-code').value.trim(),
                 modality:     document.getElementById('edit-modality').value,
                 dicom:        [...editDicomList],
-                deptTemplate: document.getElementById('edit-dept-template').value.trim(),
-                userTemplate: document.getElementById('edit-user-template').value.trim(),
-                aiRules:      editAiRules,
+                deptTemplate:  document.getElementById('edit-dept-template').value.trim(),
+                userTemplate:  document.getElementById('edit-user-template').value.trim(),
+                textTemplate:  document.getElementById('edit-text-template').value.trim(),
+                aiRules:       editAiRules,
             };
 
             if (currentEditId === '__new__') {
@@ -953,6 +1006,16 @@
             const bl = document.getElementById('back-link');
             bl.href = `launch.html?${params.toString()}`;
         }
+
+        // ── Textuele template logica ─────────────────────────────────────────────
+        const logicTextarea = document.getElementById('logic-textarea');
+        const logicSaveBtn  = document.getElementById('logic-save-btn');
+        logicTextarea.value = localStorage.getItem('textTemplateLogic') || DEFAULT_TEXT_TEMPLATE_LOGIC;
+        logicSaveBtn.addEventListener('click', () => {
+            localStorage.setItem('textTemplateLogic', logicTextarea.value);
+            logicSaveBtn.textContent = 'Opgeslagen ✓';
+            setTimeout(() => { logicSaveBtn.textContent = 'Opslaan'; }, 2000);
+        });
 
         // ── Init ─────────────────────────────────────────────────────────────────
         renderFilters();
