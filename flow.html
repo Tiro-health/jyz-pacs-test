@@ -472,7 +472,17 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
             { id:'rx-vin',  name:'RX VINGER',                  code:'rxving',   modality:'RX',
               dicom:['vinger links','vinger rechts','vingers'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'rx-bek',  name:'RX BEKKEN EN HEUP',          code:'rxbek',    modality:'RX',
-              dicom:['bekken','heup links','heup rechts'], deptTemplate:'', userTemplate:'', aiRules:[] },
+              dicom:['bekken','heup links','heup rechts'], deptTemplate:'', userTemplate:'', aiRules:[],
+              textTemplate:`{- Post-operatieve status: XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
+- Botpatroon: 'Normaal botpatroon.' // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
+- Coxo-femorale gewricht: 'Normaal.' // Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties. Ook eventuele Pincer of CAM type FAI mag hier beschreven worden en eveneens eventueel aanwezige heupdysplasie.
+- Pubisgewricht en SI-gewrichten: 'Normaal.' // Beschrijf hier het pubisgewricht en eventuele degeneratie of artrose. Eveneens degeneratie van de sacro-iliacale gewrichten valt hier onder of tekenen van spondylartropathie.
+- Weke delen: 'Normaal.' // Beschrijving van weke dele opzetting of letsels in de weke delen inclusief eventuele weke delen verkalkingen of verbening (myossiti ossificans). Ook opzetting van de vetplannen of gewrichtsruimtes hier te beschrijven.
+- Fracturen: 'Geen verplaatste fracturen aantoonbaar.' // beschrijving van eventuele fracturen of sequelen van fracturen. Beschrijving van eventuele onderbreking in aflijning van de cortex. Ook avulsiefractuurtje of fragmentjes.
+- Andere: "/" // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output. Artrose van de lumbale wervelzuil mag hieronder.
+
+BESLUIT:
+XXX` },
             { id:'rx-bovb', name:'RX BOVENBEEN',               code:'rxbovb',   modality:'RX',
               dicom:['femur links','femur rechts','bovenbenen'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'rx-kni',  name:'RX KNIE',                    code:'rxkni',    modality:'RX',
