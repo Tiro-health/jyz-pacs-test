@@ -755,8 +755,6 @@
                             <button id="tt-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                         </div>
                     </div>
-                    <!-- Template source (always visible) -->
-                    <pre id="text-template-content" class="px-3 py-3 text-xs font-mono text-neutral-700 dark:text-neutral-300 whitespace-pre-wrap leading-relaxed"></pre>
                 </div>
             </details>
 
@@ -1909,16 +1907,12 @@
             }
             function updateTextTemplateBackup() {
                 const acc  = document.getElementById('text-template-accordion');
-                const pre  = document.getElementById('text-template-content');
                 const suf  = document.getElementById('text-template-suffix');
-                const tmpl = window._flowTextTemplate || '';
-                if (tmpl && !_hasRealTiroTemplate()) {
+                if ((window._flowTextTemplate || '') && !_hasRealTiroTemplate()) {
                     acc.classList.remove('hidden');
-                    pre.textContent = tmpl;
                     suf.textContent = '';
                 } else {
                     acc.classList.add('hidden');
-                    pre.textContent = '';
                     suf.textContent = '';
                 }
             }
