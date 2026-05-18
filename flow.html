@@ -582,7 +582,7 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
         // ── App state ────────────────────────────────────────────────────────────
         let state = loadData();
 
-        // Migrate: sync deptTemplate and userTemplate from DEFAULT_EXAM_TYPES
+        // Migrate: sync deptTemplate, userTemplate and textTemplate from DEFAULT_EXAM_TYPES
         (function migrate() {
             let changed = false;
             DEFAULT_EXAM_TYPES.forEach(def => {
@@ -594,6 +594,10 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
                 }
                 if (def.userTemplate && et.userTemplate !== def.userTemplate) {
                     et.userTemplate = def.userTemplate;
+                    changed = true;
+                }
+                if (def.textTemplate && !et.textTemplate) {
+                    et.textTemplate = def.textTemplate;
                     changed = true;
                 }
             });
