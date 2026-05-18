@@ -2780,6 +2780,8 @@ INSTRUCTIES VOOR UITVOER:
             });
 
             function scheduleRealtimeCheck() {
+                // When the PiP window is open, realtime check runs there instead
+                if (_pipWindow && !_pipWindow.closed) return;
                 clearTimeout(_realtimeDebounce);
                 _realtimeDebounce = setTimeout(() => {
                     const tekst = readDictationText().trim();
@@ -3234,23 +3236,6 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             let _pipRealtimeAbort = null;
             let _pipRealtimeDebounce = null;
             let _pipRealtimeLastText = '';
-            let _popupWindow = null;
-
-            // Receive messages from dictation-popup.html
-            const _popupBc = new BroadcastChannel('dictation-popup-sync');
-            _popupBc.onmessage = (e) => {
-                const { type, value } = e.data || {};
-                if (type === 'text-update') {
-                    setDictationText(value || '');
-                    if (realtimeEnabled) scheduleRealtimeCheck();
-                } else if (type === 'send-to-report') {
-                    if (value) setDictationText(value);
-                    document.getElementById('autofill-btn')?.click();
-                } else if (type === 'popup-closed') {
-                    _popupWindow = null;
-                    updateDictationPopoutToggle(false);
-                }
-            };
 
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
@@ -3261,8 +3246,6 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             function closeDictationPopout() {
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
-                if (_popupWindow && !_popupWindow.closed) _popupWindow.close();
-                _popupWindow = null;
                 _pipWindow = null;
                 _pipRealtimeLastText = '';
                 updateDictationPopoutToggle(false);
@@ -3299,25 +3282,15 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 const wrap = mk('div', 'flex flex-col gap-3');
 
-                // ── Dictation via tiro-magic-clipboard (DMO-compatible) ─
-                // Using the same web component as the main page so Dragon
-                // Medical One can anchor its speech function to this field.
-                const mc = pipWindow.document.createElement('tiro-magic-clipboard');
-                mc.setAttribute('dictation-language', 'nl');
-                const _savedProvider = localStorage.getItem('dictationProvider');
-                if (_savedProvider) mc.setAttribute('dictation-endpoint', _savedProvider);
-                mc.style.display = 'block';
-
-                let latestPipText = '';
-                mc.addEventListener('input', (e) => {
-                    const path = e.composedPath?.() ?? [];
-                    const src = path[0];
-                    if (src && src !== mc && 'value' in src) {
-                        latestPipText = src.value;
-                    }
-                }, { capture: true });
-
-                wrap.appendChild(mc);
+                // ── Dictation textarea (DMO input) ──────────────────
+                const ta = pipWindow.document.createElement('textarea');
+                ta.rows = 5;
+                ta.placeholder = 'Dicteer hier via DMO…';
+                ta.className = 'w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
+                ta.style.overflow = 'hidden';
+                const _autoGrow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+                ta.addEventListener('input', _autoGrow);
+                wrap.appendChild(ta);
 
                 // ── Action buttons ──────────────────────────────────
                 const btnRow = mk('div', 'flex items-center gap-2 flex-wrap');
@@ -3391,7 +3364,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
-                        const text = latestPipText.trim();
+                        const text = ta.value.trim();
                         if (!text) return;
                         setDictationText(text);
                         setTimeout(() => document.getElementById('autofill-btn').click(), 100);
@@ -3399,7 +3372,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
                     }),
                     mkBtn(S, 'Translate', async () => {
-                        const text = latestPipText.trim();
+                        const text = ta.value.trim();
                         if (!text) { alert('Geen tekst om te vertalen.'); return; }
                         const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
                         const prompt = fillPrompt(template, { text });
@@ -3421,7 +3394,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
-                        pipCopy(latestPipText);
+                        pipCopy(ta.value);
                         const orig = btn.textContent;
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
@@ -3523,7 +3496,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 wrap.appendChild(vcPanel);
 
                 vcBtn.addEventListener('click', async () => {
-                    const tekst = latestPipText.trim();
+                    const tekst = ta.value.trim();
                     if (!tekst) { pipWindow.alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
                     if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
 
@@ -3728,10 +3701,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
                 //   - only run realtime verslag check when realtimeEnabled
-                mc.addEventListener('input', () => {
+                ta.addEventListener('input', () => {
                     clearTimeout(_pipRealtimeDebounce);
                     _pipRealtimeDebounce = setTimeout(async () => {
-                        const tekst = latestPipText.trim();
+                        const tekst = ta.value.trim();
                         if (!tekst || tekst === _pipRealtimeLastText) return;
                         _pipRealtimeLastText = tekst;
 
@@ -3775,38 +3748,29 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 });
             }
 
-            function openDictationPopout() {
-                // Open as a regular browser window so Dragon Medical One
-                // can anchor its speech function (Document PiP is not supported by DMO).
-                const popupUrl = new URL('dictation-popup.html', window.location.href);
-                if (pacsTypeOnderzoek)               popupUrl.searchParams.set('type_onderzoek', pacsTypeOnderzoek);
-                if (pacsLateralisatie)               popupUrl.searchParams.set('lateralisatie', pacsLateralisatie);
-                if (pacsKlinischeInlichtingen)       popupUrl.searchParams.set('klinische_inlichtingen', pacsKlinischeInlichtingen);
-                if (pacsDiagnostischeVraagstelling)  popupUrl.searchParams.set('diagnostische_vraagstelling', pacsDiagnostischeVraagstelling);
-
-                const popup = window.open(popupUrl.toString(), 'dictation-popup', 'width=460,height=580,resizable=yes');
-                if (!popup) {
-                    alert('Pop-upvenster geblokkeerd door de browser. Sta pop-ups toe voor deze pagina en probeer opnieuw.');
+            async function openDictationPopout() {
+                if (!window.documentPictureInPicture) {
+                    alert('Document Picture-in-Picture wordt niet ondersteund. Gebruik Chrome 116+.');
                     return;
                 }
-                _popupWindow = popup;
-                updateDictationPopoutToggle(true);
-
-                // Poll until closed (beforeunload message may not fire reliably)
-                const _checkClosed = setInterval(() => {
-                    if (!_popupWindow || _popupWindow.closed) {
-                        clearInterval(_checkClosed);
-                        closeDictationPopout();
-                    }
-                }, 500);
+                try {
+                    const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 560 });
+                    _pipWindow = pipWindow;
+                    buildPipUI(pipWindow);
+                    updateDictationPopoutToggle(true);
+                    pipWindow.addEventListener('pagehide', closeDictationPopout);
+                } catch (err) {
+                    if (err.name !== 'NotAllowedError') console.warn('PiP fout:', err);
+                    updateDictationPopoutToggle(false);
+                }
             }
 
-            dictationPopoutToggle.addEventListener('click', () => {
-                if (_popupWindow && !_popupWindow.closed) {
-                    _popupWindow.close();
+            dictationPopoutToggle.addEventListener('click', async () => {
+                if (_pipWindow) {
+                    _pipWindow.close();
                     closeDictationPopout();
                 } else {
-                    openDictationPopout();
+                    await openDictationPopout();
                 }
             });
 
