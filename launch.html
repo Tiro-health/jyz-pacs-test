@@ -2504,6 +2504,35 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             const verslagCheckBtn = document.getElementById("verslag-check-btn");
             const verslagCheckUrlInput = document.getElementById("verslag-check-url");
 
+            const DEFAULT_AUTOFILL_BACKUP_PROMPT = `Je bent een gespecialiseerde radioloog-assistent. De dictatie hieronder bevat de bevindingen van een radiologisch onderzoek in gesproken/ruwe vorm. Vul de textuele back-up template in op basis van deze dictatie.
+
+=== SYNTAXIS VAN DE TEMPLATE ===
+{text_template_logic}
+=== EINDE SYNTAXIS ===
+
+=== TEXTUELE BACK-UP TEMPLATE ===
+{text_template}
+=== EINDE TEMPLATE ===
+
+=== CONTEXT ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+=== EINDE CONTEXT ===
+
+=== DICTATIE ===
+{tekst}
+=== EINDE DICTATIE ===
+
+INSTRUCTIES:
+- Vul de template in op basis van de dictatie.
+- Vervang invulvelden (XXX, ' ', " ") door de relevante bevindingen uit de dictatie.
+- Als een sectie niet besproken werd in de dictatie, gebruik dan de standaard invultekst (tekst tussen aanhalingstekens).
+- Pas de { }-regels toe: toon de prefix-tekst enkel als het veld effectief ingevuld werd.
+- Pas de [ ]-regels toe: veldlabels tussen [ ] worden NIET in de output opgenomen.
+- Verwijder // commentaren volledig uit de output.
+- Geef enkel de ingevulde template terug, zonder extra uitleg.`;
+
             const DEFAULT_VERSLAG_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten.
 
 === CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
@@ -3088,10 +3117,47 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 }
             }
 
-            // Trigger SNOMED CT generation when Autofill Template is clicked and button is active
+            // Trigger SNOMED CT generation when Autofill Template is clicked and button is active.
+            // If no Tiro template is loaded but a textTemplate exists, use AI to fill the backup template.
             document.getElementById("autofill-btn").addEventListener("click", () => {
                 if (snomedCtActive) runSnomedCtGeneration();
+                if (!form && window._flowTextTemplate) {
+                    runAutofillBackup();
+                }
             });
+
+            async function runAutofillBackup() {
+                const tekst = latestDictationText.trim();
+                if (!tekst) { alert("Geen dictatie gevonden. Dicteer eerst uw bevindingen."); return; }
+                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const ki  = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                const dv  = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                const logic = window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
+                const prompt = fillPrompt(DEFAULT_AUTOFILL_BACKUP_PROMPT, {
+                    tekst,
+                    type_onderzoek: typeOnderzoek,
+                    klinische_inlichtingen: ki,
+                    diagnostische_vraagstelling: dv,
+                    text_template: window._flowTextTemplate,
+                    text_template_logic: logic,
+                });
+                if (GEMINI_API_KEY) {
+                    openGeminiModal("Autofill back-up template");
+                    try {
+                        const text = await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                            geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                            _geminiRawText = partial;
+                            geminiContent.innerHTML = renderMarkdown(partial);
+                        }, _newGeminiSignal());
+                        resolveGeminiModal(text);
+                    } catch (e) {
+                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
+                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                    }
+                } else {
+                    openChatGPT(prompt);
+                }
+            }
 
             // ============================================
             // Dictation keyboard shortcut
