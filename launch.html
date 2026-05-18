@@ -1816,6 +1816,20 @@
                     mc.removeAttribute("for");
                     if (form) mc.setAttribute("for", "report-form");
                 }
+
+                // Update autofill button type: 'submit' triggers Tiro SDK; 'button' falls back to backup prompt
+                _updateAutofillBtnType();
+            }
+
+            // "AI resultaten" en "SNOMED CT" tellen niet mee als echte Tiro-invultemplates
+            const _EXCLUDED_TEMPLATE_NAMES = new Set(['AI resultaten', 'SNOMED CT']);
+            function _hasRealTiroTemplate() {
+                return Array.from(document.querySelectorAll('.template-checkbox:checked'))
+                    .some(cb => !_EXCLUDED_TEMPLATE_NAMES.has(cb.value) && !cb.value.startsWith('flow:ai:'));
+            }
+            function _updateAutofillBtnType() {
+                const btn = document.getElementById('autofill-btn');
+                if (btn) btn.type = _hasRealTiroTemplate() ? 'submit' : 'button';
             }
 
             // ============================================
@@ -3121,10 +3135,11 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             }
 
             // Trigger SNOMED CT generation when Autofill Template is clicked and button is active.
-            // If no Tiro template is loaded but a textTemplate exists, use AI to fill the backup template.
+            // If no real Tiro template is active (excluding "AI resultaten", "SNOMED CT", flow:ai:...),
+            // fall back to the contextual backup prompt instead.
             document.getElementById("autofill-btn").addEventListener("click", () => {
                 if (snomedCtActive) runSnomedCtGeneration();
-                if (!form && window._flowTextTemplate) {
+                if (!_hasRealTiroTemplate() && window._flowTextTemplate) {
                     runAutofillBackup();
                 }
             });
