@@ -1295,10 +1295,17 @@
                 updateActiveTemplateSuffix();
             }
 
-            function showFlowStatus(msg) {
+            function showFlowStatus(msg, info) {
                 const el = document.getElementById("flow-status-msg");
-                if (msg) { el.textContent = "⚠ " + msg; el.classList.remove("hidden"); }
-                else      { el.textContent = ""; el.classList.add("hidden"); }
+                if (msg) {
+                    el.textContent = (info ? "ℹ " : "⚠ ") + msg;
+                    el.className = info
+                        ? "text-xs rounded px-2 py-1.5 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200/60 dark:border-cyan-800/30 text-cyan-700 dark:text-cyan-400"
+                        : "text-xs rounded px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/30 text-amber-700 dark:text-amber-400";
+                } else {
+                    el.textContent = "";
+                    el.className = "hidden text-xs rounded px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/30 text-amber-700 dark:text-amber-400";
+                }
             }
 
             function updateTemplatesFromFlow(typeOnderzoek) {
@@ -1377,8 +1384,13 @@
                 } catch(_) {}
 
                 if (items.length === 0) {
-                    showFlowStatus("Onderzoekstype gevonden maar nog geen templates ingesteld");
-                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    if (window._flowTextTemplate) {
+                        showFlowStatus("Onderzoekstype gevonden — geen Tiro-templates ingesteld, enkel textuele back-up beschikbaar", true);
+                        setDynamicTemplates([]);
+                    } else {
+                        showFlowStatus("Onderzoekstype gevonden maar nog geen templates ingesteld");
+                        setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    }
                     createTemplateForms();
                     updateTextTemplateBackup();
                     return;
