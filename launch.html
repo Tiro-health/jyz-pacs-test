@@ -1864,7 +1864,8 @@
                 geminiModelVerslag:    'gemini-3.1-flash-lite',
                 geminiModelSnomed:     'gemini-3.1-flash-lite',
                 geminiModelMedgemma:   'gemini-3.1-flash-lite',
-                geminiModelRealtime:   'gemini-3.1-flash-lite',
+                geminiModelRealtime:          'gemini-3.1-flash-lite',
+                geminiModelAutofillBackup:   'gemini-3.1-flash-lite',
             };
             function getModel(key) {
                 return localStorage.getItem(key) || GEMINI_MODEL_DEFAULTS[key] || 'gemini-2.5-flash';
@@ -2504,34 +2505,36 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
             const verslagCheckBtn = document.getElementById("verslag-check-btn");
             const verslagCheckUrlInput = document.getElementById("verslag-check-url");
 
-            const DEFAULT_AUTOFILL_BACKUP_PROMPT = `Je bent een gespecialiseerde radioloog-assistent. De dictatie hieronder bevat de bevindingen van een radiologisch onderzoek in gesproken/ruwe vorm. Vul de textuele back-up template in op basis van deze dictatie.
-
-=== SYNTAXIS VAN DE TEMPLATE ===
-{text_template_logic}
-=== EINDE SYNTAXIS ===
+            const DEFAULT_AUTOFILL_BACKUP_PROMPT = `Je bent een gespecialiseerde radioloog-assistent. Vul de textuele back-up template volledig in op basis van de gedicteerde bevindingen.
 
 === TEXTUELE BACK-UP TEMPLATE ===
 {text_template}
 === EINDE TEMPLATE ===
 
-=== CONTEXT ===
+=== SYNTAXIS VAN DE TEMPLATE-NOTATIES ===
+{text_template_logic}
+=== EINDE SYNTAXIS ===
+
+=== KLINISCHE CONTEXT (ter referentie — niet teruggeven in output) ===
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
 === EINDE CONTEXT ===
 
-=== DICTATIE ===
+=== GEDICTEERDE BEVINDINGEN ===
 {tekst}
 === EINDE DICTATIE ===
 
-INSTRUCTIES:
-- Vul de template in op basis van de dictatie.
-- Vervang invulvelden (XXX, ' ', " ") door de relevante bevindingen uit de dictatie.
-- Als een sectie niet besproken werd in de dictatie, gebruik dan de standaard invultekst (tekst tussen aanhalingstekens).
-- Pas de { }-regels toe: toon de prefix-tekst enkel als het veld effectief ingevuld werd.
-- Pas de [ ]-regels toe: veldlabels tussen [ ] worden NIET in de output opgenomen.
-- Verwijder // commentaren volledig uit de output.
-- Geef enkel de ingevulde template terug, zonder extra uitleg.`;
+INVULREGELS:
+1. Sectie besproken in dictatie → vervang XXX of de tekst tussen ' ' / " " door de overeenkomstige bevinding
+2. Sectie NIET besproken → behoud de standaardtekst (tekst tussen ' ' of " "); heeft het veld geen standaard (XXX), laat het dan leeg of verwijder de lijn
+3. [ ]-labels → het label zelf NIET in de output opnemen; de bijbehorende bevinding wél
+4. { }-prefix → enkel weergeven als het gekoppelde veld effectief ingevuld werd; anders het volledige fragment weglaten
+5. // commentaren → volledig verwijderen uit de output
+6. Verzin GEEN bevindingen die niet expliciet in de dictatie staan
+7. Behoud de structuur, de volgorde en de opmaak van de template
+
+Geef UITSLUITEND de ingevulde verslagtekst terug — geen uitleg, geen sectielabels, geen inleiding.`;
 
             const DEFAULT_VERSLAG_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten.
 
@@ -3133,7 +3136,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const ki  = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv  = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const logic = window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
-                const prompt = fillPrompt(DEFAULT_AUTOFILL_BACKUP_PROMPT, {
+                const savedPrompt = localStorage.getItem('autofillBackupUrl');
+                const template = savedPrompt || DEFAULT_AUTOFILL_BACKUP_PROMPT;
+                const prompt = fillPrompt(template, {
                     tekst,
                     type_onderzoek: typeOnderzoek,
                     klinische_inlichtingen: ki,
@@ -3144,7 +3149,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 if (GEMINI_API_KEY) {
                     openGeminiModal("Autofill back-up template");
                     try {
-                        const text = await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                        const text = await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => {
                             geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                             _geminiRawText = partial;
                             geminiContent.innerHTML = renderMarkdown(partial);
