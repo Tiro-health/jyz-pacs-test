@@ -203,6 +203,25 @@
                 </div>
             </div>
 
+            <!-- Autofill back-up template prompt -->
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-sm font-medium">Autofill back-up template prompt</span>
+                    <button data-reset="autofill-backup" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="autofill-backup-prompt" rows="16" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{text_template}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{text_template_logic}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code></p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="autofill-backup-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- SNOMED database note -->
             <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3">
                 <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen &nbsp;·&nbsp; Procedure template injectie nog uit te werken</p>
@@ -304,6 +323,37 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 <b>Besluit</b>
 [besluit gerangschikt naar ernst; antwoord op klinische vraag indien van toepassing]`;
 
+            const DEFAULT_AUTOFILL_BACKUP = `Je bent een gespecialiseerde radioloog-assistent. Vul de textuele back-up template volledig in op basis van de gedicteerde bevindingen.
+
+=== TEXTUELE BACK-UP TEMPLATE ===
+{text_template}
+=== EINDE TEMPLATE ===
+
+=== SYNTAXIS VAN DE TEMPLATE-NOTATIES ===
+{text_template_logic}
+=== EINDE SYNTAXIS ===
+
+=== KLINISCHE CONTEXT (ter referentie — niet teruggeven in output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+=== EINDE CONTEXT ===
+
+=== GEDICTEERDE BEVINDINGEN ===
+{tekst}
+=== EINDE DICTATIE ===
+
+INVULREGELS:
+1. Sectie besproken in dictatie → vervang XXX of de tekst tussen ' ' / " " door de overeenkomstige bevinding
+2. Sectie NIET besproken → behoud de standaardtekst (tekst tussen ' ' of " "); heeft het veld geen standaard (XXX), laat het dan leeg of verwijder de lijn
+3. [ ]-labels → het label zelf NIET in de output opnemen; de bijbehorende bevinding wél
+4. { }-prefix → enkel weergeven als het gekoppelde veld effectief ingevuld werd; anders het volledige fragment weglaten
+5. // commentaren → volledig verwijderen uit de output
+6. Verzin GEEN bevindingen die niet expliciet in de dictatie staan
+7. Behoud de structuur, de volgorde en de opmaak van de template
+
+Geef UITSLUITEND de ingevulde verslagtekst terug — geen uitleg, geen sectielabels, geen inleiding.`;
+
             const DEFAULT_SNOMED = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
 
 === CONTEXT (uitsluitend ter referentie — niet weergeven in output) ===
@@ -362,6 +412,14 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     versionKey: "verslagCheckVersion",
                     version: "8",
                     defaultPrompt: DEFAULT_VERSLAG,
+                },
+                {
+                    id: "autofill-backup-prompt",
+                    resetKey: "autofill-backup",
+                    storageKey: "autofillBackupUrl",
+                    versionKey: "autofillBackupVersion",
+                    version: "1",
+                    defaultPrompt: DEFAULT_AUTOFILL_BACKUP,
                 },
                 {
                     id: "snomed-prompt",
@@ -429,7 +487,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 { id: "translate-model", storageKey: "geminiModelTranslate", defaultModel: "gemini-3.1-flash-lite" },
                 { id: "kidv-model",      storageKey: "geminiModelKidv",      defaultModel: "gemini-2.5-pro"        },
                 { id: "verslag-model",   storageKey: "geminiModelVerslag",   defaultModel: "gemini-3.1-flash-lite" },
-                { id: "realtime-model",  storageKey: "geminiModelRealtime",  defaultModel: "gemini-3.1-flash-lite" },
+                { id: "realtime-model",         storageKey: "geminiModelRealtime",        defaultModel: "gemini-3.1-flash-lite" },
+                { id: "autofill-backup-model",  storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-3.1-flash-lite" },
                 { id: "snomed-model",    storageKey: "geminiModelSnomed",    defaultModel: "gemini-3.1-flash-lite" },
                 { id: "medgemma-model",  storageKey: "geminiModelMedgemma",  defaultModel: "gemini-3.1-flash-lite" },
             ];
