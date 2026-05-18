@@ -2456,6 +2456,13 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                 return lines.join("\n");
             }
 
+            // Returns the best available template context for MedGemma:
+            // active Tiro template structure when checked, otherwise textual backup template.
+            function getMedgemmaTemplateContext() {
+                const tiro = _hasRealTiroTemplate() && buildTemplateStructure(latestReportQuestionnaire);
+                return tiro || window._flowTextTemplate || '';
+            }
+
             const radiologyModal = document.getElementById("radiology-check-modal");
             const modalKi = document.getElementById("modal-ki");
             const modalDv = document.getElementById("modal-dv");
@@ -3955,7 +3962,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                    const procedureTemplate = buildTemplateStructure(latestReportQuestionnaire);
+                    const procedureTemplate = getMedgemmaTemplateContext();
                     const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": procedureTemplate });
                     pmAnalyseBtn.disabled = true;
                     pmAnalyseBtn.textContent = 'Analyseren…';
@@ -4260,7 +4267,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                const procedureTemplate = buildTemplateStructure(latestReportQuestionnaire);
+                const procedureTemplate = getMedgemmaTemplateContext();
                 const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, "Procedure template": procedureTemplate });
                 medgemmaAnalyseBtn.disabled = true;
                 medgemmaAnalyseBtn.textContent = "Analyseren…";
