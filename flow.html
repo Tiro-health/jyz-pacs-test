@@ -288,12 +288,13 @@
                         <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Textuele back-up template</label>
                     </div>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Wordt gebruikt als back-up wanneer de Tiro-link niet beschikbaar is, en als structuurcontext voor AI-prompts.</p>
-                    <textarea
-                        id="edit-text-template"
-                        rows="8"
-                        placeholder="SECTIE:\n- [Veld:] 'Standaardtekst' // AI-context voor dit veld&#10;- [Ander veld:] XXX&#10;&#10;BESLUIT:&#10;XXX"
-                        class="w-full px-3 py-2 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
-                    ></textarea>
+                    <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
+                        class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                        <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                    </button>
+                    <textarea id="edit-text-template" class="hidden"></textarea>
                 </div>
 
             </div><!-- /panel-body -->
@@ -745,12 +746,13 @@ XXX` },
             : `<span class="text-xs text-neutral-400 italic">—</span>`}
         </div>
       </div>
-      <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
+      <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
+        class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2 w-full text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-b-sm -mx-0 px-0 pb-0.5">
         <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textuele back-up</span>
         ${et.textTemplate
-          ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">Actief</span>`
-          : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded">Inactief</span>`}
-      </div>
+          ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
+          : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
+      </button>
     </div>
 
     <!-- AI rules preview -->
@@ -797,6 +799,17 @@ XXX` },
             document.getElementById('edit-dept-template').value = et.deptTemplate || '';
             document.getElementById('edit-user-template').value = et.userTemplate || '';
             document.getElementById('edit-text-template').value = et.textTemplate || '';
+            window._currentEditId = et.id;
+            const ttBadge = document.getElementById('tt-edit-badge');
+            if (ttBadge) {
+                if (et.textTemplate) {
+                    ttBadge.textContent = 'Actief';
+                    ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
+                } else {
+                    ttBadge.textContent = 'Inactief';
+                    ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
+                }
+            }
             document.getElementById('dicom-input').value = '';
             document.getElementById('dicom-suggestions').classList.add('hidden');
 
@@ -1037,9 +1050,200 @@ XXX` },
             setTimeout(() => { logicSaveBtn.textContent = 'Opslaan'; }, 2000);
         });
 
+        // ── Textuele back-up template code editor ───────────────────────────────
+
+        function highlightTt(text) {
+            return text.split('\n').map(line => {
+                // Escape HTML entities
+                let escaped = line
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+
+                // Split at // for comment
+                const commentIdx = escaped.indexOf('//');
+                let left = commentIdx >= 0 ? escaped.slice(0, commentIdx) : escaped;
+                let commentPart = commentIdx >= 0
+                    ? '<span style="color:#64748b">//' + escaped.slice(commentIdx + 2) + '</span>'
+                    : '';
+
+                // Apply placeholder for XXX
+                left = left.replace(/XXX/g, '\x01');
+
+                // {…} orange
+                left = left.replace(/\{[^}]*\}/g, m => '<span style="color:#fb923c">' + m + '</span>');
+
+                // […] sky blue
+                left = left.replace(/\[[^\]]*\]/g, m => '<span style="color:#38bdf8">' + m + '</span>');
+
+                // '…' amber
+                left = left.replace(/'[^']*'/g, m => '<span style="color:#fbbf24">' + m + '</span>');
+
+                // "…" amber
+                left = left.replace(/"[^"]*"/g, m => '<span style="color:#fbbf24">' + m + '</span>');
+
+                // Restore XXX placeholder → pink
+                left = left.replace(/\x01/g, '<span style="color:#f472b6">XXX</span>');
+
+                // ALL-CAPS header like BESLUIT: or NIEREN:
+                left = left.replace(/^(\s*)([A-Z][A-Z0-9 _-]+:)/, (_, ws, hdr) =>
+                    ws + '<span style="color:#a78bfa">' + hdr + '</span>'
+                );
+
+                return left + commentPart;
+            }).join('\n');
+        }
+
+        let _ttEditorExamId = null;
+
+        window.openTtEditor = function(examId) {
+            _ttEditorExamId = examId;
+            const et = state.examTypes.find(e => e.id === examId);
+            if (!et) return;
+            document.getElementById('tt-editor-modal').classList.remove('hidden');
+            document.getElementById('tt-editor-exam-name').textContent = et.name;
+            const ta = document.getElementById('tt-editor-input');
+            ta.value = et.textTemplate || '';
+            syncTtHighlight();
+            ta.focus();
+        };
+
+        window.closeTtEditor = function() {
+            document.getElementById('tt-editor-modal').classList.add('hidden');
+            _ttEditorExamId = null;
+        };
+
+        window.saveTtEditor = function() {
+            const ta = document.getElementById('tt-editor-input');
+            const val = ta.value.trim();
+            if (!_ttEditorExamId) return;
+            // 1. Update examTypes in memory
+            const et = state.examTypes.find(e => e.id === _ttEditorExamId);
+            if (et) et.textTemplate = val;
+            // 2. Save to localStorage
+            saveData();
+            // 3. If slide-over is currently open for this exam, sync the hidden textarea and badge
+            const hiddenTa = document.getElementById('edit-text-template');
+            if (hiddenTa && document.getElementById('slide-over').classList.contains('open') &&
+                window._currentEditId === _ttEditorExamId) {
+                hiddenTa.value = val;
+                const ttBadge = document.getElementById('tt-edit-badge');
+                if (ttBadge) {
+                    if (val) {
+                        ttBadge.textContent = 'Actief';
+                        ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
+                    } else {
+                        ttBadge.textContent = 'Inactief';
+                        ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
+                    }
+                }
+            }
+            // 4. Re-render cards
+            renderCards();
+            closeTtEditor();
+        };
+
+        function syncTtHighlight() {
+            const ta = document.getElementById('tt-editor-input');
+            const pre = document.getElementById('tt-editor-highlight');
+            pre.innerHTML = highlightTt(ta.value) + '\n';
+        }
+
+        window.openTtEditorFromSlideOver = function() {
+            if (window._currentEditId) openTtEditor(window._currentEditId);
+        };
+
+        // Wire input/scroll events
+        const _ttTa = document.getElementById('tt-editor-input');
+        _ttTa.addEventListener('input', syncTtHighlight);
+        _ttTa.addEventListener('scroll', () => {
+            const pre = document.getElementById('tt-editor-highlight');
+            pre.scrollTop = _ttTa.scrollTop;
+            pre.scrollLeft = _ttTa.scrollLeft;
+        });
+
         // ── Init ─────────────────────────────────────────────────────────────────
         renderFilters();
         renderCards();
         </script>
+
+        <!-- ── Textuele back-up template code editor modal ───────────────────── -->
+        <div id="tt-editor-modal" class="hidden fixed inset-0 z-[60] flex flex-col bg-[#0f172a]">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-700 flex-shrink-0 bg-[#0f172a]">
+                <h2 class="text-sm font-semibold text-neutral-100">
+                    📝 Textuele back-up template — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
+                </h2>
+                <button onclick="closeTtEditor()" class="p-1.5 rounded hover:bg-slate-700 text-neutral-400 hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+            </div>
+
+            <!-- Body: two columns -->
+            <div class="flex flex-1 min-h-0 overflow-hidden">
+
+                <!-- Left column: legend -->
+                <div class="w-[28rem] flex-shrink-0 bg-[#0f172a] border-r border-slate-700 overflow-y-auto px-5 py-4 space-y-3 hidden lg:block">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Syntaxis legenda</p>
+                    <div class="space-y-2.5 text-xs font-mono">
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#fbbf24" class="flex-shrink-0 font-bold">'&nbsp;'</span>
+                            <span class="text-slate-400">Invulveld met standaard invultekst. De tekst tussen de aanhalingstekens wordt getoond als er geen andere bevindingen zijn.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#fbbf24" class="flex-shrink-0 font-bold">"&nbsp;"</span>
+                            <span class="text-slate-400">Idem — dubbele aanhalingstekens.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#f472b6" class="flex-shrink-0 font-bold">XXX</span>
+                            <span class="text-slate-400">Invulveld zonder standaard invultekst.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#64748b" class="flex-shrink-0 font-bold">//</span>
+                            <span class="text-slate-400">Contextuele AI-tekst — niet in het eindresultaat, wel in de AI-prompt als context.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#38bdf8" class="flex-shrink-0 font-bold">[&nbsp;]</span>
+                            <span class="text-slate-400">Label van het invulveld — zichtbaar in de template maar <em>niet</em> in de output.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#fb923c" class="flex-shrink-0 font-bold">{&nbsp;}</span>
+                            <span class="text-slate-400">Conditioneel blok — enkel zichtbaar in de output als het veld effectief ingevuld werd.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">HEADER:</span>
+                            <span class="text-slate-400">Sectiekop in hoofdletters gevolgd door een dubbele punt.</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Voorbeeld</p>
+                        <pre style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;white-space:pre-wrap;word-break:break-all"><span style="color:#a78bfa">BESLUIT:</span>
+<span style="color:#f472b6">XXX</span>
+
+<span style="color:#38bdf8">[Botpatroon:]</span> <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
+<span style="color:#fb923c">{Fractuur:}</span> <span style="color:#f472b6">XXX</span></pre>
+                    </div>
+                </div>
+
+                <!-- Right column: code editor -->
+                <div class="flex-1 flex flex-col min-w-0 bg-[#0f172a]">
+                    <div class="relative flex-1 min-h-0">
+                        <pre id="tt-editor-highlight"
+                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;white-space:pre-wrap;word-break:break-all;color:#e2e8f0;margin:0;pointer-events:none;overflow:auto;position:absolute;inset:0;background:transparent;"></pre>
+                        <textarea id="tt-editor-input"
+                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;background:transparent;color:transparent;caret-color:#e2e8f0;resize:none;outline:none;border:none;overflow:auto;position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;"
+                            spellcheck="false"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
+                <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
+                <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+            </div>
+        </div>
     </body>
 </html>
