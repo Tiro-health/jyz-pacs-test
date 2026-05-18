@@ -2780,8 +2780,6 @@ INSTRUCTIES VOOR UITVOER:
             });
 
             function scheduleRealtimeCheck() {
-                // When the PiP window is open, realtime check runs there instead
-                if (_pipWindow && !_pipWindow.closed) return;
                 clearTimeout(_realtimeDebounce);
                 _realtimeDebounce = setTimeout(() => {
                     const tekst = readDictationText().trim();
@@ -3236,6 +3234,23 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             let _pipRealtimeAbort = null;
             let _pipRealtimeDebounce = null;
             let _pipRealtimeLastText = '';
+            let _popupWindow = null;
+
+            // Receive messages from dictation-popup.html
+            const _popupBc = new BroadcastChannel('dictation-popup-sync');
+            _popupBc.onmessage = (e) => {
+                const { type, value } = e.data || {};
+                if (type === 'text-update') {
+                    setDictationText(value || '');
+                    if (realtimeEnabled) scheduleRealtimeCheck();
+                } else if (type === 'send-to-report') {
+                    if (value) setDictationText(value);
+                    document.getElementById('autofill-btn')?.click();
+                } else if (type === 'popup-closed') {
+                    _popupWindow = null;
+                    updateDictationPopoutToggle(false);
+                }
+            };
 
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
@@ -3246,6 +3261,8 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             function closeDictationPopout() {
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
+                if (_popupWindow && !_popupWindow.closed) _popupWindow.close();
+                _popupWindow = null;
                 _pipWindow = null;
                 _pipRealtimeLastText = '';
                 updateDictationPopoutToggle(false);
@@ -3758,29 +3775,38 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 });
             }
 
-            async function openDictationPopout() {
-                if (!window.documentPictureInPicture) {
-                    alert('Document Picture-in-Picture wordt niet ondersteund. Gebruik Chrome 116+.');
+            function openDictationPopout() {
+                // Open as a regular browser window so Dragon Medical One
+                // can anchor its speech function (Document PiP is not supported by DMO).
+                const popupUrl = new URL('dictation-popup.html', window.location.href);
+                if (pacsTypeOnderzoek)               popupUrl.searchParams.set('type_onderzoek', pacsTypeOnderzoek);
+                if (pacsLateralisatie)               popupUrl.searchParams.set('lateralisatie', pacsLateralisatie);
+                if (pacsKlinischeInlichtingen)       popupUrl.searchParams.set('klinische_inlichtingen', pacsKlinischeInlichtingen);
+                if (pacsDiagnostischeVraagstelling)  popupUrl.searchParams.set('diagnostische_vraagstelling', pacsDiagnostischeVraagstelling);
+
+                const popup = window.open(popupUrl.toString(), 'dictation-popup', 'width=460,height=580,resizable=yes');
+                if (!popup) {
+                    alert('Pop-upvenster geblokkeerd door de browser. Sta pop-ups toe voor deze pagina en probeer opnieuw.');
                     return;
                 }
-                try {
-                    const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 560 });
-                    _pipWindow = pipWindow;
-                    buildPipUI(pipWindow);
-                    updateDictationPopoutToggle(true);
-                    pipWindow.addEventListener('pagehide', closeDictationPopout);
-                } catch (err) {
-                    if (err.name !== 'NotAllowedError') console.warn('PiP fout:', err);
-                    updateDictationPopoutToggle(false);
-                }
+                _popupWindow = popup;
+                updateDictationPopoutToggle(true);
+
+                // Poll until closed (beforeunload message may not fire reliably)
+                const _checkClosed = setInterval(() => {
+                    if (!_popupWindow || _popupWindow.closed) {
+                        clearInterval(_checkClosed);
+                        closeDictationPopout();
+                    }
+                }, 500);
             }
 
-            dictationPopoutToggle.addEventListener('click', async () => {
-                if (_pipWindow) {
-                    _pipWindow.close();
+            dictationPopoutToggle.addEventListener('click', () => {
+                if (_popupWindow && !_popupWindow.closed) {
+                    _popupWindow.close();
                     closeDictationPopout();
                 } else {
-                    await openDictationPopout();
+                    openDictationPopout();
                 }
             });
 
