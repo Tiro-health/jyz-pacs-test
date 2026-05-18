@@ -3155,7 +3155,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             document.getElementById("autofill-btn").addEventListener("click", () => {
                 if (snomedCtActive) runSnomedCtGeneration();
                 if (!_hasRealTiroTemplate() && window._flowTextTemplate) {
-                    runAutofillBackup();
+                    runAutofillBackup(_pipTtRef || null);
                 }
             });
 
@@ -3176,10 +3176,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 if (_ttShowingOrig) {
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
-                    ttToggleOrig.textContent = '↩ Ingevuld';
+                    ttToggleOrig.textContent = '↩ Gecorrigeerd';
                 } else {
                     ttContent.innerHTML = _ttResultHTML;
-                    ttToggleOrig.textContent = '↩ Origineel';
+                    ttToggleOrig.textContent = '↩ Ingevuld';
                 }
             });
             ttCopy.addEventListener('click', () => {
@@ -3188,16 +3188,20 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 ).catch(() => {});
             });
 
-            async function runAutofillBackup() {
+            async function runAutofillBackup(pipRefs) {
                 const tekst = readDictationText() || _realtimeOriginalText || '';
-                if (!tekst) { alert("Geen dictatietekst gevonden. Dicteer eerst uw bevindingen."); return; }
+                if (!tekst) {
+                    if (pipRefs) pipRefs.pipAlert('Geen dictatietekst gevonden. Dicteer eerst uw bevindingen.');
+                    else alert("Geen dictatietekst gevonden. Dicteer eerst uw bevindingen.");
+                    return;
+                }
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki  = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv  = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const logic = window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
                 const savedPrompt = localStorage.getItem('autofillBackupUrl');
-                const template = savedPrompt || DEFAULT_AUTOFILL_BACKUP_PROMPT;
-                const prompt = fillPrompt(template, {
+                const backupTemplate = savedPrompt || DEFAULT_AUTOFILL_BACKUP_PROMPT;
+                const backupPrompt = fillPrompt(backupTemplate, {
                     tekst,
                     type_onderzoek: typeOnderzoek,
                     klinische_inlichtingen: ki,
@@ -3205,34 +3209,84 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     text_template: window._flowTextTemplate,
                     text_template_logic: logic,
                 });
-                if (!GEMINI_API_KEY) { openChatGPT(prompt); return; }
+                if (!GEMINI_API_KEY) { openChatGPT(backupPrompt); return; }
 
-                // Show result panel inside accordion, open accordion
-                document.getElementById('text-template-accordion').setAttribute('open', '');
-                ttResultPanel.classList.remove('hidden');
-                ttActions.style.display = 'none';
-                ttToggleOrig.style.display = 'none';
-                ttToggleOrig.textContent = '↩ Origineel';
-                ttStatus.innerHTML = '<span class="autofill-spinner"></span> Verwerken…';
-                ttContent.innerHTML = '';
-                _ttOriginalText = tekst;
-                _ttShowingOrig = false;
-                _ttResultHTML = null;
+                // Resolve target elements (main page or PiP)
+                const isMain = !pipRefs;
+                const targetContent = isMain ? ttContent : pipRefs.content;
+                const targetStatus  = isMain ? ttStatus  : pipRefs.status;
+                const targetActions = isMain ? ttActions : pipRefs.actions;
+                const targetToggle  = isMain ? ttToggleOrig : pipRefs.toggle;
+
+                // Close realtime panel
+                if (isMain) {
+                    _realtimeAbort?.abort();
+                    realtimePanel.classList.add('hidden');
+                } else {
+                    _pipRealtimeAbort?.abort();
+                    clearTimeout(_pipRealtimeDebounce);
+                    if (pipRefs.rtPanel) pipRefs.rtPanel.style.display = 'none';
+                }
+
+                // Show result panel
+                if (isMain) {
+                    document.getElementById('text-template-accordion').setAttribute('open', '');
+                    ttResultPanel.classList.remove('hidden');
+                    _ttOriginalText = null;
+                    _ttShowingOrig = false;
+                    _ttResultHTML = null;
+                } else {
+                    pipRefs.panel.style.display = '';
+                    pipRefs.origText = null;
+                    pipRefs.showingOrig = false;
+                    pipRefs.resultHTML = null;
+                }
+
+                targetActions.style.display = 'none';
+                targetToggle.style.display = 'none';
+                targetToggle.textContent = '↩ Ingevuld';
+                targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verwerken…';
+                targetContent.innerHTML = '';
+
                 _ttAbort?.abort();
                 _ttAbort = new AbortController();
 
                 let firstChunk = true;
                 try {
-                    await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => {
-                        if (firstChunk) { firstChunk = false; ttStatus.innerHTML = ''; }
-                        ttContent.innerHTML = renderMarkdown(partial);
+                    // Phase 1: generate filled backup template
+                    await callGeminiStream(getModel('geminiModelAutofillBackup'), backupPrompt, (partial) => {
+                        if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
+                        targetContent.innerHTML = renderMarkdown(partial);
                     }, _ttAbort.signal);
-                    ttStatus.innerHTML = '';
-                    ttActions.style.display = 'flex';
-                    ttToggleOrig.style.display = _ttOriginalText ? '' : 'none';
+
+                    // Save the backup result for the toggle (↩ Ingevuld)
+                    const backupPlainText = targetContent.innerText;
+                    if (isMain) _ttOriginalText = backupPlainText;
+                    else pipRefs.origText = backupPlainText;
+
+                    // Phase 2: run verslag check on the backup result
+                    targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verslag check…';
+                    const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                    const vcPrompt = fillPrompt(vcTemplate, {
+                        tekst: backupPlainText,
+                        type_onderzoek: typeOnderzoek,
+                        klinische_inlichtingen: ki,
+                        diagnostische_vraagstelling: dv,
+                        patient_info: extractPatientInfo(),
+                        text_template: window._flowTextTemplate || '',
+                    });
+                    firstChunk = true;
+                    await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => {
+                        if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
+                        targetContent.innerHTML = renderMarkdown(partial);
+                    }, _ttAbort.signal);
+
+                    targetStatus.innerHTML = '';
+                    targetActions.style.display = 'flex';
+                    targetToggle.style.display = backupPlainText ? '' : 'none';
                 } catch (e) {
-                    ttStatus.innerHTML = '';
-                    if (e.name !== 'AbortError') ttContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
+                    targetStatus.innerHTML = '';
+                    if (e.name !== 'AbortError') targetContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
                 }
             }
 
@@ -3431,6 +3485,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             let _pipRealtimeAbort = null;
             let _pipRealtimeDebounce = null;
             let _pipRealtimeLastText = '';
+            let _pipTtRef = null;
 
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
@@ -3441,7 +3496,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             function closeDictationPopout() {
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
+                _ttAbort?.abort();
                 _pipWindow = null;
+                _pipTtRef = null;
                 _pipRealtimeLastText = '';
                 updateDictationPopoutToggle(false);
             }
@@ -3562,9 +3619,15 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         const text = ta.value.trim();
                         if (!text) return;
                         setDictationText(text);
-                        setTimeout(() => document.getElementById('autofill-btn').click(), 100);
-                        sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
-                        setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
+                        if (!_hasRealTiroTemplate() && window._flowTextTemplate) {
+                            // Back-up mode: render result directly in PiP
+                            runAutofillBackup(_pipTtRef);
+                        } else {
+                            // Tiro SDK mode: delegate to main autofill button
+                            setTimeout(() => document.getElementById('autofill-btn').click(), 100);
+                            sentInd.classList.remove('hidden'); sentInd.classList.add('inline-flex');
+                            setTimeout(() => { sentInd.classList.add('hidden'); sentInd.classList.remove('inline-flex'); }, 2000);
+                        }
                     }),
                     mkBtn(S, 'Translate', async () => {
                         const text = ta.value.trim();
@@ -3727,6 +3790,62 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
                     }
                 });
+
+                // ── Textuele back-up resultaat panel ────────────────
+                const pipTtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                pipTtPanel.style.display = 'none';
+                const pipTtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const pipTtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Autofill — back-up template');
+                const pipTtStatus = mk('span', 'flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500', '');
+                pipTtHead.append(pipTtTitle, pipTtStatus);
+                const pipTtContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] leading-relaxed');
+                const pipTtActions = mk('div', 'items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
+                pipTtActions.style.display = 'none';
+
+                let _pipTtOrigText = null, _pipTtShowingOrig = false, _pipTtResultHTML = null;
+
+                const pipTtToggle = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '↩ Ingevuld', () => {
+                    _pipTtShowingOrig = !_pipTtShowingOrig;
+                    if (_pipTtShowingOrig) {
+                        _pipTtResultHTML = pipTtContent.innerHTML;
+                        pipTtContent.innerHTML = (_pipTtOrigText || '').replace(/\n/g, '<br>');
+                        pipTtToggle.textContent = '↩ Gecorrigeerd';
+                    } else {
+                        pipTtContent.innerHTML = _pipTtResultHTML;
+                        pipTtToggle.textContent = '↩ Ingevuld';
+                    }
+                });
+                pipTtToggle.style.display = 'none';
+
+                const pipTtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
+                    const btn = e.currentTarget;
+                    pipCopy(_pipTtShowingOrig ? (_pipTtOrigText || '') : (pipTtContent.innerText || ''));
+                    const orig = btn.textContent;
+                    btn.textContent = 'Gekopieerd ✓';
+                    btn.style.color = '#16a34a';
+                    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                });
+
+                pipTtActions.append(pipTtToggle, pipTtCopyBtn);
+                pipTtPanel.append(pipTtHead, pipTtContent, pipTtActions);
+                wrap.appendChild(pipTtPanel);
+
+                // Build ref object for runAutofillBackup
+                _pipTtRef = {
+                    panel:       pipTtPanel,
+                    content:     pipTtContent,
+                    status:      pipTtStatus,
+                    actions:     pipTtActions,
+                    toggle:      pipTtToggle,
+                    rtPanel:     rtPanel,
+                    get origText()    { return _pipTtOrigText; },
+                    set origText(v)   { _pipTtOrigText = v; },
+                    get showingOrig() { return _pipTtShowingOrig; },
+                    set showingOrig(v){ _pipTtShowingOrig = v; },
+                    get resultHTML()  { return _pipTtResultHTML; },
+                    set resultHTML(v) { _pipTtResultHTML = v; },
+                    pipAlert: (msg) => pipWindow.alert(msg),
+                };
 
                 // ── MedGemma beeldanalyse panel ─────────────────────
                 const pipMedgemmaPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-background overflow-hidden');
