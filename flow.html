@@ -266,6 +266,21 @@
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
+                <!-- AI Rules -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                            <span>🤖</span>
+                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</label>
+                        </div>
+                        <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Nieuwe regel</button>
+                    </div>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                    <div id="ai-rules-list" class="space-y-2.5"></div>
+                </div>
+
+                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+
                 <!-- Text template backup -->
                 <div>
                     <div class="flex items-center gap-2 mb-1">
@@ -279,21 +294,6 @@
                         placeholder="SECTIE:\n- [Veld:] 'Standaardtekst' // AI-context voor dit veld&#10;- [Ander veld:] XXX&#10;&#10;BESLUIT:&#10;XXX"
                         class="w-full px-3 py-2 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
                     ></textarea>
-                </div>
-
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-
-                <!-- AI Rules -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center gap-2">
-                            <span>🤖</span>
-                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</label>
-                        </div>
-                        <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Nieuwe regel</button>
-                    </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
-                    <div id="ai-rules-list" class="space-y-2.5"></div>
                 </div>
 
             </div><!-- /panel-body -->
