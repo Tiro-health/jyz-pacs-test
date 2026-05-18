@@ -2548,10 +2548,10 @@ Diagnostische vraagstelling: {diagnostische_vraagstelling}
 === EINDE DICTATIE ===
 
 INVULREGELS:
-1. Sectie besproken in dictatie → vervang XXX of de tekst tussen ' ' / " " door de overeenkomstige bevinding; verwijder de aanhalingstekens zelf ALTIJD uit de output
+1. Sectie besproken in dictatie → vervang XXX of de inhoud tussen ' ' / " " door de overeenkomstige bevinding; verwijder de aanhalingstekens ' ' en " " ALTIJD uit de output
 2. Sectie NIET besproken → gebruik de standaardtekst (de inhoud tussen ' ' of " ") maar verwijder de aanhalingstekens; heeft het veld geen standaard (XXX), schrijf dan "/"
-3. [ ]-labels → het label zelf NIET in de output opnemen; de bijbehorende bevinding wél
-4. { }-prefix → enkel weergeven als het gekoppelde veld effectief ingevuld werd; anders het volledige fragment weglaten
+3. [ ]-labels → verwijder de [ ] haakjes én de label-tekst volledig uit de output; schrijf enkel de bijbehorende bevinding
+4. { }-prefix → verwijder de { } haakjes; toon de inhoud enkel als het gekoppelde veld ingevuld werd, anders het volledige fragment weglaten
 5. // commentaren → bevatten extra context over het in te vullen veld; volledig verwijderen uit de output
 6. Neem gedicteerde zinnen LETTERLIJK over en verplaats ze naar het juiste invulveld; verzin GEEN bevindingen die niet in de dictatie staan; herformuleer enkel wanneer dit expliciet vermeld staat bij de // commentaar van het betreffende veld
 7. Behoud de structuur, de volgorde en de opmaak van de template
