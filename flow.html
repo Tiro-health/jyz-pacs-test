@@ -731,6 +731,12 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
             : `<span class="text-xs text-neutral-400 italic">—</span>`}
         </div>
       </div>
+      <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
+        <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textuele back-up</span>
+        ${et.textTemplate
+          ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">Actief</span>`
+          : `<button class="edit-btn text-[10px] text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 underline underline-offset-2 transition-colors" data-id="${esc(et.id)}">Inactief — klik om in te vullen</button>`}
+      </div>
     </div>
 
     <!-- AI rules preview -->
