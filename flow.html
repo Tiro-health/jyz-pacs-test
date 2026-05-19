@@ -1146,30 +1146,24 @@ XXX` },
                     .replace(/</g, '&lt;')
                     .replace(/>/g, '&gt;');
 
-                // Split at // for comment
+                // Split at // for comment first (before any other replacements)
                 const commentIdx = escaped.indexOf('//');
                 let left = commentIdx >= 0 ? escaped.slice(0, commentIdx) : escaped;
                 let commentPart = commentIdx >= 0
                     ? '<span style="color:#64748b">//' + escaped.slice(commentIdx + 2) + '</span>'
                     : '';
 
-                // Apply placeholder for XXX
-                left = left.replace(/XXX/g, '\x01');
-
-                // {…} orange
-                left = left.replace(/\{[^}]*\}/g, m => '<span style="color:#fb923c">' + m + '</span>');
-
-                // […] sky blue
-                left = left.replace(/\[[^\]]*\]/g, m => '<span style="color:#38bdf8">' + m + '</span>');
-
-                // '…' amber
-                left = left.replace(/'[^']*'/g, m => '<span style="color:#fbbf24">' + m + '</span>');
-
-                // "…" amber
-                left = left.replace(/"[^"]*"/g, m => '<span style="color:#fbbf24">' + m + '</span>');
-
-                // Restore XXX placeholder → pink
-                left = left.replace(/\x01/g, '<span style="color:#f472b6">XXX</span>');
+                // Single-pass replacement: all patterns matched at once so generated
+                // HTML from one match is never re-processed by a subsequent pattern.
+                left = left.replace(
+                    /XXX|\{[^}]*\}|\[[^\]]*\]|'[^']*'|"[^"]*"/g,
+                    m => {
+                        if (m === 'XXX')  return '<span style="color:#f472b6">XXX</span>';
+                        if (m[0] === '{') return '<span style="color:#fb923c">' + m + '</span>';
+                        if (m[0] === '[') return '<span style="color:#38bdf8">' + m + '</span>';
+                        return '<span style="color:#fbbf24">' + m + '</span>';
+                    }
+                );
 
                 // ALL-CAPS header like BESLUIT: or NIEREN:
                 left = left.replace(/^(\s*)([A-Z][A-Z0-9 _-]+:)/, (_, ws, hdr) =>
