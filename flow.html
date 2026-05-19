@@ -1233,21 +1233,18 @@ XXX` },
             if (window._currentEditId) openTtEditor(window._currentEditId);
         };
 
+        // Wire input/scroll events
+        const _ttTa = document.getElementById('tt-editor-input');
+        _ttTa.addEventListener('input', syncTtHighlight);
+        _ttTa.addEventListener('scroll', () => {
+            const pre = document.getElementById('tt-editor-highlight');
+            pre.scrollTop = _ttTa.scrollTop;
+            pre.scrollLeft = _ttTa.scrollLeft;
+        });
+
         // ── Init ─────────────────────────────────────────────────────────────────
         renderFilters();
         renderCards();
-
-        // Wire input/scroll events for the tt-editor modal (modal HTML lives after this script)
-        document.addEventListener('DOMContentLoaded', () => {
-            const _ttTa = document.getElementById('tt-editor-input');
-            if (!_ttTa) return;
-            _ttTa.addEventListener('input', syncTtHighlight);
-            _ttTa.addEventListener('scroll', () => {
-                const pre = document.getElementById('tt-editor-highlight');
-                pre.scrollTop = _ttTa.scrollTop;
-                pre.scrollLeft = _ttTa.scrollLeft;
-            });
-        });
         </script>
 
     </body>
