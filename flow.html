@@ -309,6 +309,85 @@
             </div>
         </div>
 
+        <!-- ── Textuele back-up template code editor modal ───────────────────── -->
+        <div id="tt-editor-modal" class="hidden fixed inset-0 z-[60] flex flex-col bg-[#0f172a]">
+            <!-- Header -->
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-700 flex-shrink-0 bg-[#0f172a]">
+                <h2 class="text-sm font-semibold text-neutral-100">
+                    📝 Textuele back-up template — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
+                </h2>
+                <button onclick="closeTtEditor()" class="p-1.5 rounded hover:bg-slate-700 text-neutral-400 hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+            </div>
+
+            <!-- Body: two columns -->
+            <div class="flex flex-1 min-h-0 overflow-hidden">
+
+                <!-- Left column: legend -->
+                <div class="w-[28rem] flex-shrink-0 bg-[#0f172a] border-r border-slate-700 overflow-y-auto px-5 py-4 space-y-3 hidden lg:block">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Syntaxis legenda</p>
+                    <div class="space-y-2.5 text-xs font-mono">
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#fbbf24" class="flex-shrink-0 font-bold">'&nbsp;'</span>
+                            <span class="text-slate-400">Invulveld met standaard invultekst. De tekst tussen de aanhalingstekens wordt getoond als er geen andere bevindingen zijn.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#fbbf24" class="flex-shrink-0 font-bold">"&nbsp;"</span>
+                            <span class="text-slate-400">Idem — dubbele aanhalingstekens.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#f472b6" class="flex-shrink-0 font-bold">XXX</span>
+                            <span class="text-slate-400">Invulveld zonder standaard invultekst.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#64748b" class="flex-shrink-0 font-bold">//</span>
+                            <span class="text-slate-400">Contextuele AI-tekst — niet in het eindresultaat, wel in de AI-prompt als context.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#38bdf8" class="flex-shrink-0 font-bold">[&nbsp;]</span>
+                            <span class="text-slate-400">Label van het invulveld — zichtbaar in de template maar <em>niet</em> in de output.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#fb923c" class="flex-shrink-0 font-bold">{&nbsp;}</span>
+                            <span class="text-slate-400">Conditioneel blok — enkel zichtbaar in de output als het veld effectief ingevuld werd.</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">HEADER:</span>
+                            <span class="text-slate-400">Sectiekop in hoofdletters gevolgd door een dubbele punt.</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-700">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Voorbeeld</p>
+                        <pre style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;white-space:pre-wrap;word-break:break-all"><span style="color:#a78bfa">BESLUIT:</span>
+<span style="color:#f472b6">XXX</span>
+
+<span style="color:#38bdf8">[Botpatroon:]</span> <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
+<span style="color:#fb923c">{Fractuur:}</span> <span style="color:#f472b6">XXX</span></pre>
+                    </div>
+                </div>
+
+                <!-- Right column: code editor -->
+                <div class="flex-1 flex flex-col min-w-0 bg-[#0f172a]">
+                    <div class="relative flex-1 min-h-0">
+                        <pre id="tt-editor-highlight"
+                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;white-space:pre-wrap;word-break:break-all;color:#e2e8f0;margin:0;pointer-events:none;overflow:auto;position:absolute;inset:0;background:transparent;"></pre>
+                        <textarea id="tt-editor-input"
+                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;background:transparent;color:transparent;caret-color:#e2e8f0;resize:none;outline:none;border:none;overflow:auto;position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;"
+                            spellcheck="false"
+                            autocomplete="off"
+                            autocorrect="off"
+                            autocapitalize="off"
+                        ></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
+                <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
+                <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+            </div>
+        </div>
+
         <!-- ── Script ─────────────────────────────────────────────────────────── -->
         <script>
         const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
@@ -1167,83 +1246,5 @@ XXX` },
         renderCards();
         </script>
 
-        <!-- ── Textuele back-up template code editor modal ───────────────────── -->
-        <div id="tt-editor-modal" class="hidden fixed inset-0 z-[60] flex flex-col bg-[#0f172a]">
-            <!-- Header -->
-            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-700 flex-shrink-0 bg-[#0f172a]">
-                <h2 class="text-sm font-semibold text-neutral-100">
-                    📝 Textuele back-up template — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
-                </h2>
-                <button onclick="closeTtEditor()" class="p-1.5 rounded hover:bg-slate-700 text-neutral-400 hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
-            </div>
-
-            <!-- Body: two columns -->
-            <div class="flex flex-1 min-h-0 overflow-hidden">
-
-                <!-- Left column: legend -->
-                <div class="w-[28rem] flex-shrink-0 bg-[#0f172a] border-r border-slate-700 overflow-y-auto px-5 py-4 space-y-3 hidden lg:block">
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Syntaxis legenda</p>
-                    <div class="space-y-2.5 text-xs font-mono">
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#fbbf24" class="flex-shrink-0 font-bold">'&nbsp;'</span>
-                            <span class="text-slate-400">Invulveld met standaard invultekst. De tekst tussen de aanhalingstekens wordt getoond als er geen andere bevindingen zijn.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#fbbf24" class="flex-shrink-0 font-bold">"&nbsp;"</span>
-                            <span class="text-slate-400">Idem — dubbele aanhalingstekens.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#f472b6" class="flex-shrink-0 font-bold">XXX</span>
-                            <span class="text-slate-400">Invulveld zonder standaard invultekst.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#64748b" class="flex-shrink-0 font-bold">//</span>
-                            <span class="text-slate-400">Contextuele AI-tekst — niet in het eindresultaat, wel in de AI-prompt als context.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#38bdf8" class="flex-shrink-0 font-bold">[&nbsp;]</span>
-                            <span class="text-slate-400">Label van het invulveld — zichtbaar in de template maar <em>niet</em> in de output.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#fb923c" class="flex-shrink-0 font-bold">{&nbsp;}</span>
-                            <span class="text-slate-400">Conditioneel blok — enkel zichtbaar in de output als het veld effectief ingevuld werd.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5">
-                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">HEADER:</span>
-                            <span class="text-slate-400">Sectiekop in hoofdletters gevolgd door een dubbele punt.</span>
-                        </div>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-slate-700">
-                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Voorbeeld</p>
-                        <pre style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;white-space:pre-wrap;word-break:break-all"><span style="color:#a78bfa">BESLUIT:</span>
-<span style="color:#f472b6">XXX</span>
-
-<span style="color:#38bdf8">[Botpatroon:]</span> <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
-<span style="color:#fb923c">{Fractuur:}</span> <span style="color:#f472b6">XXX</span></pre>
-                    </div>
-                </div>
-
-                <!-- Right column: code editor -->
-                <div class="flex-1 flex flex-col min-w-0 bg-[#0f172a]">
-                    <div class="relative flex-1 min-h-0">
-                        <pre id="tt-editor-highlight"
-                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;white-space:pre-wrap;word-break:break-all;color:#e2e8f0;margin:0;pointer-events:none;overflow:auto;position:absolute;inset:0;background:transparent;"></pre>
-                        <textarea id="tt-editor-input"
-                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;background:transparent;color:transparent;caret-color:#e2e8f0;resize:none;outline:none;border:none;overflow:auto;position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;"
-                            spellcheck="false"
-                            autocomplete="off"
-                            autocorrect="off"
-                            autocapitalize="off"
-                        ></textarea>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Footer -->
-            <div class="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
-                <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
-                <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
-            </div>
-        </div>
     </body>
 </html>
