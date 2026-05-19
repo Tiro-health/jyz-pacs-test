@@ -71,6 +71,13 @@
             }
             :root.dark .border-slate-700 { border-color: #2d3f4d !important; }
 
+            /* Code editor overlay textarea: keep transparent so syntax-highlight pre shows through */
+            #tt-editor-input {
+                background-color: transparent !important;
+                color: transparent !important;
+                border-color: transparent !important;
+            }
+
             details > summary { list-style: none; }
             details > summary::-webkit-details-marker { display: none; }
             details[open] .chevron { transform: rotate(180deg); }
