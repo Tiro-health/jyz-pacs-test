@@ -358,16 +358,16 @@
                             <span class="text-slate-400">Conditioneel blok — enkel zichtbaar in de output als het veld effectief ingevuld werd.</span>
                         </div>
                         <div class="flex items-start gap-2.5">
-                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">Label:</span>
-                            <span class="text-slate-400">Omschrijving van het volgende invulveld, gevolgd door een dubbele punt. Geldt zowel voor sectienamen in hoofdletters (<code class="text-slate-300">NIEREN:</code>) als voor veldlabels binnen een bulletpunt (<code class="text-slate-300">- Blaas:</code>).</span>
+                            <span class="flex-shrink-0 font-bold text-slate-300">Tekst</span>
+                            <span class="text-slate-400">Alle overige tekst is een label — de omschrijving of structuur van het invulveld. Verschijnt zowel in de template als in de uiteindelijke output.</span>
                         </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-slate-700">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Voorbeeld</p>
-                        <pre style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;white-space:pre-wrap;word-break:break-all"><span style="color:#a78bfa">BESLUIT:</span>
+                        <pre style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;white-space:pre-wrap;word-break:break-all">BESLUIT:
 <span style="color:#f472b6">XXX</span>
 
-<span style="color:#a78bfa">- Blaas:</span> <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
+- Blaas: <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
 <span style="color:#38bdf8">[Botpatroon:]</span> <span style="color:#fbbf24">'Normaal.'</span>
 <span style="color:#fb923c">{Fractuur:}</span> <span style="color:#f472b6">XXX</span></pre>
                     </div>
@@ -1164,11 +1164,6 @@ XXX` },
                         if (m[0] === '[') return '<span style="color:#38bdf8">' + m + '</span>';
                         return '<span style="color:#fbbf24">' + m + '</span>';
                     }
-                );
-
-                // Label: sectienaam (NIEREN:) of veldlabel (- Blaas:) gevolgd door dubbele punt
-                left = left.replace(/^(\s*(?:-\s*)?)([A-Za-z][A-Za-z0-9 _-]*:)(?=\s|$)/, (_, prefix, label) =>
-                    prefix + '<span style="color:#a78bfa">' + label + '</span>'
                 );
 
                 return left + commentPart;
