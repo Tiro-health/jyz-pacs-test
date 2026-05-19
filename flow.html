@@ -358,8 +358,8 @@
                             <span class="text-slate-400">Conditioneel blok — enkel zichtbaar in de output als het veld effectief ingevuld werd.</span>
                         </div>
                         <div class="flex items-start gap-2.5">
-                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">HEADER:</span>
-                            <span class="text-slate-400">Sectiekop in hoofdletters gevolgd door een dubbele punt.</span>
+                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">Label:</span>
+                            <span class="text-slate-400">Omschrijving van het volgende invulveld, gevolgd door een dubbele punt. Geldt zowel voor sectienamen in hoofdletters (<code class="text-slate-300">NIEREN:</code>) als voor veldlabels binnen een bulletpunt (<code class="text-slate-300">- Blaas:</code>).</span>
                         </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-slate-700">
@@ -367,7 +367,8 @@
                         <pre style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;white-space:pre-wrap;word-break:break-all"><span style="color:#a78bfa">BESLUIT:</span>
 <span style="color:#f472b6">XXX</span>
 
-<span style="color:#38bdf8">[Botpatroon:]</span> <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
+<span style="color:#a78bfa">- Blaas:</span> <span style="color:#fbbf24">'Normaal.'</span> <span style="color:#64748b">// context voor AI</span>
+<span style="color:#38bdf8">[Botpatroon:]</span> <span style="color:#fbbf24">'Normaal.'</span>
 <span style="color:#fb923c">{Fractuur:}</span> <span style="color:#f472b6">XXX</span></pre>
                     </div>
                 </div>
@@ -1165,9 +1166,9 @@ XXX` },
                     }
                 );
 
-                // ALL-CAPS header like BESLUIT: or NIEREN:
-                left = left.replace(/^(\s*)([A-Z][A-Z0-9 _-]+:)/, (_, ws, hdr) =>
-                    ws + '<span style="color:#a78bfa">' + hdr + '</span>'
+                // Label: sectienaam (NIEREN:) of veldlabel (- Blaas:) gevolgd door dubbele punt
+                left = left.replace(/^(\s*(?:-\s*)?)([A-Za-z][A-Za-z0-9 _-]*:)(?=\s|$)/, (_, prefix, label) =>
+                    prefix + '<span style="color:#a78bfa">' + label + '</span>'
                 );
 
                 return left + commentPart;
