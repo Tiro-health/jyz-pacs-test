@@ -2961,7 +2961,10 @@ CODERINGREGELS:
 - Codeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
 - Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
 - Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
-- Gebruik uitsluitend bestaande, numerieke SNOMED CT-codes; hallucineer NOOIT fictieve codes; laat weg bij twijfel
+- Gebruik UITSLUITEND officieel geregistreerde, numerieke SNOMED CT-codes
+- Alle codes worden automatisch gevalideerd via de officiële SNOMED CT-database — fictieve codes worden verwijderd
+- Laat een bevinding VOLLEDIG weg als je de exacte SNOMED CT-code niet met zekerheid kent; stel nooit een onzekere code voor
+- Kies steeds de meest specifieke bestaande code voor de beschreven bevinding
 
 UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 <b>hoofddiagnose</b>
@@ -2970,7 +2973,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 [numerieke SNOMED-code] ([Nederlandse omschrijving])
 [numerieke SNOMED-code] ([Nederlandse omschrijving])`;
 
-            const SNOMED_CT_PROMPT_VERSION = "1";
+            const SNOMED_CT_PROMPT_VERSION = "2";
             const savedSnomedCtVersion = localStorage.getItem("snomedCtPromptVersion");
             const savedSnomedCt = savedSnomedCtVersion === SNOMED_CT_PROMPT_VERSION
                 ? localStorage.getItem("snomedCtActionUrl")
@@ -3153,7 +3156,67 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 banner.classList.remove("hidden");
             }
 
-            function runSnomedCtGeneration() {
+            function showSnomedInfo(msg) {
+                const banner = document.getElementById("snomed-error-banner");
+                document.getElementById("snomed-error-text").textContent = msg;
+                banner.classList.remove("hidden");
+            }
+
+            // ── Snowstorm API validation ──────────────────────────────────────────
+            async function fetchSnomedConcept(code) {
+                const url = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/browser/MAIN/concepts/${encodeURIComponent(code)}`;
+                try {
+                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+                    if (res.status === 404) return null;   // code does not exist
+                    if (!res.ok) return undefined;          // API error — keep code (false-negative prevention)
+                    const data = await res.json();
+                    return data.active ? data : null;       // inactive = removed from SNOMED CT
+                } catch {
+                    return undefined;                       // network/CORS error — keep code
+                }
+            }
+
+            async function validateAndFilterSnomedCodes(rawText) {
+                const plain = rawText.replace(/<b>(.*?)<\/b>/gi, '$1').replace(/<[^>]+>/g, '').trim();
+                const lines = plain.split('\n').map(l => l.trim()).filter(Boolean);
+
+                // Collect unique codes
+                const codes = [];
+                for (const line of lines) {
+                    const m = line.match(/^(\d{6,18})/);
+                    if (m && !codes.includes(m[1])) codes.push(m[1]);
+                }
+                if (!codes.length) return { cleanText: plain, invalidCodes: [], apiError: false };
+
+                // Validate all codes in parallel
+                let apiError = false;
+                const entries = await Promise.all(
+                    codes.map(code =>
+                        fetchSnomedConcept(code).then(r => {
+                            if (r === undefined) apiError = true;
+                            return { code, result: r };
+                        })
+                    )
+                );
+
+                const validSet = new Set();
+                const invalidCodes = [];
+                for (const { code, result } of entries) {
+                    if (result === undefined) validSet.add(code); // API error: keep
+                    else if (result === null)  invalidCodes.push(code); // not found / inactive
+                    else                       validSet.add(code);
+                }
+
+                // Filter lines: keep section headers and valid-code lines
+                const cleanLines = lines.filter(line => {
+                    const m = line.match(/^(\d{6,18})/);
+                    return !m || validSet.has(m[1]);
+                });
+
+                return { cleanText: cleanLines.join('\n'), invalidCodes, apiError };
+            }
+
+            async function runSnomedCtGeneration() {
                 const tekst = readDictationText();
                 if (!tekst.trim()) return;
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
@@ -3164,9 +3227,20 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
                 if (GEMINI_API_KEY) {
                     document.getElementById("snomed-error-banner").classList.add("hidden");
-                    callGemini(getModel('geminiModelSnomed'), prompt)
-                        .then(text => parseSnomedResult(text))
-                        .catch(e => { if (e.name !== "AbortError") showSnomedError(e.message); });
+                    try {
+                        const raw = await callGemini(getModel('geminiModelSnomed'), prompt);
+                        showSnomedInfo('SNOMED CT: codes valideren via Snowstorm…');
+                        const { cleanText, invalidCodes, apiError } = await validateAndFilterSnomedCodes(raw);
+                        document.getElementById("snomed-error-banner").classList.add("hidden");
+                        parseSnomedResult(cleanText);
+                        if (invalidCodes.length) {
+                            showSnomedError(`${invalidCodes.length} fictieve/onbekende code(s) verwijderd: ${invalidCodes.join(', ')}`);
+                        } else if (apiError) {
+                            showSnomedInfo('SNOMED CT: validatie gedeeltelijk mislukt (netwerkfout) — niet-verifieerbare codes behouden.');
+                        }
+                    } catch (e) {
+                        if (e.name !== "AbortError") showSnomedError(e.message);
+                    }
                 } else {
                     openChatGPT(prompt);
                 }
