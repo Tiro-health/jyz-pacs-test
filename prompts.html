@@ -223,10 +223,10 @@
             </div>
 
             <!-- SNOMED database note -->
-            <div class="rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 px-4 py-3">
-                <p class="text-xs font-medium text-amber-800 dark:text-amber-300 mb-0.5">SNOMED database nog toe te voegen &nbsp;·&nbsp; Procedure template injectie nog uit te werken</p>
-                <p class="text-xs text-amber-700 dark:text-amber-400">Gegenereerde codes worden momenteel <b>niet</b> gevalideerd tegen een officiële SNOMED CT-database. Validatie via de admin-interface wordt in een latere fase toegevoegd.</p>
-                <p class="text-xs text-amber-700 dark:text-amber-400 mt-1">De <b>{Procedure template}</b> placeholder in de MedGemma-prompt injecteert de actieve tiro-template structuur — koppeling met de externe template-server (<code>templates.tiro.health</code>) is nog in onderzoek.</p>
+            <div class="rounded-md border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-950 px-4 py-3">
+                <p class="text-xs font-medium text-green-800 dark:text-green-300 mb-0.5">SNOMED CT validatie actief via Snowstorm API</p>
+                <p class="text-xs text-green-700 dark:text-green-400">Gegenereerde codes worden automatisch gevalideerd via de officiële publieke SNOMED CT-database (browser.ihtsdotools.org). Fictieve of inactieve codes worden verwijderd vóór het invullen van het formulier. Vereist internetverbinding.</p>
+                <p class="text-xs text-green-700 dark:text-green-400 mt-1">De <b>{Procedure template}</b> placeholder in de MedGemma-prompt injecteert de actieve tiro-template structuur — koppeling met de externe template-server (<code>templates.tiro.health</code>) is nog in onderzoek.</p>
             </div>
 
         </div>
@@ -371,7 +371,10 @@ CODERINGREGELS:
 - Codeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
 - Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
 - Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
-- Gebruik uitsluitend bestaande, numerieke SNOMED CT-codes; hallucineer NOOIT fictieve codes; laat weg bij twijfel
+- Gebruik UITSLUITEND officieel geregistreerde, numerieke SNOMED CT-codes
+- Alle codes worden automatisch gevalideerd via de officiële SNOMED CT-database — fictieve codes worden verwijderd
+- Laat een bevinding VOLLEDIG weg als je de exacte SNOMED CT-code niet met zekerheid kent; stel nooit een onzekere code voor
+- Kies steeds de meest specifieke bestaande code voor de beschreven bevinding
 
 UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 <b>hoofddiagnose</b>
