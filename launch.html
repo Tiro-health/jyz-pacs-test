@@ -3199,10 +3199,10 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 if (_ttShowingOrig) {
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
-                    ttToggleOrig.textContent = '↩ Gecorrigeerd';
+                    ttToggleOrig.textContent = 'Toon gecorrigeerd';
                 } else {
                     ttContent.innerHTML = _ttResultHTML;
-                    ttToggleOrig.textContent = '↩ Ingevuld';
+                    ttToggleOrig.textContent = 'Toon origineel';
                 }
             });
             ttCopy.addEventListener('click', () => {
@@ -3271,7 +3271,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 targetActions.style.display = 'none';
                 targetToggle.style.display = 'none';
-                targetToggle.textContent = '↩ Ingevuld';
+                targetToggle.textContent = 'Toon origineel';
                 targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verwerken…';
                 targetContent.innerHTML = '';
 
@@ -3310,7 +3310,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                     targetStatus.innerHTML = '';
                     targetActions.style.display = 'flex';
-                    targetToggle.style.display = backupPlainText ? '' : 'none';
+                    targetToggle.style.display = backupPlainText ? 'inline-flex' : 'none';
                 } catch (e) {
                     targetStatus.innerHTML = '';
                     if (e.name !== 'AbortError') targetContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
@@ -3845,15 +3845,15 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 let _pipTtOrigText = null, _pipTtShowingOrig = false, _pipTtResultHTML = null;
 
-                const pipTtToggle = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '↩ Ingevuld', () => {
+                const pipTtToggle = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Toon origineel', () => {
                     _pipTtShowingOrig = !_pipTtShowingOrig;
                     if (_pipTtShowingOrig) {
                         _pipTtResultHTML = pipTtContent.innerHTML;
                         pipTtContent.innerHTML = (_pipTtOrigText || '').replace(/\n/g, '<br>');
-                        pipTtToggle.textContent = '↩ Gecorrigeerd';
+                        pipTtToggle.textContent = 'Toon gecorrigeerd';
                     } else {
                         pipTtContent.innerHTML = _pipTtResultHTML;
-                        pipTtToggle.textContent = '↩ Ingevuld';
+                        pipTtToggle.textContent = 'Toon origineel';
                     }
                 });
                 pipTtToggle.style.display = 'none';
