@@ -151,6 +151,10 @@
                     Nieuw type
                 </button>
             </div>
+            <div class="flex justify-end gap-5 px-4 pb-2.5">
+                <button id="dicom-list-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Dicom lijst</button>
+                <button id="logic-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Textueel back-up logica</button>
+            </div>
 
             <!-- Search + modality tabs -->
             <div class="flex items-center gap-2 px-4 pb-3 flex-wrap">
@@ -169,25 +173,6 @@
 
         <!-- ── Card list ──────────────────────────────────────────────────────── -->
         <div class="p-4 max-w-4xl mx-auto">
-            <!-- ── Textuele template logica ──────────────────────────────────────────── -->
-            <details id="logic-accordion" class="mb-4 bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-lg">
-                <summary class="flex items-center gap-2 px-4 py-3 text-sm font-medium cursor-pointer text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-accent rounded-lg select-none">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Algemene logica textuele back-up templates
-                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                </summary>
-                <div class="px-4 py-3 border-t border-neutral-200 dark:border-slate-700">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Pas hier de syntaxisregels aan die gelden voor alle textuele back-up templates. Wordt mee opgenomen als context in AI-prompts.</p>
-                    <textarea
-                        id="logic-textarea"
-                        rows="14"
-                        class="w-full px-3 py-2 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
-                    ></textarea>
-                    <div class="flex justify-end mt-2">
-                        <button id="logic-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
-                    </div>
-                </div>
-            </details>
             <div id="cards-container" class="space-y-1.5"></div>
             <div id="empty-state" class="hidden text-center py-20 text-neutral-400 dark:text-neutral-500">
                 <svg class="mx-auto mb-3 opacity-40" xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
@@ -393,6 +378,49 @@
             <div class="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
                 <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
                 <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+            </div>
+        </div>
+
+        <!-- ── DICOM lijst modal ───────────────────────────────────────────────── -->
+        <div id="dicom-list-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">DICOM codes lijst</h2>
+                    <button id="dicom-list-modal-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="flex gap-2 px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <div class="relative flex-1 min-w-0">
+                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <input id="dicom-list-search" type="text" placeholder="Zoek DICOM code…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    </div>
+                    <input id="dicom-list-add-input" type="text" placeholder="Nieuwe code…" class="w-44 px-3 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <button id="dicom-list-add-btn" type="button" class="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors flex-shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                        Toevoegen
+                    </button>
+                </div>
+                <div id="dicom-list-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- ── Textueel back-up logica modal ──────────────────────────────────── -->
+        <div id="logic-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Algemene logica textuele back-up templates</h2>
+                    <button id="logic-modal-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 py-4">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Pas hier de syntaxisregels aan die gelden voor alle textuele back-up templates. Wordt mee opgenomen als context in AI-prompts.</p>
+                    <textarea
+                        id="logic-textarea"
+                        rows="16"
+                        class="w-full px-3 py-2 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
+                    ></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button id="logic-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1241,7 +1269,91 @@ XXX` },
         // ── Init ─────────────────────────────────────────────────────────────────
         renderFilters();
         renderCards();
+
+        // ── Dicom lijst modal ─────────────────────────────────────────────────────
+        const _extraDicomOnLoad = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
+        _extraDicomOnLoad.forEach(c => { if (!JYZ_DICOM_CODES.includes(c)) JYZ_DICOM_CODES.push(c); });
+
+        function renderDicomListModal(filter) {
+            const content = document.getElementById('dicom-list-content');
+            const extra   = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
+            const q = (filter || '').toLowerCase();
+            const shown = q ? JYZ_DICOM_CODES.filter(c => c.toLowerCase().includes(q)) : JYZ_DICOM_CODES;
+
+            const extraShown = shown.filter(c => extra.includes(c));
+            const mainShown  = shown.filter(c => !extra.includes(c));
+            const tag = (c, deletable) => {
+                const del = deletable
+                    ? `<button class="dicom-del ml-1 text-neutral-400 hover:text-red-500 leading-none font-bold" data-code="${c}" title="Verwijderen">×</button>`
+                    : '';
+                return `<span class="inline-flex items-center px-2 py-0.5 rounded bg-neutral-100 dark:bg-slate-700 text-xs font-mono text-neutral-700 dark:text-neutral-200">${c}${del}</span>`;
+            };
+
+            let html = '';
+            if (extraShown.length) {
+                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Aangepast (${extraShown.length})</p>`;
+                html += `<div class="flex flex-wrap gap-1.5 mb-4">${extraShown.map(c => tag(c, true)).join('')}</div>`;
+            }
+            html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">JYZ DICOM codes (${mainShown.length})</p>`;
+            html += `<div class="flex flex-wrap gap-1.5">${mainShown.map(c => tag(c, false)).join('')}</div>`;
+            if (!shown.length) html = '<p class="text-sm text-neutral-400 dark:text-neutral-500 py-4 text-center">Geen codes gevonden</p>';
+
+            content.innerHTML = html;
+            content.querySelectorAll('.dicom-del').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const code = btn.dataset.code;
+                    let ex = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
+                    ex = ex.filter(e => e !== code);
+                    localStorage.setItem('dicomCodesExtra', JSON.stringify(ex));
+                    const idx = JYZ_DICOM_CODES.indexOf(code);
+                    if (idx > -1) JYZ_DICOM_CODES.splice(idx, 1);
+                    renderDicomListModal(document.getElementById('dicom-list-search').value);
+                });
+            });
+        }
+
+        document.getElementById('dicom-list-btn').addEventListener('click', () => {
+            document.getElementById('dicom-list-modal').classList.remove('hidden');
+            document.getElementById('dicom-list-search').value = '';
+            renderDicomListModal('');
+        });
+        document.getElementById('dicom-list-modal-close').addEventListener('click', () => {
+            document.getElementById('dicom-list-modal').classList.add('hidden');
+        });
+        document.getElementById('dicom-list-modal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+        });
+        document.getElementById('dicom-list-search').addEventListener('input', e => {
+            renderDicomListModal(e.target.value);
+        });
+        document.getElementById('dicom-list-add-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('dicom-list-add-btn').click(); }
+        });
+        document.getElementById('dicom-list-add-btn').addEventListener('click', () => {
+            const inp = document.getElementById('dicom-list-add-input');
+            const val = inp.value.trim();
+            if (!val) return;
+            if (!JYZ_DICOM_CODES.includes(val)) {
+                JYZ_DICOM_CODES.push(val);
+                let ex = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
+                if (!ex.includes(val)) { ex.push(val); localStorage.setItem('dicomCodesExtra', JSON.stringify(ex)); }
+            }
+            inp.value = '';
+            renderDicomListModal(document.getElementById('dicom-list-search').value);
+        });
+
+        // ── Textueel back-up logica modal ────────────────────────────────────────
+        document.getElementById('logic-modal-btn').addEventListener('click', () => {
+            document.getElementById('logic-modal').classList.remove('hidden');
+        });
+        document.getElementById('logic-modal-close').addEventListener('click', () => {
+            document.getElementById('logic-modal').classList.add('hidden');
+        });
+        document.getElementById('logic-modal').addEventListener('click', e => {
+            if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+        });
         </script>
+
 
     </body>
 </html>
