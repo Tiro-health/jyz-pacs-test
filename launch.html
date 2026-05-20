@@ -747,7 +747,10 @@
                     <div id="tt-result-panel" class="hidden">
                         <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
                             <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Autofill — back-up template</span>
-                            <span id="tt-status" class="flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500"></span>
+                            <div class="flex items-center gap-2">
+                                <span id="tt-status" class="flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500"></span>
+                                <button id="tt-close" type="button" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer" title="Sluiten">×</button>
+                            </div>
                         </div>
                         <div id="tt-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
                         <div id="tt-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
@@ -3207,9 +3210,13 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     _ttShowingOrig ? (_ttOriginalText || '') : ttContent.innerText
                 ).catch(() => {});
             });
+            document.getElementById('tt-close').addEventListener('click', () => {
+                _ttAbort?.abort();
+                ttResultPanel.classList.add('hidden');
+            });
 
-            async function runAutofillBackup(pipRefs) {
-                const tekst = readDictationText() || _realtimeOriginalText || '';
+            async function runAutofillBackup(pipRefs, providedText) {
+                const tekst = providedText || readDictationText() || _realtimeOriginalText || '';
                 if (!tekst) {
                     if (pipRefs) pipRefs.pipAlert('Geen dictatietekst gevonden. Dicteer eerst uw bevindingen.');
                     else alert("Geen dictatietekst gevonden. Dicteer eerst uw bevindingen.");
@@ -3636,12 +3643,17 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
-                        const text = ta.value.trim();
-                        if (!text) return;
+                        // PiP textarea has priority; fall back to main clipboard dictation
+                        const pipText = ta.value.trim();
+                        const text = pipText || readDictationText().trim();
+                        if (!text) {
+                            pipWindow.alert('Geen dictatietekst gevonden. Dicteer of typ eerst een verslag.');
+                            return;
+                        }
                         setDictationText(text);
                         if (!_hasRealTiroTemplate() && window._flowTextTemplate) {
-                            // Back-up mode: render result directly in PiP
-                            runAutofillBackup(_pipTtRef);
+                            // Back-up mode: pass text directly so readDictationText() timing is irrelevant
+                            runAutofillBackup(_pipTtRef, text);
                         } else {
                             // Tiro SDK mode: delegate to main autofill button
                             setTimeout(() => document.getElementById('autofill-btn').click(), 100);
@@ -3817,7 +3829,16 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const pipTtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const pipTtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Autofill — back-up template');
                 const pipTtStatus = mk('span', 'flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500', '');
-                pipTtHead.append(pipTtTitle, pipTtStatus);
+                const pipTtCloseBtn = mk('button', 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer', '×');
+                pipTtCloseBtn.type = 'button';
+                pipTtCloseBtn.title = 'Sluiten';
+                pipTtCloseBtn.addEventListener('click', () => {
+                    _ttAbort?.abort();
+                    pipTtPanel.style.display = 'none';
+                });
+                const pipTtRightHead = mk('div', 'flex items-center gap-2');
+                pipTtRightHead.append(pipTtStatus, pipTtCloseBtn);
+                pipTtHead.append(pipTtTitle, pipTtRightHead);
                 const pipTtContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] leading-relaxed');
                 const pipTtActions = mk('div', 'items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
                 pipTtActions.style.display = 'none';
