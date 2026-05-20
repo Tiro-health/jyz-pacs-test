@@ -3636,8 +3636,13 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
-                        const text = ta.value.trim();
-                        if (!text) return;
+                        // PiP textarea has priority; fall back to main clipboard dictation
+                        const pipText = ta.value.trim();
+                        const text = pipText || readDictationText().trim();
+                        if (!text) {
+                            pipWindow.alert('Geen dictatietekst gevonden. Dicteer of typ eerst een verslag.');
+                            return;
+                        }
                         setDictationText(text);
                         if (!_hasRealTiroTemplate() && window._flowTextTemplate) {
                             // Back-up mode: render result directly in PiP
