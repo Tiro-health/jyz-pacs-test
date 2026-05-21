@@ -3320,18 +3320,19 @@ negated bevindingen
             let _ttAbort             = null;
             let _ttLabelsVisible     = true;
 
-            // Wrap [Label:] patterns in the rendered HTML so they can be toggled
+            // Wrap [Label:] patterns in the rendered HTML so they can be toggled.
+            // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
                 el.querySelectorAll('p, li').forEach(node => {
                     node.innerHTML = node.innerHTML.replace(
-                        /(\[[^\]]+:\])/g,
+                        /\[([^\]]+:)\]/g,
                         '<span class="tt-section-label">$1</span>'
                     );
                 });
                 // Also handle text nodes directly in the container (non-markdown output)
                 if (!el.querySelector('p, li')) {
                     el.innerHTML = el.innerHTML.replace(
-                        /(\[[^\]]+:\])/g,
+                        /\[([^\]]+:)\]/g,
                         '<span class="tt-section-label">$1</span>'
                     );
                 }
