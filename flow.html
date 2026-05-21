@@ -870,7 +870,7 @@ XXX` },
             : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
         </button>
         <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen in het resultaatvenster">
-          <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible !== false ? 'checked' : ''}>
+          <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible === true ? 'checked' : ''}>
           <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
         </label>
       </div>
@@ -1126,7 +1126,7 @@ XXX` },
                 userTemplate:  document.getElementById('edit-user-template').value.trim(),
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
                 aiRules:       editAiRules,
-                labelsDefaultVisible: _existingForSave?.labelsDefaultVisible !== false,
+                labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
             };
 
             if (currentEditId === '__new__') {

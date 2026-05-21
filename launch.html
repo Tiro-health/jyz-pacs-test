@@ -1272,7 +1272,7 @@
             // Global text template state (set when a flow match is found)
             window._flowTextTemplate = '';
             window._flowTextTemplateLogic = '';
-            window._flowLabelsDefaultVisible = true;
+            window._flowLabelsDefaultVisible = false;
 
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
@@ -1389,7 +1389,7 @@
 
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
-                window._flowLabelsDefaultVisible = match.labelsDefaultVisible !== false;
+                window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
                 window._flowTextTemplateLogic = '';
                 try {
                     window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
