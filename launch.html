@@ -1843,11 +1843,19 @@
                     container.appendChild(ff);
                 });
 
-                // Re-link magic clipboard to the new primary form so it initialises correctly
+                // Re-link magic clipboard to the new primary form so it initialises correctly.
+                // Done twice: immediately (handles re-selections) and deferred (handles initial page
+                // load where tiro-form-filler custom elements may not yet have run connectedCallback).
                 const mc = document.querySelector("tiro-magic-clipboard");
                 if (mc) {
                     mc.removeAttribute("for");
                     if (form) mc.setAttribute("for", "report-form");
+                    const _mcTargetForm = form;
+                    setTimeout(() => {
+                        if (!mc.isConnected) return;
+                        mc.removeAttribute("for");
+                        if (_mcTargetForm?.isConnected) mc.setAttribute("for", "report-form");
+                    }, 0);
                 }
 
                 // Update autofill button type: 'submit' triggers Tiro SDK; 'button' falls back to backup prompt
