@@ -1289,7 +1289,6 @@
             window._flowTextTemplate = '';
             window._flowTextTemplateLogic = '';
             window._flowLabelsDefaultVisible = false;
-            window._flowShowCorrectedByDefault = true;
 
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
@@ -1407,7 +1406,6 @@
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
                 window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
-                window._flowShowCorrectedByDefault = match.showCorrectedByDefault !== false;
                 window._flowTextTemplateLogic = '';
                 try {
                     window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
@@ -3508,19 +3506,12 @@ negated bevindingen
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
-                        // Auto-switch to origineel if exam type prefers it
-                        if (vcAfterAutofillEnabled && !window._flowShowCorrectedByDefault && backupPlainText) {
-                            ttToggleOrig.click();
-                        }
                     } else if (pipRefs?.labelsBtn) {
                         pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(targetContent);
                         const hasLabels = !!targetContent.querySelector('.tt-section-label');
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
                         pipRefs.applyLabels();
-                        if (vcAfterAutofillEnabled && !window._flowShowCorrectedByDefault && backupPlainText) {
-                            pipRefs.toggle.click();
-                        }
                     }
                 } catch (e) {
                     targetStatus.innerHTML = '';
