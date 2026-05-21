@@ -3343,8 +3343,6 @@ bijdiagnose
             ttToggleLabels.addEventListener('click', () => {
                 _ttLabelsVisible = !_ttLabelsVisible;
                 applyLabelVisibility();
-                // Keep _ttResultHTML in sync so toggling original and back preserves state
-                _ttResultHTML = ttContent.innerHTML;
             });
 
             ttToggleOrig.addEventListener('click', () => {
@@ -3357,7 +3355,10 @@ bijdiagnose
                 } else {
                     ttContent.innerHTML = _ttResultHTML;
                     ttToggleOrig.textContent = 'Toon origineel';
-                    if (ttContent.querySelector('.tt-section-label')) ttToggleLabels.style.display = '';
+                    if (ttContent.querySelector('.tt-section-label')) {
+                        ttToggleLabels.style.display = '';
+                        applyLabelVisibility(); // herstel correcte zichtbaarheid na restore
+                    }
                 }
             });
             ttCopy.addEventListener('click', () => {
