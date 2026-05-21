@@ -376,10 +376,16 @@
 
             <!-- Footer -->
             <div class="flex items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
-                <label class="flex items-center gap-2 cursor-pointer select-none" title="Labels standaard tonen in het resultaatvenster">
-                    <input type="checkbox" id="tt-editor-labels-toggle" class="w-3.5 h-3.5 rounded accent-cyan-500">
-                    <span class="text-[11px] text-slate-400">Labels standaard tonen</span>
-                </label>
+                <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2 cursor-pointer select-none" title="Labels standaard tonen in het resultaatvenster">
+                        <input type="checkbox" id="tt-editor-labels-toggle" class="w-3.5 h-3.5 rounded accent-cyan-500">
+                        <span class="text-[11px] text-slate-400">Labels standaard tonen</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer select-none" title="Na autofill standaard de gecorrigeerde versie tonen (i.p.v. origineel)">
+                        <input type="checkbox" id="tt-editor-corrected-toggle" class="w-3.5 h-3.5 rounded accent-cyan-500">
+                        <span class="text-[11px] text-slate-400">Gecorrigeerd standaard tonen</span>
+                    </label>
+                </div>
                 <div class="flex items-center gap-3">
                     <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
                     <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
@@ -879,6 +885,10 @@ XXX` },
           <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible === true ? 'checked' : ''}>
           <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
         </label>
+        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Na autofill standaard de gecorrigeerde versie tonen (i.p.v. origineel)">
+          <input type="checkbox" class="corrected-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.showCorrectedByDefault !== false ? 'checked' : ''}>
+          <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Gecorrigeerd</span>
+        </label>
       </div>
     </div>
 
@@ -1132,7 +1142,8 @@ XXX` },
                 userTemplate:  document.getElementById('edit-user-template').value.trim(),
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
                 aiRules:       editAiRules,
-                labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
+                labelsDefaultVisible:     _existingForSave?.labelsDefaultVisible === true,
+                showCorrectedByDefault:   _existingForSave?.showCorrectedByDefault !== false,
             };
 
             if (currentEditId === '__new__') {
@@ -1223,6 +1234,7 @@ XXX` },
             const ta = document.getElementById('tt-editor-input');
             ta.value = et.textTemplate || '';
             document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
+            document.getElementById('tt-editor-corrected-toggle').checked = et.showCorrectedByDefault !== false;
             syncTtHighlight();
             ta.focus();
         };
@@ -1241,6 +1253,7 @@ XXX` },
             if (et) {
                 et.textTemplate = val;
                 et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
+                et.showCorrectedByDefault = document.getElementById('tt-editor-corrected-toggle').checked;
             }
             // 2. Save to localStorage
             saveData();
@@ -1290,11 +1303,16 @@ XXX` },
 
         // Labels default-visible toggle per exam type (delegated)
         document.getElementById('cards-container').addEventListener('change', e => {
-            const cb = e.target.closest('.labels-default-toggle');
-            if (!cb) return;
             e.stopPropagation();
+            const labCb = e.target.closest('.labels-default-toggle');
+            const corCb = e.target.closest('.corrected-default-toggle');
+            const cb = labCb || corCb;
+            if (!cb) return;
             const idx = state.examTypes.findIndex(t => t.id === cb.dataset.id);
-            if (idx >= 0) { state.examTypes[idx].labelsDefaultVisible = cb.checked; saveData(); }
+            if (idx < 0) return;
+            if (labCb) state.examTypes[idx].labelsDefaultVisible = cb.checked;
+            if (corCb) state.examTypes[idx].showCorrectedByDefault = cb.checked;
+            saveData();
         });
 
         // ── Dicom lijst modal ─────────────────────────────────────────────────────

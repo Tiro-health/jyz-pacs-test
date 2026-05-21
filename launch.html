@@ -1212,6 +1212,22 @@
                         </button>
                     </div>
 
+                    <!-- Verslag check na autofill -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="vc-after-autofill-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Verslag check uitvoeren na autofill template
+                        </label>
+                        <button
+                            id="vc-after-autofill-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="true"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-cyan-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[19px]"></span>
+                        </button>
+                    </div>
+
                     <!-- MedGemma visibility -->
                     <div class="flex items-center justify-between py-0.5">
                         <label for="medgemma-visible" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
@@ -1273,6 +1289,7 @@
             window._flowTextTemplate = '';
             window._flowTextTemplateLogic = '';
             window._flowLabelsDefaultVisible = false;
+            window._flowShowCorrectedByDefault = true;
 
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
@@ -1390,6 +1407,7 @@
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
                 window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
+                window._flowShowCorrectedByDefault = match.showCorrectedByDefault !== false;
                 window._flowTextTemplateLogic = '';
                 try {
                     window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
@@ -3459,26 +3477,29 @@ negated bevindingen
                     if (isMain) _ttOriginalText = backupPlainText;
                     else pipRefs.origText = backupPlainText;
 
-                    // Phase 2: run verslag check on the backup result
-                    targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verslag check…';
-                    const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                    const vcPrompt = fillPrompt(vcTemplate, {
-                        tekst: backupPlainText,
-                        type_onderzoek: typeOnderzoek,
-                        klinische_inlichtingen: ki,
-                        diagnostische_vraagstelling: dv,
-                        patient_info: extractPatientInfo(),
-                        text_template: window._flowTextTemplate || '',
-                    });
-                    firstChunk = true;
-                    await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => {
-                        if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
-                        targetContent.innerHTML = renderMarkdown(partial);
-                    }, _ttAbort.signal);
+                    // Phase 2: run verslag check (skipped when vcAfterAutofillEnabled is off)
+                    if (vcAfterAutofillEnabled) {
+                        targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verslag check…';
+                        const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                        const vcPrompt = fillPrompt(vcTemplate, {
+                            tekst: backupPlainText,
+                            type_onderzoek: typeOnderzoek,
+                            klinische_inlichtingen: ki,
+                            diagnostische_vraagstelling: dv,
+                            patient_info: extractPatientInfo(),
+                            text_template: window._flowTextTemplate || '',
+                        });
+                        firstChunk = true;
+                        await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => {
+                            if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
+                            targetContent.innerHTML = renderMarkdown(partial);
+                        }, _ttAbort.signal);
+                    }
 
                     targetStatus.innerHTML = '';
                     targetActions.style.display = 'flex';
-                    targetToggle.style.display = backupPlainText ? 'inline-flex' : 'none';
+                    // Only show Toon origineel when verslag check ran (two versions to compare)
+                    targetToggle.style.display = (vcAfterAutofillEnabled && backupPlainText) ? 'inline-flex' : 'none';
                     // Wrap [Label:] patterns and show toggle button if any labels are present
                     if (isMain) {
                         _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
@@ -3487,12 +3508,19 @@ negated bevindingen
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
+                        // Auto-switch to origineel if exam type prefers it
+                        if (vcAfterAutofillEnabled && !window._flowShowCorrectedByDefault && backupPlainText) {
+                            ttToggleOrig.click();
+                        }
                     } else if (pipRefs?.labelsBtn) {
                         pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(targetContent);
                         const hasLabels = !!targetContent.querySelector('.tt-section-label');
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
                         pipRefs.applyLabels();
+                        if (vcAfterAutofillEnabled && !window._flowShowCorrectedByDefault && backupPlainText) {
+                            pipRefs.toggle.click();
+                        }
                     }
                 } catch (e) {
                     targetStatus.innerHTML = '';
@@ -3687,6 +3715,21 @@ negated bevindingen
                 updateMedgemmaToggle();
             });
             updateMedgemmaToggle();
+
+            // Verslag check na autofill toggle
+            const vcAfterAutofillToggle = document.getElementById('vc-after-autofill-toggle');
+            let vcAfterAutofillEnabled = localStorage.getItem('vcAfterAutofill') !== 'false';
+            function updateVcAfterAutofillToggle() {
+                vcAfterAutofillToggle.setAttribute('aria-checked', String(vcAfterAutofillEnabled));
+                vcAfterAutofillToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${vcAfterAutofillEnabled ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
+                vcAfterAutofillToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${vcAfterAutofillEnabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+            }
+            vcAfterAutofillToggle.addEventListener('click', () => {
+                vcAfterAutofillEnabled = !vcAfterAutofillEnabled;
+                localStorage.setItem('vcAfterAutofill', String(vcAfterAutofillEnabled));
+                updateVcAfterAutofillToggle();
+            });
+            updateVcAfterAutofillToggle();
 
             // ============================================
             // Dictation popout (Document PiP — textarea + realtime check)
