@@ -375,9 +375,15 @@
             </div>
 
             <!-- Footer -->
-            <div class="flex items-center justify-end gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
-                <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
-                <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+            <div class="flex items-center justify-between gap-3 px-5 py-3.5 border-t border-slate-700 flex-shrink-0 bg-[#0f172a]">
+                <label class="flex items-center gap-2 cursor-pointer select-none" title="Labels standaard tonen in het resultaatvenster">
+                    <input type="checkbox" id="tt-editor-labels-toggle" class="w-3.5 h-3.5 rounded accent-cyan-500">
+                    <span class="text-[11px] text-slate-400">Labels standaard tonen</span>
+                </label>
+                <div class="flex items-center gap-3">
+                    <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
+                    <button onclick="saveTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                </div>
             </div>
         </div>
 
@@ -1216,6 +1222,7 @@ XXX` },
             document.getElementById('tt-editor-exam-name').textContent = et.name;
             const ta = document.getElementById('tt-editor-input');
             ta.value = et.textTemplate || '';
+            document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
             syncTtHighlight();
             ta.focus();
         };
@@ -1231,7 +1238,10 @@ XXX` },
             if (!_ttEditorExamId) return;
             // 1. Update examTypes in memory
             const et = state.examTypes.find(e => e.id === _ttEditorExamId);
-            if (et) et.textTemplate = val;
+            if (et) {
+                et.textTemplate = val;
+                et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
+            }
             // 2. Save to localStorage
             saveData();
             // 3. If slide-over is currently open for this exam, sync the hidden textarea and badge
