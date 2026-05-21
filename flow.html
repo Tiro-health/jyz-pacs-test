@@ -861,13 +861,19 @@ XXX` },
             : `<span class="text-xs text-neutral-400 italic">—</span>`}
         </div>
       </div>
-      <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
-        class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2 w-full text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-b-sm -mx-0 px-0 pb-0.5">
-        <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textuele back-up</span>
-        ${et.textTemplate
-          ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
-          : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
-      </button>
+      <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
+        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
+          class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-1 min-w-0">
+          <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textuele back-up</span>
+          ${et.textTemplate
+            ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
+            : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
+        </button>
+        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen in het resultaatvenster">
+          <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible !== false ? 'checked' : ''}>
+          <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
+        </label>
+      </div>
     </div>
 
     <!-- AI rules preview -->
@@ -1109,6 +1115,7 @@ XXX` },
             const replaceCount = editAiRules.filter(r => r.action === 'replace_template' && r.template).length;
             if (replaceCount > 1) { alert('Er kan maximaal één AI-regel zijn met de actie "Vervang template". Pas de regels aan.'); return; }
 
+            const _existingForSave = state.examTypes.find(t => t.id === currentEditId);
             const updated = {
                 id:           currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
                 name,
@@ -1119,6 +1126,7 @@ XXX` },
                 userTemplate:  document.getElementById('edit-user-template').value.trim(),
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
                 aiRules:       editAiRules,
+                labelsDefaultVisible: _existingForSave?.labelsDefaultVisible !== false,
             };
 
             if (currentEditId === '__new__') {
@@ -1269,6 +1277,15 @@ XXX` },
         // ── Init ─────────────────────────────────────────────────────────────────
         renderFilters();
         renderCards();
+
+        // Labels default-visible toggle per exam type (delegated)
+        document.getElementById('cards-container').addEventListener('change', e => {
+            const cb = e.target.closest('.labels-default-toggle');
+            if (!cb) return;
+            e.stopPropagation();
+            const idx = state.examTypes.findIndex(t => t.id === cb.dataset.id);
+            if (idx >= 0) { state.examTypes[idx].labelsDefaultVisible = cb.checked; saveData(); }
+        });
 
         // ── Dicom lijst modal ─────────────────────────────────────────────────────
         const _extraDicomOnLoad = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');

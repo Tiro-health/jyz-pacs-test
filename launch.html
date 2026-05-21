@@ -1272,6 +1272,7 @@
             // Global text template state (set when a flow match is found)
             window._flowTextTemplate = '';
             window._flowTextTemplateLogic = '';
+            window._flowLabelsDefaultVisible = true;
 
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
@@ -1388,6 +1389,7 @@
 
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
+                window._flowLabelsDefaultVisible = match.labelsDefaultVisible !== false;
                 window._flowTextTemplateLogic = '';
                 try {
                     window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
@@ -3477,12 +3479,12 @@ negated bevindingen
                     targetToggle.style.display = backupPlainText ? 'inline-flex' : 'none';
                     // Wrap [Label:] patterns and show toggle button if any labels are present
                     if (isMain) {
-                        _ttLabelsVisible = true;
+                        _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(ttContent);
                         const hasLabels = !!ttContent.querySelector('.tt-section-label');
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
-                        ttToggleLabels.textContent = 'Labels verbergen';
+                        applyLabelVisibility();
                     }
                 } catch (e) {
                     targetStatus.innerHTML = '';
