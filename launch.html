@@ -3359,14 +3359,10 @@ negated bevindingen
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
                     ttToggleOrig.textContent = 'Toon gecorrigeerd';
-                    ttToggleLabels.style.display = 'none'; // labels n.v.t. op origineel
                 } else {
                     ttContent.innerHTML = _ttResultHTML;
                     ttToggleOrig.textContent = 'Toon origineel';
-                    if (ttContent.querySelector('.tt-section-label')) {
-                        ttToggleLabels.style.display = '';
-                        applyLabelVisibility(); // herstel correcte zichtbaarheid na restore
-                    }
+                    applyLabelVisibility(); // herstel correcte zichtbaarheid na restore
                 }
             });
             ttCopy.addEventListener('click', () => {
