@@ -3011,6 +3011,7 @@ CODERINGREGELS:
 - Identificeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
 - Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
 - Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
+- Negated bevindingen: normale bevindingen of expliciet afwezige pathologie (bv. normale gewrichtsverhoudingen, geen fracturen)
 - Geef de officiële SNOMED CT-conceptnaam (Engels of Nederlands) — GEEN numerieke codes
 - De codes worden automatisch opgezocht via de officiële SNOMED CT-database
 - Kies de meest specifieke conceptnaam die de bevinding correct beschrijft
@@ -3021,9 +3022,12 @@ hoofddiagnose
 [SNOMED CT-conceptnaam]
 bijdiagnose
 [SNOMED CT-conceptnaam]
+[SNOMED CT-conceptnaam]
+negated bevindingen
+[SNOMED CT-conceptnaam]
 [SNOMED CT-conceptnaam]`;
 
-            const SNOMED_CT_PROMPT_VERSION = "3";
+            const SNOMED_CT_PROMPT_VERSION = "4";
             const savedSnomedCtVersion = localStorage.getItem("snomedCtPromptVersion");
             const savedSnomedCt = savedSnomedCtVersion === SNOMED_CT_PROMPT_VERSION
                 ? localStorage.getItem("snomedCtActionUrl")
@@ -3156,20 +3160,23 @@ bijdiagnose
                 const lines = plain.split("\n").map(l => l.trim()).filter(Boolean);
                 if (!lines.length) return;
 
-                const hoofdLines = [], bijLines = [];
+                const hoofdLines = [], bijLines = [], negatedLines = [];
                 let section = "";
                 for (const line of lines) {
                     const lower = line.toLowerCase();
-                    if (lower === "hoofddiagnose") { section = "hoofd"; continue; }
-                    if (lower === "bijdiagnose")   { section = "bij";   continue; }
-                    if (section === "hoofd") hoofdLines.push(line);
-                    else if (section === "bij") bijLines.push(line);
+                    if (lower === "hoofddiagnose")       { section = "hoofd";   continue; }
+                    if (lower === "bijdiagnose")         { section = "bij";     continue; }
+                    if (lower === "negated bevindingen") { section = "negated"; continue; }
+                    if (section === "hoofd")   hoofdLines.push(line);
+                    else if (section === "bij")     bijLines.push(line);
+                    else if (section === "negated") negatedLines.push(line);
                 }
 
                 const snomedForm = findSnomedCtTemplateForm();
                 if (snomedForm) {
-                    if (hoofdLines.length) deepFillByLabel(snomedForm, "hoofddiagnose", hoofdLines.join("\n"));
-                    if (bijLines.length)   deepFillByLabel(snomedForm, "bijdiagnose",   bijLines.join("\n"));
+                    if (hoofdLines.length)   deepFillByLabel(snomedForm, "hoofddiagnose", hoofdLines.join("\n"));
+                    if (bijLines.length)     deepFillByLabel(snomedForm, "bijdiagnose",   bijLines.join("\n"));
+                    if (negatedLines.length) deepFillByLabel(snomedForm, "negated",       negatedLines.join("\n"));
                     document.getElementById("template-accordion")?.setAttribute("open", "");
                 }
             }
@@ -3230,15 +3237,14 @@ bijdiagnose
             }
 
             // Zet AI-conceptnamen om naar echte SNOMED CT codes via Snowstorm zoekopdrachten
+            const SNOMED_SECTION_HEADERS = new Set(['hoofddiagnose', 'bijdiagnose', 'negated bevindingen']);
+
             async function resolveSnomedConcepts(rawText) {
                 const plain = rawText.replace(/<b>(.*?)<\/b>/gi, '$1').replace(/<[^>]+>/g, '').trim();
                 const lines = plain.split('\n').map(l => l.trim()).filter(Boolean);
 
                 // Verzamel conceptregels (geen sectiekoppen)
-                const conceptLines = lines.filter(l => {
-                    const lower = l.toLowerCase();
-                    return lower !== 'hoofddiagnose' && lower !== 'bijdiagnose';
-                });
+                const conceptLines = lines.filter(l => !SNOMED_SECTION_HEADERS.has(l.toLowerCase()));
 
                 // Zoek alle concepten parallel op
                 const results = await Promise.all(
@@ -3251,8 +3257,9 @@ bijdiagnose
                 const outLines = [];
                 for (const line of lines) {
                     const lower = line.toLowerCase();
-                    if (lower === 'hoofddiagnose') { outLines.push('<b>hoofddiagnose</b>'); continue; }
-                    if (lower === 'bijdiagnose')   { outLines.push('<b>bijdiagnose</b>');   continue; }
+                    if (lower === 'hoofddiagnose')      { outLines.push('<b>hoofddiagnose</b>');      continue; }
+                    if (lower === 'bijdiagnose')        { outLines.push('<b>bijdiagnose</b>');        continue; }
+                    if (lower === 'negated bevindingen') { outLines.push('<b>negated bevindingen</b>'); continue; }
                     const hit = resultMap.get(line);
                     if (hit) outLines.push(`${hit.code} (${hit.term})`);
                     else notFound.push(line);
