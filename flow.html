@@ -434,10 +434,10 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
 
 //  =  Contextuele / informatieve tekst voor betere en accuratere AI-prompt met betrekking tot het gekoppelde invulveld.
 
-[ ]  =  Geeft de tekst weer gekoppeld aan het invulveld, maar maakt duidelijk dat de gekoppelde tekst NIET in het eindresultaat mag worden overgenomen.
+[ ]  =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk in de output — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
     Voorbeelden:
-      - [Botpatroon:] 'Normaal'   →   output:  - Normaal
-      - Botpatroon: 'Normaal'     →   output:  - Botpatroon: Normaal
+      - [ Botpatroon:] 'Normaal'   →   output:  [ Botpatroon:] Normaal
+      - Botpatroon: 'Normaal'      →   output:  - Botpatroon: Normaal
 
 { }  =  Maakt duidelijk dat de tekst tussen deze haakjes enkel in het eindresultaat zichtbaar is als het gekoppelde invulveld effectief werd ingevuld. Als het niet besproken werd, is deze niet zichtbaar.`;
 
