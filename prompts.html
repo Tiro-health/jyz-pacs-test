@@ -371,6 +371,7 @@ CODERINGREGELS:
 - Identificeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
 - Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
 - Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
+- Negated bevindingen: normale bevindingen of expliciet afwezige pathologie (bv. normale gewrichtsverhoudingen, geen fracturen)
 - Geef de officiële SNOMED CT-conceptnaam (Engels of Nederlands) — GEEN numerieke codes
 - De codes worden automatisch opgezocht via de officiële SNOMED CT-database
 - Kies de meest specifieke conceptnaam die de bevinding correct beschrijft
@@ -380,6 +381,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, enkel conceptnamen, geen codes, g
 hoofddiagnose
 [SNOMED CT-conceptnaam]
 bijdiagnose
+[SNOMED CT-conceptnaam]
+[SNOMED CT-conceptnaam]
+negated bevindingen
 [SNOMED CT-conceptnaam]
 [SNOMED CT-conceptnaam]`;
 
