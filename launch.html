@@ -761,8 +761,8 @@
                         <div id="tt-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
                         <div id="tt-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
                             <button id="tt-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
-                            <button id="tt-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                             <button id="tt-toggle-labels" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Labels</button>
+                            <button id="tt-copy" type="button" class="ml-auto px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                         </div>
                     </div>
                 </div>
@@ -3487,6 +3487,12 @@ negated bevindingen
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
+                    } else if (pipRefs?.labelsBtn) {
+                        pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
+                        wrapSectionLabels(targetContent);
+                        const hasLabels = !!targetContent.querySelector('.tt-section-label');
+                        pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
+                        pipRefs.applyLabels();
                     }
                 } catch (e) {
                     targetStatus.innerHTML = '';
@@ -4021,21 +4027,42 @@ negated bevindingen
                 pipTtActions.style.display = 'none';
 
                 let _pipTtOrigText = null, _pipTtShowingOrig = false, _pipTtResultHTML = null;
+                let _pipTtLabelsVisible = true;
+
+                function pipTtApplyLabels() {
+                    pipTtContent.querySelectorAll('.tt-section-label').forEach(s => {
+                        s.style.display = _pipTtLabelsVisible ? '' : 'none';
+                    });
+                    pipTtLabelsBtn.textContent = _pipTtLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
+                    pipTtLabelsBtn.classList.toggle('bg-cyan-50', !_pipTtLabelsVisible);
+                    pipTtLabelsBtn.classList.toggle('dark:bg-cyan-900/30', !_pipTtLabelsVisible);
+                    pipTtLabelsBtn.classList.toggle('border-cyan-300', !_pipTtLabelsVisible);
+                    pipTtLabelsBtn.classList.toggle('dark:border-cyan-700', !_pipTtLabelsVisible);
+                }
 
                 const pipTtToggle = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Toon origineel', () => {
                     _pipTtShowingOrig = !_pipTtShowingOrig;
                     if (_pipTtShowingOrig) {
                         _pipTtResultHTML = pipTtContent.innerHTML;
                         pipTtContent.innerHTML = (_pipTtOrigText || '').replace(/\n/g, '<br>');
+                        wrapSectionLabels(pipTtContent);
+                        pipTtApplyLabels();
                         pipTtToggle.textContent = 'Toon gecorrigeerd';
                     } else {
                         pipTtContent.innerHTML = _pipTtResultHTML;
                         pipTtToggle.textContent = 'Toon origineel';
+                        pipTtApplyLabels();
                     }
                 });
                 pipTtToggle.style.display = 'none';
 
-                const pipTtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
+                const pipTtLabelsBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Labels verbergen', () => {
+                    _pipTtLabelsVisible = !_pipTtLabelsVisible;
+                    pipTtApplyLabels();
+                });
+                pipTtLabelsBtn.style.display = 'none';
+
+                const pipTtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer ml-auto', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
                     pipCopy(_pipTtShowingOrig ? (_pipTtOrigText || '') : (pipTtContent.innerText || ''));
                     const orig = btn.textContent;
@@ -4044,7 +4071,7 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                pipTtActions.append(pipTtToggle, pipTtCopyBtn);
+                pipTtActions.append(pipTtToggle, pipTtLabelsBtn, pipTtCopyBtn);
                 pipTtPanel.append(pipTtHead, pipTtContent, pipTtActions);
                 wrap.appendChild(pipTtPanel);
 
@@ -4055,13 +4082,17 @@ negated bevindingen
                     status:      pipTtStatus,
                     actions:     pipTtActions,
                     toggle:      pipTtToggle,
+                    labelsBtn:   pipTtLabelsBtn,
+                    applyLabels: pipTtApplyLabels,
                     rtPanel:     rtPanel,
-                    get origText()    { return _pipTtOrigText; },
-                    set origText(v)   { _pipTtOrigText = v; },
-                    get showingOrig() { return _pipTtShowingOrig; },
-                    set showingOrig(v){ _pipTtShowingOrig = v; },
-                    get resultHTML()  { return _pipTtResultHTML; },
-                    set resultHTML(v) { _pipTtResultHTML = v; },
+                    get origText()      { return _pipTtOrigText; },
+                    set origText(v)     { _pipTtOrigText = v; },
+                    get showingOrig()   { return _pipTtShowingOrig; },
+                    set showingOrig(v)  { _pipTtShowingOrig = v; },
+                    get resultHTML()    { return _pipTtResultHTML; },
+                    set resultHTML(v)   { _pipTtResultHTML = v; },
+                    get labelsVisible() { return _pipTtLabelsVisible; },
+                    set labelsVisible(v){ _pipTtLabelsVisible = v; },
                     pipAlert: (msg) => pipWindow.alert(msg),
                 };
 
