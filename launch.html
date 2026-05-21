@@ -762,6 +762,7 @@
                         <div id="tt-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
                             <button id="tt-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                             <button id="tt-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                            <button id="tt-toggle-labels" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Labels</button>
                         </div>
                     </div>
                 </div>
@@ -3299,16 +3300,52 @@ bijdiagnose
             });
 
             // ── Textuele back-up result panel ─────────────────────────────────────────
-            const ttResultPanel   = document.getElementById('tt-result-panel');
-            const ttContent       = document.getElementById('tt-content');
-            const ttStatus        = document.getElementById('tt-status');
-            const ttActions       = document.getElementById('tt-actions');
-            const ttToggleOrig    = document.getElementById('tt-toggle-orig');
-            const ttCopy          = document.getElementById('tt-copy');
-            let _ttOriginalText   = null;
-            let _ttResultHTML     = null;
-            let _ttShowingOrig    = false;
-            let _ttAbort          = null;
+            const ttResultPanel      = document.getElementById('tt-result-panel');
+            const ttContent          = document.getElementById('tt-content');
+            const ttStatus           = document.getElementById('tt-status');
+            const ttActions          = document.getElementById('tt-actions');
+            const ttToggleOrig       = document.getElementById('tt-toggle-orig');
+            const ttCopy             = document.getElementById('tt-copy');
+            const ttToggleLabels     = document.getElementById('tt-toggle-labels');
+            let _ttOriginalText      = null;
+            let _ttResultHTML        = null;
+            let _ttShowingOrig       = false;
+            let _ttAbort             = null;
+            let _ttLabelsVisible     = true;
+
+            // Wrap [Label:] patterns in the rendered HTML so they can be toggled
+            function wrapSectionLabels(el) {
+                el.querySelectorAll('p, li').forEach(node => {
+                    node.innerHTML = node.innerHTML.replace(
+                        /(\[[^\]]+:\])/g,
+                        '<span class="tt-section-label">$1</span>'
+                    );
+                });
+                // Also handle text nodes directly in the container (non-markdown output)
+                if (!el.querySelector('p, li')) {
+                    el.innerHTML = el.innerHTML.replace(
+                        /(\[[^\]]+:\])/g,
+                        '<span class="tt-section-label">$1</span>'
+                    );
+                }
+            }
+
+            function applyLabelVisibility() {
+                const labels = ttContent.querySelectorAll('.tt-section-label');
+                labels.forEach(s => { s.style.display = _ttLabelsVisible ? '' : 'none'; });
+                ttToggleLabels.textContent = _ttLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
+                ttToggleLabels.classList.toggle('bg-cyan-50', !_ttLabelsVisible);
+                ttToggleLabels.classList.toggle('dark:bg-cyan-900/30', !_ttLabelsVisible);
+                ttToggleLabels.classList.toggle('border-cyan-300', !_ttLabelsVisible);
+                ttToggleLabels.classList.toggle('dark:border-cyan-700', !_ttLabelsVisible);
+            }
+
+            ttToggleLabels.addEventListener('click', () => {
+                _ttLabelsVisible = !_ttLabelsVisible;
+                applyLabelVisibility();
+                // Keep _ttResultHTML in sync so toggling original and back preserves state
+                _ttResultHTML = ttContent.innerHTML;
+            });
 
             ttToggleOrig.addEventListener('click', () => {
                 _ttShowingOrig = !_ttShowingOrig;
@@ -3316,9 +3353,11 @@ bijdiagnose
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
                     ttToggleOrig.textContent = 'Toon gecorrigeerd';
+                    ttToggleLabels.style.display = 'none'; // labels n.v.t. op origineel
                 } else {
                     ttContent.innerHTML = _ttResultHTML;
                     ttToggleOrig.textContent = 'Toon origineel';
+                    if (ttContent.querySelector('.tt-section-label')) ttToggleLabels.style.display = '';
                 }
             });
             ttCopy.addEventListener('click', () => {
@@ -3329,6 +3368,8 @@ bijdiagnose
             document.getElementById('tt-close').addEventListener('click', () => {
                 _ttAbort?.abort();
                 ttResultPanel.classList.add('hidden');
+                _ttLabelsVisible = true;
+                ttToggleLabels.classList.remove('bg-cyan-50', 'dark:bg-cyan-900/30', 'border-cyan-300', 'dark:border-cyan-700');
                 showTemplatePreview();
             });
 
@@ -3429,6 +3470,15 @@ bijdiagnose
                     targetStatus.innerHTML = '';
                     targetActions.style.display = 'flex';
                     targetToggle.style.display = backupPlainText ? 'inline-flex' : 'none';
+                    // Wrap [Label:] patterns and show toggle button if any labels are present
+                    if (isMain) {
+                        _ttLabelsVisible = true;
+                        wrapSectionLabels(ttContent);
+                        const hasLabels = !!ttContent.querySelector('.tt-section-label');
+                        ttToggleLabels.style.display = hasLabels ? '' : 'none';
+                        ttToggleLabels.classList.remove('hidden');
+                        ttToggleLabels.textContent = 'Labels verbergen';
+                    }
                 } catch (e) {
                     targetStatus.innerHTML = '';
                     if (e.name !== 'AbortError') targetContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
