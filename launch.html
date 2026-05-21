@@ -2622,13 +2622,13 @@ Diagnostische vraagstelling: {diagnostische_vraagstelling}
 INVULREGELS:
 1. Sectie besproken in dictatie → vervang XXX of de inhoud tussen ' ' / " " door de overeenkomstige bevinding; verwijder de aanhalingstekens ' ' en " " ALTIJD uit de output
 2. Sectie NIET besproken → gebruik de standaardtekst (de inhoud tussen ' ' of " ") maar verwijder de aanhalingstekens; heeft het veld geen standaard (XXX), schrijf dan "/"
-3. [ ]-labels → verwijder de [ ] haakjes én de label-tekst volledig uit de output; schrijf enkel de bijbehorende bevinding
+3. [ ]-labels → behoud de [ ] haakjes en de label-tekst exact zoals ze staan aan het begin van de regel (bv. "[ Botpatroon:]"); verwijder enkel het eventuele "-" koppelteken vóór het label; schrijf daarna de bijbehorende bevinding op dezelfde regel
 4. { }-prefix → verwijder de { } haakjes; toon de inhoud enkel als het gekoppelde veld ingevuld werd, anders het volledige fragment weglaten
 5. // commentaren → bevatten extra context over het in te vullen veld; volledig verwijderen uit de output
 6. Neem gedicteerde zinnen LETTERLIJK over en verplaats ze naar het juiste invulveld; verzin GEEN bevindingen die niet in de dictatie staan; herformuleer enkel wanneer dit expliciet vermeld staat bij de // commentaar van het betreffende veld
 7. Behoud de structuur, de volgorde en de opmaak van de template
 
-Geef UITSLUITEND de ingevulde verslagtekst terug — geen uitleg, geen sectielabels, geen inleiding.`;
+Geef UITSLUITEND de ingevulde verslagtekst terug — geen uitleg, geen inleiding.`;
 
             const DEFAULT_VERSLAG_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten.
 
