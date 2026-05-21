@@ -354,7 +354,7 @@ INVULREGELS:
 
 Geef UITSLUITEND de ingevulde verslagtekst terug — geen uitleg, geen sectielabels, geen inleiding.`;
 
-            const DEFAULT_SNOMED = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
+            const DEFAULT_SNOMED = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en identificeer de te coderen bevindingen.
 
 === CONTEXT (uitsluitend ter referentie — niet weergeven in output) ===
 Type onderzoek: {type_onderzoek}
@@ -368,20 +368,20 @@ Patiënt: {patient_info}
 === EINDE VERSLAG ===
 
 CODERINGREGELS:
-- Codeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
+- Identificeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
 - Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
 - Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
-- Gebruik UITSLUITEND officieel geregistreerde, numerieke SNOMED CT-codes
-- Alle codes worden automatisch gevalideerd via de officiële SNOMED CT-database — fictieve codes worden verwijderd
-- Laat een bevinding VOLLEDIG weg als je de exacte SNOMED CT-code niet met zekerheid kent; stel nooit een onzekere code voor
-- Kies steeds de meest specifieke bestaande code voor de beschreven bevinding
+- Geef de officiële SNOMED CT-conceptnaam (Engels of Nederlands) — GEEN numerieke codes
+- De codes worden automatisch opgezocht via de officiële SNOMED CT-database
+- Kies de meest specifieke conceptnaam die de bevinding correct beschrijft
+- Laat een bevinding weg als je de juiste SNOMED CT-conceptnaam niet met zekerheid kent
 
-UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
-<b>hoofddiagnose</b>
-[numerieke SNOMED-code] ([Nederlandse omschrijving])
-<b>bijdiagnose</b>
-[numerieke SNOMED-code] ([Nederlandse omschrijving])
-[numerieke SNOMED-code] ([Nederlandse omschrijving])`;
+UITVOERFORMAAT — geef UITSLUITEND dit terug, enkel conceptnamen, geen codes, geen uitleg, geen preamble:
+hoofddiagnose
+[SNOMED CT-conceptnaam]
+bijdiagnose
+[SNOMED CT-conceptnaam]
+[SNOMED CT-conceptnaam]`;
 
             // ── localStorage helpers ───────────────────────────────────────────
             function migratePrompt(stored) {

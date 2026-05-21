@@ -2985,7 +2985,7 @@ INSTRUCTIES VOOR UITVOER:
             // ============================================
             const snomedCtActionUrlInput = document.getElementById("snomed-ct-action-url");
 
-            const DEFAULT_SNOMED_CT_PROMPT = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en stel een volledige, accurate codeerlijst op.
+            const DEFAULT_SNOMED_CT_PROMPT = `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en identificeer de te coderen bevindingen.
 
 === CONTEXT (uitsluitend ter referentie — niet weergeven in output) ===
 Type onderzoek: {type_onderzoek}
@@ -2999,22 +2999,22 @@ Patiënt: {patient_info}
 === EINDE VERSLAG ===
 
 CODERINGREGELS:
-- Codeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
+- Identificeer elke afzonderlijke radiologische bevinding als één SNOMED CT-concept
 - Hoofddiagnose: bevinding die het meest aansluit bij de klinische vraagstelling; acute pathologie gaat ALTIJD naar hoofddiagnose
 - Bijdiagnose: alle overige bevindingen (chronisch, incidenteel, postoperatief, anatomische varianten)
-- Gebruik UITSLUITEND officieel geregistreerde, numerieke SNOMED CT-codes
-- Alle codes worden automatisch gevalideerd via de officiële SNOMED CT-database — fictieve codes worden verwijderd
-- Laat een bevinding VOLLEDIG weg als je de exacte SNOMED CT-code niet met zekerheid kent; stel nooit een onzekere code voor
-- Kies steeds de meest specifieke bestaande code voor de beschreven bevinding
+- Geef de officiële SNOMED CT-conceptnaam (Engels of Nederlands) — GEEN numerieke codes
+- De codes worden automatisch opgezocht via de officiële SNOMED CT-database
+- Kies de meest specifieke conceptnaam die de bevinding correct beschrijft
+- Laat een bevinding weg als je de juiste SNOMED CT-conceptnaam niet met zekerheid kent
 
-UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
-<b>hoofddiagnose</b>
-[numerieke SNOMED-code] ([Nederlandse omschrijving])
-<b>bijdiagnose</b>
-[numerieke SNOMED-code] ([Nederlandse omschrijving])
-[numerieke SNOMED-code] ([Nederlandse omschrijving])`;
+UITVOERFORMAAT — geef UITSLUITEND dit terug, enkel conceptnamen, geen codes, geen uitleg, geen preamble:
+hoofddiagnose
+[SNOMED CT-conceptnaam]
+bijdiagnose
+[SNOMED CT-conceptnaam]
+[SNOMED CT-conceptnaam]`;
 
-            const SNOMED_CT_PROMPT_VERSION = "2";
+            const SNOMED_CT_PROMPT_VERSION = "3";
             const savedSnomedCtVersion = localStorage.getItem("snomedCtPromptVersion");
             const savedSnomedCt = savedSnomedCtVersion === SNOMED_CT_PROMPT_VERSION
                 ? localStorage.getItem("snomedCtActionUrl")
@@ -3203,58 +3203,53 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 banner.classList.remove("hidden");
             }
 
-            // ── Snowstorm API validation ──────────────────────────────────────────
-            async function fetchSnomedConcept(code) {
-                const url = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/browser/MAIN/concepts/${encodeURIComponent(code)}`;
+            // ── Snowstorm API: zoek een concept op naam, geeft { code, term } terug ──
+            async function searchSnomedConcept(term) {
+                const url = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/MAIN/concepts?term=${encodeURIComponent(term)}&activeFilter=true&limit=3`;
                 try {
                     const res = await fetch(url, { headers: { Accept: 'application/json' } });
-                    if (res.status === 404) return null;   // code does not exist
-                    if (!res.ok) return undefined;          // API error — keep code (false-negative prevention)
+                    if (!res.ok) return null;
                     const data = await res.json();
-                    return data.active ? data : null;       // inactive = removed from SNOMED CT
+                    const hit = data.items?.[0];
+                    if (!hit) return null;
+                    // pt = preferred term (zonder type-qualifier), fsn als fallback
+                    const label = hit.pt?.term || hit.fsn?.term?.replace(/\s*\([^)]+\)\s*$/, '').trim() || term;
+                    return { code: hit.conceptId, term: label };
                 } catch {
-                    return undefined;                       // network/CORS error — keep code
+                    return null;  // netwerk/CORS-fout → concept weglaten
                 }
             }
 
-            async function validateAndFilterSnomedCodes(rawText) {
+            // Zet AI-conceptnamen om naar echte SNOMED CT codes via Snowstorm zoekopdrachten
+            async function resolveSnomedConcepts(rawText) {
                 const plain = rawText.replace(/<b>(.*?)<\/b>/gi, '$1').replace(/<[^>]+>/g, '').trim();
                 const lines = plain.split('\n').map(l => l.trim()).filter(Boolean);
 
-                // Collect unique codes
-                const codes = [];
-                for (const line of lines) {
-                    const m = line.match(/^(\d{6,18})/);
-                    if (m && !codes.includes(m[1])) codes.push(m[1]);
-                }
-                if (!codes.length) return { cleanText: plain, invalidCodes: [], apiError: false };
-
-                // Validate all codes in parallel
-                let apiError = false;
-                const entries = await Promise.all(
-                    codes.map(code =>
-                        fetchSnomedConcept(code).then(r => {
-                            if (r === undefined) apiError = true;
-                            return { code, result: r };
-                        })
-                    )
-                );
-
-                const validSet = new Set();
-                const invalidCodes = [];
-                for (const { code, result } of entries) {
-                    if (result === undefined) validSet.add(code); // API error: keep
-                    else if (result === null)  invalidCodes.push(code); // not found / inactive
-                    else                       validSet.add(code);
-                }
-
-                // Filter lines: keep section headers and valid-code lines
-                const cleanLines = lines.filter(line => {
-                    const m = line.match(/^(\d{6,18})/);
-                    return !m || validSet.has(m[1]);
+                // Verzamel conceptregels (geen sectiekoppen)
+                const conceptLines = lines.filter(l => {
+                    const lower = l.toLowerCase();
+                    return lower !== 'hoofddiagnose' && lower !== 'bijdiagnose';
                 });
 
-                return { cleanText: cleanLines.join('\n'), invalidCodes, apiError };
+                // Zoek alle concepten parallel op
+                const results = await Promise.all(
+                    conceptLines.map(term => searchSnomedConcept(term).then(r => [term, r]))
+                );
+                const resultMap = new Map(results);
+
+                // Bouw de uitvoer op
+                const notFound = [];
+                const outLines = [];
+                for (const line of lines) {
+                    const lower = line.toLowerCase();
+                    if (lower === 'hoofddiagnose') { outLines.push('<b>hoofddiagnose</b>'); continue; }
+                    if (lower === 'bijdiagnose')   { outLines.push('<b>bijdiagnose</b>');   continue; }
+                    const hit = resultMap.get(line);
+                    if (hit) outLines.push(`${hit.code} (${hit.term})`);
+                    else notFound.push(line);
+                }
+
+                return { resolvedText: outLines.join('\n'), notFound };
             }
 
             async function runSnomedCtGeneration() {
@@ -3270,14 +3265,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     document.getElementById("snomed-error-banner").classList.add("hidden");
                     try {
                         const raw = await callGemini(getModel('geminiModelSnomed'), prompt);
-                        showSnomedInfo('SNOMED CT: codes valideren via Snowstorm…');
-                        const { cleanText, invalidCodes, apiError } = await validateAndFilterSnomedCodes(raw);
+                        showSnomedInfo('SNOMED CT: codes opzoeken via Snowstorm…');
+                        const { resolvedText, notFound } = await resolveSnomedConcepts(raw);
                         document.getElementById("snomed-error-banner").classList.add("hidden");
-                        parseSnomedResult(cleanText);
-                        if (invalidCodes.length) {
-                            showSnomedError(`${invalidCodes.length} fictieve/onbekende code(s) verwijderd: ${invalidCodes.join(', ')}`);
-                        } else if (apiError) {
-                            showSnomedInfo('SNOMED CT: validatie gedeeltelijk mislukt (netwerkfout) — niet-verifieerbare codes behouden.');
+                        parseSnomedResult(resolvedText);
+                        if (notFound.length) {
+                            showSnomedError(`${notFound.length} concept(en) niet gevonden in SNOMED CT: ${notFound.join(', ')}`);
                         }
                     } catch (e) {
                         if (e.name !== "AbortError") showSnomedError(e.message);
