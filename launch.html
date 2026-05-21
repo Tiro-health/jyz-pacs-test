@@ -3360,11 +3360,13 @@ negated bevindingen
                 if (_ttShowingOrig) {
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
+                    wrapSectionLabels(ttContent);
+                    applyLabelVisibility();
                     ttToggleOrig.textContent = 'Toon gecorrigeerd';
                 } else {
                     ttContent.innerHTML = _ttResultHTML;
                     ttToggleOrig.textContent = 'Toon origineel';
-                    applyLabelVisibility(); // herstel correcte zichtbaarheid na restore
+                    applyLabelVisibility();
                 }
             });
             ttCopy.addEventListener('click', () => {
