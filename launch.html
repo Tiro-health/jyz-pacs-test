@@ -2679,7 +2679,8 @@ Controleer actief op de volgende foutcategorieën:
 - Niet-gedefinieerde afkortingen
 
 INSTRUCTIES VOOR UITVOER:
-- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen labels, geen sectietitels, geen context
+- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen sectietitels, geen context
+- Behoud [ ]-labels (bv. "[ Botpatroon:]") en [br]-markeringen letterlijk zoals ze in de ingevoerde tekst staan — verwijder ze NIET
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
 - Markeer elke correctie als: <del>originele tekst</del><ins>gecorrigeerde tekst</ins>
@@ -2687,7 +2688,7 @@ INSTRUCTIES VOOR UITVOER:
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "8";
+            const VERSLAG_CHECK_VERSION = "9";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
