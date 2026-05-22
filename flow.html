@@ -452,10 +452,10 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
       - [ Botpatroon:] 'Normaal'       →   output:  [ Botpatroon:] Normaal
       - Botpatroon: 'Normaal'          →   output:  - Botpatroon: Normaal
 
-[br]  =  Regelsprong-markering — enkel te plaatsen direct na een [ ]-label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen kan worden. Uitzondering op de [ ]-regel: de AI schrijft de bevinding hier op de VOLGENDE regel.
+[br]  =  Systeem-markering — enkel te plaatsen direct na een [ ]-label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen moet worden (compact weergave). De AI negeert [br] volledig — het wordt nooit in de output geschreven. Het systeem leest [br] rechtstreeks uit de template en verwerkt het via regex.
     Voorbeeld:
-      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:][br]
-                                                     Normaal
+      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:] Normaal
+                                           (systeem verbergt de enter bij het verbergen van het label)
 
 { }  =  Maakt duidelijk dat de tekst tussen deze haakjes enkel in het eindresultaat zichtbaar is als het gekoppelde invulveld effectief werd ingevuld. Als het niet besproken werd, is deze niet zichtbaar.`;
 
