@@ -1289,6 +1289,7 @@
             window._flowTextTemplate = '';
             window._flowTextTemplateLogic = '';
             window._flowLabelsDefaultVisible = false;
+            window._flowTrimLabelNewlines = false;
 
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
@@ -1406,6 +1407,7 @@
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
                 window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
+                window._flowTrimLabelNewlines = match.trimLabelNewlines === true;
                 window._flowTextTemplateLogic = '';
                 try {
                     window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
@@ -3354,9 +3356,31 @@ negated bevindingen
                 }
             }
 
+            function markLabelBrs(el) {
+                el.querySelectorAll('.tt-section-label').forEach(span => {
+                    const next = span.nextSibling;
+                    if (next?.nodeName === 'BR') next.classList.add('tt-label-br');
+                    const prevBrs = [];
+                    let node = span.previousSibling;
+                    while (node?.nodeName === 'BR') { prevBrs.unshift(node); node = node.previousSibling; }
+                    // If label is at content start (no text before), mark all preceding BRs
+                    if (!node && prevBrs.length > 0) {
+                        prevBrs.forEach(br => br.classList.add('tt-label-br'));
+                    } else {
+                        // Keep first BR (end-of-content separator), mark the rest
+                        prevBrs.slice(1).forEach(br => br.classList.add('tt-label-br'));
+                    }
+                });
+            }
+
             function applyLabelVisibility() {
                 const labels = ttContent.querySelectorAll('.tt-section-label');
                 labels.forEach(s => { s.style.display = _ttLabelsVisible ? '' : 'none'; });
+                if (window._flowTrimLabelNewlines) {
+                    ttContent.querySelectorAll('.tt-label-br').forEach(br => {
+                        br.style.display = _ttLabelsVisible ? '' : 'none';
+                    });
+                }
                 ttToggleLabels.textContent = _ttLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
                 ttToggleLabels.classList.toggle('bg-cyan-50', !_ttLabelsVisible);
                 ttToggleLabels.classList.toggle('dark:bg-cyan-900/30', !_ttLabelsVisible);
@@ -3375,6 +3399,7 @@ negated bevindingen
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
                     wrapSectionLabels(ttContent);
+                    if (window._flowTrimLabelNewlines) markLabelBrs(ttContent);
                     applyLabelVisibility();
                     ttToggleOrig.textContent = 'Toon gecorrigeerd';
                 } else {
@@ -3503,12 +3528,14 @@ negated bevindingen
                     if (isMain) {
                         _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(ttContent);
+                        if (window._flowTrimLabelNewlines) markLabelBrs(ttContent);
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
                     } else if (pipRefs?.labelsBtn) {
                         pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(targetContent);
+                        if (window._flowTrimLabelNewlines) markLabelBrs(targetContent);
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
                         pipRefs.applyLabels();
                     }
@@ -4066,6 +4093,11 @@ negated bevindingen
                     pipTtContent.querySelectorAll('.tt-section-label').forEach(s => {
                         s.style.display = _pipTtLabelsVisible ? '' : 'none';
                     });
+                    if (window._flowTrimLabelNewlines) {
+                        pipTtContent.querySelectorAll('.tt-label-br').forEach(br => {
+                            br.style.display = _pipTtLabelsVisible ? '' : 'none';
+                        });
+                    }
                     pipTtLabelsBtn.textContent = _pipTtLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
                     pipTtLabelsBtn.classList.toggle('bg-cyan-50', !_pipTtLabelsVisible);
                     pipTtLabelsBtn.classList.toggle('dark:bg-cyan-900/30', !_pipTtLabelsVisible);
@@ -4079,6 +4111,7 @@ negated bevindingen
                         _pipTtResultHTML = pipTtContent.innerHTML;
                         pipTtContent.innerHTML = (_pipTtOrigText || '').replace(/\n/g, '<br>');
                         wrapSectionLabels(pipTtContent);
+                        if (window._flowTrimLabelNewlines) markLabelBrs(pipTtContent);
                         pipTtApplyLabels();
                         pipTtToggle.textContent = 'Toon gecorrigeerd';
                     } else {
