@@ -2638,7 +2638,7 @@ Diagnostische vraagstelling: {diagnostische_vraagstelling}
 INVULREGELS:
 1. Sectie besproken in dictatie → vervang XXX of de inhoud tussen ' ' / " " door de overeenkomstige bevinding; verwijder de aanhalingstekens ' ' en " " ALTIJD uit de output
 2. Sectie NIET besproken → gebruik de standaardtekst (de inhoud tussen ' ' of " ") maar verwijder de aanhalingstekens; heeft het veld geen standaard (XXX), schrijf dan "/"
-3. [ ]-labels → behoud de [ ] haakjes en de label-tekst exact zoals ze staan, op een eigen regel (bv. "[ Botpatroon:]"); schrijf de bijbehorende bevinding op de VOLGENDE regel (niet op dezelfde regel als het label)
+3. [ ]-labels → behoud de [ ] haakjes en de label-tekst exact zoals ze staan, op een eigen regel; schrijf de bijbehorende bevinding op de VOLGENDE regel; een [br] direct na een label is een opmaakmarkering — behoud [br] letterlijk op dezelfde regel als het label (bv. "[ Botpatroon:][br]")
 4. { }-prefix → verwijder de { } haakjes; toon de inhoud enkel als het gekoppelde veld ingevuld werd, anders het volledige fragment weglaten
 5. // commentaren → bevatten extra context over het in te vullen veld; volledig verwijderen uit de output
 6. Neem gedicteerde zinnen LETTERLIJK over en verplaats ze naar het juiste invulveld; verzin GEEN bevindingen die niet in de dictatie staan; herformuleer enkel wanneer dit expliciet vermeld staat bij de // commentaar van het betreffende veld
@@ -2679,7 +2679,8 @@ Controleer actief op de volgende foutcategorieën:
 - Niet-gedefinieerde afkortingen
 
 INSTRUCTIES VOOR UITVOER:
-- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen labels, geen sectietitels, geen context
+- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen sectietitels, geen context
+- Behoud [ ]-labels (bv. "[ Botpatroon:]") en [br]-markeringen letterlijk zoals ze in de ingevoerde tekst staan — verwijder ze NIET
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
 - Markeer elke correctie als: <del>originele tekst</del><ins>gecorrigeerde tekst</ins>
@@ -2687,7 +2688,7 @@ INSTRUCTIES VOOR UITVOER:
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "8";
+            const VERSLAG_CHECK_VERSION = "9";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
@@ -3339,12 +3340,16 @@ negated bevindingen
             // Wrap [Label:] patterns in the rendered HTML so they can be toggled.
             // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
-                // Match [ LABEL:] followed by a <br> and include that <br> inside the span.
-                // This way hiding the span also hides the trailing line break, preventing
-                // blank lines when labels are hidden.
+                // [ LABEL:][br] — the [br] marker means: include the trailing <br> inside
+                // the span so hiding the label also removes the line break (no blank lines).
                 el.innerHTML = el.innerHTML.replace(
-                    /\[([^\]]+:)\](<br\s*\/?>)/g,
+                    /\[([^\]]+:)\]\[br\](<br\s*\/?>)/g,
                     '<span class="tt-section-label">$1$2</span>'
+                );
+                // [ LABEL:] — plain label, no BR attached
+                el.innerHTML = el.innerHTML.replace(
+                    /\[([^\]]+:)\]/g,
+                    '<span class="tt-section-label">$1</span>'
                 );
             }
 

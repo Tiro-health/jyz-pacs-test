@@ -339,6 +339,10 @@
                             <span class="text-slate-400">Label van het invulveld — zichtbaar in de template maar <em>niet</em> in de output.</span>
                         </div>
                         <div class="flex items-start gap-2.5">
+                            <span style="color:#a78bfa" class="flex-shrink-0 font-bold">[br]</span>
+                            <span class="text-slate-400">Regelsprong-markering — direct na een [ ]-label plaatsen zodat de enter samen met het label verborgen wordt (compacte weergave zonder lege regels).</span>
+                        </div>
+                        <div class="flex items-start gap-2.5">
                             <span style="color:#fb923c" class="flex-shrink-0 font-bold">{&nbsp;}</span>
                             <span class="text-slate-400">Conditioneel blok — enkel zichtbaar in de output als het veld effectief ingevuld werd.</span>
                         </div>
@@ -443,10 +447,16 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
 
 //  =  Contextuele / informatieve tekst voor betere en accuratere AI-prompt met betrekking tot het gekoppelde invulveld.
 
-[ ]  =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk in de output — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
+[ ]  =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk op een eigen regel in de output — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
     Voorbeelden:
-      - [ Botpatroon:] 'Normaal'   →   output:  [ Botpatroon:] Normaal
-      - Botpatroon: 'Normaal'      →   output:  - Botpatroon: Normaal
+      - [ Botpatroon:] 'Normaal'       →   output:  [ Botpatroon:]
+                                                     Normaal
+      - Botpatroon: 'Normaal'          →   output:  - Botpatroon: Normaal
+
+[br]  =  Regelsprong-markering — enkel te plaatsen direct na een [ ]-label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen kan worden. De AI behoudt [br] letterlijk op dezelfde regel als het label.
+    Voorbeeld:
+      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:][br]
+                                                     Normaal
 
 { }  =  Maakt duidelijk dat de tekst tussen deze haakjes enkel in het eindresultaat zichtbaar is als het gekoppelde invulveld effectief werd ingevuld. Als het niet besproken werd, is deze niet zichtbaar.`;
 
@@ -691,14 +701,14 @@ XXX` },
               dicom:['echo lever en galblaas'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'ech-bor', name:'ECHO BORSTEN BILATERAAL',    code:'echbor',   modality:'ECHO',
               dicom:['echo borsten bilateraal','echo mammae bilateraal','echo borsten'], deptTemplate:'', userTemplate:'', aiRules:[],
-              textTemplate:`[ WEEFSELTYPERING:]
+              textTemplate:`[ WEEFSELTYPERING:][br]
 - Type XXX // voeg hier één van de drie mogelijkheden in 'a: homogeen vet', 'b: homogeen fibroglandulair weefsel' of 'c: heterogeen fibroglandulair weefsel'
-[ VOORGESCHIEDENIS:]
+[ VOORGESCHIEDENIS:][br]
 "- Geen relevante voorgeschiedenis." // Beschrijf hier eventuele relevante voorgeschiedenis bestaande uit voornamelijk operatieve voorgeschiedenis zoals brede excisie, tumorectomie, mastectomie, okselevidement of sentinel procedure. Eveneens aanwezig operatief materiaal wordt hier besproken.
-[ MASSA'S en ARCHITECTUURVERSTORINGEN:]
+[ MASSA'S en ARCHITECTUURVERSTORINGEN:][br]
 "- Geen verdachte solide of cystische structuren." // Beschrijf hier eventuele solide of cystische structuren zowel van benigne als maligne aard.
 "- Geen focale verstoring van de architectuur." // Beschrijf hier eventuele (secundaire) verstoringen van de architectuur.
-[ LYMFEKLIEREN:]
+[ LYMFEKLIEREN:][br]
 "- Geen verdachte lymfklieren axillair/infraclaviculair." // Beschrijf hier de pathologische lymfeklieren in de oksel (axillair) infraclaviculair of aan de mammaria interna keten.
 
 BESLUIT:
@@ -757,8 +767,18 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
                     et.textTemplate = def.textTemplate;
                     changed = true;
                 }
+                // Force-update templates that use [br] markers if the stored version doesn't have them yet
+                if (def.textTemplate && def.textTemplate.includes('[br]') && et.textTemplate && !et.textTemplate.includes('[br]')) {
+                    et.textTemplate = def.textTemplate;
+                    changed = true;
+                }
             });
             if (changed) saveData();
+            // Update saved textTemplateLogic if it predates [br] support
+            const savedLogic = localStorage.getItem('textTemplateLogic');
+            if (savedLogic && !savedLogic.includes('[br]')) {
+                localStorage.setItem('textTemplateLogic', DEFAULT_TEXT_TEMPLATE_LOGIC);
+            }
         })();
         let currentEditId = null;
         let activeModality = 'ALLE';
@@ -1225,11 +1245,12 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
                 // Single-pass replacement: all patterns matched at once so generated
                 // HTML from one match is never re-processed by a subsequent pattern.
                 left = left.replace(
-                    /XXX|\{[^}]*\}|\[[^\]]*\]|'[^']*'|"[^"]*"/g,
+                    /XXX|\[br\]|\{[^}]*\}|\[[^\]]*\]|'[^']*'|"[^"]*"/g,
                     m => {
-                        if (m === 'XXX')  return '<span style="color:#f472b6">XXX</span>';
-                        if (m[0] === '{') return '<span style="color:#fb923c">' + m + '</span>';
-                        if (m[0] === '[') return '<span style="color:#38bdf8">' + m + '</span>';
+                        if (m === 'XXX')   return '<span style="color:#f472b6">XXX</span>';
+                        if (m === '[br]')  return '<span style="color:#a78bfa">[br]</span>';
+                        if (m[0] === '{')  return '<span style="color:#fb923c">' + m + '</span>';
+                        if (m[0] === '[')  return '<span style="color:#38bdf8">' + m + '</span>';
                         return '<span style="color:#fbbf24">' + m + '</span>';
                     }
                 );
