@@ -2638,7 +2638,7 @@ Diagnostische vraagstelling: {diagnostische_vraagstelling}
 INVULREGELS:
 1. Sectie besproken in dictatie → vervang XXX of de inhoud tussen ' ' / " " door de overeenkomstige bevinding; verwijder de aanhalingstekens ' ' en " " ALTIJD uit de output
 2. Sectie NIET besproken → gebruik de standaardtekst (de inhoud tussen ' ' of " ") maar verwijder de aanhalingstekens; heeft het veld geen standaard (XXX), schrijf dan "/"
-3. [ ]-labels → behoud de [ ] haakjes en de label-tekst exact zoals ze staan, op een eigen regel; schrijf de bijbehorende bevinding op de VOLGENDE regel; een [br] direct na een label is een opmaakmarkering — behoud [br] letterlijk op dezelfde regel als het label (bv. "[ Botpatroon:][br]")
+3. [ ]-labels → behoud de [ ] haakjes en de label-tekst exact zoals ze staan; schrijf de bijbehorende bevinding op DEZELFDE regel als het label (bv. "[ Botpatroon:] Normaal botpatroon."); negeer eventuele [br]-markeringen volledig — die zijn enkel voor het systeem en mogen niet in de output verschijnen
 4. { }-prefix → verwijder de { } haakjes; toon de inhoud enkel als het gekoppelde veld ingevuld werd, anders het volledige fragment weglaten
 5. // commentaren → bevatten extra context over het in te vullen veld; volledig verwijderen uit de output
 6. Neem gedicteerde zinnen LETTERLIJK over en verplaats ze naar het juiste invulveld; verzin GEEN bevindingen die niet in de dictatie staan; herformuleer enkel wanneer dit expliciet vermeld staat bij de // commentaar van het betreffende veld
@@ -2680,7 +2680,7 @@ Controleer actief op de volgende foutcategorieën:
 
 INSTRUCTIES VOOR UITVOER:
 - Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen sectietitels, geen context
-- Behoud [ ]-labels (bv. "[ Botpatroon:]") en [br]-markeringen letterlijk zoals ze in de ingevoerde tekst staan — verwijder ze NIET
+- Behoud [ ]-labels (bv. "[ Botpatroon:]") letterlijk zoals ze in de ingevoerde tekst staan — verwijder ze NIET
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
 - Markeer elke correctie als: <del>originele tekst</del><ins>gecorrigeerde tekst</ins>
@@ -3340,17 +3340,28 @@ negated bevindingen
             // Wrap [Label:] patterns in the rendered HTML so they can be toggled.
             // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
-                // [ LABEL:][br] — the [br] marker means: include the trailing <br> inside
-                // the span so hiding the label also removes the line break (no blank lines).
-                el.innerHTML = el.innerHTML.replace(
-                    /\[([^\]]+:)\]\[br\](<br\s*\/?>)/g,
-                    '<span class="tt-section-label">$1$2</span>'
-                );
-                // [ LABEL:] — plain label, no BR attached
                 el.innerHTML = el.innerHTML.replace(
                     /\[([^\]]+:)\]/g,
                     '<span class="tt-section-label">$1</span>'
                 );
+            }
+
+            function applyCompactBrs(el) {
+                // Read [br]-marked labels from the template definition (not from AI output).
+                // For each matching span, move the immediately following <br> inside the span
+                // so hiding the span also removes that line break.
+                const template = window._flowTextTemplate || '';
+                const compactLabels = new Set();
+                const re = /\[([^\]]+:)\]\[br\]/g;
+                let m;
+                while ((m = re.exec(template)) !== null) compactLabels.add(m[1].trim());
+                if (!compactLabels.size) return;
+                el.querySelectorAll('.tt-section-label').forEach(span => {
+                    if (compactLabels.has(span.textContent.trim())) {
+                        const next = span.nextSibling;
+                        if (next?.nodeName === 'BR') span.appendChild(next);
+                    }
+                });
             }
 
             function applyLabelVisibility() {
@@ -3374,6 +3385,7 @@ negated bevindingen
                     _ttResultHTML = ttContent.innerHTML;
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
                     wrapSectionLabels(ttContent);
+                    applyCompactBrs(ttContent);
                     applyLabelVisibility();
                     ttToggleOrig.textContent = 'Toon gecorrigeerd';
                 } else {
@@ -3502,12 +3514,14 @@ negated bevindingen
                     if (isMain) {
                         _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(ttContent);
+                        applyCompactBrs(ttContent);
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
                     } else if (pipRefs?.labelsBtn) {
                         pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(targetContent);
+                        applyCompactBrs(targetContent);
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
                         pipRefs.applyLabels();
                     }
@@ -4078,6 +4092,7 @@ negated bevindingen
                         _pipTtResultHTML = pipTtContent.innerHTML;
                         pipTtContent.innerHTML = (_pipTtOrigText || '').replace(/\n/g, '<br>');
                         wrapSectionLabels(pipTtContent);
+                        applyCompactBrs(pipTtContent);
                         pipTtApplyLabels();
                         pipTtToggle.textContent = 'Toon gecorrigeerd';
                     } else {

@@ -447,16 +447,15 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
 
 //  =  Contextuele / informatieve tekst voor betere en accuratere AI-prompt met betrekking tot het gekoppelde invulveld.
 
-[ ]  =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk op een eigen regel in de output — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
+[ ]  =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk in de output op DEZELFDE regel als de bevinding — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
     Voorbeelden:
-      - [ Botpatroon:] 'Normaal'       →   output:  [ Botpatroon:]
-                                                     Normaal
+      - [ Botpatroon:] 'Normaal'       →   output:  [ Botpatroon:] Normaal
       - Botpatroon: 'Normaal'          →   output:  - Botpatroon: Normaal
 
-[br]  =  Regelsprong-markering — enkel te plaatsen direct na een [ ]-label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen kan worden. De AI behoudt [br] letterlijk op dezelfde regel als het label.
+[br]  =  Systeem-markering — enkel te plaatsen direct na een [ ]-label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen moet worden (compact weergave). De AI negeert [br] volledig — het wordt nooit in de output geschreven. Het systeem leest [br] rechtstreeks uit de template en verwerkt het via regex.
     Voorbeeld:
-      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:][br]
-                                                     Normaal
+      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:] Normaal
+                                           (systeem verbergt de enter bij het verbergen van het label)
 
 { }  =  Maakt duidelijk dat de tekst tussen deze haakjes enkel in het eindresultaat zichtbaar is als het gekoppelde invulveld effectief werd ingevuld. Als het niet besproken werd, is deze niet zichtbaar.`;
 
