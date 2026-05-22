@@ -715,6 +715,35 @@ Conclusie weefseltypering: XXX. // neem hier de hoogste score van de weefseltype
 XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
 Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
+            { id:'ech-sch', name:'ECHO SCHOUDER',               code:'echsch',   modality:'ECHO',
+              dicom:['echo schouder links','echo schouder rechts','echo schouder'], deptTemplate:'', userTemplate:'', aiRules:[],
+              textTemplate:`[ AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
+"- Normaal voorkomen van het AC-gewricht." // Beschrijf hier de bevindingen van het AC gewricht inclusief opzetting van het kapsel, degeneratie van het AC gewricht met subchondrale sclerose en osteofytose vorming en eventuele hydrops of Geyser sign.
+"- Geen argumenten voor subacromiale impingement." // Beschrijf hier de bevindingen met betrekking van subacromiale impingement tijdens dynamisch echografische controle.
+
+[ ROTATOR INTERVAL:][br]
+"- Normaal voorkomen van het coracohumerale ligament, geen argumenten voor anterosuperieure impingement." // Beschrijf hier het coracohumerale ligament (CHL), het superieure glenohumerale ligament (sGHL) en eventuele tekenen van anterosuperieure impingement.
+"- Normaal voorkomen van de rotator cable, geen subluxatie van de lange bicepspees." // Bespreek hier de rotator cable en eventuele subluxatie van de lange biceps pees of aanwezigheid van pulley letsels.
+"- Normaal voorkomen van de lange bicepspees, geen toegenomen vocht in de peesschede." // Bespreek hier de lange bicepspees in kader van tendinose van deze pees, eventuele vocht in de peesschede van de lange biceps pees of eventuele scheurvormingen.
+
+[ ROTATOR CUFF, SPIERBUIKEN en BURSA SUBACROMIALIS:][br]
+"- Normaal voorkomen van de rotatorcuff pezen." // Bespreek hier de rotator cuff pezen (supraspinatuspees, infraspinatuspees, subscapularispees, teres minor) met eventuele tendinose en eventuele scheurvormingen of fraying van de pezen. Bespreek hier ook eventuele inliggend verkalkingen en het type.
+"- Normaal voorkomen van de bursa subacromialis." // Bespreek hier de bursa subacromialis met eventuele opzetting of inflammatie dan wel bursitis alsook eventuele inliggende componenten.
+"- Normaal voorkomen van de rotatorcuff spierbuiken." // Bespreek hier de spierbuiken met eventuele spierige letsels alsook de trofische en lipomateuze status (lipoatrofie) van de spierbuiken.
+
+[ POSTERIEURE LABRUM, POSTERIEURE GLENOHUMERALE GEWRICHT en GLENOID NOTCH:][br]
+"- Normaal voorkomen van het posterieure labrum, geen labrale cyste." // Bespreek hier bevindingen van het labrum waaronder degeneratieve aantastingen en cyste vorming.
+"- Geen hydrops aan het posterieure glenohumerale gewricht." // Bespreek hier een eventuele hydrops van het glenohumerale gewricht.
+"- Normaal voorkomen van de notch." // Bespreek hier de glenoidale notch. Als deze wordt aangetast door een labrale cyste mag je ook hier de labrale cyste bespreken.
+
+[ AXILLAIRE POUCH / KAPSEL (IGHL):][br]
+"- Normale axillaire pouch, geen argumenten voor adhesieve capsulitis." // Bespreek hier de axillaire pouch of het inferieure glenohumerale ligament (iGHL), bespreek de verdikking van dit ligament in kader van adhesieve of constrictieve capsulitis.
+
+[ ANDERE:][br]
+- "/" // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
+
+BESLUIT:
+XXX` },
             // ── MAMMO ────────────────────────────────────────────────────────────
             { id:'mam-scr', name:'SCREENINGSMAMMOGRAFIE',      code:'mamscr',   modality:'MAMMO',
               dicom:['screeningsmammografie','mammografie 2 borsten','mammo beide borsten hoog risico','SCREENING KOMEN'], deptTemplate:'', userTemplate:'', aiRules:[] },
