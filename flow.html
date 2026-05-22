@@ -381,10 +381,7 @@
                         <input type="checkbox" id="tt-editor-labels-toggle" class="w-3.5 h-3.5 rounded accent-cyan-500">
                         <span class="text-[11px] text-slate-400">Labels standaard tonen</span>
                     </label>
-                    <label class="flex items-center gap-2 cursor-pointer select-none" title="Bij verborgen labels ook de tussenliggende enters weghalen">
-                        <input type="checkbox" id="tt-editor-trim-toggle" class="w-3.5 h-3.5 rounded accent-cyan-500">
-                        <span class="text-[11px] text-slate-400">Compact bij verbergen</span>
-                    </label>
+
                 </div>
                 <div class="flex items-center gap-3">
                     <button onclick="closeTtEditor()" class="px-4 py-2 text-sm font-medium rounded-md border border-slate-600 hover:bg-slate-700 text-neutral-300 transition-colors">Annuleer</button>
@@ -693,16 +690,16 @@ XXX` },
             { id:'ech-lev', name:'ECHO LEVER EN GALBLAAS',     code:'echlev',   modality:'ECHO',
               dicom:['echo lever en galblaas'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'ech-bor', name:'ECHO BORSTEN BILATERAAL',    code:'echbor',   modality:'ECHO',
-              dicom:['echo borsten bilateraal','echo mammae bilateraal','echo borsten'], deptTemplate:'', userTemplate:'', aiRules:[], trimLabelNewlines: true,
-              textTemplate:`[ WEEFSELTYPERING:]
-- Type XXX // voeg hier één van de drie mogelijkheden in 'a: homogeen vet', 'b: homogeen fibroglandulair weefsel' of 'c: heterogeen fibroglandulair weefsel'
-[ VOORGESCHIEDENIS:]
-"- Geen relevante voorgeschiedenis." // Beschrijf hier eventuele relevante voorgeschiedenis bestaande uit voornamelijk operatieve voorgeschiedenis zoals brede excisie, tumorectomie, mastectomie, okselevidement of sentinel procedure. Eveneens aanwezig operatief materiaal wordt hier besproken.
-[ MASSA'S en ARCHITECTUURVERSTORINGEN:]
-"- Geen verdachte solide of cystische structuren." // Beschrijf hier eventuele solide of cystische structuren zowel van benigne als maligne aard.
+              dicom:['echo borsten bilateraal','echo mammae bilateraal','echo borsten'], deptTemplate:'', userTemplate:'', aiRules:[],
+              textTemplate:`[ WEEFSELTYPERING:
+]- Type XXX // voeg hier één van de drie mogelijkheden in 'a: homogeen vet', 'b: homogeen fibroglandulair weefsel' of 'c: heterogeen fibroglandulair weefsel'
+[ VOORGESCHIEDENIS:
+]"- Geen relevante voorgeschiedenis." // Beschrijf hier eventuele relevante voorgeschiedenis bestaande uit voornamelijk operatieve voorgeschiedenis zoals brede excisie, tumorectomie, mastectomie, okselevidement of sentinel procedure. Eveneens aanwezig operatief materiaal wordt hier besproken.
+[ MASSA'S en ARCHITECTUURVERSTORINGEN:
+]"- Geen verdachte solide of cystische structuren." // Beschrijf hier eventuele solide of cystische structuren zowel van benigne als maligne aard.
 "- Geen focale verstoring van de architectuur." // Beschrijf hier eventuele (secundaire) verstoringen van de architectuur.
-[ LYMFEKLIEREN:]
-"- Geen verdachte lymfklieren axillair/infraclaviculair." // Beschrijf hier de pathologische lymfeklieren in de oksel (axillair) infraclaviculair of aan de mammaria interna keten.
+[ LYMFEKLIEREN:
+]"- Geen verdachte lymfklieren axillair/infraclaviculair." // Beschrijf hier de pathologische lymfeklieren in de oksel (axillair) infraclaviculair of aan de mammaria interna keten.
 
 BESLUIT:
 Conclusie weefseltypering: XXX. // neem hier de hoogste score van de weefseltypering over D > A.
@@ -907,10 +904,7 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
           <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible === true ? 'checked' : ''}>
           <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
         </label>
-        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Bij verborgen labels ook de tussenliggende enters weghalen (compact)">
-          <input type="checkbox" class="trim-newlines-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.trimLabelNewlines === true ? 'checked' : ''}>
-          <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Compact</span>
-        </label>
+
       </div>
     </div>
 
@@ -1165,7 +1159,6 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
                 aiRules:       editAiRules,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
-                trimLabelNewlines:    _existingForSave?.trimLabelNewlines === true,
             };
 
             if (currentEditId === '__new__') {
@@ -1256,7 +1249,6 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
             const ta = document.getElementById('tt-editor-input');
             ta.value = et.textTemplate || '';
             document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
-            document.getElementById('tt-editor-trim-toggle').checked = et.trimLabelNewlines === true;
             syncTtHighlight();
             ta.focus();
         };
@@ -1275,7 +1267,6 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
             if (et) {
                 et.textTemplate = val;
                 et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
-                et.trimLabelNewlines    = document.getElementById('tt-editor-trim-toggle').checked;
             }
             // 2. Save to localStorage
             saveData();
@@ -1326,14 +1317,11 @@ Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocoll
         // Labels default-visible toggle per exam type (delegated)
         document.getElementById('cards-container').addEventListener('change', e => {
             e.stopPropagation();
-            const labCb  = e.target.closest('.labels-default-toggle');
-            const trimCb = e.target.closest('.trim-newlines-toggle');
-            const cb = labCb || trimCb;
-            if (!cb) return;
-            const idx = state.examTypes.findIndex(t => t.id === cb.dataset.id);
+            const labCb = e.target.closest('.labels-default-toggle');
+            if (!labCb) return;
+            const idx = state.examTypes.findIndex(t => t.id === labCb.dataset.id);
             if (idx < 0) return;
-            if (labCb)  state.examTypes[idx].labelsDefaultVisible = cb.checked;
-            if (trimCb) state.examTypes[idx].trimLabelNewlines = cb.checked;
+            state.examTypes[idx].labelsDefaultVisible = labCb.checked;
             saveData();
         });
 
