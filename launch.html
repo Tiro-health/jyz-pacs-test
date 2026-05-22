@@ -3339,11 +3339,12 @@ negated bevindingen
             // Wrap [Label:] patterns in the rendered HTML so they can be toggled.
             // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
-                // New format: [ LABEL:\n]content — the <br> is inside the span so hiding it
-                // removes the label line including its trailing line break automatically.
+                // Match [ LABEL:] followed by a <br> and include that <br> inside the span.
+                // This way hiding the span also hides the trailing line break, preventing
+                // blank lines when labels are hidden.
                 el.innerHTML = el.innerHTML.replace(
-                    /\[([^\]]+:)<br\s*\/?>\]/g,
-                    '<span class="tt-section-label">$1<br></span>'
+                    /\[([^\]]+:)\](<br\s*\/?>)/g,
+                    '<span class="tt-section-label">$1$2</span>'
                 );
             }
 
@@ -3492,7 +3493,7 @@ negated bevindingen
                     // Wrap [Label:] patterns and show toggle button if any labels are present.
                     // Use backupPlainText (phase 1 output) to detect labels so the button shows
                     // even when the verslag check (phase 2) strips them from the final output.
-                    const hasLabels = /\[[^\]]+:/.test(backupPlainText);
+                    const hasLabels = /\[[^\]]+:\]/.test(backupPlainText);
                     if (isMain) {
                         _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(ttContent);
