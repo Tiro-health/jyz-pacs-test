@@ -3348,8 +3348,9 @@ negated bevindingen
 
             function applyCompactBrs(el) {
                 // Read [br]-marked labels from the template definition (not from AI output).
-                // For each matching span, move the immediately following <br> inside the span
-                // so hiding the span also removes that line break.
+                // Ensures the label span ends with a <br> so the line break is hidden
+                // together with the label. If the AI put content on the same line
+                // (no BR sibling), we insert one inside the span ourselves.
                 const template = window._flowTextTemplate || '';
                 const compactLabels = new Set();
                 const re = /\[([^\]]+:)\]\[br\]/g;
@@ -3359,7 +3360,11 @@ negated bevindingen
                 el.querySelectorAll('.tt-section-label').forEach(span => {
                     if (compactLabels.has(span.textContent.trim())) {
                         const next = span.nextSibling;
-                        if (next?.nodeName === 'BR') span.appendChild(next);
+                        if (next?.nodeName === 'BR') {
+                            span.appendChild(next); // move existing BR inside
+                        } else {
+                            span.appendChild(el.ownerDocument.createElement('br')); // insert BR inside
+                        }
                     }
                 });
             }
