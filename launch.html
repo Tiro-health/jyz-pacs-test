@@ -3496,18 +3496,19 @@ negated bevindingen
                     targetActions.style.display = 'flex';
                     // Only show Toon origineel when verslag check ran (two versions to compare)
                     targetToggle.style.display = (vcAfterAutofillEnabled && backupPlainText) ? 'inline-flex' : 'none';
-                    // Wrap [Label:] patterns and show toggle button if any labels are present
+                    // Wrap [Label:] patterns and show toggle button if any labels are present.
+                    // Use backupPlainText (phase 1 output) to detect labels so the button shows
+                    // even when the verslag check (phase 2) strips them from the final output.
+                    const hasLabels = /\[[^\]]+:\]/.test(backupPlainText);
                     if (isMain) {
                         _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(ttContent);
-                        const hasLabels = !!ttContent.querySelector('.tt-section-label');
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
                     } else if (pipRefs?.labelsBtn) {
                         pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(targetContent);
-                        const hasLabels = !!targetContent.querySelector('.tt-section-label');
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
                         pipRefs.applyLabels();
                     }

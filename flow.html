@@ -686,6 +686,23 @@ XXX` },
               dicom:['echo klein bekken man'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'ech-lev', name:'ECHO LEVER EN GALBLAAS',     code:'echlev',   modality:'ECHO',
               dicom:['echo lever en galblaas'], deptTemplate:'', userTemplate:'', aiRules:[] },
+            { id:'ech-bor', name:'ECHO BORSTEN BILATERAAL',    code:'echbor',   modality:'ECHO',
+              dicom:['echo borsten bilateraal','echo mammae bilateraal','echo borsten'], deptTemplate:'', userTemplate:'', aiRules:[],
+              textTemplate:`[ WEEFSELTYPERING:]
+- Type XXX // voeg hier één van de drie mogelijkheden in 'a: homogeen vet', 'b: homogeen fibroglandulair weefsel' of 'c: heterogeen fibroglandulair weefsel'
+[ VOORGESCHIEDENIS:]
+"- Geen relevante voorgeschiedenis." // Beschrijf hier eventuele relevante voorgeschiedenis bestaande uit voornamelijk operatieve voorgeschiedenis zoals brede excisie, tumorectomie, mastectomie, okselevidement of sentinel procedure. Eveneens aanwezig operatief materiaal wordt hier besproken.
+[ MASSA'S en ARCHITECTUURVERSTORINGEN:]
+"- Geen verdachte solide of cystische structuren." // Beschrijf hier eventuele solide of cystische structuren zowel van benigne als maligne aard.
+"- Geen focale verstoring van de architectuur." // Beschrijf hier eventuele (secundaire) verstoringen van de architectuur.
+[ LYMFEKLIEREN:]
+"- Geen verdachte lymfklieren axillair/infraclaviculair." // Beschrijf hier de pathologische lymfeklieren in de oksel (axillair) infraclaviculair of aan de mammaria interna keten.
+
+BESLUIT:
+Conclusie weefseltypering: XXX. // neem hier de hoogste score van de weefseltypering over D > A.
+XXX // Maak hier een besluit van de bevindingen.
+BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
+Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
             // ── MAMMO ────────────────────────────────────────────────────────────
             { id:'mam-scr', name:'SCREENINGSMAMMOGRAFIE',      code:'mamscr',   modality:'MAMMO',
               dicom:['screeningsmammografie','mammografie 2 borsten','mammo beide borsten hoog risico','SCREENING KOMEN'], deptTemplate:'', userTemplate:'', aiRules:[] },
@@ -714,12 +731,17 @@ XXX` },
         // ── App state ────────────────────────────────────────────────────────────
         let state = loadData();
 
-        // Migrate: sync deptTemplate, userTemplate and textTemplate from DEFAULT_EXAM_TYPES
+        // Migrate: sync templates from DEFAULT_EXAM_TYPES and add new entries
         (function migrate() {
             let changed = false;
             DEFAULT_EXAM_TYPES.forEach(def => {
                 const et = state.examTypes.find(t => t.id === def.id);
-                if (!et) return;
+                if (!et) {
+                    // New default exam type not yet in stored state — add it
+                    state.examTypes.push(JSON.parse(JSON.stringify(def)));
+                    changed = true;
+                    return;
+                }
                 if (def.deptTemplate && et.deptTemplate !== def.deptTemplate) {
                     et.deptTemplate = def.deptTemplate;
                     changed = true;
