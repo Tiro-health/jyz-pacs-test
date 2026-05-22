@@ -716,7 +716,7 @@ XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
 Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
             { id:'ech-sch', name:'ECHO SCHOUDER',               code:'echsch',   modality:'ECHO',
-              dicom:['echo schouder links','echo schouder rechts','echo schouder'], deptTemplate:'', userTemplate:'', aiRules:[],
+              dicom:['echo schouder links','echo schouder rechts','echo schouder'], deptTemplate:'', userTemplate:'', aiRules:[], labelsDefaultVisible: true,
               textTemplate:`[ AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
 "- Normaal voorkomen van het AC-gewricht." // Beschrijf hier de bevindingen van het AC gewricht inclusief opzetting van het kapsel, degeneratie van het AC gewricht met subchondrale sclerose en osteofytose vorming en eventuele hydrops of Geyser sign.
 "- Geen argumenten voor subacromiale impingement." // Beschrijf hier de bevindingen met betrekking van subacromiale impingement tijdens dynamisch echografische controle.
@@ -798,6 +798,11 @@ XXX` },
                 // Force-update templates that use [br] markers if the stored version doesn't have them yet
                 if (def.textTemplate && def.textTemplate.includes('[br]') && et.textTemplate && !et.textTemplate.includes('[br]')) {
                     et.textTemplate = def.textTemplate;
+                    changed = true;
+                }
+                // Sync labelsDefaultVisible if the def explicitly sets it true and stored doesn't
+                if (def.labelsDefaultVisible === true && et.labelsDefaultVisible !== true) {
+                    et.labelsDefaultVisible = true;
                     changed = true;
                 }
             });
