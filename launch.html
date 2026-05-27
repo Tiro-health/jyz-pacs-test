@@ -3400,9 +3400,7 @@ negated bevindingen
                 }
             });
             ttCopy.addEventListener('click', () => {
-                navigator.clipboard.writeText(
-                    _ttShowingOrig ? (_ttOriginalText || '') : ttContent.innerText
-                ).catch(() => {});
+                navigator.clipboard.writeText(ttContent.innerText).catch(() => {});
             });
             document.getElementById('tt-close').addEventListener('click', () => {
                 _ttAbort?.abort();
@@ -4116,7 +4114,7 @@ negated bevindingen
 
                 const pipTtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipCopy(_pipTtShowingOrig ? (_pipTtOrigText || '') : (pipTtContent.innerText || ''));
+                    pipCopy(pipTtContent.innerText || '');
                     const orig = btn.textContent;
                     btn.textContent = 'Gekopieerd ✓';
                     btn.style.color = '#16a34a';
