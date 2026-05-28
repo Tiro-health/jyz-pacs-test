@@ -2009,8 +2009,13 @@
                 }
                 return p;
             }
-            function openChatGPT(prompt) {
-                window.open("https://chatgpt.com/?q=" + encodeURIComponent(prompt), "_blank", "noopener,noreferrer");
+            function noApiKeyHtml(prompt) {
+                return `<div class="space-y-3 py-1">
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400">Je moet een API toevoegen om deze werking te kunnen uitvoeren.</p>
+                    <p class="text-sm text-neutral-500 dark:text-neutral-400">Eventueel kan u een voorbeeld prompt zien door op de ChatGPT knop te duwen.</p>
+                    <a href="https://chatgpt.com/?q=${encodeURIComponent(prompt)}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md bg-[#10a37f] hover:bg-[#0d8c6d] text-white transition-colors cursor-pointer">ChatGPT</a>
+                </div>`;
             }
 
             const GEMINI_SYSTEM = "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <del> voor verwijderde tekst, <ins> voor ingevoegde/gecorrigeerde tekst. Combineer tags waar nodig.";
@@ -2408,7 +2413,9 @@
                         else if (e.name !== "AbortError") rejectGeminiModal(e.message);
                     }
                 } else {
-                    openChatGPT(prompt);
+                    openGeminiModal("Geen API-sleutel");
+                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                    geminiContent.innerHTML = noApiKeyHtml(prompt);
                 }
             });
 
@@ -2567,7 +2574,9 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                         else if (e.name !== "AbortError") rejectGeminiModal(e.message);
                     }
                 } else {
-                    openChatGPT(prompt);
+                    openGeminiModal("Geen API-sleutel");
+                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                    geminiContent.innerHTML = noApiKeyHtml(prompt);
                 }
             }
 
@@ -2808,7 +2817,9 @@ INSTRUCTIES VOOR UITVOER:
                         else if (e.name !== "AbortError") rejectGeminiModal(e.message);
                     }
                 } else {
-                    openChatGPT(prompt);
+                    openGeminiModal("Geen API-sleutel");
+                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                    geminiContent.innerHTML = noApiKeyHtml(prompt);
                 }
             }
 
@@ -3309,7 +3320,9 @@ negated bevindingen
                         if (e.name !== "AbortError") showSnomedError(e.message);
                     }
                 } else {
-                    openChatGPT(prompt);
+                    openGeminiModal("Geen API-sleutel");
+                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
+                    geminiContent.innerHTML = noApiKeyHtml(prompt);
                 }
             }
 
@@ -3431,7 +3444,21 @@ negated bevindingen
                     text_template: window._flowTextTemplate,
                     text_template_logic: logic,
                 });
-                if (!GEMINI_API_KEY) { openChatGPT(backupPrompt); return; }
+                if (!GEMINI_API_KEY) {
+                    if (pipRefs) {
+                        pipRefs.panel.style.display = '';
+                        pipRefs.status.innerHTML = '';
+                        pipRefs.content.innerHTML = noApiKeyHtml(backupPrompt);
+                        pipRefs.actions.style.display = 'none';
+                    } else {
+                        hideTemplatePreview();
+                        ttResultPanel.classList.remove('hidden');
+                        ttStatus.innerHTML = '';
+                        ttContent.innerHTML = noApiKeyHtml(backupPrompt);
+                        ttActions.style.display = 'none';
+                    }
+                    return;
+                }
 
                 // Resolve target elements (main page or PiP)
                 const isMain = !pipRefs;
@@ -3911,7 +3938,7 @@ negated bevindingen
                             }
                         } else {
                             trStatus.textContent = '';
-                            openChatGPT(prompt);
+                            trContent.innerHTML = noApiKeyHtml(prompt);
                         }
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
