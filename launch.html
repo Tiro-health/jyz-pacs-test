@@ -3247,12 +3247,56 @@ negated bevindingen
                 banner.classList.remove("hidden");
             }
 
-            // ── SNOMED CT concept lookup: probeer tx.fhir.org (HL7 FHIR) daarna Snowstorm ──
+            // ── Lokale SNOMED CT referentie (snomed-radiology.json) ──────────────────────
+            let _snomedIndex = null;   // geladen bij eerste gebruik
+
+            async function loadSnomedIndex() {
+                if (_snomedIndex) return _snomedIndex;
+                try {
+                    const r = await fetch('./snomed-radiology.json');
+                    if (!r.ok) return (_snomedIndex = []);
+                    const data = await r.json();
+                    _snomedIndex = data.concepts || [];
+                } catch {
+                    _snomedIndex = [];
+                }
+                return _snomedIndex;
+            }
+
+            // Zoek in de lokale index: exact match eerst, dan case-insensitive prefix, dan bevat.
+            function localSnomedLookup(index, term) {
+                const q = term.toLowerCase().trim();
+                if (!q) return null;
+                // 1. exact
+                let hit = index.find(c => c.term.toLowerCase() === q);
+                if (hit) return hit;
+                // 2. term begint met zoekterm (woord-grens)
+                hit = index.find(c => c.term.toLowerCase().startsWith(q));
+                if (hit) return hit;
+                // 3. zoekterm is bevat in term
+                hit = index.find(c => c.term.toLowerCase().includes(q));
+                if (hit) return hit;
+                // 4. alle woorden van de zoekterm komen voor in de term
+                const words = q.split(/\s+/).filter(Boolean);
+                if (words.length > 1) {
+                    hit = index.find(c => words.every(w => c.term.toLowerCase().includes(w)));
+                    if (hit) return hit;
+                }
+                return null;
+            }
+
+            // ── SNOMED CT concept lookup: lokale index → tx.fhir.org → Snowstorm ──────────
             async function searchSnomedConcept(term) {
+                // 1. Probeer lokale referentielijst (snomed-radiology.json)
+                const index = await loadSnomedIndex();
+                if (index.length) {
+                    const local = localSnomedLookup(index, term);
+                    if (local) return { code: local.id, term: local.term };
+                }
+
+                // 2. Fallback naar externe API (vereist internet + CORS-toegang)
                 const encoded = encodeURIComponent(term);
-                // Primair: HL7 publieke FHIR terminology server (open CORS, geen auth)
                 const fhirUrl = `https://tx.fhir.org/r4/ValueSet/$expand?url=http://snomed.info/sct%3Ffhir_vs&filter=${encoded}&count=3`;
-                // Fallback: Snowstorm browser-API (kan geblokkeerd zijn door WAF)
                 const snowUrl = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/MAIN/concepts?term=${encoded}&activeFilter=true&limit=3`;
 
                 for (const [url, isFhir] of [[fhirUrl, true], [snowUrl, false]]) {
