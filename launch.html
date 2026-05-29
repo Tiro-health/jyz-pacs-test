@@ -3247,24 +3247,40 @@ negated bevindingen
                 banner.classList.remove("hidden");
             }
 
-            // ── Snowstorm API: zoek een concept op naam, geeft { code, term } terug ──
+            // ── SNOMED CT concept lookup: probeer tx.fhir.org (HL7 FHIR) daarna Snowstorm ──
             async function searchSnomedConcept(term) {
-                const url = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/MAIN/concepts?term=${encodeURIComponent(term)}&activeFilter=true&limit=3`;
-                try {
-                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-                    if (!res.ok) return null;
-                    const data = await res.json();
-                    const hit = data.items?.[0];
-                    if (!hit) return null;
-                    // pt = preferred term (zonder type-qualifier), fsn als fallback
-                    const label = hit.pt?.term || hit.fsn?.term?.replace(/\s*\([^)]+\)\s*$/, '').trim() || term;
-                    return { code: hit.conceptId, term: label };
-                } catch {
-                    return null;  // netwerk/CORS-fout → concept weglaten
+                const encoded = encodeURIComponent(term);
+                // Primair: HL7 publieke FHIR terminology server (open CORS, geen auth)
+                const fhirUrl = `https://tx.fhir.org/r4/ValueSet/$expand?url=http://snomed.info/sct%3Ffhir_vs&filter=${encoded}&count=3`;
+                // Fallback: Snowstorm browser-API (kan geblokkeerd zijn door WAF)
+                const snowUrl = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/MAIN/concepts?term=${encoded}&activeFilter=true&limit=3`;
+
+                for (const [url, isFhir] of [[fhirUrl, true], [snowUrl, false]]) {
+                    try {
+                        const res = await fetch(url, {
+                            headers: { Accept: isFhir ? 'application/fhir+json' : 'application/json' }
+                        });
+                        if (!res.ok) continue;
+                        const data = await res.json();
+                        if (isFhir) {
+                            const hit = data.expansion?.contains?.[0];
+                            if (!hit) continue;
+                            const label = hit.display?.replace(/\s*\([^)]+\)\s*$/, '').trim() || term;
+                            return { code: hit.code, term: label };
+                        } else {
+                            const hit = data.items?.[0];
+                            if (!hit) continue;
+                            const label = hit.pt?.term || hit.fsn?.term?.replace(/\s*\([^)]+\)\s*$/, '').trim() || term;
+                            return { code: hit.conceptId, term: label };
+                        }
+                    } catch {
+                        continue;
+                    }
                 }
+                return null;
             }
 
-            // Zet AI-conceptnamen om naar echte SNOMED CT codes via Snowstorm zoekopdrachten
+            // Zet AI-conceptnamen om naar echte SNOMED CT codes
             const SNOMED_SECTION_HEADERS = new Set(['hoofddiagnose', 'bijdiagnose', 'negated bevindingen']);
 
             async function resolveSnomedConcepts(rawText) {
@@ -3280,7 +3296,7 @@ negated bevindingen
                 );
                 const resultMap = new Map(results);
 
-                // Bouw de uitvoer op
+                // Bouw de uitvoer op — concepten zonder code worden alsnog opgenomen (naam zonder code)
                 const notFound = [];
                 const outLines = [];
                 for (const line of lines) {
@@ -3289,8 +3305,12 @@ negated bevindingen
                     if (lower === 'bijdiagnose')        { outLines.push('<b>bijdiagnose</b>');        continue; }
                     if (lower === 'negated bevindingen') { outLines.push('<b>negated bevindingen</b>'); continue; }
                     const hit = resultMap.get(line);
-                    if (hit) outLines.push(`${hit.code} (${hit.term})`);
-                    else notFound.push(line);
+                    if (hit) {
+                        outLines.push(`${hit.code} (${hit.term})`);
+                    } else {
+                        outLines.push(line);  // geen code gevonden, maar naam nog steeds invullen
+                        notFound.push(line);
+                    }
                 }
 
                 return { resolvedText: outLines.join('\n'), notFound };
@@ -3309,12 +3329,12 @@ negated bevindingen
                     document.getElementById("snomed-error-banner").classList.add("hidden");
                     try {
                         const raw = await callGemini(getModel('geminiModelSnomed'), prompt);
-                        showSnomedInfo('SNOMED CT: codes opzoeken via Snowstorm…');
+                        showSnomedInfo('SNOMED CT: codes opzoeken…');
                         const { resolvedText, notFound } = await resolveSnomedConcepts(raw);
                         document.getElementById("snomed-error-banner").classList.add("hidden");
                         parseSnomedResult(resolvedText);
                         if (notFound.length) {
-                            showSnomedError(`${notFound.length} concept(en) niet gevonden in SNOMED CT: ${notFound.join(', ')}`);
+                            showSnomedError(`${notFound.length} concept(en) zonder SNOMED CT-code ingevuld (controleer manueel): ${notFound.join(', ')}`);
                         }
                     } catch (e) {
                         if (e.name !== "AbortError") showSnomedError(e.message);
