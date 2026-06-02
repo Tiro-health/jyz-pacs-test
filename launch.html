@@ -660,6 +660,24 @@
                         <span id="snomed-error-text" class="flex-1"></span>
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
+                    <!-- Dragon Medical One dictation field — standard <textarea> in light DOM so
+                         DMO's browser extension can detect, anchor and use Full Text Control.
+                         Kept in sync with tiro-magic-clipboard via JS below. -->
+                    <label id="dmo-label" for="dmo-dictation" style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">Dictatie</label>
+                    <textarea
+                        id="dmo-dictation"
+                        name="dictation"
+                        aria-labelledby="dmo-label"
+                        autocomplete="off"
+                        autocorrect="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        data-lpignore="true"
+                        placeholder="Dicteer hier via Dragon Medical One…"
+                        rows="5"
+                        class="w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed mb-2"
+                        style="overflow:hidden"
+                    ></textarea>
                     <tiro-magic-clipboard
                         for="report-form"
                         dictation-language="nl"
@@ -2368,14 +2386,44 @@
                 localStorage.setItem("dictationActionVersion", TRANSLATE_PROMPT_VERSION);
             });
 
+            // Dragon Medical One dictation textarea (light DOM — DMO can see and anchor to it)
+            const dmoTextarea = document.getElementById('dmo-dictation');
+            const _dmoAutoGrow = () => {
+                dmoTextarea.style.height = 'auto';
+                dmoTextarea.style.height = dmoTextarea.scrollHeight + 'px';
+            };
+
             // Cache dictation text via input events that bubble up (composed) through shadow DOM.
             // composedPath()[0] gives the original source element for open shadow DOMs.
             let latestDictationText = "";
+            let _dmoSyncing = false; // prevent feedback loops
+
+            // Dragon types into dmoTextarea → push to tiro-magic-clipboard + cache
+            dmoTextarea.addEventListener('input', () => {
+                _dmoAutoGrow();
+                latestDictationText = dmoTextarea.value;
+                if (_dmoSyncing) return;
+                _dmoSyncing = true;
+                const shadowEl = clipboard.shadowRoot?.querySelector(
+                    "textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']"
+                );
+                if (shadowEl) {
+                    if ("value" in shadowEl) setNativeValue(shadowEl, dmoTextarea.value);
+                    else { shadowEl.innerText = dmoTextarea.value; shadowEl.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true })); }
+                }
+                _dmoSyncing = false;
+            });
+
             clipboard.addEventListener("input", (e) => {
                 const path = e.composedPath?.() ?? [];
                 const src = path[0];
                 if (src && src !== clipboard && "value" in src) {
                     latestDictationText = src.value;
+                    // Keep Dragon textarea in sync when user types in the clipboard component
+                    if (!_dmoSyncing && dmoTextarea.value !== src.value) {
+                        dmoTextarea.value = src.value;
+                        _dmoAutoGrow();
+                    }
                 }
             }, { capture: true });
 
@@ -2436,16 +2484,18 @@
             }
 
             function setDictationText(text) {
-                // Try light DOM first, then shadow DOM
-                const el = clipboard.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']")
-                    || clipboard.shadowRoot?.querySelector("textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']");
+                // Keep Dragon textarea in sync
+                if (dmoTextarea && dmoTextarea.value !== text) {
+                    dmoTextarea.value = text;
+                    _dmoAutoGrow();
+                }
+                // Also push into the shadow DOM component
+                const el = clipboard.shadowRoot?.querySelector(
+                    "textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']"
+                );
                 if (el) {
-                    if ("value" in el) {
-                        setNativeValue(el, text);
-                    } else {
-                        el.innerText = text;
-                        el.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true }));
-                    }
+                    if ("value" in el) setNativeValue(el, text);
+                    else { el.innerText = text; el.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true })); }
                 }
                 latestDictationText = text;
             }
