@@ -3946,6 +3946,100 @@ negated bevindingen
                 ta.addEventListener('input', _autoGrow);
                 wrap.appendChild(ta);
 
+                // ── Inline correction mode (contenteditable) ────────
+                let _pipInlineMode = localStorage.getItem('pipInlineMode') === '1';
+                const _inlineCache = new Map(); // rawText → corrHTML (null = pending)
+                let _inlineDebounce = null;
+
+                const ce = pipWindow.document.createElement('div');
+                ce.contentEditable = 'true';
+                ce.className = ta.className.replace('resize-none', '');
+                ce.style.cssText = 'min-height:80px;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;cursor:text;box-sizing:border-box';
+                const _ceFirstDiv = pipWindow.document.createElement('div');
+                _ceFirstDiv.innerHTML = '<br>';
+                ce.appendChild(_ceFirstDiv);
+                ce.style.display = _pipInlineMode ? '' : 'none';
+                ta.style.display = _pipInlineMode ? 'none' : '';
+                wrap.appendChild(ce);
+
+                function getCeText() {
+                    const divs = Array.from(ce.children);
+                    if (!divs.length) return ce.textContent;
+                    return divs.map(div => {
+                        if (div.childNodes.length === 1 && div.firstChild.nodeName === 'BR') return '';
+                        return getRealtimeText(div);
+                    }).join('\n').replace(/\n+$/, '');
+                }
+
+                function getCursorLineDiv() {
+                    const sel = pipWindow.getSelection();
+                    if (!sel || !sel.rangeCount) return null;
+                    let node = sel.getRangeAt(0).startContainer;
+                    while (node && node !== ce) {
+                        if (node.parentElement === ce) return node.nodeType === 1 ? node : node.parentElement;
+                        node = node.parentElement;
+                    }
+                    return null;
+                }
+
+                async function checkInlineLines() {
+                    if (!_pipInlineMode || !realtimeEnabled || !GEMINI_API_KEY) return;
+                    const cursorDiv = getCursorLineDiv();
+                    for (const div of Array.from(ce.children)) {
+                        if (div === cursorDiv) continue;
+                        if (div.dataset.dirty) {
+                            div.textContent = div.textContent;
+                            delete div.dataset.dirty;
+                        }
+                        if (div.dataset.rawText) continue;
+                        const rawText = div.textContent.trim();
+                        if (!rawText) continue;
+                        if (_inlineCache.has(rawText)) {
+                            const h = _inlineCache.get(rawText);
+                            if (h) { div.dataset.rawText = rawText; div.innerHTML = h; }
+                            continue;
+                        }
+                        _inlineCache.set(rawText, null);
+                        div.dataset.rawText = rawText;
+                        const capturedText = rawText;
+                        const capturedDiv = div;
+                        (async () => {
+                            try {
+                                const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                                const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                                const ki = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
+                                const dv = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
+                                const pat = extractPatientInfo();
+                                const prompt = fillPrompt(template, { tekst: capturedText, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat });
+                                let full = '';
+                                await callGeminiStream(getModel('geminiModelRealtime'), prompt, p => { full = p; }, undefined);
+                                const corrText = extractCleanCorrection(full);
+                                const corrHTML = computeDiffHTML(capturedText, corrText);
+                                _inlineCache.set(capturedText, corrHTML);
+                                if (capturedDiv.dataset.rawText === capturedText) capturedDiv.innerHTML = corrHTML;
+                            } catch(e) {
+                                _inlineCache.delete(capturedText);
+                                if (capturedDiv.dataset.rawText === capturedText) delete capturedDiv.dataset.rawText;
+                            }
+                        })();
+                    }
+                }
+
+                function _applyInlineModeUI() {
+                    ta.style.display = _pipInlineMode ? 'none' : '';
+                    ce.style.display = _pipInlineMode ? '' : 'none';
+                    rtPanel.style.display = (!_pipInlineMode && realtimeEnabled) ? '' : 'none';
+                    vcBtn.style.display = (!_pipInlineMode && !realtimeEnabled) ? '' : 'none';
+                    inlineToggleBtn.textContent = _pipInlineMode ? '↩ Paneel' : '⌨ Inline';
+                    if (_pipInlineMode) {
+                        inlineToggleBtn.style.borderColor = '#0891b2';
+                        inlineToggleBtn.style.color = '#0891b2';
+                    } else {
+                        inlineToggleBtn.style.borderColor = '';
+                        inlineToggleBtn.style.color = '';
+                    }
+                }
+
                 // ── Action buttons ──────────────────────────────────
                 const btnRow = mk('div', 'flex items-center gap-2 flex-wrap');
                 let _pipZoom = 1.0;
@@ -4010,16 +4104,43 @@ negated bevindingen
                 const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
                 trPanel.append(trHead, trContent);
 
-                // "Verslag check" button — visible only when realtime is OFF
+                // "Verslag check" button — visible only when realtime is OFF and not in inline mode
                 const vcBtn = mk('button', SM.replace('cursor-pointer','') + ' cursor-pointer', '');
                 vcBtn.type = 'button';
                 vcBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Verslag check';
-                vcBtn.style.display = realtimeEnabled ? 'none' : '';
+                vcBtn.style.display = (realtimeEnabled || _pipInlineMode) ? 'none' : '';
+
+                // Inline/Paneel toggle button
+                const inlineToggleBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', _pipInlineMode ? '↩ Paneel' : '⌨ Inline', () => {
+                    _pipInlineMode = !_pipInlineMode;
+                    localStorage.setItem('pipInlineMode', _pipInlineMode ? '1' : '0');
+                    if (_pipInlineMode) {
+                        // Paneel → Inline: copy textarea text to CE
+                        const text = ta.value;
+                        ce.innerHTML = '';
+                        (text ? text.split('\n') : ['']).forEach(line => {
+                            const d = pipWindow.document.createElement('div');
+                            d.textContent = line;
+                            if (!line) d.innerHTML = '<br>';
+                            ce.appendChild(d);
+                        });
+                        _inlineCache.clear();
+                    } else {
+                        // Inline → Paneel: extract CE text to textarea
+                        ta.value = getCeText();
+                        _autoGrow();
+                    }
+                    _applyInlineModeUI();
+                });
+                if (_pipInlineMode) {
+                    inlineToggleBtn.style.borderColor = '#0891b2';
+                    inlineToggleBtn.style.color = '#0891b2';
+                }
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
                         // PiP textarea has priority; fall back to main clipboard dictation
-                        const pipText = ta.value.trim();
+                        const pipText = _pipInlineMode ? getCeText().trim() : ta.value.trim();
                         const text = pipText || readDictationText().trim();
                         if (!text) {
                             pipWindow.alert('Geen dictatietekst gevonden. Dicteer of typ eerst een verslag.');
@@ -4037,7 +4158,7 @@ negated bevindingen
                         }
                     }),
                     mkBtn(S, 'Translate', async () => {
-                        const text = ta.value.trim();
+                        const text = _pipInlineMode ? getCeText().trim() : ta.value.trim();
                         if (!text) { alert('Geen tekst om te vertalen.'); return; }
                         const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
                         const prompt = fillPrompt(template, { text });
@@ -4059,13 +4180,14 @@ negated bevindingen
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
-                        pipCopy(ta.value);
+                        pipCopy(_pipInlineMode ? getCeText() : ta.value);
                         const orig = btn.textContent;
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
                         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
                     vcBtn,
+                    inlineToggleBtn,
                     sentInd,
                     fontBtns,
                 );
@@ -4074,11 +4196,10 @@ negated bevindingen
 
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
-                rtPanel.style.display = realtimeEnabled ? '' : 'none';
+                rtPanel.style.display = (realtimeEnabled && !_pipInlineMode) ? '' : 'none';
                 // Keep PiP realtime panel and manual vcBtn in sync with the main toggle
                 realtimeToggle.addEventListener('click', () => {
-                    rtPanel.style.display = realtimeEnabled ? '' : 'none';
-                    vcBtn.style.display   = realtimeEnabled ? 'none' : '';
+                    _applyInlineModeUI();
                 });
                 const rtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const rtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Real time — Verslag check');
@@ -4161,7 +4282,7 @@ negated bevindingen
                 wrap.appendChild(vcPanel);
 
                 vcBtn.addEventListener('click', async () => {
-                    const tekst = ta.value.trim();
+                    const tekst = (_pipInlineMode ? getCeText() : ta.value).trim();
                     if (!tekst) { pipWindow.alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
                     if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
 
@@ -4465,10 +4586,47 @@ negated bevindingen
                     }
                 });
 
+                // ── Contenteditable (inline mode) event handlers ────
+                ce.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Enter') return;
+                    e.preventDefault();
+                    const sel = pipWindow.getSelection();
+                    if (!sel || !sel.rangeCount) return;
+                    let curDiv = sel.getRangeAt(0).startContainer;
+                    while (curDiv && curDiv.parentElement !== ce) curDiv = curDiv.parentElement;
+                    const newDiv = pipWindow.document.createElement('div');
+                    newDiv.innerHTML = '<br>';
+                    if (curDiv && ce.contains(curDiv)) {
+                        curDiv.after(newDiv);
+                    } else {
+                        ce.appendChild(newDiv);
+                    }
+                    const r = pipWindow.document.createRange();
+                    r.setStart(newDiv, 0);
+                    r.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(r);
+                    clearTimeout(_inlineDebounce);
+                    _inlineDebounce = setTimeout(checkInlineLines, 1500);
+                    setDictationText(getCeText());
+                });
+
+                ce.addEventListener('input', () => {
+                    const cursorDiv = getCursorLineDiv();
+                    if (cursorDiv && cursorDiv.dataset.rawText) {
+                        cursorDiv.dataset.dirty = '1';
+                        delete cursorDiv.dataset.rawText;
+                    }
+                    clearTimeout(_inlineDebounce);
+                    _inlineDebounce = setTimeout(checkInlineLines, 1500);
+                    setDictationText(getCeText());
+                });
+
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
                 //   - only run realtime verslag check when realtimeEnabled
                 ta.addEventListener('input', () => {
+                    if (_pipInlineMode) return;
                     clearTimeout(_pipRealtimeDebounce);
                     _pipRealtimeDebounce = setTimeout(async () => {
                         const tekst = ta.value.trim();
