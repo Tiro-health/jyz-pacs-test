@@ -4110,7 +4110,7 @@ negated bevindingen
                     if (!divs.length) return ce.textContent;
                     return divs.map(div => {
                         if (div.childNodes.length === 1 && div.firstChild.nodeName === 'BR') return '';
-                        return getRealtimeText(div);
+                        return getRealtimeText(div).replace(/\n+$/, '');
                     }).join('\n').replace(/\n+$/, '');
                 }
 
@@ -4230,13 +4230,20 @@ negated bevindingen
 
                 // Copy plain text inside the PiP window using execCommand (clipboard API unavailable in PiP)
                 function pipCopy(text) {
+                    // Prefer modern Clipboard API (runs in main-window context, so navigator refers to main window)
+                    if (navigator.clipboard?.writeText) {
+                        navigator.clipboard.writeText(text).catch(() => _pipCopyFallback(text));
+                    } else {
+                        _pipCopyFallback(text);
+                    }
+                }
+                function _pipCopyFallback(text) {
                     try {
                         const el = pipWindow.document.createElement('textarea');
                         el.value = text;
                         el.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;pointer-events:none';
                         pipWindow.document.body.appendChild(el);
-                        el.focus();
-                        el.select();
+                        el.focus(); el.select();
                         pipWindow.document.execCommand('copy');
                         pipWindow.document.body.removeChild(el);
                     } catch(e) {}
