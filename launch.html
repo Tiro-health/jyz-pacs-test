@@ -4653,15 +4653,46 @@ negated bevindingen
                     e.preventDefault();
                     const sel = pipWindow.getSelection();
                     if (!sel || !sel.rangeCount) return;
-                    let curDiv = sel.getRangeAt(0).startContainer;
+
+                    const range = sel.getRangeAt(0);
+                    if (!range.collapsed) range.deleteContents();
+
+                    // Find the direct child div of ce that holds the cursor
+                    let curDiv = range.startContainer;
                     while (curDiv && curDiv.parentElement !== ce) curDiv = curDiv.parentElement;
+
                     const newDiv = pipWindow.document.createElement('div');
-                    newDiv.innerHTML = '<br>';
-                    if (curDiv && ce.contains(curDiv)) {
+
+                    if (curDiv && curDiv !== ce && ce.contains(curDiv)) {
+                        // Split curDiv at cursor: extract everything from cursor to end of div
+                        const afterRange = pipWindow.document.createRange();
+                        afterRange.setStart(range.startContainer, range.startOffset);
+                        afterRange.setEnd(curDiv, curDiv.childNodes.length);
+                        const fragment = afterRange.extractContents();
+
+                        const hasRealContent = fragment.textContent.trim() ||
+                            Array.from(fragment.childNodes).some(n => n.nodeName !== 'BR');
+
+                        if (hasRealContent) {
+                            newDiv.appendChild(fragment);
+                            // curDiv content changed — stale rawText must be cleared so it can re-check
+                            delete curDiv.dataset.rawText;
+                            delete curDiv.dataset.dirty;
+                        } else {
+                            newDiv.innerHTML = '<br>';
+                        }
+
+                        // Ensure curDiv isn't left empty
+                        if (!curDiv.childNodes.length || curDiv.textContent === '') {
+                            curDiv.innerHTML = '<br>';
+                        }
+
                         curDiv.after(newDiv);
                     } else {
+                        newDiv.innerHTML = '<br>';
                         ce.appendChild(newDiv);
                     }
+
                     const r = pipWindow.document.createRange();
                     r.setStart(newDiv, 0);
                     r.collapse(true);
