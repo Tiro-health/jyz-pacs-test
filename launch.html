@@ -130,6 +130,10 @@
                     transform: rotate(360deg);
                 }
             }
+            @keyframes ai-pulse {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+            }
             .autofill-spinner {
                 display: inline-block;
                 width: 14px;
@@ -138,6 +142,27 @@
                 border-top-color: white;
                 border-radius: 50%;
                 animation: spin 0.6s linear infinite;
+            }
+            .ai-spinner {
+                display: inline-block;
+                width: 11px;
+                height: 11px;
+                border: 1.5px solid rgba(99, 179, 237, 0.3);
+                border-top-color: #63b3ed;
+                border-radius: 50%;
+                animation: spin 0.7s linear infinite;
+                vertical-align: middle;
+            }
+            [data-checking]::after {
+                content: '';
+                display: inline-block;
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #63b3ed;
+                margin-left: 6px;
+                vertical-align: middle;
+                animation: ai-pulse 1s ease-in-out infinite;
             }
 
             /* Color variables from frontend UI package */
@@ -3154,7 +3179,7 @@ UITVOERFORMAAT — STRIKT:
 
                 _realtimeAbort?.abort();
                 _realtimeAbort = new AbortController();
-                realtimeStatus.textContent = 'Verwerken…';
+                realtimeStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                 _realtimeOriginalText = tekst;
                 _realtimeShowingOriginal = false;
                 _realtimeResultHTML = null;
@@ -4121,6 +4146,7 @@ negated bevindingen
                         }
                         _inlineCache.set(rawText, null);
                         div.dataset.rawText = rawText;
+                        div.dataset.checking = '1';
                         const capturedText = rawText;
                         const capturedDiv = div;
                         (async () => {
@@ -4138,10 +4164,16 @@ negated bevindingen
                                 const corrText = extractCleanCorrection(full).split('\n').map(l => l.trim()).filter(Boolean)[0] || capturedText;
                                 const corrHTML = computeDiffHTML(capturedText, corrText);
                                 _inlineCache.set(capturedText, corrHTML);
-                                if (capturedDiv.dataset.rawText === capturedText) capturedDiv.innerHTML = corrHTML;
+                                if (capturedDiv.dataset.rawText === capturedText) {
+                                    delete capturedDiv.dataset.checking;
+                                    capturedDiv.innerHTML = corrHTML;
+                                }
                             } catch(e) {
                                 _inlineCache.delete(capturedText);
-                                if (capturedDiv.dataset.rawText === capturedText) delete capturedDiv.dataset.rawText;
+                                if (capturedDiv.dataset.rawText === capturedText) {
+                                    delete capturedDiv.dataset.checking;
+                                    delete capturedDiv.dataset.rawText;
+                                }
                             }
                         })();
                     }
@@ -4807,7 +4839,7 @@ negated bevindingen
 
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
-                        rtStatus.textContent = 'Verwerken…';
+                        rtStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                         rtActions.style.display = 'none';
                         rtOrigBtn.style.display = 'none';
                         _rtOrigText = tekst;
