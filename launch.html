@@ -4039,7 +4039,7 @@ negated bevindingen
                     return null;
                 }
 
-                async function checkInlineLines() {
+                async function checkInlineLines(requirePeriod = true) {
                     if (!_pipInlineMode || !realtimeEnabled || !GEMINI_API_KEY) return;
                     const cursorDiv = getCursorLineDiv();
                     for (const div of Array.from(ce.children)) {
@@ -4051,6 +4051,8 @@ negated bevindingen
                         if (div.dataset.rawText) continue;
                         const rawText = div.textContent.trim();
                         if (!rawText) continue;
+                        // Only check sentences that end with punctuation (unless triggered by Enter)
+                        if (requirePeriod && !/[.!?]$/.test(rawText)) continue;
                         if (_inlineCache.has(rawText)) {
                             const h = _inlineCache.get(rawText);
                             if (h) { div.dataset.rawText = rawText; div.innerHTML = h; }
@@ -4666,7 +4668,8 @@ negated bevindingen
                     sel.removeAllRanges();
                     sel.addRange(r);
                     clearTimeout(_inlineDebounce);
-                    _inlineDebounce = setTimeout(checkInlineLines, 1500);
+                    // Enter = user explicitly finished the line → check regardless of period
+                    _inlineDebounce = setTimeout(() => checkInlineLines(false), 1500);
                     setDictationText(getCeText());
                 });
 
@@ -4677,7 +4680,8 @@ negated bevindingen
                         delete cursorDiv.dataset.rawText;
                     }
                     clearTimeout(_inlineDebounce);
-                    _inlineDebounce = setTimeout(checkInlineLines, 1500);
+                    // Debounce = DMO mid-dictation → only check complete sentences (ending with . ! ?)
+                    _inlineDebounce = setTimeout(() => checkInlineLines(true), 1500);
                     setDictationText(getCeText());
                 });
 
