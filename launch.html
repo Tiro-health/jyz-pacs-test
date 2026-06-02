@@ -731,7 +731,7 @@
                                 id="medgemma-quick-btn"
                                 type="button"
                                 style="display:none"
-                                title="MedGemma beeldanalyse"
+                                title="Beeldanalyse"
                                 class="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -833,7 +833,7 @@
                 </div>
             </details>
 
-            <!-- MedGemma Image Analysis -->
+            <!-- Beeldanalyse -->
             <details
                 id="medgemma-accordion"
                 class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3"
@@ -844,7 +844,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
                     </svg>
-                    MedGemma beeldanalyse
+                    Beeldanalyse
                     <button
                         id="medgemma-analyse-btn"
                         type="button"
@@ -1257,7 +1257,7 @@
                     <!-- MedGemma visibility -->
                     <div class="flex items-center justify-between py-0.5">
                         <label for="medgemma-visible" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            MedGemma beeldanalyse
+                            Beeldanalyse
                         </label>
                         <button
                             id="medgemma-visible"
@@ -4203,7 +4203,7 @@ negated bevindingen
                 const btnPipCam = mk('button', SZ, '');
                 btnPipCam.id = 'pip-medgemma-btn';
                 btnPipCam.type = 'button';
-                btnPipCam.title = 'MedGemma beeldanalyse';
+                btnPipCam.title = 'Beeldanalyse';
                 btnPipCam.style.display = medgemmaVisible ? '' : 'none';
                 btnPipCam.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
                 btnPipCam.className = medgemmaAccordionActive ? PIP_CAM_ON : PIP_CAM_OFF;
@@ -4579,13 +4579,13 @@ negated bevindingen
                     pipAlert: (msg) => pipWindow.alert(msg),
                 };
 
-                // ── MedGemma beeldanalyse panel ─────────────────────
+                // ── Beeldanalyse panel ─────────────────────
                 const pipMedgemmaPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-background overflow-hidden');
                 pipMedgemmaPanel.id = 'pip-medgemma-panel';
                 pipMedgemmaPanel.style.display = medgemmaAccordionActive ? '' : 'none';
 
                 const pmHeader = mk('div', 'flex items-center gap-2 px-3 py-2 text-sm font-medium text-neutral-900 dark:text-neutral-100 border-b border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
-                pmHeader.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> MedGemma beeldanalyse';
+                pmHeader.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg> Beeldanalyse';
 
                 const pmBody = mk('div', 'px-3 py-3 space-y-2');
 
@@ -4697,7 +4697,7 @@ negated bevindingen
                         pmResultContent.innerHTML = renderMarkdown(result);
                         pmResult.classList.remove('hidden');
                     } catch (err) {
-                        pipWindow.alert('MedGemma fout: ' + err.message);
+                        pipWindow.alert('Beeldanalyse fout: ' + err.message);
                     } finally {
                         pmAnalyseBtn.disabled = false;
                         pmAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
@@ -5073,7 +5073,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 e.stopPropagation();
                 if (!medgemmaImageBase64) {
                     document.getElementById("medgemma-accordion").open = true;
-                    alert("Upload eerst een afbeelding in het MedGemma-paneel.");
+                    alert("Upload eerst een afbeelding in het Beeldanalyse-paneel.");
                     return;
                 }
                 const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
@@ -5088,7 +5088,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
                     showMedgemmaResult(result);
                 } catch (err) {
-                    alert("MedGemma fout: " + err.message);
+                    alert("Beeldanalyse fout: " + err.message);
                 } finally {
                     medgemmaAnalyseBtn.disabled = false;
                     medgemmaAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
