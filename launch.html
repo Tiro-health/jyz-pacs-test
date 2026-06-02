@@ -2172,6 +2172,26 @@
                 return html.replace(/\n/g, '<br>');
             }
 
+            function getRealtimeText(container) {
+                let parts = [];
+                container.childNodes.forEach(function walk(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        parts.push(node.textContent);
+                    } else if (node.nodeName === 'BR') {
+                        parts.push('\n');
+                    } else if (node.classList && node.classList.contains('corr-reverted')) {
+                        parts.push(node.dataset.orig || '');
+                    } else if (node.classList && node.classList.contains('corr')) {
+                        parts.push(node.textContent);
+                    } else if (node.style && node.style.textDecoration && node.style.textDecoration.includes('line-through')) {
+                        // Pure deletion in correction state: skip
+                    } else {
+                        node.childNodes.forEach(walk);
+                    }
+                });
+                return parts.join('');
+            }
+
             let _geminiRawText = "";
             let _currentAbort = null;
             let _abortedByUser = false;
@@ -2744,7 +2764,10 @@ INSTRUCTIES VOOR UITVOER:
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
                 : "";
             verslagCheckUrlInput.value = savedVerslagCheck || DEFAULT_VERSLAG_CHECK_PROMPT;
-            if (!savedVerslagCheck) localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
+            if (!savedVerslagCheck) {
+                localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
+                localStorage.setItem("verslagCheckUrl", DEFAULT_VERSLAG_CHECK_PROMPT);
+            }
             verslagCheckUrlInput.addEventListener("input", () => {
                 localStorage.setItem("verslagCheckUrl", verslagCheckUrlInput.value);
                 localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
@@ -3045,7 +3068,7 @@ INSTRUCTIES VOOR UITVOER:
 
             realtimeCopy.addEventListener('click', () => {
                 navigator.clipboard.writeText(
-                    _realtimeShowingOriginal ? _realtimeOriginalText : (_realtimeCorrectedText || realtimeContent.innerText)
+                    _realtimeShowingOriginal ? _realtimeOriginalText : getRealtimeText(realtimeContent)
                 ).catch(() => {});
                 const orig = realtimeCopy.textContent;
                 realtimeCopy.textContent = 'Gekopieerd ✓';
@@ -4061,7 +4084,7 @@ negated bevindingen
 
                 const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipCopy(_rtShowingOrig ? (_rtOrigText || '') : (_rtCorrText || rtContent.innerText || ''));
+                    pipCopy(_rtShowingOrig ? (_rtOrigText || '') : getRealtimeText(rtContent));
                     const orig = btn.textContent;
                     btn.textContent = 'Gekopieerd ✓';
                     btn.style.color = '#16a34a';
