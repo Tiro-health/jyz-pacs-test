@@ -165,6 +165,18 @@
                 </div>
             </div>
 
+            <!-- Inline check prompt -->
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-sm font-medium">Inline verslag check prompt <span class="ml-1 text-xs font-normal text-neutral-400 dark:text-neutral-500">(PiP — per zin)</span></span>
+                    <button data-reset="inline-check" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="inline-check-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                </div>
+            </div>
+
             <!-- SNOMED CT prompt -->
             <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
                 <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
@@ -300,6 +312,37 @@ INSTRUCTIES VOOR UITVOER:
 - Geef de gecorrigeerde tekst terug zonder enige markering of opmaak
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
+
+            const DEFAULT_INLINE_CHECK = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaande gedicteerde radiologische zin op fouten.
+
+=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+=== EINDE CONTEXT ===
+
+=== TE CONTROLEREN ZIN ===
+{tekst}
+=== EINDE ZIN ===
+
+Controleer actief op:
+
+**KRITIEK:**
+- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren
+- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"
+
+**SPEECH-TO-TEXT FOUTEN:**
+- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname, acuut↔inactief, focaal↔diffuus
+- Voorvoegsel-/achtervoegselfouten: hyper-/hypo-, in-/un-, -itis/-osis, vergroot↔verkleind, aanwezig↔afwezig
+- Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
+- Ontbrekende woorden die de betekenis wijzigen
+
+INSTRUCTIES VOOR UITVOER:
+- Geef UITSLUITEND de gecorrigeerde zin terug — geen uitleg, geen context, geen markering
+- Vervang uitsluitend foutieve woorden door de correctie op dezelfde plaats
+- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
+- Indien geen fouten gevonden: geef de originele zin ongewijzigd terug`;
 
             const DEFAULT_MEDGEMMA = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.
 
@@ -442,6 +485,14 @@ negated bevindingen
                     versionKey: "medgemmaPromptVersion",
                     version: "5",
                     defaultPrompt: DEFAULT_MEDGEMMA,
+                },
+                {
+                    id: "inline-check-prompt",
+                    resetKey: "inline-check",
+                    storageKey: "inlineCheckUrl",
+                    versionKey: "inlineCheckVersion",
+                    version: "1",
+                    defaultPrompt: DEFAULT_INLINE_CHECK,
                 },
             ];
 

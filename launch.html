@@ -1056,6 +1056,7 @@
                         <textarea id="dictation-action-url"></textarea>
                         <textarea id="kidv-action-url"></textarea>
                         <textarea id="verslag-check-url"></textarea>
+                        <textarea id="inline-check-url"></textarea>
                         <textarea id="snomed-ct-action-url"></textarea>
                         <textarea id="medgemma-action-url"></textarea>
                     </div>
@@ -2794,6 +2795,54 @@ INSTRUCTIES VOOR UITVOER:
                 localStorage.setItem("verslagCheckVersion", VERSLAG_CHECK_VERSION);
             });
 
+            const inlineCheckUrlInput = document.getElementById("inline-check-url");
+
+            const DEFAULT_INLINE_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaande gedicteerde radiologische zin op fouten.
+
+=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+=== EINDE CONTEXT ===
+
+=== TE CONTROLEREN ZIN ===
+{tekst}
+=== EINDE ZIN ===
+
+Controleer actief op:
+
+**KRITIEK:**
+- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren
+- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"
+
+**SPEECH-TO-TEXT FOUTEN:**
+- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname, acuut↔inactief, focaal↔diffuus
+- Voorvoegsel-/achtervoegselfouten: hyper-/hypo-, in-/un-, -itis/-osis, vergroot↔verkleind, aanwezig↔afwezig
+- Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
+- Ontbrekende woorden die de betekenis wijzigen
+
+INSTRUCTIES VOOR UITVOER:
+- Geef UITSLUITEND de gecorrigeerde zin terug — geen uitleg, geen context, geen markering
+- Vervang uitsluitend foutieve woorden door de correctie op dezelfde plaats
+- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
+- Indien geen fouten gevonden: geef de originele zin ongewijzigd terug`;
+
+            const INLINE_CHECK_VERSION = "1";
+            const storedInlineCheckVersion = localStorage.getItem("inlineCheckVersion");
+            const savedInlineCheck = storedInlineCheckVersion === INLINE_CHECK_VERSION
+                ? migratePrompt(localStorage.getItem("inlineCheckUrl"))
+                : "";
+            inlineCheckUrlInput.value = savedInlineCheck || DEFAULT_INLINE_CHECK_PROMPT;
+            if (!savedInlineCheck) {
+                localStorage.setItem("inlineCheckVersion", INLINE_CHECK_VERSION);
+                localStorage.setItem("inlineCheckUrl", DEFAULT_INLINE_CHECK_PROMPT);
+            }
+            inlineCheckUrlInput.addEventListener("input", () => {
+                localStorage.setItem("inlineCheckUrl", inlineCheckUrlInput.value);
+                localStorage.setItem("inlineCheckVersion", INLINE_CHECK_VERSION);
+            });
+
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
             const CAM_BTN_OFF   = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
@@ -4005,7 +4054,7 @@ negated bevindingen
                         const capturedDiv = div;
                         (async () => {
                             try {
-                                const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                                const template = inlineCheckUrlInput.value.trim() || DEFAULT_INLINE_CHECK_PROMPT;
                                 const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
                                 const ki = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
                                 const dv = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
