@@ -3924,9 +3924,25 @@ negated bevindingen
                 const wrap = mk('div', 'flex flex-col gap-3');
 
                 // ── Dictation textarea (DMO input) ──────────────────
+                // Label element: Dragon Medical One uses visible labels for
+                // "click [field name]" voice navigation and Full Text Control.
+                const taLabel = pipWindow.document.createElement('label');
+                taLabel.htmlFor = 'dmo-dictation';
+                taLabel.textContent = 'Dictatie';
+                taLabel.style.cssText = 'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0';
+                wrap.appendChild(taLabel);
+
                 const ta = pipWindow.document.createElement('textarea');
+                ta.id = 'dmo-dictation';         // Dragon identifies field by id/name
+                ta.name = 'dictation';
                 ta.rows = 5;
                 ta.placeholder = 'Dicteer hier via DMO…';
+                ta.setAttribute('aria-labelledby', 'dmo-dictation-lbl');
+                ta.setAttribute('autocomplete', 'off');   // no browser autocomplete interference
+                ta.setAttribute('autocorrect', 'off');    // no mobile autocorrect
+                ta.setAttribute('autocapitalize', 'off'); // no autocapitalize
+                ta.setAttribute('spellcheck', 'false');   // Dragon handles its own spell-check
+                ta.setAttribute('data-lpignore', 'true'); // prevent password manager overlap
                 ta.className = 'w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
                 ta.style.overflow = 'hidden';
                 const _autoGrow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
@@ -4402,6 +4418,9 @@ negated bevindingen
                 });
 
                 pipWindow.document.body.appendChild(wrap);
+
+                // Auto-focus the dictation textarea so Dragon immediately targets it
+                setTimeout(() => { ta.focus(); }, 150);
 
                 // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
                 const pipCorrTooltip = mk('div', '');
