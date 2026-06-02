@@ -173,7 +173,7 @@
                 </div>
                 <div class="p-4 flex flex-col gap-2">
                     <textarea id="inline-check-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{volledige_tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
                 </div>
             </div>
 
@@ -322,6 +322,10 @@ Diagnostische vraagstelling: {diagnostische_vraagstelling}
 Patiënt: {patient_info}
 === EINDE CONTEXT ===
 
+=== VOLLEDIG GEDICTEERD VERSLAG TOT NU TOE (uitsluitend ter referentie voor consistentiecontrole — niet teruggeven in de output) ===
+{volledige_tekst}
+=== EINDE VERSLAG ===
+
 === TE CONTROLEREN ZIN ===
 {tekst}
 === EINDE ZIN ===
@@ -329,7 +333,7 @@ Patiënt: {patient_info}
 Controleer actief op:
 
 **KRITIEK:**
-- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren
+- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren — gebruik het volledige verslag als referentie om te verifiëren of links/rechts consistent is
 - Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"
 
 **SPEECH-TO-TEXT FOUTEN:**
@@ -338,10 +342,13 @@ Controleer actief op:
 - Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
 - Ontbrekende woorden die de betekenis wijzigen
 
+**TERMINOLOGIE (enkel indien inconsistentie met de rest van het verslag):**
+- Gebruik het volledige verslag als referentie — corrigeer uitsluitend als de te controleren zin een term gebruikt die duidelijk afwijkt van eerder correct gebruikte terminologie in hetzelfde verslag
+
 INSTRUCTIES VOOR UITVOER:
 - Geef UITSLUITEND de gecorrigeerde zin terug — geen uitleg, geen context, geen markering
 - Vervang uitsluitend foutieve woorden door de correctie op dezelfde plaats
-- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
+- Wijzig NIETS aan correcte tekst — het volledige verslag is referentie, GEEN stijlmodel
 - Indien geen fouten gevonden: geef de originele zin ongewijzigd terug`;
 
             const DEFAULT_MEDGEMMA = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.
@@ -491,7 +498,7 @@ negated bevindingen
                     resetKey: "inline-check",
                     storageKey: "inlineCheckUrl",
                     versionKey: "inlineCheckVersion",
-                    version: "1",
+                    version: "2",
                     defaultPrompt: DEFAULT_INLINE_CHECK,
                 },
             ];
