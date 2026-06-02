@@ -3160,10 +3160,12 @@ UITVOERFORMAAT — STRIKT:
                 clearTimeout(_realtimeDebounce);
                 _realtimeDebounce = setTimeout(() => {
                     const tekst = readDictationText().trim();
-                    if (tekst && tekst !== _realtimeLastText) {
-                        _realtimeLastText = tekst;
-                        runRealtimeCheck(tekst);
-                    }
+                    if (!tekst || tekst === _realtimeLastText) return;
+                    // Only check when the last non-empty line ends with sentence-ending punctuation
+                    const lastLine = tekst.split('\n').map(l => l.trim()).filter(Boolean).pop();
+                    if (!lastLine || !/[.!?]$/.test(lastLine)) return;
+                    _realtimeLastText = tekst;
+                    runRealtimeCheck(tekst);
                 }, 2000);
             }
 
@@ -4732,6 +4734,9 @@ negated bevindingen
 
                         // Only run realtime check when the toggle is on
                         if (!realtimeEnabled) return;
+                        // Only check when the last non-empty line ends with sentence-ending punctuation
+                        const lastLine = tekst.split('\n').map(l => l.trim()).filter(Boolean).pop();
+                        if (!lastLine || !/[.!?]$/.test(lastLine)) return;
 
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
