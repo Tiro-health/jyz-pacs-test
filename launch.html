@@ -2797,16 +2797,16 @@ INSTRUCTIES VOOR UITVOER:
 
             const inlineCheckUrlInput = document.getElementById("inline-check-url");
 
-            const DEFAULT_INLINE_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaande gedicteerde radiologische zin op fouten.
+            const DEFAULT_INLINE_CHECK_PROMPT = `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer UITSLUITEND de zin onder "TE CONTROLEREN ZIN" op fouten.
 
-=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
+=== KLINISCHE CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
 Type onderzoek: {type_onderzoek}
 Klinische inlichtingen: {klinische_inlichtingen}
 Diagnostische vraagstelling: {diagnostische_vraagstelling}
 Patiënt: {patient_info}
 === EINDE CONTEXT ===
 
-=== VOLLEDIG GEDICTEERD VERSLAG TOT NU TOE (uitsluitend ter referentie voor consistentiecontrole — niet teruggeven in de output) ===
+=== REEDS GEDICTEERD VERSLAG (uitsluitend ter referentie voor lateraliteit- en consistentiecontrole — niet teruggeven, niet aanpassen) ===
 {volledige_tekst}
 === EINDE VERSLAG ===
 
@@ -2817,7 +2817,7 @@ Patiënt: {patient_info}
 Controleer actief op:
 
 **KRITIEK:**
-- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren — gebruik het volledige verslag als referentie om te verifiëren of links/rechts consistent is
+- Lateraliteit: links/rechts verwisseling — gebruik het volledige verslag als referentie om te verifiëren of links/rechts consistent is
 - Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"
 
 **SPEECH-TO-TEXT FOUTEN:**
@@ -2826,16 +2826,17 @@ Controleer actief op:
 - Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
 - Ontbrekende woorden die de betekenis wijzigen
 
-**TERMINOLOGIE (enkel indien inconsistentie met de rest van het verslag):**
-- Gebruik het volledige verslag als referentie — corrigeer uitsluitend als de te controleren zin een term gebruikt die duidelijk afwijkt van eerder correct gebruikte terminologie in hetzelfde verslag
+**TERMINOLOGIE (enkel indien duidelijke inconsistentie met de rest van het verslag):**
+- Corrigeer uitsluitend als de te controleren zin een term gebruikt die aantoonbaar afwijkt van eerder correct gebruikte terminologie
 
-INSTRUCTIES VOOR UITVOER:
-- Geef UITSLUITEND de gecorrigeerde zin terug — geen uitleg, geen context, geen markering
+UITVOERFORMAAT — STRIKT:
+- Geef UITSLUITEND de gecorrigeerde versie van de "TE CONTROLEREN ZIN" terug — één enkele regel, geen uitleg, geen context, geen markering, geen andere zinnen
+- Het reeds gedicteerde verslag is ALLEEN referentie — geef het NOOIT terug en pas het NOOIT aan
 - Vervang uitsluitend foutieve woorden door de correctie op dezelfde plaats
 - Wijzig NIETS aan correcte tekst — het volledige verslag is referentie, GEEN stijlmodel
 - Indien geen fouten gevonden: geef de originele zin ongewijzigd terug`;
 
-            const INLINE_CHECK_VERSION = "2";
+            const INLINE_CHECK_VERSION = "3";
             const storedInlineCheckVersion = localStorage.getItem("inlineCheckVersion");
             const savedInlineCheck = storedInlineCheckVersion === INLINE_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("inlineCheckUrl"))
@@ -4070,7 +4071,8 @@ negated bevindingen
                                 const prompt = fillPrompt(template, { tekst: capturedText, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, volledige_tekst: volledigeTekst });
                                 let full = '';
                                 await callGeminiStream(getModel('geminiModelRealtime'), prompt, p => { full = p; }, undefined);
-                                const corrText = extractCleanCorrection(full);
+                                // Take only the first non-empty line — prevents AI from returning multiple sentences
+                                const corrText = extractCleanCorrection(full).split('\n').map(l => l.trim()).filter(Boolean)[0] || capturedText;
                                 const corrHTML = computeDiffHTML(capturedText, corrText);
                                 _inlineCache.set(capturedText, corrHTML);
                                 if (capturedDiv.dataset.rawText === capturedText) capturedDiv.innerHTML = corrHTML;
