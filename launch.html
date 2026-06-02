@@ -1928,6 +1928,48 @@
                 return rawText.replace(/<[^>]+>/g, '');
             }
 
+            function computeDiffHTML(origText, corrText) {
+                if (!origText || !corrText) {
+                    const esc0 = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                    return corrText ? esc0(corrText).replace(/\n/g,'<br>') : '';
+                }
+                const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                const tokenize = s => s.match(/[A-Za-zÀ-ÿ0-9'"-]+|\s+|[^A-Za-zÀ-ÿ0-9\s]/g) || [];
+                const orig = tokenize(origText), corr = tokenize(corrText);
+                const m = orig.length, n = corr.length;
+                const dp = Array.from({length: m + 1}, () => new Uint16Array(n + 1));
+                for (let i = m - 1; i >= 0; i--)
+                    for (let j = n - 1; j >= 0; j--)
+                        dp[i][j] = orig[i] === corr[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+                const ops = [];
+                let i = 0, j = 0;
+                while (i < m || j < n) {
+                    if (i < m && j < n && orig[i] === corr[j]) { ops.push({op:'=', v:orig[i]}); i++; j++; }
+                    else if (j < n && (i >= m || dp[i][j+1] >= dp[i+1][j])) { ops.push({op:'+', v:corr[j]}); j++; }
+                    else { ops.push({op:'-', v:orig[i]}); i++; }
+                }
+                let html = '', k = 0;
+                while (k < ops.length) {
+                    if (ops[k].op === '=') { html += esc(ops[k].v); k++; continue; }
+                    let del = '', ins = '';
+                    while (k < ops.length && ops[k].op !== '=') {
+                        if (ops[k].op === '-') del += ops[k].v;
+                        else ins += ops[k].v;
+                        k++;
+                    }
+                    if (del.trim() && ins.trim()) {
+                        html += `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${esc(del)}">${esc(ins)}</span>`;
+                    } else if (del.trim()) {
+                        html += `<span style="text-decoration:line-through;color:#9ca3af">${esc(del)}</span>`;
+                    } else if (ins.trim()) {
+                        html += `<span style="color:#16a34a;font-weight:bold">${esc(ins)}</span>`;
+                    } else {
+                        html += esc(ins || del);
+                    }
+                }
+                return html.replace(/\n/g, '<br>');
+            }
+
             let _geminiRawText = "";
             let _currentAbort = null;
             let _abortedByUser = false;
@@ -2429,12 +2471,11 @@ INSTRUCTIES VOOR UITVOER:
 - Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen labels, geen sectietitels, geen context
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
-- Markeer elke correctie als: <del>originele tekst</del><ins>gecorrigeerde tekst</ins>
-  Voorbeeld: <del>humeruskop rechts</del><ins>femurhals links</ins>
+- Geef de gecorrigeerde tekst terug zonder enige markering of opmaak
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "8";
+            const VERSLAG_CHECK_VERSION = "9";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
@@ -2627,6 +2668,7 @@ INSTRUCTIES VOOR UITVOER:
             let _realtimeOriginalText = null;
             let _realtimeShowingOriginal = false;
             let _realtimeResultHTML = null;
+            let _realtimeCorrectedText = null;
 
             function updateRealtimeToggle() {
                 realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
@@ -2652,6 +2694,7 @@ INSTRUCTIES VOOR UITVOER:
                     _realtimeOriginalText = null;
                     _realtimeShowingOriginal = false;
                     _realtimeResultHTML = null;
+                    _realtimeCorrectedText = null;
                     realtimeActions.style.display = 'none';
                     realtimeToggleOrig.style.display = 'none';
                 }
@@ -2674,6 +2717,7 @@ INSTRUCTIES VOOR UITVOER:
                 _realtimeOriginalText = tekst;
                 _realtimeShowingOriginal = false;
                 _realtimeResultHTML = null;
+                _realtimeCorrectedText = null;
                 realtimeActions.style.display = 'none';
                 realtimeToggleOrig.style.display = 'none';
                 realtimeToggleOrig.textContent = '↩ Origineel';
@@ -2687,12 +2731,16 @@ INSTRUCTIES VOOR UITVOER:
                 const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
 
                 let firstChunk = true;
+                let streamedText = '';
                 try {
                     await callGeminiStream(getModel('geminiModelRealtime'), prompt, (partial) => {
                         if (firstChunk) { realtimeContent.innerHTML = ''; firstChunk = false; }
-                        realtimeContent.innerHTML = renderMarkdown(partial);
+                        streamedText = partial;
+                        realtimeContent.innerHTML = partial.replace(/\n/g, '<br>');
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
+                    _realtimeCorrectedText = streamedText;
+                    realtimeContent.innerHTML = computeDiffHTML(tekst, streamedText);
                     realtimeActions.style.display = 'flex';
                     realtimeToggleOrig.style.display = _realtimeOriginalText ? 'inline-block' : 'none';
                 } catch (e) {
@@ -2716,7 +2764,7 @@ INSTRUCTIES VOOR UITVOER:
 
             realtimeCopy.addEventListener('click', () => {
                 navigator.clipboard.writeText(
-                    _realtimeShowingOriginal ? _realtimeOriginalText : realtimeContent.innerText
+                    _realtimeShowingOriginal ? _realtimeOriginalText : (_realtimeCorrectedText || realtimeContent.innerText)
                 ).catch(() => {});
                 const orig = realtimeCopy.textContent;
                 realtimeCopy.textContent = 'Gekopieerd ✓';
@@ -3348,7 +3396,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const rtActions = mk('div', 'items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
                 rtActions.style.display = 'none';
 
-                let _rtOrigText = null, _rtShowingOrig = false, _rtResultHTML = null;
+                let _rtOrigText = null, _rtShowingOrig = false, _rtResultHTML = null, _rtCorrText = null;
 
                 const rtOrigBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '↩ Origineel', () => {
                     _rtShowingOrig = !_rtShowingOrig;
@@ -3365,7 +3413,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
                 const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipCopy(_rtShowingOrig ? (_rtOrigText || '') : (rtContent.innerText || ''));
+                    pipCopy(_rtShowingOrig ? (_rtOrigText || '') : (_rtCorrText || rtContent.innerText || ''));
                     const orig = btn.textContent;
                     btn.textContent = 'Gekopieerd ✓';
                     btn.style.color = '#16a34a';
@@ -3566,6 +3614,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         _rtShowingOrig = false;
                         _rtResultHTML = null;
                         rtOrigBtn.textContent = '↩ Origineel';
+                        _rtCorrText = null;
 
                         const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                         const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
@@ -3577,11 +3626,15 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                         if (!GEMINI_API_KEY) { rtStatus.textContent = 'Geen API-sleutel ingesteld.'; return; }
                         try {
                             let first = true;
+                            let pipStreamedText = '';
                             await callGeminiStream(getModel('geminiModelRealtime'), prompt, (partial) => {
                                 if (first) { rtContent.innerHTML = ''; first = false; }
-                                rtContent.innerHTML = renderMarkdown(partial);
+                                pipStreamedText = partial;
+                                rtContent.innerHTML = partial.replace(/\n/g, '<br>');
                                 rtStatus.textContent = '';
                             }, _pipRealtimeAbort.signal);
+                            _rtCorrText = pipStreamedText;
+                            rtContent.innerHTML = computeDiffHTML(tekst, pipStreamedText);
                             rtActions.style.display = 'flex';
                             rtOrigBtn.style.display = _rtOrigText ? '' : 'none';
                         } catch (e) {
