@@ -2130,6 +2130,14 @@
                 return rawText.replace(/<[^>]+>/g, '');
             }
 
+            // Strip any AI-returned HTML markup and extract clean corrected text
+            function extractCleanCorrection(text) {
+                return text
+                    .replace(/<del[^>]*>[\s\S]*?<\/del>/gi, '')   // remove deletions
+                    .replace(/<ins[^>]*>([\s\S]*?)<\/ins>/gi, '$1') // keep insertions
+                    .replace(/<[^>]+>/g, '');                        // strip remaining tags
+            }
+
             function computeDiffHTML(origText, corrText) {
                 if (!origText || !corrText) {
                     const esc0 = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3043,8 +3051,8 @@ INSTRUCTIES VOOR UITVOER:
                         realtimeContent.innerHTML = partial.replace(/\n/g, '<br>');
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
-                    _realtimeCorrectedText = streamedText;
-                    realtimeContent.innerHTML = computeDiffHTML(tekst, streamedText);
+                    _realtimeCorrectedText = extractCleanCorrection(streamedText);
+                    realtimeContent.innerHTML = computeDiffHTML(tekst, _realtimeCorrectedText);
                     realtimeActions.style.display = 'flex';
                     realtimeToggleOrig.style.display = _realtimeOriginalText ? 'inline-block' : 'none';
                 } catch (e) {
@@ -4477,8 +4485,8 @@ negated bevindingen
                                 rtContent.innerHTML = partial.replace(/\n/g, '<br>');
                                 rtStatus.textContent = '';
                             }, _pipRealtimeAbort.signal);
-                            _rtCorrText = pipStreamedText;
-                            rtContent.innerHTML = computeDiffHTML(tekst, pipStreamedText);
+                            _rtCorrText = extractCleanCorrection(pipStreamedText);
+                            rtContent.innerHTML = computeDiffHTML(tekst, _rtCorrText);
                             rtActions.style.display = 'flex';
                             rtOrigBtn.style.display = _rtOrigText ? '' : 'none';
                         } catch (e) {
