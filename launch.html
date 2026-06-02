@@ -722,7 +722,7 @@
                             </div>
                             <div id="realtime-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
                             <div id="realtime-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
-                                <button id="realtime-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
+                                <button id="realtime-toggle-orig" type="button" style="display:none" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                                 <button id="realtime-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                             </div>
                         </div>
@@ -2975,7 +2975,7 @@ INSTRUCTIES VOOR UITVOER:
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
                     realtimeActions.style.display = 'flex';
-                    realtimeToggleOrig.style.display = _realtimeOriginalText ? '' : 'none';
+                    realtimeToggleOrig.style.display = _realtimeOriginalText ? 'inline-block' : 'none';
                 } catch (e) {
                     if (e.name !== 'AbortError') {
                         realtimeStatus.textContent = 'Fout: ' + e.message;
@@ -2999,6 +2999,10 @@ INSTRUCTIES VOOR UITVOER:
                 navigator.clipboard.writeText(
                     _realtimeShowingOriginal ? _realtimeOriginalText : realtimeContent.innerText
                 ).catch(() => {});
+                const orig = realtimeCopy.textContent;
+                realtimeCopy.textContent = 'Gekopieerd ✓';
+                realtimeCopy.style.color = '#16a34a';
+                setTimeout(() => { realtimeCopy.textContent = orig; realtimeCopy.style.color = ''; }, 2000);
             });
 
             function scheduleRealtimeCheck() {
