@@ -2184,6 +2184,65 @@
                 return html.replace(/\n/g, '<br>');
             }
 
+            // Two-level diff: LCS at line level, word diff within matched/replaced pairs.
+            // Prevents the AI from dropping structural elements (newlines, section headers).
+            function computeDiffHTMLStructured(origText, corrText) {
+                const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+                const origLines = origText.split('\n');
+                const corrLines = corrText.split('\n');
+                const n = origLines.length, m = corrLines.length;
+
+                // Bottom-up LCS DP on lines (compare trimmed, preserve original spacing)
+                const dp = Array.from({length: n+1}, () => new Int32Array(m+1));
+                for (let i = n-1; i >= 0; i--)
+                    for (let j = m-1; j >= 0; j--)
+                        dp[i][j] = origLines[i].trim() === corrLines[j].trim()
+                            ? dp[i+1][j+1] + 1
+                            : Math.max(dp[i+1][j], dp[i][j+1]);
+
+                // Backtrack to get line-level ops
+                const ops = [];
+                let i = 0, j = 0;
+                while (i < n || j < m) {
+                    if (i < n && j < m && origLines[i].trim() === corrLines[j].trim()) {
+                        ops.push({op:'=', orig:origLines[i], corr:corrLines[j]});
+                        i++; j++;
+                    } else if (j < m && (i >= n || dp[i][j+1] >= dp[i+1][j])) {
+                        ops.push({op:'+', corr:corrLines[j]});
+                        j++;
+                    } else {
+                        ops.push({op:'-', orig:origLines[i]});
+                        i++;
+                    }
+                }
+
+                // Render: group consecutive -/+ blocks, pair them 1:1 for word diff
+                const result = [];
+                let k = 0;
+                while (k < ops.length) {
+                    if (ops[k].op === '=') {
+                        result.push(esc(ops[k].orig));
+                        k++;
+                    } else {
+                        const delLines = [], insLines = [];
+                        while (k < ops.length && ops[k].op !== '=') {
+                            if (ops[k].op === '-') delLines.push(ops[k].orig);
+                            else insLines.push(ops[k].corr);
+                            k++;
+                        }
+                        // Pair del/ins lines 1:1 → word-level diff per pair
+                        const pairs = Math.min(delLines.length, insLines.length);
+                        for (let p = 0; p < pairs; p++)
+                            result.push(computeDiffHTML(delLines[p], insLines[p]));
+                        // Unpaired original lines (AI deleted them): keep as-is — never remove structure
+                        for (let p = pairs; p < delLines.length; p++)
+                            result.push(esc(delLines[p]));
+                        // Unpaired AI-inserted lines: silently skip — AI cannot inject new structure
+                    }
+                }
+                return result.join('<br>');
+            }
+
             function getRealtimeText(container) {
                 let parts = [];
                 container.childNodes.forEach(function walk(node) {
@@ -3122,7 +3181,7 @@ UITVOERFORMAAT — STRIKT:
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
                     _realtimeCorrectedText = extractCleanCorrection(streamedText);
-                    realtimeContent.innerHTML = computeDiffHTML(tekst, _realtimeCorrectedText);
+                    realtimeContent.innerHTML = computeDiffHTMLStructured(tekst, _realtimeCorrectedText);
                     realtimeActions.style.display = 'flex';
                     realtimeToggleOrig.style.display = _realtimeOriginalText ? 'inline-block' : 'none';
                 } catch (e) {
@@ -4243,7 +4302,15 @@ negated bevindingen
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
-                        pipCopy(_pipInlineMode ? getCeText() : ta.value);
+                        let textToCopy;
+                        if (_pipInlineMode) {
+                            textToCopy = getCeText();
+                        } else if (realtimeEnabled && _rtOrigText) {
+                            textToCopy = _rtShowingOrig ? (_rtOrigText || ta.value) : getRealtimeText(rtContent);
+                        } else {
+                            textToCopy = ta.value;
+                        }
+                        pipCopy(textToCopy);
                         const orig = btn.textContent;
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
@@ -4767,7 +4834,7 @@ negated bevindingen
                                 rtStatus.textContent = '';
                             }, _pipRealtimeAbort.signal);
                             _rtCorrText = extractCleanCorrection(pipStreamedText);
-                            rtContent.innerHTML = computeDiffHTML(tekst, _rtCorrText);
+                            rtContent.innerHTML = computeDiffHTMLStructured(tekst, _rtCorrText);
                             rtActions.style.display = 'flex';
                             rtOrigBtn.style.display = _rtOrigText ? '' : 'none';
                         } catch (e) {
