@@ -2806,6 +2806,10 @@ Diagnostische vraagstelling: {diagnostische_vraagstelling}
 Patiënt: {patient_info}
 === EINDE CONTEXT ===
 
+=== VOLLEDIG GEDICTEERD VERSLAG TOT NU TOE (uitsluitend ter referentie voor consistentiecontrole — niet teruggeven in de output) ===
+{volledige_tekst}
+=== EINDE VERSLAG ===
+
 === TE CONTROLEREN ZIN ===
 {tekst}
 === EINDE ZIN ===
@@ -2813,7 +2817,7 @@ Patiënt: {patient_info}
 Controleer actief op:
 
 **KRITIEK:**
-- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren
+- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren — gebruik het volledige verslag als referentie om te verifiëren of links/rechts consistent is
 - Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"
 
 **SPEECH-TO-TEXT FOUTEN:**
@@ -2822,13 +2826,16 @@ Controleer actief op:
 - Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling
 - Ontbrekende woorden die de betekenis wijzigen
 
+**TERMINOLOGIE (enkel indien inconsistentie met de rest van het verslag):**
+- Gebruik het volledige verslag als referentie — corrigeer uitsluitend als de te controleren zin een term gebruikt die duidelijk afwijkt van eerder correct gebruikte terminologie in hetzelfde verslag
+
 INSTRUCTIES VOOR UITVOER:
 - Geef UITSLUITEND de gecorrigeerde zin terug — geen uitleg, geen context, geen markering
 - Vervang uitsluitend foutieve woorden door de correctie op dezelfde plaats
-- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
+- Wijzig NIETS aan correcte tekst — het volledige verslag is referentie, GEEN stijlmodel
 - Indien geen fouten gevonden: geef de originele zin ongewijzigd terug`;
 
-            const INLINE_CHECK_VERSION = "1";
+            const INLINE_CHECK_VERSION = "2";
             const storedInlineCheckVersion = localStorage.getItem("inlineCheckVersion");
             const savedInlineCheck = storedInlineCheckVersion === INLINE_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("inlineCheckUrl"))
@@ -4059,7 +4066,8 @@ negated bevindingen
                                 const ki = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
                                 const dv = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
                                 const pat = extractPatientInfo();
-                                const prompt = fillPrompt(template, { tekst: capturedText, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat });
+                                const volledigeTekst = getCeText();
+                                const prompt = fillPrompt(template, { tekst: capturedText, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, volledige_tekst: volledigeTekst });
                                 let full = '';
                                 await callGeminiStream(getModel('geminiModelRealtime'), prompt, p => { full = p; }, undefined);
                                 const corrText = extractCleanCorrection(full);
