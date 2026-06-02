@@ -2168,11 +2168,14 @@
                         k++;
                     }
                     if (del.trim() && ins.trim()) {
+                        // Replacement: red italic, click to revert
                         html += `<span class="corr" style="color:#ef4444;font-weight:bold;font-style:italic" data-orig="${esc(del)}">${esc(ins)}</span>`;
                     } else if (del.trim()) {
-                        html += `<span style="text-decoration:line-through;color:#9ca3af">${esc(del)}</span>`;
+                        // Deletion: grey strikethrough, click to keep original word
+                        html += `<span class="corr" data-del="true" data-orig="${esc(del)}" style="text-decoration:line-through;color:#9ca3af;cursor:pointer">${esc(del)}</span>`;
                     } else if (ins.trim()) {
-                        html += `<span style="color:#16a34a;font-weight:bold">${esc(ins)}</span>`;
+                        // Insertion: green bold, click to remove added word
+                        html += `<span class="corr" data-ins="true" data-orig="${esc(ins)}" style="color:#16a34a;font-weight:bold;cursor:pointer">${esc(ins)}</span>`;
                     } else {
                         html += esc(ins || del);
                     }
@@ -2187,12 +2190,14 @@
                         parts.push(node.textContent);
                     } else if (node.nodeName === 'BR') {
                         parts.push('\n');
-                    } else if (node.classList && node.classList.contains('corr-reverted')) {
-                        parts.push(node.dataset.orig || '');
                     } else if (node.classList && node.classList.contains('corr')) {
-                        parts.push(node.textContent);
-                    } else if (node.style && node.style.textDecoration && node.style.textDecoration.includes('line-through')) {
-                        // Pure deletion in correction state: skip
+                        // Correction state (AI version):
+                        if (node.dataset.del) { /* deletion = word removed, skip */ }
+                        else parts.push(node.textContent); // replacement or insertion: include
+                    } else if (node.classList && node.classList.contains('corr-reverted')) {
+                        // Reverted state (user chose original):
+                        if (node.dataset.ins) { /* insertion reverted = word removed, skip */ }
+                        else parts.push(node.textContent); // deletion kept or replacement reverted: include
                     } else {
                         node.childNodes.forEach(walk);
                     }
@@ -2311,10 +2316,13 @@
                 const el = e.target.closest(".corr, .corr-reverted");
                 if (!el) return;
                 if (el.classList.contains("corr-reverted")) {
-                    showCorrTooltip(el, "Klik om correctie te herstellen: " + el.dataset.corr);
+                    if (el.dataset.ins) showCorrTooltip(el, "Klik om toevoeging terug te zetten");
+                    else if (el.dataset.del) showCorrTooltip(el, "Klik om verwijdering terug te draaien");
+                    else showCorrTooltip(el, "Klik om correctie te herstellen: " + el.dataset.corr);
                 } else {
-                    const orig = el.getAttribute("data-orig");
-                    if (orig) showCorrTooltip(el, "Origineel: " + orig + " — klik om te herstellen");
+                    if (el.dataset.del) showCorrTooltip(el, "AI: verwijderd — klik om te bewaren");
+                    else if (el.dataset.ins) showCorrTooltip(el, "AI: toegevoegd — klik om te verwijderen");
+                    else { const orig = el.getAttribute("data-orig"); if (orig) showCorrTooltip(el, "Origineel: " + orig + " — klik om te herstellen"); }
                 }
             });
             document.addEventListener("mouseout", (e) => {
@@ -2327,18 +2335,23 @@
                 if (!el) return;
                 corrTooltip.classList.add("hidden");
                 if (el.classList.contains("corr-reverted")) {
-                    // Re-apply correction
-                    el.textContent = el.dataset.corr;
+                    // Re-apply AI correction
+                    if (!el.dataset.del && !el.dataset.ins) el.textContent = el.dataset.corr;
                     el.className = "corr";
-                    el.style.cssText = "color:#ef4444;font-weight:bold;font-style:italic";
+                    if (el.dataset.del) el.style.cssText = "text-decoration:line-through;color:#9ca3af;cursor:pointer";
+                    else if (el.dataset.ins) el.style.cssText = "color:#16a34a;font-weight:bold;cursor:pointer";
+                    else el.style.cssText = "color:#ef4444;font-weight:bold;font-style:italic";
                 } else {
-                    // Revert to original — only if we have original text to show
-                    const orig = el.getAttribute("data-orig");
-                    if (!orig) return;
-                    el.dataset.corr = el.textContent;
-                    el.textContent = orig;
+                    // Revert to original
+                    if (!el.dataset.del && !el.dataset.ins) {
+                        const orig = el.getAttribute("data-orig");
+                        if (!orig) return;
+                        el.dataset.corr = el.textContent;
+                        el.textContent = orig;
+                    }
                     el.className = "corr-reverted";
-                    el.style.cssText = "";
+                    if (el.dataset.ins) el.style.cssText = "text-decoration:line-through;color:#9ca3af;cursor:pointer";
+                    else el.style.cssText = "";
                 }
             });
 
@@ -4411,9 +4424,15 @@ negated bevindingen
                 pipWindow.document.addEventListener('mouseover', (e) => {
                     const el = e.target.closest('.corr, .corr-reverted');
                     if (!el) { pipCorrTooltip.style.display = 'none'; return; }
-                    pipCorrTooltip.textContent = el.classList.contains('corr-reverted')
-                        ? 'Klik om correctie te herstellen: ' + el.dataset.corr
-                        : 'Origineel: ' + (el.getAttribute('data-orig') || '') + ' — klik om te herstellen';
+                    if (el.classList.contains('corr-reverted')) {
+                        pipCorrTooltip.textContent = el.dataset.ins ? 'Klik om toevoeging terug te zetten'
+                            : el.dataset.del ? 'Klik om verwijdering terug te draaien'
+                            : 'Klik om correctie te herstellen: ' + el.dataset.corr;
+                    } else {
+                        pipCorrTooltip.textContent = el.dataset.del ? 'AI: verwijderd — klik om te bewaren'
+                            : el.dataset.ins ? 'AI: toegevoegd — klik om te verwijderen'
+                            : 'Origineel: ' + (el.getAttribute('data-orig') || '') + ' — klik om te herstellen';
+                    }
                     pipCorrTooltip.style.display = 'block';
                 });
                 pipWindow.document.addEventListener('mousemove', (e) => {
@@ -4428,16 +4447,21 @@ negated bevindingen
                     if (!el) return;
                     pipCorrTooltip.style.display = 'none';
                     if (el.classList.contains('corr-reverted')) {
-                        el.textContent = el.dataset.corr;
+                        if (!el.dataset.del && !el.dataset.ins) el.textContent = el.dataset.corr;
                         el.className = 'corr';
-                        el.style.cssText = 'color:#ef4444;font-weight:bold;font-style:italic';
+                        if (el.dataset.del) el.style.cssText = 'text-decoration:line-through;color:#9ca3af;cursor:pointer';
+                        else if (el.dataset.ins) el.style.cssText = 'color:#16a34a;font-weight:bold;cursor:pointer';
+                        else el.style.cssText = 'color:#ef4444;font-weight:bold;font-style:italic';
                     } else {
-                        const orig = el.getAttribute('data-orig');
-                        if (!orig) return;
-                        el.dataset.corr = el.textContent;
-                        el.textContent = orig;
+                        if (!el.dataset.del && !el.dataset.ins) {
+                            const orig = el.getAttribute('data-orig');
+                            if (!orig) return;
+                            el.dataset.corr = el.textContent;
+                            el.textContent = orig;
+                        }
                         el.className = 'corr-reverted';
-                        el.style.cssText = '';
+                        if (el.dataset.ins) el.style.cssText = 'text-decoration:line-through;color:#9ca3af;cursor:pointer';
+                        else el.style.cssText = '';
                     }
                 });
 
