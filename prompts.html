@@ -189,9 +189,9 @@
                     <div class="flex items-center gap-2 mt-1">
                         <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
                         <select id="ai-consult-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                            <option value="gemini-2.0-flash">gemini-2.0-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.0-flash aanbevolen</span>
                     </div>
                 </div>
             </div>
@@ -599,7 +599,7 @@ negated bevindingen
                 { id: "autofill-backup-model",  storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-2.5-pro" },
                 { id: "snomed-model",    storageKey: "geminiModelSnomed",    defaultModel: "gemini-3.1-flash-lite" },
                 { id: "medgemma-model",  storageKey: "geminiModelMedgemma",  defaultModel: "gemini-3.1-flash-lite" },
-                { id: "ai-consult-model", storageKey: "geminiModelAiConsult", defaultModel: "gemini-2.5-flash" },
+                { id: "ai-consult-model", storageKey: "geminiModelAiConsult", defaultModel: "gemini-2.0-flash" },
             ];
 
             async function loadModels() {
