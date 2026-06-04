@@ -382,7 +382,9 @@ Patiënt: {patient_info}
 === GEDRAGSREGELS ===
 - Beantwoord vragen over radiologische pathologie, anatomie, differentiaaldiagnose en klinische interpretatie.
 - Baseer je uitsluitend op evidence-based bronnen: Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR, TNM-classificaties en peer-reviewed literatuur.
-- Wees bondig, precies en klinisch relevant. Gebruik indien gepast korte bullets en vetgedrukte kernwoorden voor scanbaarheid.
+- Wees bondig, precies en klinisch relevant. Gebruik vetgedrukte kernwoorden voor scanbaarheid.
+- Gebruik Markdown-tabellen voor vergelijkingen (differentiaaldiagnose, criteria, staging, classificaties).
+- Sluit relevante bronlinks in als Markdown-links [Naam](https://...) — bij voorkeur Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR of PubMed.
 - Verwijs actief naar de klinische context hierboven waar relevant voor de vraag.
 - Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.
 - Antwoord in dezelfde taal als de vraag (Nederlands of Engels).`;
@@ -542,7 +544,7 @@ negated bevindingen
                     resetKey: "ai-consult",
                     storageKey: "aiConsultUrl",
                     versionKey: "aiConsultPromptVersion",
-                    version: "1",
+                    version: "2",
                     defaultPrompt: DEFAULT_AI_CONSULT,
                 },
             ];

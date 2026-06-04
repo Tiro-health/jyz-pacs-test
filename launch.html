@@ -2158,6 +2158,19 @@
                     .replace(/&gt;/g, '>')
                     .replace(/&amp;/g, '&');
 
+                // Convert markdown tables before newline→<br> conversion
+                text = text.replace(/((?:^|\n)(?:\|[^\n]+\|\n?){2,})/g, (block) => {
+                    const lines = block.trim().split('\n').filter(l => /^\|/.test(l.trim()));
+                    const sepIdx = lines.findIndex(l => /^\|[\s|:-]+\|$/.test(l.trim()));
+                    if (sepIdx < 1) return block;
+                    const parseRow = l => l.split('|').slice(1, -1).map(c => c.trim());
+                    const hdr = parseRow(lines[sepIdx - 1]).map(c => `<th style="border:1px solid var(--tw-border);padding:3px 8px;background:var(--th-bg);text-align:left;font-size:0.75rem;font-weight:600">${c}</th>`).join('');
+                    const rows = lines.slice(sepIdx + 1).map(l =>
+                        '<tr>' + parseRow(l).map(c => `<td style="border:1px solid var(--tw-border);padding:3px 8px;font-size:0.75rem">${c}</td>`).join('') + '</tr>'
+                    ).join('');
+                    return `\n<table style="border-collapse:collapse;width:100%;margin:4px 0"><thead><tr>${hdr}</tr></thead><tbody>${rows}</tbody></table>\n`;
+                });
+
                 // Whitelist and convert known safe HTML tags, strip the rest
                 const html = text
                     // Primary format: <del>original</del><ins>correction</ins> — explicit, reliable
@@ -2182,8 +2195,11 @@
                     .replace(/\*\*\*(.*?)\*\*\*/gs, '<span style="color:#ef4444;font-weight:bold;font-style:italic">$1</span>')
                     .replace(/\*\*(.*?)\*\*/gs,      '<strong>$1</strong>')
                     .replace(/\*(.*?)\*/gs,           '<em>$1</em>')
-                    // Strip any remaining unknown tags
-                    .replace(/<(?!\/?(strong|em|span|br)\b)[^>]+>/gi, '')
+                    // Markdown links [text](https://...) → clickable anchor
+                    .replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g,
+                        '<a href="$2" target="_blank" rel="noopener noreferrer" style="color:#0891b2;text-decoration:underline">$1</a>')
+                    // Strip any remaining unknown tags (allow table, a, tr, td, th elements)
+                    .replace(/<(?!\/?(strong|em|span|br|a|table|thead|tbody|tr|td|th)\b)[^>]+>/gi, '')
                     .replace(/\n/g, '<br>');
                 return html;
             }
@@ -2669,7 +2685,7 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                 localStorage.setItem("kidvActionUrl", kidvActionUrlInput.value);
             });
 
-            const AI_CONSULT_PROMPT_VERSION = "1";
+            const AI_CONSULT_PROMPT_VERSION = "2";
             const DEFAULT_AI_CONSULT_PROMPT = `Je bent een medisch-radiologische expertassistent met diepgaande kennis van radiologische anatomie, pathologie, diagnostische beeldvorming en klinische geneeskunde. Je ondersteunt een radioloog tijdens zijn/haar rapportage en beantwoordt gerichte vragen.
 
 === KLINISCHE CONTEXT ===
@@ -2681,7 +2697,9 @@ Patiënt: {patient_info}
 === GEDRAGSREGELS ===
 - Beantwoord vragen over radiologische pathologie, anatomie, differentiaaldiagnose en klinische interpretatie.
 - Baseer je uitsluitend op evidence-based bronnen: Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR, TNM-classificaties en peer-reviewed literatuur.
-- Wees bondig, precies en klinisch relevant. Gebruik indien gepast korte bullets en vetgedrukte kernwoorden voor scanbaarheid.
+- Wees bondig, precies en klinisch relevant. Gebruik vetgedrukte kernwoorden voor scanbaarheid.
+- Gebruik Markdown-tabellen voor vergelijkingen (differentiaaldiagnose, criteria, staging, classificaties).
+- Sluit relevante bronlinks in als Markdown-links [Naam](https://...) — bij voorkeur Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR of PubMed.
 - Verwijs actief naar de klinische context hierboven waar relevant voor de vraag.
 - Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.
 - Antwoord in dezelfde taal als de vraag (Nederlands of Engels).`;
