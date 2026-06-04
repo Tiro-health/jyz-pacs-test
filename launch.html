@@ -518,10 +518,17 @@
                         <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                     </svg>
                     Clinical information and diagnostic question<span id="clinical-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
+                    <div class="ml-auto flex items-center gap-1.5 shrink-0">
+                    <button
+                        id="ai-consult-btn"
+                        type="button"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors"
+                        title="AI Radiologie Assistent"
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
                     <button
                         id="radiology-check-btn"
                         type="button"
-                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9 11l3 3L22 4"/>
@@ -529,6 +536,7 @@
                         </svg>
                         Radiology check
                     </button>
+                    </div>
                     <svg
                         class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
@@ -550,6 +558,32 @@
                     />
                 </div>
             </details>
+
+            <!-- AI Consult chat panel -->
+            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden">
+                <div class="flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                        AI Radiologie Assistent
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button id="ai-consult-clear" type="button" class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Wis gesprek</button>
+                        <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
+                    </div>
+                </div>
+                <div id="ai-consult-messages" class="px-3 py-3 max-h-72 overflow-y-auto flex flex-col gap-3 text-sm">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
+                </div>
+                <div class="px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
+                    <textarea
+                        id="ai-consult-input"
+                        rows="2"
+                        placeholder="Vraag stellen…"
+                        class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                    ></textarea>
+                    <button id="ai-consult-send" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0">Verstuur</button>
+                </div>
+            </div>
 
             <!-- Previous Studies Form -->
             <details
@@ -1082,6 +1116,7 @@
                         <textarea id="kidv-action-url"></textarea>
                         <textarea id="verslag-check-url"></textarea>
                         <textarea id="inline-check-url"></textarea>
+                        <textarea id="ai-consult-url"></textarea>
                         <textarea id="snomed-ct-action-url"></textarea>
                         <textarea id="medgemma-action-url"></textarea>
                     </div>
@@ -1962,6 +1997,7 @@
                 geminiModelVerslag:    'gemini-3.1-flash-lite',
                 geminiModelSnomed:     'gemini-3.1-flash-lite',
                 geminiModelMedgemma:   'gemini-3.1-flash-lite',
+                geminiModelAiConsult:    'gemini-2.5-flash',
                 geminiModelRealtime:          'gemini-3.1-flash-lite',
                 geminiModelAutofillBackup:   'gemini-2.5-pro',
             };
@@ -2633,6 +2669,30 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                 localStorage.setItem("kidvActionUrl", kidvActionUrlInput.value);
             });
 
+            const AI_CONSULT_PROMPT_VERSION = "1";
+            const DEFAULT_AI_CONSULT_PROMPT = `Je bent een medisch-radiologische expertassistent met diepgaande kennis van radiologische anatomie, pathologie, diagnostische beeldvorming en klinische geneeskunde. Je ondersteunt een radioloog tijdens zijn/haar rapportage en beantwoordt gerichte vragen.
+
+=== KLINISCHE CONTEXT ===
+Type onderzoek: {type_onderzoek}
+Klinische inlichtingen: {klinische_inlichtingen}
+Diagnostische vraagstelling: {diagnostische_vraagstelling}
+Patiënt: {patient_info}
+
+=== GEDRAGSREGELS ===
+- Beantwoord vragen over radiologische pathologie, anatomie, differentiaaldiagnose en klinische interpretatie.
+- Baseer je uitsluitend op evidence-based bronnen: Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR, TNM-classificaties en peer-reviewed literatuur.
+- Wees bondig, precies en klinisch relevant. Gebruik indien gepast korte bullets en vetgedrukte kernwoorden voor scanbaarheid.
+- Verwijs actief naar de klinische context hierboven waar relevant voor de vraag.
+- Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.
+- Antwoord in dezelfde taal als de vraag (Nederlands of Engels).`;
+
+            const aiConsultUrlInput = document.getElementById("ai-consult-url");
+            const savedAiConsult = migratePrompt(localStorage.getItem("aiConsultUrl"));
+            aiConsultUrlInput.value = savedAiConsult || DEFAULT_AI_CONSULT_PROMPT;
+            aiConsultUrlInput.addEventListener("input", () => {
+                localStorage.setItem("aiConsultUrl", aiConsultUrlInput.value);
+            });
+
             // Cache the latest clinical form response via tiro-update
             let latestClinicalResponse = null;
             let latestContextResponse = null;
@@ -2783,6 +2843,105 @@ Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale
                 if (e.target === radiologyModal) {
                     radiologyModal.classList.add("hidden");
                     radiologyModal.classList.remove("flex");
+                }
+            });
+
+            // ── AI Consult chat ─────────────────────────────────────────
+            const aiConsultPanel = document.getElementById("ai-consult-panel");
+            const aiConsultBtn = document.getElementById("ai-consult-btn");
+            const aiConsultMessages = document.getElementById("ai-consult-messages");
+            const aiConsultInput = document.getElementById("ai-consult-input");
+            const aiConsultSend = document.getElementById("ai-consult-send");
+            const aiConsultClear = document.getElementById("ai-consult-clear");
+            const aiConsultClose = document.getElementById("ai-consult-close");
+
+            let _aiConsultHistory = []; // [{role:'user', parts:[{text}]}, {role:'model', parts:[{text}]}]
+            let _aiConsultAbort = null;
+
+            function _aiAddMessage(role, html, streaming = false) {
+                const isUser = role === 'user';
+                const wrap = document.createElement('div');
+                wrap.className = isUser
+                    ? 'flex justify-end'
+                    : 'flex justify-start';
+                const bubble = document.createElement('div');
+                bubble.className = isUser
+                    ? 'max-w-[80%] px-3 py-2 rounded-lg text-xs bg-cyan-600 text-white'
+                    : 'max-w-[85%] px-3 py-2 rounded-lg text-xs bg-neutral-100 dark:bg-accent text-neutral-800 dark:text-neutral-200';
+                bubble.innerHTML = html;
+                wrap.appendChild(bubble);
+                aiConsultMessages.appendChild(wrap);
+                aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight;
+                return bubble; // return so streaming can update it
+            }
+
+            async function _aiSend() {
+                const text = aiConsultInput.value.trim();
+                if (!text || _aiConsultAbort) return;
+                if (!GEMINI_API_KEY) { alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
+
+                aiConsultInput.value = '';
+                aiConsultInput.style.height = 'auto';
+
+                // Remove placeholder hint if first message
+                const hint = aiConsultMessages.querySelector('p');
+                if (hint) hint.remove();
+
+                _aiAddMessage('user', text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'));
+                _aiConsultHistory.push({ role: 'user', parts: [{ text }] });
+
+                const loadingBubble = _aiAddMessage('model', '<span class="ai-spinner" style="border-top-color:#64748b;border-color:rgba(100,116,139,0.3)"></span>');
+                aiConsultSend.disabled = true;
+
+                const template = aiConsultUrlInput.value.trim() || DEFAULT_AI_CONSULT_PROMPT;
+                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                const pat = extractPatientInfo();
+                const systemPrompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat });
+
+                _aiConsultAbort = new AbortController();
+                try {
+                    const full = await callGeminiChatStream(
+                        getModel('geminiModelAiConsult'),
+                        systemPrompt,
+                        _aiConsultHistory,
+                        (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight; },
+                        _aiConsultAbort.signal
+                    );
+                    loadingBubble.innerHTML = renderMarkdown(full);
+                    _aiConsultHistory.push({ role: 'model', parts: [{ text: full }] });
+                } catch (e) {
+                    if (e.name !== 'AbortError') loadingBubble.innerHTML = '<span class="text-red-400">Fout: ' + e.message + '</span>';
+                    _aiConsultHistory.pop(); // remove the user message if failed
+                } finally {
+                    _aiConsultAbort = null;
+                    aiConsultSend.disabled = false;
+                    aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight;
+                }
+            }
+
+            aiConsultBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                aiConsultPanel.classList.toggle("hidden");
+                if (!aiConsultPanel.classList.contains("hidden")) {
+                    aiConsultInput.focus();
+                }
+            });
+
+            aiConsultClose.addEventListener("click", () => aiConsultPanel.classList.add("hidden"));
+
+            aiConsultClear.addEventListener("click", () => {
+                _aiConsultHistory = [];
+                aiConsultMessages.innerHTML = '<p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>';
+            });
+
+            aiConsultSend.addEventListener("click", _aiSend);
+
+            aiConsultInput.addEventListener("keydown", (e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    _aiSend();
                 }
             });
 
@@ -5032,6 +5191,38 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 medgemmaPreview.classList.add("hidden");
                 medgemmaDropzone.classList.remove("hidden");
             });
+
+            async function callGeminiChatStream(model, systemPrompt, history, onChunk, signal) {
+                const body = JSON.stringify({
+                    system_instruction: { parts: [{ text: systemPrompt }] },
+                    contents: history,
+                });
+                const res = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
+                    { method: "POST", headers: { "Content-Type": "application/json" }, body, signal }
+                );
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err?.error?.message || res.statusText);
+                }
+                const reader = res.body.getReader();
+                const dec = new TextDecoder();
+                let full = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = dec.decode(value, { stream: true });
+                    for (const line of chunk.split('\n')) {
+                        if (!line.startsWith('data: ')) continue;
+                        try {
+                            const d = JSON.parse(line.slice(6));
+                            const text = d?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                            if (text) { full += text; onChunk(full); }
+                        } catch {}
+                    }
+                }
+                return full;
+            }
 
             async function callMedGemma(imageBase64, mimeType, prompt) {
                 const model = getModel('geminiModelMedgemma');
