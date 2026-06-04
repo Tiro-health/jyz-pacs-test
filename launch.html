@@ -2890,6 +2890,7 @@ Patiënt: {patient_info}
                 wrap.appendChild(bubble);
                 aiConsultMessages.appendChild(wrap);
                 aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight;
+                _resizeAiConsult();
                 return bubble; // return so streaming can update it
             }
 
@@ -2924,7 +2925,7 @@ Patiënt: {patient_info}
                         getModel('geminiModelAiConsult'),
                         systemPrompt,
                         _aiConsultHistory,
-                        (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight; },
+                        (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight; _resizeAiConsult(); },
                         _aiConsultAbort.signal
                     );
                     loadingBubble.innerHTML = renderMarkdown(full);
@@ -2947,6 +2948,17 @@ Patiënt: {patient_info}
                 aiConsultMessages.style.maxHeight = Math.max(120, available) + 'px';
             }
             window.addEventListener('resize', _resizeAiConsult);
+            window.addEventListener('scroll', _resizeAiConsult);
+
+            // Keep ai-consult-panel in view when other accordions expand
+            ['settings-accordion','active-template-accordion','previous-studies-accordion','context-accordion'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.addEventListener('toggle', () => {
+                    if (!aiConsultPanel.classList.contains('hidden')) {
+                        requestAnimationFrame(() => aiConsultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+                    }
+                });
+            });
 
             aiConsultBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
