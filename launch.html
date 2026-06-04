@@ -571,7 +571,7 @@
                         <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
                     </div>
                 </div>
-                <div id="ai-consult-messages" class="px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm">
+                <div id="ai-consult-messages" class="px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:100px">
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
                 </div>
                 <div class="px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
@@ -2890,7 +2890,6 @@ Patiënt: {patient_info}
                 wrap.appendChild(bubble);
                 aiConsultMessages.appendChild(wrap);
                 aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight;
-                _resizeAiConsult();
                 return bubble; // return so streaming can update it
             }
 
@@ -2925,7 +2924,7 @@ Patiënt: {patient_info}
                         getModel('geminiModelAiConsult'),
                         systemPrompt,
                         _aiConsultHistory,
-                        (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight; _resizeAiConsult(); },
+                        (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight; },
                         _aiConsultAbort.signal
                     );
                     loadingBubble.innerHTML = renderMarkdown(full);
@@ -2945,26 +2944,17 @@ Patiënt: {patient_info}
                 const msgRect = aiConsultMessages.getBoundingClientRect();
                 const inputArea = aiConsultPanel.querySelector(':scope > div:last-child');
                 const inputH = inputArea ? inputArea.offsetHeight : 58;
-                const toolbar = 44; // bottom toolbar
-                const available = window.innerHeight - msgRect.top - inputH - toolbar;
-                const h = Math.max(100, available) + 'px';
-                aiConsultMessages.style.height = h;
-                aiConsultMessages.style.maxHeight = h;
+                const available = window.innerHeight - msgRect.top - inputH - 52;
+                aiConsultMessages.style.maxHeight = Math.max(120, available) + 'px';
             }
             window.addEventListener('resize', _resizeAiConsult);
-            window.addEventListener('scroll', _resizeAiConsult);
 
-            // Keep ai-consult-panel in view when other accordions expand
-            ['settings-accordion','active-template-accordion','previous-studies-accordion','context-accordion'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('toggle', () => {
-                    if (!aiConsultPanel.classList.contains('hidden')) {
-                        setTimeout(() => {
-                            aiConsultPanel.scrollIntoView({ behavior: 'instant', block: 'start' });
-                            _resizeAiConsult();
-                        }, 0);
-                    }
-                });
+            // When settings opens it can push ai-consult-panel out of view in split mode;
+            // scroll just enough to bring it back (only if it has gone above the fold).
+            document.getElementById('settings-accordion')?.addEventListener('toggle', () => {
+                if (!aiConsultPanel.classList.contains('hidden')) {
+                    requestAnimationFrame(() => aiConsultPanel.scrollIntoView({ behavior: 'instant', block: 'nearest' }));
+                }
             });
 
             aiConsultBtn.addEventListener("click", (e) => {
