@@ -571,7 +571,7 @@
                         <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
                     </div>
                 </div>
-                <div id="ai-consult-messages" class="px-3 py-3 max-h-72 overflow-y-auto flex flex-col gap-3 text-sm">
+                <div id="ai-consult-messages" class="px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:100px">
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
                 </div>
                 <div class="px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
@@ -2921,10 +2921,20 @@ Patiënt: {patient_info}
                 }
             }
 
+            function _resizeAiConsult() {
+                if (aiConsultPanel.classList.contains('hidden')) return;
+                const rect = aiConsultMessages.getBoundingClientRect();
+                const bottomReserve = 80; // fixed toolbar + margin
+                const available = window.innerHeight - rect.top - bottomReserve;
+                aiConsultMessages.style.maxHeight = Math.max(120, available) + 'px';
+            }
+            window.addEventListener('resize', _resizeAiConsult);
+
             aiConsultBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
                 aiConsultPanel.classList.toggle("hidden");
                 if (!aiConsultPanel.classList.contains("hidden")) {
+                    _resizeAiConsult();
                     aiConsultInput.focus();
                 }
             });
