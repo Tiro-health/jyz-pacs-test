@@ -560,8 +560,8 @@
             </details>
 
             <!-- AI Consult chat panel -->
-            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden">
-                <div class="flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden flex flex-col">
+                <div class="shrink-0 flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
                     <span class="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
                         AI Radiologie Assistent
@@ -571,10 +571,10 @@
                         <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
                     </div>
                 </div>
-                <div id="ai-consult-messages" class="px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:100px">
+                <div id="ai-consult-messages" class="flex-1 min-h-0 px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:120px">
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
                 </div>
-                <div class="px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
+                <div class="shrink-0 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
                     <textarea
                         id="ai-consult-input"
                         rows="2"
@@ -2941,13 +2941,17 @@ Patiënt: {patient_info}
 
             function _resizeAiConsult() {
                 if (aiConsultPanel.classList.contains('hidden')) return;
-                const msgRect = aiConsultMessages.getBoundingClientRect();
-                const inputArea = aiConsultPanel.querySelector(':scope > div:last-child');
-                const inputH = inputArea ? inputArea.offsetHeight : 58;
-                const available = window.innerHeight - msgRect.top - inputH - 52;
-                aiConsultMessages.style.maxHeight = Math.max(120, available) + 'px';
+                const panelRect = aiConsultPanel.getBoundingClientRect();
+                // toolbar is fixed bottom-4 (~16px) + ~44px tall = top at viewport - 60px; add 12px safety
+                const reserve = 72;
+                aiConsultPanel.style.maxHeight = Math.max(200, window.innerHeight - panelRect.top - reserve) + 'px';
             }
             window.addEventListener('resize', _resizeAiConsult);
+
+            // Accordions above ai-consult-panel can push it down, shrinking available space
+            ['context-accordion', 'clinical-accordion'].forEach(id => {
+                document.getElementById(id)?.addEventListener('toggle', () => requestAnimationFrame(_resizeAiConsult));
+            });
 
             // When settings opens it can push ai-consult-panel out of view in split mode;
             // scroll just enough to bring it back (only if it has gone above the fold).
