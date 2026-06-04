@@ -571,7 +571,7 @@
                         <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
                     </div>
                 </div>
-                <div id="ai-consult-messages" class="px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:100px">
+                <div id="ai-consult-messages" class="px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm">
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
                 </div>
                 <div class="px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
@@ -2942,10 +2942,14 @@ Patiënt: {patient_info}
 
             function _resizeAiConsult() {
                 if (aiConsultPanel.classList.contains('hidden')) return;
-                const rect = aiConsultMessages.getBoundingClientRect();
-                const bottomReserve = 80; // fixed toolbar + margin
-                const available = window.innerHeight - rect.top - bottomReserve;
-                aiConsultMessages.style.maxHeight = Math.max(120, available) + 'px';
+                const msgRect = aiConsultMessages.getBoundingClientRect();
+                const inputArea = aiConsultPanel.querySelector(':scope > div:last-child');
+                const inputH = inputArea ? inputArea.offsetHeight : 58;
+                const toolbar = 44; // bottom toolbar
+                const available = window.innerHeight - msgRect.top - inputH - toolbar;
+                const h = Math.max(100, available) + 'px';
+                aiConsultMessages.style.height = h;
+                aiConsultMessages.style.maxHeight = h;
             }
             window.addEventListener('resize', _resizeAiConsult);
             window.addEventListener('scroll', _resizeAiConsult);
@@ -2955,7 +2959,10 @@ Patiënt: {patient_info}
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('toggle', () => {
                     if (!aiConsultPanel.classList.contains('hidden')) {
-                        requestAnimationFrame(() => aiConsultPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+                        setTimeout(() => {
+                            aiConsultPanel.scrollIntoView({ behavior: 'instant', block: 'start' });
+                            _resizeAiConsult();
+                        }, 0);
                     }
                 });
             });
@@ -2964,8 +2971,7 @@ Patiënt: {patient_info}
                 e.stopPropagation();
                 aiConsultPanel.classList.toggle("hidden");
                 if (!aiConsultPanel.classList.contains("hidden")) {
-                    _resizeAiConsult();
-                    aiConsultInput.focus();
+                    requestAnimationFrame(() => { _resizeAiConsult(); aiConsultInput.focus(); });
                 }
             });
 
