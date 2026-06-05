@@ -520,12 +520,6 @@
                     Clinical information and diagnostic question<span id="clinical-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
                     <div class="ml-auto flex items-center gap-1.5 shrink-0">
                     <button
-                        id="ai-consult-btn"
-                        type="button"
-                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors"
-                        title="AI Radiologie Assistent"
-                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
-                    <button
                         id="radiology-check-btn"
                         type="button"
                         class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
@@ -558,32 +552,6 @@
                     />
                 </div>
             </details>
-
-            <!-- AI Consult chat panel -->
-            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden flex flex-col">
-                <div class="shrink-0 flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
-                    <span class="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-                        AI Radiologie Assistent
-                    </span>
-                    <div class="flex items-center gap-2">
-                        <button id="ai-consult-clear" type="button" class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Wis gesprek</button>
-                        <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
-                    </div>
-                </div>
-                <div id="ai-consult-messages" class="flex-1 min-h-0 px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:120px">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
-                </div>
-                <div class="shrink-0 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
-                    <textarea
-                        id="ai-consult-input"
-                        rows="2"
-                        placeholder="Vraag stellen…"
-                        class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
-                    ></textarea>
-                    <button id="ai-consult-send" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0">Verstuur</button>
-                </div>
-            </div>
 
             <!-- Previous Studies Form -->
             <details
@@ -667,9 +635,15 @@
                     </svg>
                     Dictation
                     <button
+                        id="ai-consult-btn"
+                        type="button"
+                        class="ml-auto inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
+                        title="AI Radiologie Assistent"
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+                    <button
                         id="ai-resultaten-btn"
                         type="button"
-                        class="ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/>
@@ -777,7 +751,10 @@
                         <div id="realtime-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
                             <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
                                 <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Real time — Verslag check</span>
-                                <span id="realtime-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                                <div class="flex items-center gap-2">
+                                    <span id="realtime-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                                    <button type="button" id="realtime-close" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base" title="Sluiten">×</button>
+                                </div>
                             </div>
                             <div id="realtime-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] prose prose-sm dark:prose-invert max-w-none"></div>
                             <div id="realtime-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
@@ -788,6 +765,32 @@
                     </tiro-magic-clipboard>
                 </div>
             </details>
+
+            <!-- AI Consult chat panel -->
+            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden flex flex-col">
+                <div class="shrink-0 flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                        AI Radiologie Assistent
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button id="ai-consult-clear" type="button" class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Wis gesprek</button>
+                        <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
+                    </div>
+                </div>
+                <div id="ai-consult-messages" class="flex-1 min-h-0 px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:120px">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
+                </div>
+                <div class="shrink-0 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
+                    <textarea
+                        id="ai-consult-input"
+                        rows="2"
+                        placeholder="Vraag stellen…"
+                        class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                    ></textarea>
+                    <button id="ai-consult-send" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0">Verstuur</button>
+                </div>
+            </div>
 
             <!-- Textuele back-up template (enkel zichtbaar wanneer geen echte Tiro-template actief) -->
             <details
@@ -2948,10 +2951,8 @@ Patiënt: {patient_info}
             }
             window.addEventListener('resize', _resizeAiConsult);
 
-            // Accordions above ai-consult-panel can push it down, shrinking available space
-            ['context-accordion', 'clinical-accordion'].forEach(id => {
-                document.getElementById(id)?.addEventListener('toggle', () => requestAnimationFrame(_resizeAiConsult));
-            });
+            // autofill-accordion is above ai-consult-panel; toggling it changes available space
+            document.getElementById('autofill-accordion')?.addEventListener('toggle', () => requestAnimationFrame(_resizeAiConsult));
 
             // When settings opens it can push ai-consult-panel out of view in split mode;
             // scroll just enough to bring it back (only if it has gone above the fold).
@@ -3310,6 +3311,7 @@ UITVOERFORMAAT — STRIKT:
             const realtimeActions = document.getElementById('realtime-actions');
             const realtimeToggleOrig = document.getElementById('realtime-toggle-orig');
             const realtimeCopy = document.getElementById('realtime-copy');
+            document.getElementById('realtime-close')?.addEventListener('click', () => realtimePanel.classList.add('hidden'));
             let realtimeEnabled = localStorage.getItem('realtimeEnabled') === 'true';
             let _realtimeDebounce = null;
             let _realtimeAbort = null;
@@ -4399,6 +4401,12 @@ negated bevindingen
                 const _applyZoom = () => { pipWindow.document.body.style.zoom = _pipZoom; };
                 const SZ = 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer font-bold leading-none';
                 const fontBtns = mk('div', 'flex gap-1 ml-auto items-center');
+                const btnPipAI = mk('button', 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors cursor-pointer', '');
+                btnPipAI.id = 'pip-ai-consult-btn';
+                btnPipAI.type = 'button';
+                btnPipAI.title = 'AI Radiologie Assistent';
+                btnPipAI.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>';
+
                 const btnPipCam = mk('button', SZ, '');
                 btnPipCam.id = 'pip-medgemma-btn';
                 btnPipCam.type = 'button';
@@ -4415,7 +4423,7 @@ negated bevindingen
                 btnFontUp.style.fontSize   = '13px';
                 btnFontDown.addEventListener('click', () => { _pipZoom = Math.max(0.5, +(_pipZoom - 0.1).toFixed(1)); _applyZoom(); });
                 btnFontUp.addEventListener('click',   () => { _pipZoom = Math.min(2.0, +(_pipZoom + 0.1).toFixed(1)); _applyZoom(); });
-                fontBtns.append(btnPipCam, btnFontDown, btnFontUp);
+                fontBtns.append(btnPipAI, btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -4562,6 +4570,106 @@ negated bevindingen
                 wrap.appendChild(btnRow);
                 wrap.appendChild(trPanel);
 
+                // ── PiP AI Radiologie Assistent panel ───────────────
+                const pipAiPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-background overflow-hidden flex flex-col');
+                pipAiPanel.style.display = 'none';
+
+                const pipAiHead = mk('div', 'flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const pipAiTitle = mk('span', 'text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5', '');
+                pipAiTitle.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> AI Radiologie Assistent';
+                const pipAiHeadRight = mk('div', 'flex items-center gap-2');
+                const pipAiClearBtn = mkBtn('text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors cursor-pointer', 'Wis gesprek', () => {
+                    _pipAiHistory = [];
+                    pipAiMessages.innerHTML = '<p style="font-size:11px;color:#9ca3af;text-align:center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>';
+                });
+                const pipAiCloseBtn = mk('button', 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base', '×');
+                pipAiCloseBtn.type = 'button'; pipAiCloseBtn.title = 'Sluiten';
+                pipAiCloseBtn.addEventListener('click', () => { pipAiPanel.style.display = 'none'; });
+                pipAiHeadRight.append(pipAiClearBtn, pipAiCloseBtn);
+                pipAiHead.append(pipAiTitle, pipAiHeadRight);
+
+                const pipAiMessages = mk('div', 'flex flex-col gap-2 px-3 py-3 overflow-y-auto');
+                pipAiMessages.style.cssText = 'min-height:80px;max-height:260px;font-size:12px';
+                pipAiMessages.innerHTML = '<p style="font-size:11px;color:#9ca3af;text-align:center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>';
+
+                const pipAiInputRow = mk('div', 'flex gap-2 items-end px-3 py-2 border-t border-neutral-200 dark:border-slate-700');
+                const pipAiInput = pipWindow.document.createElement('textarea');
+                pipAiInput.rows = 2;
+                pipAiInput.placeholder = 'Vraag stellen…';
+                pipAiInput.style.cssText = 'flex:1;padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db;background:#f9fafb;color:#1f2937;resize:none;outline:none;font-family:inherit';
+                const pipAiSendBtn = mk('button', 'inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors shrink-0', 'Verstuur');
+                pipAiSendBtn.type = 'button';
+                pipAiSendBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151';
+                pipAiInputRow.append(pipAiInput, pipAiSendBtn);
+
+                pipAiPanel.append(pipAiHead, pipAiMessages, pipAiInputRow);
+                wrap.appendChild(pipAiPanel);
+
+                let _pipAiHistory = [];
+                let _pipAiAbort = null;
+
+                function _pipAiAddMessage(role, html) {
+                    const isUser = role === 'user';
+                    const wrap_ = pipWindow.document.createElement('div');
+                    wrap_.style.cssText = 'display:flex;' + (isUser ? 'justify-content:flex-end' : 'justify-content:flex-start');
+                    const bubble = pipWindow.document.createElement('div');
+                    bubble.style.cssText = 'max-width:85%;padding:6px 10px;border-radius:8px;font-size:11px;line-height:1.5;' +
+                        (isUser ? 'background:#0891b2;color:#fff' : 'background:#f3f4f6;color:#1f2937');
+                    bubble.innerHTML = html;
+                    wrap_.appendChild(bubble);
+                    pipAiMessages.appendChild(wrap_);
+                    pipAiMessages.scrollTop = pipAiMessages.scrollHeight;
+                    return bubble;
+                }
+
+                async function _pipAiSend() {
+                    const text = pipAiInput.value.trim();
+                    if (!text || _pipAiAbort) return;
+                    if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
+                    pipAiInput.value = '';
+                    const hint = pipAiMessages.querySelector('p');
+                    if (hint) hint.remove();
+                    _pipAiAddMessage('user', text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'));
+                    _pipAiHistory.push({ role: 'user', parts: [{ text }] });
+                    const loadingBubble = _pipAiAddMessage('model', '<span class="ai-spinner" style="border-top-color:#64748b;border-color:rgba(100,116,139,0.3)"></span>');
+                    pipAiSendBtn.disabled = true;
+                    const template = aiConsultUrlInput.value.trim() || DEFAULT_AI_CONSULT_PROMPT;
+                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                    const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
+                    const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
+                    const pat = extractPatientInfo();
+                    const systemPrompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat });
+                    _pipAiAbort = new AbortController();
+                    try {
+                        const full = await callGeminiChatStream(
+                            getModel('geminiModelAiConsult'),
+                            systemPrompt,
+                            _pipAiHistory,
+                            (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); pipAiMessages.scrollTop = pipAiMessages.scrollHeight; },
+                            _pipAiAbort.signal
+                        );
+                        loadingBubble.innerHTML = renderMarkdown(full);
+                        _pipAiHistory.push({ role: 'model', parts: [{ text: full }] });
+                    } catch (e) {
+                        if (e.name !== 'AbortError') loadingBubble.innerHTML = '<span style="color:#f87171">Fout: ' + e.message + '</span>';
+                        _pipAiHistory.pop();
+                    } finally {
+                        _pipAiAbort = null;
+                        pipAiSendBtn.disabled = false;
+                        pipAiMessages.scrollTop = pipAiMessages.scrollHeight;
+                    }
+                }
+
+                btnPipAI.addEventListener('click', () => {
+                    const open = pipAiPanel.style.display !== 'none';
+                    pipAiPanel.style.display = open ? 'none' : '';
+                    if (!open) pipAiInput.focus();
+                });
+                pipAiSendBtn.addEventListener('click', _pipAiSend);
+                pipAiInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); _pipAiSend(); }
+                });
+
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 rtPanel.style.display = (realtimeEnabled && !_pipInlineMode) ? '' : 'none';
@@ -4571,8 +4679,13 @@ negated bevindingen
                 });
                 const rtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const rtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Real time — Verslag check');
+                const rtRight = mk('div', 'flex items-center gap-2');
                 const rtStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
-                rtHead.append(rtTitle, rtStatus);
+                const rtCloseBtn = mk('button', 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base', '×');
+                rtCloseBtn.type = 'button'; rtCloseBtn.title = 'Sluiten';
+                rtCloseBtn.addEventListener('click', () => { rtPanel.style.display = 'none'; });
+                rtRight.append(rtStatus, rtCloseBtn);
+                rtHead.append(rtTitle, rtRight);
                 const rtContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] leading-relaxed');
                 const rtActions = mk('div', 'items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
                 rtActions.style.display = 'none';
@@ -4610,8 +4723,13 @@ negated bevindingen
                 vcPanel.style.display = 'none';
                 const vcHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const vcTitle  = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Verslag check');
+                const vcRight = mk('div', 'flex items-center gap-2');
                 const vcStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
-                vcHead.append(vcTitle, vcStatus);
+                const vcHeaderClose = mk('button', 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base', '×');
+                vcHeaderClose.type = 'button'; vcHeaderClose.title = 'Sluiten';
+                vcHeaderClose.addEventListener('click', () => { vcPanel.style.display = 'none'; });
+                vcRight.append(vcStatus, vcHeaderClose);
+                vcHead.append(vcTitle, vcRight);
                 const vcContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 min-h-[60px] leading-relaxed');
                 const vcActions = mk('div', 'flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
                 vcActions.style.display = 'none';
