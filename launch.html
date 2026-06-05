@@ -766,32 +766,6 @@
                 </div>
             </details>
 
-            <!-- AI Consult chat panel -->
-            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden flex flex-col">
-                <div class="shrink-0 flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
-                    <span class="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
-                        AI Radiologie Assistent
-                    </span>
-                    <div class="flex items-center gap-2">
-                        <button id="ai-consult-clear" type="button" class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Wis gesprek</button>
-                        <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
-                    </div>
-                </div>
-                <div id="ai-consult-messages" class="flex-1 min-h-0 px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:120px">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
-                </div>
-                <div class="shrink-0 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
-                    <textarea
-                        id="ai-consult-input"
-                        rows="2"
-                        placeholder="Vraag stellen…"
-                        class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
-                    ></textarea>
-                    <button id="ai-consult-send" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0">Verstuur</button>
-                </div>
-            </div>
-
             <!-- Textuele back-up template (enkel zichtbaar wanneer geen echte Tiro-template actief) -->
             <details
                 id="text-template-accordion"
@@ -1331,6 +1305,32 @@
                     <div class="h-8"></div>
                 </div>
             </details>
+
+            <!-- AI Consult chat panel — always lives directly after settings-accordion -->
+            <div id="ai-consult-panel" class="hidden w-full bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg mb-3 overflow-hidden flex flex-col">
+                <div class="shrink-0 flex items-center justify-between px-3 py-2 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-xs font-medium text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>
+                        AI Radiologie Assistent
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button id="ai-consult-clear" type="button" class="text-xs text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Wis gesprek</button>
+                        <button id="ai-consult-close" type="button" class="text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors text-base leading-none">×</button>
+                    </div>
+                </div>
+                <div id="ai-consult-messages" class="flex-1 min-h-0 px-3 py-3 overflow-y-auto flex flex-col gap-3 text-sm" style="min-height:120px">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 text-center">Stel een vraag over radiologische pathologie, anatomie of klinische interpretatie.</p>
+                </div>
+                <div class="shrink-0 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex gap-2 items-end">
+                    <textarea
+                        id="ai-consult-input"
+                        rows="2"
+                        placeholder="Vraag stellen…"
+                        class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                    ></textarea>
+                    <button id="ai-consult-send" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shrink-0">Verstuur</button>
+                </div>
+            </div>
         </div>
 
 
@@ -2951,22 +2951,29 @@ Patiënt: {patient_info}
             }
             window.addEventListener('resize', _resizeAiConsult);
 
-            // autofill-accordion is above ai-consult-panel; toggling it changes available space
-            document.getElementById('autofill-accordion')?.addEventListener('toggle', () => requestAnimationFrame(_resizeAiConsult));
+            // settings is directly above ai-consult-panel; recalculate maxHeight when it toggles
+            document.getElementById('settings-accordion')?.addEventListener('toggle', () => requestAnimationFrame(_resizeAiConsult));
 
-            // When settings opens it can push ai-consult-panel out of view in split mode;
-            // scroll just enough to bring it back (only if it has gone above the fold).
-            document.getElementById('settings-accordion')?.addEventListener('toggle', () => {
-                if (!aiConsultPanel.classList.contains('hidden')) {
-                    requestAnimationFrame(() => aiConsultPanel.scrollIntoView({ behavior: 'instant', block: 'nearest' }));
-                }
-            });
+            // Accordion IDs in the left column that we collapse/restore when opening the AI panel
+            const _aiPanelAccordions = ['context-accordion','clinical-accordion','previous-studies-accordion','active-template-accordion','settings-accordion'];
+            let _aiPanelSavedOpen = null;
 
             aiConsultBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
-                aiConsultPanel.classList.toggle("hidden");
-                if (!aiConsultPanel.classList.contains("hidden")) {
+                const wasHidden = aiConsultPanel.classList.contains("hidden");
+                if (wasHidden) {
+                    // Save which accordions are currently open, then close them all
+                    _aiPanelSavedOpen = _aiPanelAccordions.filter(id => document.getElementById(id)?.hasAttribute('open'));
+                    _aiPanelAccordions.forEach(id => document.getElementById(id)?.removeAttribute('open'));
+                    aiConsultPanel.classList.remove("hidden");
                     requestAnimationFrame(() => { _resizeAiConsult(); aiConsultInput.focus(); });
+                } else {
+                    aiConsultPanel.classList.add("hidden");
+                    // Restore previously open accordions
+                    if (_aiPanelSavedOpen) {
+                        _aiPanelSavedOpen.forEach(id => document.getElementById(id)?.setAttribute('open', ''));
+                        _aiPanelSavedOpen = null;
+                    }
                 }
             });
 
@@ -3179,10 +3186,12 @@ UITVOERFORMAAT — STRIKT:
                 const templateEl = document.getElementById('template-accordion');
                 const activeTemplateEl = document.getElementById('active-template-accordion');
                 const settingsEl = document.getElementById('settings-accordion');
+                const aiConsultPanelEl = document.getElementById('ai-consult-panel');
                 if (enabled) {
-                    // Move active-template and settings into left column (safe: no web components)
+                    // Move active-template, settings, and ai-consult-panel into left column
                     leftPanels.appendChild(activeTemplateEl);
                     leftPanels.appendChild(settingsEl);
+                    leftPanels.appendChild(aiConsultPanelEl);
                     mainPanels.classList.add('split-active');
                     mainPanels.classList.remove('flex-col','pb-40');
                     templateEl.classList.remove('flex-1','min-h-0','flex','flex-col');
@@ -3191,9 +3200,10 @@ UITVOERFORMAAT — STRIKT:
                     document.getElementById('autofill-accordion').setAttribute('open','');
                     document.getElementById('template-accordion').removeAttribute('open');
                 } else {
-                    // Move active-template and settings back after right-panels
+                    // Move active-template, settings, and ai-consult-panel back after right-panels
                     mainPanels.appendChild(activeTemplateEl);
                     mainPanels.appendChild(settingsEl);
+                    mainPanels.appendChild(aiConsultPanelEl);
                     mainPanels.classList.remove('split-active');
                     mainPanels.classList.add('flex-col','pb-40');
                     templateEl.classList.add('flex-1','min-h-0','flex','flex-col');
@@ -4596,7 +4606,8 @@ negated bevindingen
                 const pipAiInput = pipWindow.document.createElement('textarea');
                 pipAiInput.rows = 2;
                 pipAiInput.placeholder = 'Vraag stellen…';
-                pipAiInput.style.cssText = 'flex:1;padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db;background:#f9fafb;color:#1f2937;resize:none;outline:none;font-family:inherit';
+                pipAiInput.className = 'flex-1 rounded-md border border-neutral-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-neutral-800 dark:text-neutral-100 resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500';
+                pipAiInput.style.cssText = 'padding:4px 8px;font-size:12px;font-family:inherit;min-width:0';
                 const pipAiSendBtn = mk('button', 'inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors shrink-0', 'Verstuur');
                 pipAiSendBtn.type = 'button';
                 pipAiSendBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151';
