@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CMD=$(jq -r '.tool_input.command' 2>/dev/null); if echo \"$CMD\" | grep -qE 'git (push|pull)'; then TARGET=\"$HOME/Documents/Radiology tiro\"; if [ -d \"$TARGET\" ]; then cp \"$(pwd)/launch.html\" \"$TARGET/\" && cp \"$(pwd)/prompts.html\" \"$TARGET/\" 2>/dev/null && echo \"Synced to $TARGET\"; fi; fi",
+            "command": "CMD=$(jq -r '.tool_input.command // empty' 2>/dev/null); if echo \"$CMD\" | grep -qE 'git (push|pull)'; then TARGET=\"$HOME/Documents/Radiology tiro\"; if [ -d \"$TARGET\" ]; then cp \"$(pwd)/launch.html\" \"$TARGET/\" && cp \"$(pwd)/prompts.html\" \"$TARGET/\" 2>/dev/null && echo \"Synced to $TARGET\"; fi; fi",
             "timeout": 10,
             "statusMessage": "Syncing to Radiology tiro…"
           }
