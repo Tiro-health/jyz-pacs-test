@@ -634,10 +634,11 @@
                         <path d="M11 3H9" />
                     </svg>
                     Dictation
+                    <div class="ml-auto flex items-center gap-2 shrink-0">
                     <button
                         id="ai-consult-btn"
                         type="button"
-                        class="ml-auto inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
                         title="AI Radiologie Assistent"
                     ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
                     <button
@@ -672,6 +673,7 @@
                         </svg>
                         Verslag check
                     </button>
+                    </div><!-- /ml-auto button group -->
                     <svg
                         class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
@@ -2809,24 +2811,17 @@ Patiënt: {patient_info}
                 const patientInfo = extractPatientInfo();
                 const template = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_PROMPT;
                 const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
-                if (GEMINI_API_KEY) {
-                    openGeminiModal("Radiology check");
-                    try {
-                        const text = await callGeminiStream(getModel('geminiModelKidv'), prompt, (partial) => {
-                            geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
-                            _geminiRawText = partial;
-                            geminiContent.innerHTML = renderMarkdown(partial);
-                        }, _newGeminiSignal());
-                        resolveGeminiModal(text);
-                    } catch (e) {
-                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
-                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
-                    }
-                } else {
-                    openGeminiModal("Geen API-sleutel");
-                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
-                    geminiContent.innerHTML = noApiKeyHtml(prompt);
-                }
+
+                // Route through the AI consult panel (chat interface)
+                _aiOpenPanel();
+                requestAnimationFrame(() => { aiConsultInput.focus(); });
+
+                // Show a concise label in the bubble; send the full prompt to the API
+                const parts = ['📋 Radiology check'];
+                if (typeOnderzoek) parts.push('Type: ' + typeOnderzoek);
+                if (ki) parts.push('KI: ' + ki);
+                if (dv) parts.push('DV: ' + dv);
+                await _aiSendMessage(prompt, parts.join('\n'));
             }
 
             radiologyCheckBtn.addEventListener("click", (e) => {
@@ -2896,19 +2891,25 @@ Patiënt: {patient_info}
                 return bubble; // return so streaming can update it
             }
 
-            async function _aiSend() {
-                const text = aiConsultInput.value.trim();
+            function _aiOpenPanel() {
+                if (aiConsultPanel.classList.contains('hidden')) {
+                    _aiPanelSavedOpen = _aiPanelAccordions.filter(id => document.getElementById(id)?.hasAttribute('open'));
+                    _aiPanelAccordions.forEach(id => document.getElementById(id)?.removeAttribute('open'));
+                    aiConsultPanel.classList.remove('hidden');
+                    requestAnimationFrame(_resizeAiConsult);
+                }
+            }
+
+            // Core send: text = full API text, displayLabel = optional shorter bubble label
+            async function _aiSendMessage(text, displayLabel) {
                 if (!text || _aiConsultAbort) return;
                 if (!GEMINI_API_KEY) { alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
 
-                aiConsultInput.value = '';
-                aiConsultInput.style.height = 'auto';
-
-                // Remove placeholder hint if first message
                 const hint = aiConsultMessages.querySelector('p');
                 if (hint) hint.remove();
 
-                _aiAddMessage('user', text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'));
+                const safeLabel = (displayLabel || text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+                _aiAddMessage('user', safeLabel);
                 _aiConsultHistory.push({ role: 'user', parts: [{ text }] });
 
                 const loadingBubble = _aiAddMessage('model', '<span class="ai-spinner" style="border-top-color:#64748b;border-color:rgba(100,116,139,0.3)"></span>');
@@ -2934,12 +2935,20 @@ Patiënt: {patient_info}
                     _aiConsultHistory.push({ role: 'model', parts: [{ text: full }] });
                 } catch (e) {
                     if (e.name !== 'AbortError') loadingBubble.innerHTML = '<span class="text-red-400">Fout: ' + e.message + '</span>';
-                    _aiConsultHistory.pop(); // remove the user message if failed
+                    _aiConsultHistory.pop();
                 } finally {
                     _aiConsultAbort = null;
                     aiConsultSend.disabled = false;
                     aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight;
                 }
+            }
+
+            async function _aiSend() {
+                const text = aiConsultInput.value.trim();
+                if (!text) return;
+                aiConsultInput.value = '';
+                aiConsultInput.style.height = 'auto';
+                await _aiSendMessage(text);
             }
 
             function _resizeAiConsult() {
