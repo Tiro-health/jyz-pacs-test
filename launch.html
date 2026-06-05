@@ -3390,6 +3390,7 @@ UITVOERFORMAAT — STRIKT:
 
                 _realtimeAbort?.abort();
                 _realtimeAbort = new AbortController();
+                realtimePanel.classList.remove('hidden');
                 realtimeStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                 _realtimeOriginalText = tekst;
                 _realtimeShowingOriginal = false;
@@ -5174,6 +5175,7 @@ negated bevindingen
 
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
+                        rtPanel.style.display = '';
                         rtStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                         rtActions.style.display = 'none';
                         rtOrigBtn.style.display = 'none';
