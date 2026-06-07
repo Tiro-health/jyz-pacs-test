@@ -120,81 +120,102 @@
                 </div>
             </div>
 
-            <!-- Radiology check prompt -->
-            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
-                    <span class="text-sm font-medium">Radiology check prompt</span>
-                    <button data-reset="kidv" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
-                </div>
-                <div class="p-4 flex flex-col gap-2">
-                    <textarea id="kidv-prompt" rows="10" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
-                        <select id="kidv-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
-                        </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Pro aanbevolen</span>
-                    </div>
-                </div>
+            <!-- ── Group: AI Radiologie Assistent ─────────────────────── -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-cyan-600 dark:text-cyan-400 uppercase tracking-wide whitespace-nowrap">AI Radiologie Assistent</span>
+                <div class="flex-1 h-px bg-cyan-200 dark:bg-cyan-800/60"></div>
             </div>
+            <div class="flex flex-col gap-3 pl-3 border-l-2 border-cyan-300 dark:border-cyan-700">
 
-            <!-- Verslag check prompt -->
-            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
-                    <span class="text-sm font-medium">Verslag check prompt</span>
-                    <button data-reset="verslag" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
-                </div>
-                <div class="p-4 flex flex-col gap-2">
-                    <textarea id="verslag-prompt" rows="14" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
-                        <select id="verslag-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                            <option value="gemini-2.5-flash">gemini-2.5-flash</option>
-                        </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                <!-- AI Radiologie Assistent system prompt -->
+                <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                        <span class="text-sm font-medium">AI Radiologie Assistent prompt <span class="ml-1 text-xs font-normal text-neutral-400 dark:text-neutral-500">(system instructie)</span></span>
+                        <button data-reset="ai-consult" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Real time</label>
-                        <select id="realtime-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
-                        </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                    <div class="p-4 flex flex-col gap-2">
+                        <textarea id="ai-consult-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                            <select id="ai-consult-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+                            </select>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.0-flash aanbevolen</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Inline check prompt -->
-            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
-                    <span class="text-sm font-medium">Inline verslag check prompt <span class="ml-1 text-xs font-normal text-neutral-400 dark:text-neutral-500">(PiP — per zin)</span></span>
-                    <button data-reset="inline-check" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
-                </div>
-                <div class="p-4 flex flex-col gap-2">
-                    <textarea id="inline-check-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{volledige_tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
-                </div>
-            </div>
-
-            <!-- AI Radiologie Assistent prompt -->
-            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
-                    <span class="text-sm font-medium">AI Radiologie Assistent prompt <span class="ml-1 text-xs font-normal text-neutral-400 dark:text-neutral-500">(system instructie)</span></span>
-                    <button data-reset="ai-consult" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
-                </div>
-                <div class="p-4 flex flex-col gap-2">
-                    <textarea id="ai-consult-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
-                    <div class="flex items-center gap-2 mt-1">
-                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
-                        <select id="ai-consult-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                            <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
-                        </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.0-flash aanbevolen</span>
+                <!-- Radiology check prompt — sent as user turn through the AI agent -->
+                <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                        <div>
+                            <span class="text-sm font-medium">Radiology check prompt</span>
+                            <span class="ml-2 text-xs text-cyan-600 dark:text-cyan-400">(verstuurd via AI agent)</span>
+                        </div>
+                        <button data-reset="kidv" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                    </div>
+                    <div class="p-4 flex flex-col gap-2">
+                        <textarea id="kidv-prompt" rows="10" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                            <select id="kidv-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                            </select>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Pro aanbevolen</span>
+                        </div>
                     </div>
                 </div>
+
+            </div><!-- /AI Radiologie Assistent group -->
+
+            <!-- ── Group: Verslag check ────────────────────────────────── -->
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide whitespace-nowrap">Verslag check</span>
+                <div class="flex-1 h-px bg-neutral-200 dark:bg-slate-700"></div>
             </div>
+            <div class="flex flex-col gap-3 pl-3 border-l-2 border-neutral-300 dark:border-slate-600">
+
+                <!-- Verslag check prompt -->
+                <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                        <span class="text-sm font-medium">Verslag check prompt</span>
+                        <button data-reset="verslag" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                    </div>
+                    <div class="p-4 flex flex-col gap-2">
+                        <textarea id="verslag-prompt" rows="14" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                        <div class="flex items-center gap-2 mt-1">
+                            <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                            <select id="verslag-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                            </select>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Real time</label>
+                            <select id="realtime-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+                            </select>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inline check prompt -->
+                <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                        <span class="text-sm font-medium">Inline verslag check prompt <span class="ml-1 text-xs font-normal text-neutral-400 dark:text-neutral-500">(PiP — per zin)</span></span>
+                        <button data-reset="inline-check" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                    </div>
+                    <div class="p-4 flex flex-col gap-2">
+                        <textarea id="inline-check-prompt" rows="12" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Placeholders: <code class="bg-neutral-100 dark:bg-background px-1 rounded">{tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{volledige_tekst}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{type_onderzoek}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{klinische_inlichtingen}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{diagnostische_vraagstelling}</code> <code class="bg-neutral-100 dark:bg-background px-1 rounded">{patient_info}</code></p>
+                    </div>
+                </div>
+
+            </div><!-- /Verslag check group -->
 
             <!-- SNOMED CT prompt -->
             <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
