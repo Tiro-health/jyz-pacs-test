@@ -1357,6 +1357,7 @@
             // Global text template state (set when a flow match is found)
             window._flowTextTemplate = '';
             window._flowTextTemplateLogic = '';
+            window._flowPresetText = '';
             window._flowLabelsDefaultVisible = false;
 
             // Event delegation — covers both static and dynamically-added checkboxes
@@ -1411,6 +1412,7 @@
                     createTemplateForms();
                     window._flowTextTemplate = '';
                     window._flowTextTemplateLogic = '';
+                    window._flowPresetText = '';
                     updateTextTemplateBackup();
                     return;
                 }
@@ -1435,6 +1437,7 @@
                     createTemplateForms();
                     window._flowTextTemplate = '';
                     window._flowTextTemplateLogic = '';
+                    window._flowPresetText = '';
                     updateTextTemplateBackup();
                     return;
                 }
@@ -1474,6 +1477,7 @@
 
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
+                window._flowPresetText = match.presetText || '';
                 window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
                 window._flowTextTemplateLogic = '';
                 try {
@@ -4350,7 +4354,7 @@ negated bevindingen
                 _pipDmoTa = ta;
 
                 // ── Inline correction mode (contenteditable) ────────
-                let _pipInlineMode = localStorage.getItem('pipInlineMode') === '1';
+                const _pipInlineMode = false; // inline toggle removed; always use textarea
                 const _inlineCache = new Map(); // rawText → corrHTML (null = pending)
                 let _inlineDebounce = null;
 
@@ -4361,8 +4365,8 @@ negated bevindingen
                 const _ceFirstDiv = pipWindow.document.createElement('div');
                 _ceFirstDiv.innerHTML = '<br>';
                 ce.appendChild(_ceFirstDiv);
-                ce.style.display = _pipInlineMode ? '' : 'none';
-                ta.style.display = _pipInlineMode ? 'none' : '';
+                ce.style.display = 'none';
+                ta.style.display = '';
                 wrap.appendChild(ce);
 
                 function getCeText() {
@@ -4440,18 +4444,10 @@ negated bevindingen
                 }
 
                 function _applyInlineModeUI() {
-                    ta.style.display = _pipInlineMode ? 'none' : '';
-                    ce.style.display = _pipInlineMode ? '' : 'none';
-                    rtPanel.style.display = (!_pipInlineMode && realtimeEnabled) ? '' : 'none';
-                    vcBtn.style.display = (!_pipInlineMode && !realtimeEnabled) ? '' : 'none';
-                    inlineToggleBtn.textContent = _pipInlineMode ? '↩ Paneel' : '⌨ Inline';
-                    if (_pipInlineMode) {
-                        inlineToggleBtn.style.borderColor = '#0891b2';
-                        inlineToggleBtn.style.color = '#0891b2';
-                    } else {
-                        inlineToggleBtn.style.borderColor = '';
-                        inlineToggleBtn.style.color = '';
-                    }
+                    ta.style.display = '';
+                    ce.style.display = 'none';
+                    rtPanel.style.display = realtimeEnabled ? '' : 'none';
+                    vcBtn.style.display = realtimeEnabled ? 'none' : '';
                 }
 
                 // ── Action buttons ──────────────────────────────────
@@ -4537,32 +4533,17 @@ negated bevindingen
                 vcBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Verslag check';
                 vcBtn.style.display = (realtimeEnabled || _pipInlineMode) ? 'none' : '';
 
-                // Inline/Paneel toggle button
-                const inlineToggleBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', _pipInlineMode ? '↩ Paneel' : '⌨ Inline', () => {
-                    _pipInlineMode = !_pipInlineMode;
-                    localStorage.setItem('pipInlineMode', _pipInlineMode ? '1' : '0');
-                    if (_pipInlineMode) {
-                        // Paneel → Inline: copy textarea text to CE
-                        const text = ta.value;
-                        ce.innerHTML = '';
-                        (text ? text.split('\n') : ['']).forEach(line => {
-                            const d = pipWindow.document.createElement('div');
-                            d.textContent = line;
-                            if (!line) d.innerHTML = '<br>';
-                            ce.appendChild(d);
-                        });
-                        _inlineCache.clear();
-                    } else {
-                        // Inline → Paneel: extract CE text to textarea
-                        ta.value = getCeText();
-                        _autoGrow();
+                // Preset button — pastes the active exam type's preset text into the DMO textarea
+                const presetBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '📋 Preset', () => {
+                    const preset = window._flowPresetText || '';
+                    if (!preset.trim()) {
+                        pipWindow.alert('Geen preset verslag ingesteld voor dit onderzoekstype. Stel een preset in via de Flow configuratie pagina.');
+                        return;
                     }
-                    _applyInlineModeUI();
+                    setNativeValue(ta, preset);
+                    _autoGrow();
+                    setDictationText(preset);
                 });
-                if (_pipInlineMode) {
-                    inlineToggleBtn.style.borderColor = '#0891b2';
-                    inlineToggleBtn.style.color = '#0891b2';
-                }
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
@@ -4622,7 +4603,7 @@ negated bevindingen
                         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
                     vcBtn,
-                    inlineToggleBtn,
+                    presetBtn,
                     sentInd,
                     fontBtns,
                 );
