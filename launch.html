@@ -4342,6 +4342,21 @@ negated bevindingen
 
                 const wrap = mk('div', 'flex flex-col gap-3');
 
+                // ── Study info header (type onderzoek + lateralisatie) ──────────
+                const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
+                function _updateStudyInfoHeader() {
+                    const typeRaw = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
+                    const lat     = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '';
+                    // Multiple studies may be pipe- or semicolon-separated
+                    const types = typeRaw ? typeRaw.split(/[|;]+/).map(t => t.trim()).filter(Boolean) : [];
+                    const parts = [...types];
+                    if (lat) parts.push(lat);
+                    studyInfoHeader.textContent = parts.join(', ');
+                    studyInfoHeader.style.display = parts.length ? '' : 'none';
+                }
+                _updateStudyInfoHeader();
+                wrap.appendChild(studyInfoHeader);
+
                 // ── Dictation textarea (DMO input) ──────────────────
                 const ta = pipWindow.document.createElement('textarea');
                 ta.rows = 5;
