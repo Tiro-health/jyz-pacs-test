@@ -3270,6 +3270,18 @@ UITVOERFORMAAT — STRIKT:
 
             verslagCheckBtn.addEventListener("click", (e) => {
                 e.stopPropagation();
+
+                // When real-time is active: button triggers an immediate check, bypassing the period requirement
+                if (realtimeEnabled) {
+                    const tekst = readDictationText().trim();
+                    if (tekst) {
+                        _realtimeLastText = tekst; // prevent immediate auto-repeat
+                        runRealtimeCheck(tekst);
+                    }
+                    return;
+                }
+
+                // Normal toggle behavior when real-time is off
                 verslagCheckActive = !verslagCheckActive;
                 verslagCheckBtn.className = (verslagCheckActive ? BTN_ON_CLASS : BTN_OFF_CLASS).replace("ml-auto ", "");
 
