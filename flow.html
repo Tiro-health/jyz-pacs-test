@@ -289,6 +289,18 @@
                     <textarea id="edit-text-template" class="hidden"></textarea>
                 </div>
 
+                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+
+                <!-- Preset verslag -->
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span>📋</span>
+                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Preset verslag</label>
+                    </div>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard verslagtekst voor de 📋 Preset knop in het PiP dicteerscherm. Wordt ongewijzigd in het dicteerveld geplakt.</p>
+                    <textarea id="edit-preset-text" rows="4" placeholder="bv. Normale bevindingen. Geen significante pathologie aantoonbaar." class="w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y text-neutral-800 dark:text-neutral-200 placeholder-neutral-400"></textarea>
+                </div>
+
             </div><!-- /panel-body -->
 
             <!-- Panel footer -->
@@ -1005,6 +1017,7 @@ XXX` },
             document.getElementById('edit-dept-template').value = et.deptTemplate || '';
             document.getElementById('edit-user-template').value = et.userTemplate || '';
             document.getElementById('edit-text-template').value = et.textTemplate || '';
+            document.getElementById('edit-preset-text').value = et.presetText || '';
             window._currentEditId = et.id;
             const ttBadge = document.getElementById('tt-edit-badge');
             if (ttBadge) {
@@ -1210,6 +1223,7 @@ XXX` },
                 deptTemplate:  document.getElementById('edit-dept-template').value.trim(),
                 userTemplate:  document.getElementById('edit-user-template').value.trim(),
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
+                presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
             };
