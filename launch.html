@@ -4345,8 +4345,9 @@ negated bevindingen
                 // ── Study info header (type onderzoek + lateralisatie) ──────────
                 const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
                 function _updateStudyInfoHeader() {
-                    const typeRaw = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
-                    const lat     = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '';
+                    // Use PACS URL params directly — extractAnyField can pick up date fields
+                    const typeRaw = pacsTypeOnderzoek || '';
+                    const lat     = pacsLateralisatie || '';
                     // Multiple studies may be pipe- or semicolon-separated
                     const types = typeRaw ? typeRaw.split(/[|;]+/).map(t => t.trim()).filter(Boolean) : [];
                     const parts = [...types];
