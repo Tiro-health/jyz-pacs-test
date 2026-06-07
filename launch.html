@@ -382,6 +382,7 @@
                     <div class="flex gap-2">
                         <button id="gemini-result-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                         <button id="gemini-result-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                        <button id="gemini-result-send-to-dictation" type="button" title="Stuur naar dictatie (vervangt tekst)" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
                         <button id="gemini-result-close" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">✕</button>
                     </div>
                 </div>
@@ -762,6 +763,7 @@
                             <div id="realtime-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
                                 <button id="realtime-toggle-orig" type="button" style="display:none" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                                 <button id="realtime-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                                <button id="realtime-send-to-dictation" type="button" title="Stuur naar dictatie (vervangt tekst)" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
                             </div>
                         </div>
                     </tiro-magic-clipboard>
@@ -801,6 +803,7 @@
                             <button id="tt-toggle-orig" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
                             <button id="tt-toggle-labels" type="button" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Labels</button>
                             <button id="tt-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                            <button id="tt-send-to-dictation" type="button" title="Stuur naar dictatie (vervangt tekst)" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
                         </div>
                     </div>
                 </div>
@@ -2429,6 +2432,10 @@
                     _showingOriginal ? _verslagOriginalText : geminiContent.innerText
                 ).catch(() => {});
             });
+            document.getElementById("gemini-result-send-to-dictation").addEventListener("click", () => {
+                const text = _showingOriginal ? _verslagOriginalText : geminiContent.innerText;
+                if (text) sendToDictationFields(text);
+            });
 
             // Fixed-position tooltip + per-correction click toggle
             const corrTooltip = document.getElementById("corr-tooltip");
@@ -2603,6 +2610,16 @@
                     }
                 }
                 latestDictationText = text;
+            }
+
+            function sendToDictationFields(text) {
+                if (!text) return;
+                setDictationText(text);
+                if (_pipDmoTa && _pipWindow && !_pipWindow.closed) {
+                    setNativeValue(_pipDmoTa, text);
+                    _pipDmoTa.style.height = 'auto';
+                    _pipDmoTa.style.height = _pipDmoTa.scrollHeight + 'px';
+                }
             }
 
             function readDictationText() {
@@ -3458,6 +3475,10 @@ UITVOERFORMAAT — STRIKT:
                 realtimeCopy.style.color = '#16a34a';
                 setTimeout(() => { realtimeCopy.textContent = orig; realtimeCopy.style.color = ''; }, 2000);
             });
+            document.getElementById('realtime-send-to-dictation').addEventListener('click', () => {
+                const text = _realtimeShowingOriginal ? _realtimeOriginalText : getRealtimeText(realtimeContent);
+                if (text) sendToDictationFields(text);
+            });
 
             function scheduleRealtimeCheck() {
                 // When the PiP window is open, realtime check runs there instead
@@ -3895,6 +3916,9 @@ negated bevindingen
             ttCopy.addEventListener('click', () => {
                 navigator.clipboard.writeText(ttContent.innerText).catch(() => {});
             });
+            document.getElementById('tt-send-to-dictation').addEventListener('click', () => {
+                sendToDictationFields(ttContent.innerText);
+            });
             document.getElementById('tt-close').addEventListener('click', () => {
                 _ttAbort?.abort();
                 ttResultPanel.classList.add('hidden');
@@ -4165,6 +4189,7 @@ negated bevindingen
             // MedGemma image analysis
             // ============================================
             let _pipWindow = null; // declared here so updateMedgemmaToggle() can reference it safely
+            let _pipDmoTa = null; // reference to PiP DMO textarea for sendToDictationFields()
             // PACS URL display
             const pacsUrlDisplay  = document.getElementById("pacs-url-display");
             const pacsUrlCopyBtn  = document.getElementById("pacs-url-copy-btn");
@@ -4265,6 +4290,7 @@ negated bevindingen
                 _ttAbort?.abort();
                 _pipWindow = null;
                 _pipTtRef = null;
+                _pipDmoTa = null;
                 _pipRealtimeLastText = '';
                 updateDictationPopoutToggle(false);
             }
@@ -4309,6 +4335,7 @@ negated bevindingen
                 const _autoGrow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
                 ta.addEventListener('input', _autoGrow);
                 wrap.appendChild(ta);
+                _pipDmoTa = ta;
 
                 // ── Inline correction mode (contenteditable) ────────
                 let _pipInlineMode = localStorage.getItem('pipInlineMode') === '1';
