@@ -619,6 +619,15 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
               dicom:['vinger links','vinger rechts','vingers'], deptTemplate:'', userTemplate:'', aiRules:[] },
             { id:'rx-bek',  name:'RX BEKKEN EN HEUP',          code:'rxbek',    modality:'RX',
               dicom:['bekken','heup links','heup rechts'], deptTemplate:'', userTemplate:'', aiRules:[],
+              presetText:`- Botpatroon: Normaal botpatroon.
+- Coxo-femorale gewricht: Normaal.
+- Overige gewichten: Normaal
+- Weke delen: Normaal.
+- Fracturen: Geen verplaatste fracturen aantoonbaar.
+- Andere: /
+
+BESLUIT:
+Geen verplaatste fracturen aantoonbaar radiografisch, bij aanhoudende of toenemende klachten CT grafisch te herevalueren.`,
               textTemplate:`{- Post-operatieve status: XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 - Botpatroon: 'Normaal botpatroon.' // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
 - Coxo-femorale gewricht: 'Normaal.' // Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties. Ook eventuele Pincer of CAM type FAI mag hier beschreven worden en eveneens eventueel aanwezige heupdysplasie.
@@ -805,6 +814,10 @@ XXX` },
                 }
                 if (def.textTemplate && !et.textTemplate) {
                     et.textTemplate = def.textTemplate;
+                    changed = true;
+                }
+                if (def.presetText && !et.presetText) {
+                    et.presetText = def.presetText;
                     changed = true;
                 }
                 // Force-update templates that use [br] markers if the stored version doesn't have them yet
