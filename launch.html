@@ -4914,7 +4914,8 @@ negated bevindingen
                     vcPanel.style.display = 'none';
                 });
 
-                vcActions.append(vcOrigBtn, vcCopyBtn, vcCloseBtn);
+                const vcSendBtn = mkSendBtn(() => _vcShowingOrig ? (_vcOrigText || '') : (vcContent.innerText || ''));
+                vcActions.append(vcOrigBtn, vcCopyBtn, vcSendBtn, vcCloseBtn);
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
 
