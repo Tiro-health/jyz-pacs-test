@@ -4530,23 +4530,8 @@ negated bevindingen
                 btnPipVc.type = 'button';
                 btnPipVc.title = 'Verslag check';
                 btnPipVc.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-                btnPipVc.addEventListener('click', () => {
-                    const tekst = ta.value.trim();
-                    const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
-                    const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
-                    const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                    if (!tekst || !typeOnderzoek || !ki || !dv) {
-                        modalVcTekst.value = tekst;
-                        modalVcType.value = typeOnderzoek;
-                        modalVcKi.value = ki;
-                        modalVcDv.value = dv;
-                        verslagModal.classList.remove("hidden");
-                        verslagModal.classList.add("flex");
-                        [modalVcTekst, modalVcType, modalVcKi, modalVcDv].find(el => !el.value)?.focus();
-                    } else {
-                        openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv);
-                    }
-                });
+                // Delegates to the existing vcBtn which streams into the PiP vcPanel
+                btnPipVc.addEventListener('click', () => vcBtn.click());
 
                 fontBtns.append(btnPipAI, btnPipVc, btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
