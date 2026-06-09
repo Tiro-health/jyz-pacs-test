@@ -4358,7 +4358,7 @@ negated bevindingen
                 if (document.documentElement.classList.contains('dark')) {
                     pipWindow.document.documentElement.classList.add('dark');
                 }
-                pipWindow.document.body.style.cssText = 'margin:0;padding:0;overflow:hidden;height:100vh;display:flex;flex-direction:column;';
+                pipWindow.document.body.style.cssText = 'margin:0;padding:0;overflow-y:auto;';
                 pipWindow.document.body.className = 'bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200';
 
                 const mk = (tag, cls, text) => {
@@ -4369,7 +4369,7 @@ negated bevindingen
                 };
 
                 const wrap = mk('div', 'flex flex-col gap-3');
-                wrap.style.cssText = 'flex:1;min-height:0;overflow-y:auto;padding:8px;box-sizing:border-box;';
+                wrap.style.cssText = 'padding:8px;box-sizing:border-box;';
 
                 // ── Study info header (type onderzoek + lateralisatie) ──────────
                 const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
@@ -4392,10 +4392,10 @@ negated bevindingen
                 ta.rows = 5;
                 ta.placeholder = 'Dicteer hier via DMO…';
                 ta.className = 'w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
-                ta.style.flex = '1';
                 ta.style.minHeight = '130px';
                 ta.style.overflowY = 'auto';
-                // _autoGrow is a no-op: flex handles the height; ta scrolls internally
+                ta.style.height = '130px'; // initial; recalcTaHeight() will override
+                // _autoGrow is a no-op: recalcTaHeight handles the height; ta scrolls internally
                 const _autoGrow = () => {};
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
@@ -5126,6 +5126,36 @@ negated bevindingen
                 });
 
                 pipWindow.document.body.appendChild(wrap);
+
+                // ── Dynamic textarea height ──────────────────────────
+                // Fills available viewport height; never smaller than min-height.
+                // Recalculates when panels show/hide or the window is resized.
+                let _recalcDebounce = null;
+                const recalcTaHeight = () => {
+                    clearTimeout(_recalcDebounce);
+                    _recalcDebounce = pipWindow.setTimeout(() => {
+                        const viewH = pipWindow.document.documentElement.clientHeight;
+                        let usedH = 0;
+                        let visCount = 0;
+                        for (const child of wrap.children) {
+                            if (child === ta || child === ce) continue;
+                            if (pipWindow.getComputedStyle(child).display === 'none') continue;
+                            usedH += child.offsetHeight;
+                            visCount++;
+                        }
+                        const gapTotal = visCount * 12; // gap-3 = 12px per gap between ta and each visible sibling
+                        const wrapPad = 16; // 8px top + 8px bottom
+                        const available = viewH - usedH - gapTotal - wrapPad;
+                        ta.style.height = Math.max(130, Math.floor(available)) + 'px';
+                    }, 30);
+                };
+                pipWindow.addEventListener('resize', recalcTaHeight);
+                // Watch all direct children of wrap for style/class changes (panel show/hide)
+                const _pipPanelObserver = new pipWindow.MutationObserver(recalcTaHeight);
+                for (const child of wrap.children) {
+                    _pipPanelObserver.observe(child, { attributes: true, attributeFilter: ['style', 'class'] });
+                }
+                recalcTaHeight();
 
                 // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
                 const pipCorrTooltip = mk('div', '');
