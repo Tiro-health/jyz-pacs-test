@@ -4494,7 +4494,6 @@ negated bevindingen
                     ta.style.display = '';
                     ce.style.display = 'none';
                     rtPanel.style.display = realtimeEnabled ? '' : 'none';
-                    vcBtn.style.display = realtimeEnabled ? 'none' : '';
                 }
 
                 // ── Action buttons ──────────────────────────────────
@@ -4643,11 +4642,7 @@ negated bevindingen
                 const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
                 trPanel.append(trHead, trContent);
 
-                // "Verslag check" button — visible only when realtime is OFF and not in inline mode
-                const vcBtn = mk('button', SM.replace('cursor-pointer','') + ' cursor-pointer', '');
-                vcBtn.type = 'button';
-                vcBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Verslag check';
-                vcBtn.style.display = (realtimeEnabled || _pipInlineMode) ? 'none' : '';
+
 
                 // Preset button — pastes the active exam type's preset text into the DMO textarea
                 const presetBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '📋 Preset', () => {
@@ -4711,7 +4706,6 @@ negated bevindingen
                         btn.style.color = '#16a34a';
                         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
-                    vcBtn,
                     presetBtn,
                     sentInd,
                     fontBtns,
@@ -4823,7 +4817,7 @@ negated bevindingen
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 rtPanel.style.display = (realtimeEnabled && !_pipInlineMode) ? '' : 'none';
-                // Keep PiP realtime panel and manual vcBtn in sync with the main toggle
+                // Keep PiP realtime panel in sync with the main toggle
                 realtimeToggle.addEventListener('click', () => {
                     _applyInlineModeUI();
                 });
@@ -4869,7 +4863,7 @@ negated bevindingen
                 rtPanel.append(rtHead, rtContent, rtActions);
                 wrap.appendChild(rtPanel);
 
-                // ── Handmatig verslag check panel (zichtbaar na klikken vcBtn) ──
+                // ── Handmatig verslag check panel (zichtbaar via btnPipVc) ──
                 const vcPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 vcPanel.style.display = 'none';
                 const vcHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
@@ -4919,43 +4913,6 @@ negated bevindingen
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
 
-                vcBtn.addEventListener('click', async () => {
-                    const tekst = (_pipInlineMode ? getCeText() : ta.value).trim();
-                    if (!tekst) { pipWindow.alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
-                    if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
-
-                    _vcAbort?.abort();
-                    _vcAbort = new AbortController();
-                    vcPanel.style.display = '';
-                    vcContent.innerHTML = '';
-                    vcStatus.textContent = 'Verwerken…';
-                    vcActions.style.display = 'none';
-                    vcOrigBtn.style.display = 'none';
-                    _vcOrigText = tekst;
-                    _vcShowingOrig = false;
-                    _vcResultHTML = null;
-                    vcOrigBtn.textContent = '↩ Origineel';
-
-                    const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
-                    const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
-                    const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
-                    const pat = extractPatientInfo();
-                    const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, text_template: window._flowTextTemplate || '' });
-
-                    try {
-                        let first = true;
-                        await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
-                            if (first) { vcContent.innerHTML = ''; first = false; }
-                            vcContent.innerHTML = renderMarkdown(partial);
-                            vcStatus.textContent = '';
-                        }, _vcAbort.signal);
-                        vcActions.style.display = 'flex';
-                        vcOrigBtn.style.display = _vcOrigText ? '' : 'none';
-                    } catch (e) {
-                        if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
-                    }
-                });
 
                 // ── Textuele back-up resultaat panel ────────────────
                 const pipTtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
