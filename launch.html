@@ -4358,6 +4358,18 @@ negated bevindingen
                 if (document.documentElement.classList.contains('dark')) {
                     pipWindow.document.documentElement.classList.add('dark');
                 }
+                // Custom scrollbar style for DMO textarea
+                const _pipScrollStyle = pipWindow.document.createElement('style');
+                _pipScrollStyle.textContent = [
+                    '.pip-dmo-ta::-webkit-scrollbar{width:4px}',
+                    '.pip-dmo-ta::-webkit-scrollbar-track{background:transparent}',
+                    '.pip-dmo-ta::-webkit-scrollbar-thumb{background:rgba(148,163,184,0.35);border-radius:9999px}',
+                    '.pip-dmo-ta::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,0.65)}',
+                    '.pip-dmo-ta{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,0.35) transparent}',
+                    '.dark .pip-dmo-ta::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.35)}',
+                    '.dark .pip-dmo-ta::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,0.65)}',
+                ].join('');
+                pipWindow.document.head.appendChild(_pipScrollStyle);
                 pipWindow.document.body.style.cssText = 'margin:0;padding:0;overflow-y:auto;';
                 pipWindow.document.body.className = 'bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200';
 
@@ -4391,7 +4403,7 @@ negated bevindingen
                 const ta = pipWindow.document.createElement('textarea');
                 ta.rows = 5;
                 ta.placeholder = 'Dicteer hier via DMO…';
-                ta.className = 'w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
+                ta.className = 'pip-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
                 ta.style.minHeight = '130px';
                 ta.style.overflowY = 'auto';
                 ta.style.height = '130px'; // initial; recalcTaHeight() will override
