@@ -4525,7 +4525,30 @@ negated bevindingen
                 btnFontUp.style.fontSize   = '13px';
                 btnFontDown.addEventListener('click', () => { _pipZoom = Math.max(0.5, +(_pipZoom - 0.1).toFixed(1)); _applyZoom(); });
                 btnFontUp.addEventListener('click',   () => { _pipZoom = Math.min(2.0, +(_pipZoom + 0.1).toFixed(1)); _applyZoom(); });
-                fontBtns.append(btnPipAI, btnPipCam, btnFontDown, btnFontUp);
+
+                const btnPipVc = mk('button', SZ.replace('font-bold leading-none', ''), '');
+                btnPipVc.type = 'button';
+                btnPipVc.title = 'Verslag check';
+                btnPipVc.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+                btnPipVc.addEventListener('click', () => {
+                    const tekst = ta.value.trim();
+                    const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                    const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
+                    const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
+                    if (!tekst || !typeOnderzoek || !ki || !dv) {
+                        modalVcTekst.value = tekst;
+                        modalVcType.value = typeOnderzoek;
+                        modalVcKi.value = ki;
+                        modalVcDv.value = dv;
+                        verslagModal.classList.remove("hidden");
+                        verslagModal.classList.add("flex");
+                        [modalVcTekst, modalVcType, modalVcKi, modalVcDv].find(el => !el.value)?.focus();
+                    } else {
+                        openVerslagCheckUrl(tekst, typeOnderzoek, ki, dv);
+                    }
+                });
+
+                fontBtns.append(btnPipAI, btnPipVc, btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
