@@ -4563,12 +4563,16 @@ negated bevindingen
                     const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, text_template: window._flowTextTemplate || '' });
 
                     try {
+                        let streamedText = '';
                         let first = true;
                         await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
                             if (first) { vcContent.innerHTML = ''; first = false; }
-                            vcContent.innerHTML = renderMarkdown(partial);
+                            streamedText = partial;
+                            vcContent.innerHTML = partial.replace(/\n/g, '<br>');
                             vcStatus.textContent = '';
                         }, _vcAbort.signal);
+                        const corrected = extractCleanCorrection(streamedText);
+                        vcContent.innerHTML = computeDiffHTMLStructured(tekst, corrected);
                         vcActions.style.display = 'flex';
                         vcOrigBtn.style.display = _vcOrigText ? '' : 'none';
                     } catch (e) {
@@ -4896,7 +4900,7 @@ negated bevindingen
 
                 const vcCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipCopy(_vcShowingOrig ? (_vcOrigText || '') : (vcContent.innerText || ''));
+                    pipCopy(_vcShowingOrig ? (_vcOrigText || '') : getRealtimeText(vcContent));
                     const orig = btn.textContent;
                     btn.textContent = 'Gekopieerd ✓';
                     btn.style.color = '#16a34a';
@@ -4908,7 +4912,7 @@ negated bevindingen
                     vcPanel.style.display = 'none';
                 });
 
-                const vcSendBtn = mkSendBtn(() => _vcShowingOrig ? (_vcOrigText || '') : (vcContent.innerText || ''));
+                const vcSendBtn = mkSendBtn(() => _vcShowingOrig ? (_vcOrigText || '') : getRealtimeText(vcContent));
                 vcActions.append(vcOrigBtn, vcCopyBtn, vcSendBtn, vcCloseBtn);
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
