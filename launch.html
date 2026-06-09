@@ -2714,13 +2714,21 @@ Geef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinisc
 
 Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale scanbaarheid.`;
 
-            const savedKidv = migratePrompt(localStorage.getItem("kidvActionUrl"));
+            const KIDV_PROMPT_VERSION = "2";
+            const storedKidvVersion = localStorage.getItem("kidvActionVersion");
+            const savedKidv = storedKidvVersion === KIDV_PROMPT_VERSION
+                ? migratePrompt(localStorage.getItem("kidvActionUrl"))
+                : "";
             kidvActionUrlInput.value = savedKidv || DEFAULT_KIDV_PROMPT;
+            if (!savedKidv) {
+                localStorage.setItem("kidvActionVersion", KIDV_PROMPT_VERSION);
+                localStorage.setItem("kidvActionUrl", DEFAULT_KIDV_PROMPT);
+            }
             kidvActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("kidvActionUrl", kidvActionUrlInput.value);
             });
 
-            const AI_CONSULT_PROMPT_VERSION = "2";
+            const AI_CONSULT_PROMPT_VERSION = "3";
             const DEFAULT_AI_CONSULT_PROMPT = `Je bent een medisch-radiologische expertassistent met diepgaande kennis van radiologische anatomie, pathologie, diagnostische beeldvorming en klinische geneeskunde. Je ondersteunt een radioloog tijdens zijn/haar rapportage en beantwoordt gerichte vragen.
 
 === KLINISCHE CONTEXT ===
@@ -2734,14 +2742,21 @@ Patiënt: {patient_info}
 - Baseer je uitsluitend op evidence-based bronnen: Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR, TNM-classificaties en peer-reviewed literatuur.
 - Wees bondig, precies en klinisch relevant. Gebruik vetgedrukte kernwoorden voor scanbaarheid.
 - Gebruik Markdown-tabellen voor vergelijkingen (differentiaaldiagnose, criteria, staging, classificaties).
-- Sluit relevante bronlinks in als Markdown-links [Naam](https://...) — bij voorkeur Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR of PubMed.
+- Verwijs naar relevante bronnen bij naam in de tekst (bv. "Radiopaedia", "Fleischner Society", "ACR"). Gebruik GEEN specifieke artikel-URLs — genereer enkel zoekpagina-links in de vorm [Radiopaedia: zoekterm](https://radiopaedia.org/search?q=zoekterm&scope=all) of [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=zoekterm). Gebruik NOOIT een specifieke artikel-URL die je zelf bedenkt, want die bestaat mogelijk niet.
 - Verwijs actief naar de klinische context hierboven waar relevant voor de vraag.
 - Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.
 - Antwoord in dezelfde taal als de vraag (Nederlands of Engels).`;
 
             const aiConsultUrlInput = document.getElementById("ai-consult-url");
-            const savedAiConsult = migratePrompt(localStorage.getItem("aiConsultUrl"));
+            const storedAiConsultVersion = localStorage.getItem("aiConsultVersion");
+            const savedAiConsult = storedAiConsultVersion === AI_CONSULT_PROMPT_VERSION
+                ? migratePrompt(localStorage.getItem("aiConsultUrl"))
+                : "";
             aiConsultUrlInput.value = savedAiConsult || DEFAULT_AI_CONSULT_PROMPT;
+            if (!savedAiConsult) {
+                localStorage.setItem("aiConsultVersion", AI_CONSULT_PROMPT_VERSION);
+                localStorage.setItem("aiConsultUrl", DEFAULT_AI_CONSULT_PROMPT);
+            }
             aiConsultUrlInput.addEventListener("input", () => {
                 localStorage.setItem("aiConsultUrl", aiConsultUrlInput.value);
             });
