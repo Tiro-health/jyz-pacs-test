@@ -4649,14 +4649,7 @@ negated bevindingen
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
-                        let textToCopy;
-                        if (_pipInlineMode) {
-                            textToCopy = getCeText();
-                        } else if (realtimeEnabled && _rtOrigText) {
-                            textToCopy = _rtShowingOrig ? (_rtOrigText || ta.value) : getRealtimeText(rtContent);
-                        } else {
-                            textToCopy = ta.value;
-                        }
+                        const textToCopy = _pipInlineMode ? getCeText() : ta.value;
                         pipCopy(textToCopy);
                         const orig = btn.textContent;
                         btn.textContent = 'Gekopieerd ✓';
