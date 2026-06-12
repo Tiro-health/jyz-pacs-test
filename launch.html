@@ -4518,14 +4518,49 @@ negated bevindingen
                 trPanel.style.display = 'none';
                 const trHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
                 const trTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Vertaling');
+                const trRight = mk('div', 'flex items-center gap-2');
                 const trStatus = mk('span', 'text-xs text-neutral-400 dark:text-neutral-500', '');
-                const trCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', () => {
-                    pipCopy(trContent.innerText || '');
+                const trHeaderClose = mk('button', 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base', '×');
+                trHeaderClose.type = 'button'; trHeaderClose.title = 'Sluiten';
+                trHeaderClose.addEventListener('click', () => { trPanel.style.display = 'none'; });
+                trRight.append(trStatus, trHeaderClose);
+                trHead.append(trTitle, trRight);
+                const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
+                const trActions = mk('div', 'flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted');
+                trActions.style.display = 'none';
+
+                let _trOrigText = null, _trShowingOrig = false, _trResultHTML = null;
+
+                const trOrigBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '↩ Origineel', () => {
+                    _trShowingOrig = !_trShowingOrig;
+                    if (_trShowingOrig) {
+                        _trResultHTML = trContent.innerHTML;
+                        trContent.innerHTML = (_trOrigText || '').replace(/\n/g, '<br>');
+                        trOrigBtn.textContent = '↩ Vertaald';
+                    } else {
+                        trContent.innerHTML = _trResultHTML;
+                        trOrigBtn.textContent = '↩ Origineel';
+                    }
+                });
+                trOrigBtn.style.display = 'none';
+
+                const trCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
+                    const btn = e.currentTarget;
+                    pipCopy(_trShowingOrig ? (_trOrigText || '') : (trContent.innerText || ''));
+                    const orig = btn.textContent;
+                    btn.textContent = 'Gekopieerd ✓';
+                    btn.style.color = '#16a34a';
+                    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                });
+
+                const trSendBtn = mkSendBtn(() => _trShowingOrig ? (_trOrigText || '') : (trContent.innerText || ''));
+
+                const trCloseBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer ml-auto', 'Sluiten', () => {
                     trPanel.style.display = 'none';
                 });
-                trHead.append(trTitle, trStatus, trCopyBtn);
-                const trContent = mk('div', 'px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed');
-                trPanel.append(trHead, trContent);
+
+                trActions.append(trOrigBtn, trCopyBtn, trSendBtn, trCloseBtn);
+                trPanel.append(trHead, trContent, trActions);
 
                 // "Verslag check" button — visible only when realtime is OFF and not in inline mode
                 const vcBtn = mk('button', SM.replace('cursor-pointer','') + ' cursor-pointer', '');
@@ -4573,17 +4608,27 @@ negated bevindingen
                         trPanel.style.display = '';
                         trContent.innerHTML = '';
                         trStatus.textContent = 'Bezig…';
+                        trActions.style.display = 'none';
+                        trOrigBtn.style.display = 'none';
+                        _trOrigText = text;
+                        _trShowingOrig = false;
+                        _trResultHTML = null;
+                        trOrigBtn.textContent = '↩ Origineel';
                         if (GEMINI_API_KEY) {
                             try {
                                 const result = await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal());
                                 trContent.innerHTML = renderMarkdown(result);
                                 trStatus.textContent = '';
+                                trActions.style.display = 'flex';
+                                trOrigBtn.style.display = _trOrigText ? '' : 'none';
                             } catch (e) {
                                 if (e.name !== 'AbortError') trStatus.textContent = 'Fout: ' + e.message;
                             }
                         } else {
                             trStatus.textContent = '';
                             trContent.innerHTML = noApiKeyHtml(prompt);
+                            trActions.style.display = 'flex';
+                            trOrigBtn.style.display = 'none';
                         }
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
