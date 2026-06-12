@@ -2004,14 +2004,14 @@
             });
 
             const GEMINI_MODEL_DEFAULTS = {
-                geminiModelTranslate:  'gemini-3.1-flash-lite',
-                geminiModelKidv:       'gemini-2.5-pro',
-                geminiModelVerslag:    'gemini-3.1-flash-lite',
-                geminiModelSnomed:     'gemini-3.1-flash-lite',
-                geminiModelMedgemma:   'gemini-3.1-flash-lite',
-                geminiModelAiConsult:    'gemini-2.0-flash-lite',
-                geminiModelRealtime:          'gemini-3.1-flash-lite',
-                geminiModelAutofillBackup:   'gemini-2.5-pro',
+                geminiModelTranslate:       'gemini-2.5-flash',
+                geminiModelKidv:            'gemini-2.5-pro',
+                geminiModelVerslag:         'gemini-2.5-flash',
+                geminiModelSnomed:          'gemini-2.5-flash',
+                geminiModelMedgemma:        'gemini-2.5-flash',
+                geminiModelAiConsult:       'gemini-2.5-pro',
+                geminiModelRealtime:        'gemini-2.5-flash',
+                geminiModelAutofillBackup:  'gemini-2.5-pro',
             };
             function getModel(key) {
                 return localStorage.getItem(key) || GEMINI_MODEL_DEFAULTS[key] || 'gemini-2.5-flash';
