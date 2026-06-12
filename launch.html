@@ -2613,6 +2613,15 @@
                         el.dispatchEvent(new InputEvent("input", { bubbles: true, composed: true }));
                     }
                 }
+                // Also try public property setters the web component may expose
+                try { clipboard.value = text; } catch (_) {}
+                try { clipboard.text  = text; } catch (_) {}
+                // Paste event — tiro-magic-clipboard intercepts clipboard paste
+                try {
+                    const dt = new DataTransfer();
+                    dt.setData('text/plain', text);
+                    clipboard.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, composed: true }));
+                } catch (_) {}
                 latestDictationText = text;
             }
 
@@ -2705,13 +2714,21 @@ Geef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinisc
 
 Gebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale scanbaarheid.`;
 
-            const savedKidv = migratePrompt(localStorage.getItem("kidvActionUrl"));
+            const KIDV_PROMPT_VERSION = "2";
+            const storedKidvVersion = localStorage.getItem("kidvActionVersion");
+            const savedKidv = storedKidvVersion === KIDV_PROMPT_VERSION
+                ? migratePrompt(localStorage.getItem("kidvActionUrl"))
+                : "";
             kidvActionUrlInput.value = savedKidv || DEFAULT_KIDV_PROMPT;
+            if (!savedKidv) {
+                localStorage.setItem("kidvActionVersion", KIDV_PROMPT_VERSION);
+                localStorage.setItem("kidvActionUrl", DEFAULT_KIDV_PROMPT);
+            }
             kidvActionUrlInput.addEventListener("input", () => {
                 localStorage.setItem("kidvActionUrl", kidvActionUrlInput.value);
             });
 
-            const AI_CONSULT_PROMPT_VERSION = "2";
+            const AI_CONSULT_PROMPT_VERSION = "3";
             const DEFAULT_AI_CONSULT_PROMPT = `Je bent een medisch-radiologische expertassistent met diepgaande kennis van radiologische anatomie, pathologie, diagnostische beeldvorming en klinische geneeskunde. Je ondersteunt een radioloog tijdens zijn/haar rapportage en beantwoordt gerichte vragen.
 
 === KLINISCHE CONTEXT ===
@@ -2725,14 +2742,21 @@ Patiënt: {patient_info}
 - Baseer je uitsluitend op evidence-based bronnen: Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR, TNM-classificaties en peer-reviewed literatuur.
 - Wees bondig, precies en klinisch relevant. Gebruik vetgedrukte kernwoorden voor scanbaarheid.
 - Gebruik Markdown-tabellen voor vergelijkingen (differentiaaldiagnose, criteria, staging, classificaties).
-- Sluit relevante bronlinks in als Markdown-links [Naam](https://...) — bij voorkeur Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR of PubMed.
+- Sluit klikbare bronlinks in als Markdown-links. Gebruik UITSLUITEND de volgende veilige URL-patronen (nooit een specifiek artikel-URL zelf bedenken want die bestaat mogelijk niet): zoekpagina's zoals [Radiopaedia](https://radiopaedia.org/search?q=ZOEKTERM&scope=all), [PubMed](https://pubmed.ncbi.nlm.nih.gov/?term=ZOEKTERM), [Google Scholar](https://scholar.google.com/scholar?q=ZOEKTERM); of vaste homepages zoals [Fleischner Society](https://fleischner.memberclicks.net/), [ACR](https://www.acr.org/Clinical-Resources), [ESR iGuide](https://www.myesrieguide.com/), [Radiology Assistant](https://radiologyassistant.nl/). Vervang ZOEKTERM door de relevante radiologische term.
 - Verwijs actief naar de klinische context hierboven waar relevant voor de vraag.
 - Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.
 - Antwoord in dezelfde taal als de vraag (Nederlands of Engels).`;
 
             const aiConsultUrlInput = document.getElementById("ai-consult-url");
-            const savedAiConsult = migratePrompt(localStorage.getItem("aiConsultUrl"));
+            const storedAiConsultVersion = localStorage.getItem("aiConsultVersion");
+            const savedAiConsult = storedAiConsultVersion === AI_CONSULT_PROMPT_VERSION
+                ? migratePrompt(localStorage.getItem("aiConsultUrl"))
+                : "";
             aiConsultUrlInput.value = savedAiConsult || DEFAULT_AI_CONSULT_PROMPT;
+            if (!savedAiConsult) {
+                localStorage.setItem("aiConsultVersion", AI_CONSULT_PROMPT_VERSION);
+                localStorage.setItem("aiConsultUrl", DEFAULT_AI_CONSULT_PROMPT);
+            }
             aiConsultUrlInput.addEventListener("input", () => {
                 localStorage.setItem("aiConsultUrl", aiConsultUrlInput.value);
             });
@@ -2743,9 +2767,11 @@ Patiënt: {patient_info}
             let latestPreviousStudiesResponse = null;
             clinicalForm.addEventListener("tiro-update", (event) => {
                 latestClinicalResponse = event.detail?.response || null;
+                _pipUpdateStudyHeader?.();
             });
             contextForm.addEventListener("tiro-update", (event) => {
                 latestContextResponse = event.detail?.response || null;
+                _pipUpdateStudyHeader?.();
             });
 
             // Extract a field value from a QuestionnaireResponse by matching item text
@@ -4206,6 +4232,7 @@ negated bevindingen
             // ============================================
             let _pipWindow = null; // declared here so updateMedgemmaToggle() can reference it safely
             let _pipDmoTa = null; // reference to PiP DMO textarea for sendToDictationFields()
+            let _pipUpdateStudyHeader = null; // called on tiro-update to refresh PiP study header
             // PACS URL display
             const pacsUrlDisplay  = document.getElementById("pacs-url-display");
             const pacsUrlCopyBtn  = document.getElementById("pacs-url-copy-btn");
@@ -4307,6 +4334,7 @@ negated bevindingen
                 _pipWindow = null;
                 _pipTtRef = null;
                 _pipDmoTa = null;
+                _pipUpdateStudyHeader = null;
                 _pipRealtimeLastText = '';
                 updateDictationPopoutToggle(false);
             }
@@ -4330,7 +4358,19 @@ negated bevindingen
                 if (document.documentElement.classList.contains('dark')) {
                     pipWindow.document.documentElement.classList.add('dark');
                 }
-                pipWindow.document.body.style.cssText = 'margin:0;padding:8px;overflow-y:auto;';
+                // Custom scrollbar style for DMO textarea
+                const _pipScrollStyle = pipWindow.document.createElement('style');
+                _pipScrollStyle.textContent = [
+                    '.pip-dmo-ta::-webkit-scrollbar{width:4px}',
+                    '.pip-dmo-ta::-webkit-scrollbar-track{background:transparent}',
+                    '.pip-dmo-ta::-webkit-scrollbar-thumb{background:rgba(148,163,184,0.35);border-radius:9999px}',
+                    '.pip-dmo-ta::-webkit-scrollbar-thumb:hover{background:rgba(148,163,184,0.65)}',
+                    '.pip-dmo-ta{scrollbar-width:thin;scrollbar-color:rgba(148,163,184,0.35) transparent}',
+                    '.dark .pip-dmo-ta::-webkit-scrollbar-thumb{background:rgba(100,116,139,0.35)}',
+                    '.dark .pip-dmo-ta::-webkit-scrollbar-thumb:hover{background:rgba(100,116,139,0.65)}',
+                ].join('');
+                pipWindow.document.head.appendChild(_pipScrollStyle);
+                pipWindow.document.body.style.cssText = 'margin:0;padding:0;overflow-y:auto;';
                 pipWindow.document.body.className = 'bg-neutral-50 dark:bg-[#161f27] text-neutral-800 dark:text-neutral-200';
 
                 const mk = (tag, cls, text) => {
@@ -4341,15 +4381,34 @@ negated bevindingen
                 };
 
                 const wrap = mk('div', 'flex flex-col gap-3');
+                wrap.style.cssText = 'padding:8px;box-sizing:border-box;';
+
+                // ── Study info header (type onderzoek + lateralisatie) ──────────
+                const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
+                _pipUpdateStudyHeader = function() {
+                    // Specific terms only — "type onderzoek" won't match "datum onderzoek"
+                    const typeRaw = extractAnyField("type onderzoek", "type of examination") || pacsTypeOnderzoek || '';
+                    const lat     = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '';
+                    // Multiple studies may be pipe- or semicolon-separated
+                    const types = typeRaw ? typeRaw.split(/[|;]+/).map(t => t.trim()).filter(Boolean) : [];
+                    const parts = [...types];
+                    if (lat) parts.push(lat);
+                    studyInfoHeader.textContent = parts.join(', ');
+                    studyInfoHeader.style.display = parts.length ? '' : 'none';
+                };
+                _pipUpdateStudyHeader();
+                wrap.appendChild(studyInfoHeader);
 
                 // ── Dictation textarea (DMO input) ──────────────────
                 const ta = pipWindow.document.createElement('textarea');
                 ta.rows = 5;
                 ta.placeholder = 'Dicteer hier via DMO…';
-                ta.className = 'w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
-                ta.style.overflow = 'hidden';
-                const _autoGrow = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
-                ta.addEventListener('input', _autoGrow);
+                ta.className = 'pip-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed';
+                ta.style.minHeight = '130px';
+                ta.style.overflowY = 'auto';
+                ta.style.height = '130px'; // initial; recalcTaHeight() will override
+                // _autoGrow is a no-op: recalcTaHeight handles the height; ta scrolls internally
+                const _autoGrow = () => {};
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
 
@@ -4447,7 +4506,6 @@ negated bevindingen
                     ta.style.display = '';
                     ce.style.display = 'none';
                     rtPanel.style.display = realtimeEnabled ? '' : 'none';
-                    vcBtn.style.display = realtimeEnabled ? 'none' : '';
                 }
 
                 // ── Action buttons ──────────────────────────────────
@@ -4478,7 +4536,66 @@ negated bevindingen
                 btnFontUp.style.fontSize   = '13px';
                 btnFontDown.addEventListener('click', () => { _pipZoom = Math.max(0.5, +(_pipZoom - 0.1).toFixed(1)); _applyZoom(); });
                 btnFontUp.addEventListener('click',   () => { _pipZoom = Math.min(2.0, +(_pipZoom + 0.1).toFixed(1)); _applyZoom(); });
-                fontBtns.append(btnPipAI, btnPipCam, btnFontDown, btnFontUp);
+
+                const VC_BTN_OFF = SZ.replace('font-bold leading-none', '');
+                const VC_BTN_ON  = 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors cursor-pointer';
+                const btnPipVc = mk('button', realtimeEnabled ? VC_BTN_ON : VC_BTN_OFF, '');
+                btnPipVc.type = 'button';
+                btnPipVc.title = 'Verslag check';
+                btnPipVc.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+
+                // Sync colour with realtime toggle
+                realtimeToggle.addEventListener('click', () => {
+                    btnPipVc.className = realtimeEnabled ? VC_BTN_ON : VC_BTN_OFF;
+                });
+
+                btnPipVc.addEventListener('click', async () => {
+                    const tekst = (_pipInlineMode ? getCeText() : ta.value).trim();
+                    if (!tekst) { pipWindow.alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
+                    if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
+
+                    _vcAbort?.abort();
+                    _vcAbort = new AbortController();
+                    btnPipVc.className = VC_BTN_ON; // groen tijdens uitvoering
+                    vcPanel.style.display = '';
+                    vcContent.innerHTML = '';
+                    vcStatus.textContent = 'Verwerken…';
+                    vcActions.style.display = 'none';
+                    vcOrigBtn.style.display = 'none';
+                    _vcOrigText = tekst;
+                    _vcShowingOrig = false;
+                    _vcResultHTML = null;
+                    vcOrigBtn.textContent = '↩ Origineel';
+
+                    const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                    const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
+                    const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
+                    const pat = extractPatientInfo();
+                    const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, text_template: window._flowTextTemplate || '' });
+
+                    try {
+                        let streamedText = '';
+                        let first = true;
+                        await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                            if (first) { vcContent.innerHTML = ''; first = false; }
+                            streamedText = partial;
+                            vcContent.innerHTML = partial.replace(/\n/g, '<br>');
+                            vcStatus.textContent = '';
+                        }, _vcAbort.signal);
+                        const corrected = extractCleanCorrection(streamedText);
+                        vcContent.innerHTML = computeDiffHTMLStructured(tekst, corrected);
+                        vcActions.style.display = 'flex';
+                        vcOrigBtn.style.display = _vcOrigText ? '' : 'none';
+                    } catch (e) {
+                        if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
+                    } finally {
+                        // Restore: groen als realtime aan, grijs als uit
+                        btnPipVc.className = realtimeEnabled ? VC_BTN_ON : VC_BTN_OFF;
+                    }
+                });
+
+                fontBtns.append(btnPipAI, btnPipVc, btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -4487,6 +4604,19 @@ negated bevindingen
                     const b = mk('button', cls, label);
                     b.type = 'button';
                     b.addEventListener('click', onClick);
+                    return b;
+                };
+
+                const mkSendBtn = (getTextFn) => {
+                    const b = mkBtn('inline-flex items-center justify-center w-[28px] h-[28px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer flex-shrink-0', '', () => {
+                        const text = getTextFn();
+                        if (!text || !text.trim()) return;
+                        setNativeValue(ta, text);
+                        _autoGrow();
+                        setDictationText(text);
+                    });
+                    b.title = 'Stuur naar DMO dicteerveld';
+                    b.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
                     return b;
                 };
 
@@ -4562,12 +4692,6 @@ negated bevindingen
                 trActions.append(trOrigBtn, trCopyBtn, trSendBtn, trCloseBtn);
                 trPanel.append(trHead, trContent, trActions);
 
-                // "Verslag check" button — visible only when realtime is OFF and not in inline mode
-                const vcBtn = mk('button', SM.replace('cursor-pointer','') + ' cursor-pointer', '');
-                vcBtn.type = 'button';
-                vcBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Verslag check';
-                vcBtn.style.display = (realtimeEnabled || _pipInlineMode) ? 'none' : '';
-
                 // Preset button — pastes the active exam type's preset text into the DMO textarea
                 const presetBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', '📋 Preset', () => {
                     const preset = window._flowPresetText || '';
@@ -4633,21 +4757,13 @@ negated bevindingen
                     }),
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
-                        let textToCopy;
-                        if (_pipInlineMode) {
-                            textToCopy = getCeText();
-                        } else if (realtimeEnabled && _rtOrigText) {
-                            textToCopy = _rtShowingOrig ? (_rtOrigText || ta.value) : getRealtimeText(rtContent);
-                        } else {
-                            textToCopy = ta.value;
-                        }
+                        const textToCopy = _pipInlineMode ? getCeText() : ta.value;
                         pipCopy(textToCopy);
                         const orig = btn.textContent;
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
                         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                     }),
-                    vcBtn,
                     presetBtn,
                     sentInd,
                     fontBtns,
@@ -4759,7 +4875,7 @@ negated bevindingen
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 rtPanel.style.display = (realtimeEnabled && !_pipInlineMode) ? '' : 'none';
-                // Keep PiP realtime panel and manual vcBtn in sync with the main toggle
+                // Keep PiP realtime panel in sync with the main toggle
                 realtimeToggle.addEventListener('click', () => {
                     _applyInlineModeUI();
                 });
@@ -4800,11 +4916,12 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                rtActions.append(rtOrigBtn, rtCopyBtn);
+                const rtSendBtn = mkSendBtn(() => _rtShowingOrig ? (_rtOrigText || '') : getRealtimeText(rtContent));
+                rtActions.append(rtOrigBtn, rtCopyBtn, rtSendBtn);
                 rtPanel.append(rtHead, rtContent, rtActions);
                 wrap.appendChild(rtPanel);
 
-                // ── Handmatig verslag check panel (zichtbaar na klikken vcBtn) ──
+                // ── Handmatig verslag check panel (zichtbaar via btnPipVc) ──
                 const vcPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 vcPanel.style.display = 'none';
                 const vcHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
@@ -4837,7 +4954,7 @@ negated bevindingen
 
                 const vcCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipCopy(_vcShowingOrig ? (_vcOrigText || '') : (vcContent.innerText || ''));
+                    pipCopy(_vcShowingOrig ? (_vcOrigText || '') : getRealtimeText(vcContent));
                     const orig = btn.textContent;
                     btn.textContent = 'Gekopieerd ✓';
                     btn.style.color = '#16a34a';
@@ -4849,47 +4966,11 @@ negated bevindingen
                     vcPanel.style.display = 'none';
                 });
 
-                vcActions.append(vcOrigBtn, vcCopyBtn, vcCloseBtn);
+                const vcSendBtn = mkSendBtn(() => _vcShowingOrig ? (_vcOrigText || '') : getRealtimeText(vcContent));
+                vcActions.append(vcOrigBtn, vcCopyBtn, vcSendBtn, vcCloseBtn);
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
 
-                vcBtn.addEventListener('click', async () => {
-                    const tekst = (_pipInlineMode ? getCeText() : ta.value).trim();
-                    if (!tekst) { pipWindow.alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
-                    if (!GEMINI_API_KEY) { pipWindow.alert('Geen Gemini API-sleutel ingesteld in Settings.'); return; }
-
-                    _vcAbort?.abort();
-                    _vcAbort = new AbortController();
-                    vcPanel.style.display = '';
-                    vcContent.innerHTML = '';
-                    vcStatus.textContent = 'Verwerken…';
-                    vcActions.style.display = 'none';
-                    vcOrigBtn.style.display = 'none';
-                    _vcOrigText = tekst;
-                    _vcShowingOrig = false;
-                    _vcResultHTML = null;
-                    vcOrigBtn.textContent = '↩ Origineel';
-
-                    const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
-                    const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
-                    const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
-                    const pat = extractPatientInfo();
-                    const prompt = fillPrompt(template, { tekst, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, text_template: window._flowTextTemplate || '' });
-
-                    try {
-                        let first = true;
-                        await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
-                            if (first) { vcContent.innerHTML = ''; first = false; }
-                            vcContent.innerHTML = renderMarkdown(partial);
-                            vcStatus.textContent = '';
-                        }, _vcAbort.signal);
-                        vcActions.style.display = 'flex';
-                        vcOrigBtn.style.display = _vcOrigText ? '' : 'none';
-                    } catch (e) {
-                        if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
-                    }
-                });
 
                 // ── Textuele back-up resultaat panel ────────────────
                 const pipTtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
@@ -4957,7 +5038,8 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                pipTtActions.append(pipTtToggle, pipTtLabelsBtn, pipTtCopyBtn);
+                const pipTtSendBtn = mkSendBtn(() => pipTtContent.innerText || '');
+                pipTtActions.append(pipTtToggle, pipTtLabelsBtn, pipTtCopyBtn, pipTtSendBtn);
                 pipTtPanel.append(pipTtHead, pipTtContent, pipTtActions);
                 wrap.appendChild(pipTtPanel);
 
@@ -5108,6 +5190,36 @@ negated bevindingen
                 });
 
                 pipWindow.document.body.appendChild(wrap);
+
+                // ── Dynamic textarea height ──────────────────────────
+                // Fills available viewport height; never smaller than min-height.
+                // Recalculates when panels show/hide or the window is resized.
+                let _recalcDebounce = null;
+                const recalcTaHeight = () => {
+                    clearTimeout(_recalcDebounce);
+                    _recalcDebounce = pipWindow.setTimeout(() => {
+                        const viewH = pipWindow.document.documentElement.clientHeight;
+                        let usedH = 0;
+                        let visCount = 0;
+                        for (const child of wrap.children) {
+                            if (child === ta || child === ce) continue;
+                            if (pipWindow.getComputedStyle(child).display === 'none') continue;
+                            usedH += child.offsetHeight;
+                            visCount++;
+                        }
+                        const gapTotal = visCount * 12; // gap-3 = 12px per gap between ta and each visible sibling
+                        const wrapPad = 16; // 8px top + 8px bottom
+                        const available = viewH - usedH - gapTotal - wrapPad;
+                        ta.style.height = Math.max(130, Math.floor(available)) + 'px';
+                    }, 30);
+                };
+                pipWindow.addEventListener('resize', recalcTaHeight);
+                // Watch all direct children of wrap for style/class changes (panel show/hide)
+                const _pipPanelObserver = new pipWindow.MutationObserver(recalcTaHeight);
+                for (const child of wrap.children) {
+                    _pipPanelObserver.observe(child, { attributes: true, attributeFilter: ['style', 'class'] });
+                }
+                recalcTaHeight();
 
                 // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
                 const pipCorrTooltip = mk('div', '');
