@@ -96,6 +96,10 @@
                 Back
             </button>
             <span class="text-sm font-medium">Prompting</span>
+            <button id="use-recommended-btn" type="button" class="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+                Modellen updaten
+            </button>
         </div>
 
         <div class="max-w-3xl mx-auto px-4 py-6 flex flex-col gap-6">
@@ -115,7 +119,7 @@
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
                         <button id="reload-models-btn" type="button" class="px-1.5 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors shrink-0" title="Haal beschikbare modellen op">↺</button>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen · past alle modellen aan</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · snel, lage kost</span>
                     </div>
                 </div>
             </div>
@@ -139,9 +143,9 @@
                         <div class="flex items-center gap-2 mt-1">
                             <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
                             <select id="ai-consult-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                                <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite</option>
+                                <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                             </select>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.0-flash aanbevolen</span>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro aanbevolen · hoge kwaliteit</span>
                         </div>
                     </div>
                 </div>
@@ -163,7 +167,7 @@
                             <select id="kidv-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                             </select>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Pro aanbevolen</span>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro aanbevolen · meest capabel</span>
                         </div>
                     </div>
                 </div>
@@ -191,14 +195,14 @@
                             <select id="verslag-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                             </select>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · goed evenwicht</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Real time</label>
                             <select id="realtime-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                                <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite</option>
+                                <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                             </select>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen · laagste latentie</span>
                         </div>
                     </div>
                 </div>
@@ -231,7 +235,7 @@
                         <select id="snomed-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · nauwkeurige codering</span>
                     </div>
                 </div>
             </div>
@@ -250,7 +254,7 @@
                         <select id="medgemma-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · multimodaal beeld</span>
                     </div>
                 </div>
             </div>
@@ -269,7 +273,7 @@
                         <select id="autofill-backup-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Pro aanbevolen</span>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro aanbevolen · complex template</span>
                     </div>
                 </div>
             </div>
@@ -615,19 +619,48 @@ negated bevindingen
 
             // ── Per-prompt model selectors ────────────────────────────────────
             const MODEL_CONFIGS = [
-                { id: "translate-model", storageKey: "geminiModelTranslate", defaultModel: "gemini-3.1-flash-lite" },
-                { id: "kidv-model",      storageKey: "geminiModelKidv",      defaultModel: "gemini-2.5-pro"        },
-                { id: "verslag-model",   storageKey: "geminiModelVerslag",   defaultModel: "gemini-3.1-flash-lite" },
-                { id: "realtime-model",         storageKey: "geminiModelRealtime",        defaultModel: "gemini-3.1-flash-lite" },
-                { id: "autofill-backup-model",  storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-2.5-pro" },
-                { id: "snomed-model",    storageKey: "geminiModelSnomed",    defaultModel: "gemini-3.1-flash-lite" },
-                { id: "medgemma-model",  storageKey: "geminiModelMedgemma",  defaultModel: "gemini-3.1-flash-lite" },
-                { id: "ai-consult-model", storageKey: "geminiModelAiConsult", defaultModel: "gemini-2.0-flash-lite" },
+                { id: "translate-model",       storageKey: "geminiModelTranslate",       defaultModel: "gemini-2.5-flash"  },
+                { id: "kidv-model",            storageKey: "geminiModelKidv",            defaultModel: "gemini-2.5-pro"    },
+                { id: "verslag-model",         storageKey: "geminiModelVerslag",         defaultModel: "gemini-2.5-flash"  },
+                { id: "realtime-model",        storageKey: "geminiModelRealtime",        defaultModel: "gemini-2.5-flash"  },
+                { id: "autofill-backup-model", storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-2.5-pro"    },
+                { id: "snomed-model",          storageKey: "geminiModelSnomed",          defaultModel: "gemini-2.5-flash"  },
+                { id: "medgemma-model",        storageKey: "geminiModelMedgemma",        defaultModel: "gemini-2.5-flash"  },
+                { id: "ai-consult-model",      storageKey: "geminiModelAiConsult",       defaultModel: "gemini-2.5-pro"    },
             ];
 
-            async function loadModels() {
+            // Preferred models per task in priority order (first available wins)
+            const RECOMMENDED_MODELS = {
+                geminiModelTranslate:       ["gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash"],
+                geminiModelKidv:            ["gemini-2.5-pro", "gemini-2.5-flash"],
+                geminiModelVerslag:         ["gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"],
+                geminiModelRealtime:        ["gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.0-flash-lite", "gemini-2.5-flash"],
+                geminiModelAutofillBackup:  ["gemini-2.5-pro", "gemini-2.5-flash"],
+                geminiModelSnomed:          ["gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.5-flash", "gemini-2.0-flash"],
+                geminiModelMedgemma:        ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
+                geminiModelAiConsult:       ["gemini-2.5-pro", "gemini-2.5-flash"],
+            };
+
+            let _cachedModels = null;
+
+            async function fetchModels() {
                 const apiKey = localStorage.getItem("geminiApiKey");
-                if (!apiKey) {
+                if (!apiKey) return null;
+                try {
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`);
+                    if (!res.ok) return null;
+                    const data = await res.json();
+                    return (data.models || [])
+                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
+                        .map(m => m.name.replace("models/", ""))
+                        .sort((a, b) => b.localeCompare(a));
+                } catch { return null; }
+            }
+
+            async function loadModels() {
+                const models = await fetchModels();
+                _cachedModels = models;
+                if (!models) {
                     MODEL_CONFIGS.forEach(cfg => {
                         const sel = document.getElementById(cfg.id);
                         sel.innerHTML = `<option value="${cfg.defaultModel}">${cfg.defaultModel} (standaard)</option>`;
@@ -635,35 +668,60 @@ negated bevindingen
                     });
                     return;
                 }
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`);
-                    if (!res.ok) return;
-                    const data = await res.json();
-                    const models = (data.models || [])
-                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
-                        .map(m => m.name.replace("models/", ""))
-                        .sort((a, b) => b.localeCompare(a));
-                    MODEL_CONFIGS.forEach(cfg => {
-                        const sel = document.getElementById(cfg.id);
-                        const saved = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
-                        sel.innerHTML = models.map(id => `<option value="${id}"${id === saved ? " selected" : ""}>${id}</option>`).join("");
-                        if (!models.includes(saved)) {
-                            sel.innerHTML = `<option value="${cfg.defaultModel}" selected>${cfg.defaultModel}</option>` + sel.innerHTML;
+                MODEL_CONFIGS.forEach(cfg => {
+                    const sel = document.getElementById(cfg.id);
+                    const saved = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
+                    sel.innerHTML = models.map(id => `<option value="${id}"${id === saved ? " selected" : ""}>${id}</option>`).join("");
+                    if (!models.includes(saved)) {
+                        sel.innerHTML = `<option value="${saved}" selected>${saved} ⚠ niet beschikbaar</option>` + sel.innerHTML;
+                    }
+                });
+            }
+
+            async function useRecommended() {
+                const btn = document.getElementById("use-recommended-btn");
+                const origHTML = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> Bezig…';
+
+                const models = await fetchModels() || _cachedModels;
+                _cachedModels = models;
+
+                MODEL_CONFIGS.forEach(cfg => {
+                    const sel = document.getElementById(cfg.id);
+                    const prefs = RECOMMENDED_MODELS[cfg.storageKey] || [];
+                    let chosen = cfg.defaultModel;
+                    if (models) {
+                        for (const pref of prefs) {
+                            if (models.includes(pref)) { chosen = pref; break; }
                         }
-                    });
-                } catch {}
+                        // Rebuild options with fresh list
+                        sel.innerHTML = models.map(id => `<option value="${id}">${id}</option>`).join("");
+                        if (!models.includes(chosen)) {
+                            sel.innerHTML = `<option value="${chosen}">${chosen}</option>` + sel.innerHTML;
+                        }
+                    }
+                    sel.value = chosen;
+                    localStorage.setItem(cfg.storageKey, chosen);
+                });
+
+                btn.disabled = false;
+                btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Bijgewerkt';
+                setTimeout(() => { btn.innerHTML = origHTML; }, 2500);
             }
 
             // Save model selection on change
             MODEL_CONFIGS.forEach(cfg => {
                 const sel = document.getElementById(cfg.id);
-                // Initialize with saved or default
                 sel.value = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
                 sel.addEventListener("change", () => localStorage.setItem(cfg.storageKey, sel.value));
             });
 
-            // Reload button
+            // Reload button (↺) — just refreshes the list
             document.getElementById("reload-models-btn").addEventListener("click", loadModels);
+
+            // "Modellen updaten" button — picks best available per task
+            document.getElementById("use-recommended-btn").addEventListener("click", useRecommended);
 
             // Auto-load on page start
             loadModels();
