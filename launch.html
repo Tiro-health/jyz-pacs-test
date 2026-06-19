@@ -3770,11 +3770,11 @@ negated bevindingen
                 banner.classList.remove("hidden");
             }
 
-            // ── SNOMED CT concept lookup: probeer tx.fhir.org (HL7 FHIR) daarna Snowstorm ──
+            // ── SNOMED CT concept lookup: probeer terminology.tiro.health (HL7 FHIR R5) daarna Snowstorm ──
             async function searchSnomedConcept(term) {
                 const encoded = encodeURIComponent(term);
-                // Primair: HL7 publieke FHIR terminology server (open CORS, geen auth)
-                const fhirUrl = `https://tx.fhir.org/r4/ValueSet/$expand?url=http://snomed.info/sct%3Ffhir_vs&filter=${encoded}&count=3`;
+                // Primair: Tiro FHIR R5 terminology server ($expand)
+                const fhirUrl = `https://terminology.tiro.health/r5/ValueSet/$expand?url=http://snomed.info/sct%3Ffhir_vs&filter=${encoded}&count=3`;
                 // Fallback: Snowstorm browser-API (kan geblokkeerd zijn door WAF)
                 const snowUrl = `https://browser.ihtsdotools.org/snowstorm/snomed-ct/MAIN/concepts?term=${encoded}&activeFilter=true&limit=3`;
 
