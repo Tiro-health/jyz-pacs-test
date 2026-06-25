@@ -1363,6 +1363,7 @@
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
                 if (e.target.matches(".template-checkbox")) {
+                    _syncTextueleTemplate();
                     createTemplateForms();
                     updateActiveTemplateSuffix();
                     updateSnomedCtBtn();
@@ -1377,18 +1378,32 @@
                 { name: "Echo Abdomen",                 label: "Echo Abdomen" },
             ];
 
-            function renderFlowCheckboxItem(name, label, checked) {
+            function renderFlowCheckboxItem(name, label, checked, mode) {
                 const v = name.replace(/"/g, "&quot;");
                 const l = label.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                return `<label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
-                    <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="${v}"${checked ? " checked" : ""}>
+                const isTextueel = mode === 'textueel';
+                const textColor = isTextueel
+                    ? 'text-amber-700 dark:text-amber-400'
+                    : 'text-neutral-700 dark:text-neutral-300';
+                const checkboxColor = isTextueel
+                    ? 'accent-amber-500'
+                    : 'text-cyan-600 focus:ring-cyan-500';
+                return `<label class="flex items-center gap-2 text-sm ${textColor} cursor-pointer">
+                    <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 ${checkboxColor}" value="${v}"${checked ? " checked" : ""}${isTextueel ? ' data-mode="textueel"' : ''}>
                     ${l}
                 </label>`;
             }
 
             function setDynamicTemplates(items) {
+                // Store textueel text templates keyed by checkbox value for autofill lookup
+                window._textueleTemplates = {};
+                items.forEach(t => {
+                    if (t.mode === 'textueel' && t.textTemplate) {
+                        window._textueleTemplates[t.name] = t.textTemplate;
+                    }
+                });
                 document.getElementById("dynamic-templates").innerHTML =
-                    items.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked)).join("");
+                    items.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked, t.mode)).join("");
                 updateActiveTemplateSuffix();
             }
 
@@ -1445,38 +1460,88 @@
                 showFlowStatus(null);
                 const items = [];
 
-                // Priority logic:
-                // - gebruiker replaces afdeling (afdeling unchecked when gebruiker exists)
-                // - first AI replace_template unchecks gebruiker and is checked instead
-                // - additional AI add_template rules are always checked (stack on top)
+                // Determine which item should be pre-checked (highest priority that has content).
+                // Priority: AI replace > user > dept. Within each level, honour activeMode.
                 const aiRules = match.aiRules || [];
-                const hasReplaceAI = aiRules.some(r => r.action === 'replace_template' && r.template);
-                const hasUser = !!match.userTemplate;
+                const replaceRule = aiRules.find(r => r.action === 'replace_template' && (r.template || r.textTemplate));
+                const hasUser = !!(match.userTemplate || match.userTextTemplate);
 
+                function activeItemKey() {
+                    if (replaceRule) {
+                        const idx = aiRules.indexOf(replaceRule);
+                        return replaceRule.activeMode === 'textueel' && replaceRule.textTemplate
+                            ? `flow:ai-txt:${match.id}:${idx}`
+                            : `flow:ai:${match.id}:${idx}`;
+                    }
+                    if (hasUser) {
+                        const uMode = match.userActiveMode || 'template';
+                        if (uMode === 'textueel' && match.userTextTemplate) return `flow:user-txt:${match.id}`;
+                        if (match.userTemplate) return `flow:user:${match.id}`;
+                        if (match.userTextTemplate) return `flow:user-txt:${match.id}`;
+                    }
+                    const dMode = match.deptActiveMode || 'template';
+                    if (dMode === 'textueel' && match.deptTextTemplate) return `flow:dept-txt:${match.id}`;
+                    if (match.deptTemplate) return `flow:dept:${match.id}`;
+                    if (match.deptTextTemplate) return `flow:dept-txt:${match.id}`;
+                    return null;
+                }
+                const activeKey = activeItemKey();
+
+                // ── Dept level ────────────────────────────────────────────────────
                 if (match.deptTemplate) {
-                    const key = "flow:dept:" + match.id;
+                    const key = `flow:dept:${match.id}`;
                     TEMPLATES[key] = match.deptTemplate;
-                    items.push({ name: key, label: match.name + " - afdeling", checked: !hasUser && !hasReplaceAI });
+                    items.push({ name: key, label: match.name + " - afdeling (template)", checked: key === activeKey, mode: 'template' });
                 }
+                const deptTxt = match.deptTextTemplate || match.textTemplate || '';
+                if (deptTxt) {
+                    const key = `flow:dept-txt:${match.id}`;
+                    TEMPLATES[key] = '__textueel__';
+                    items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: key === activeKey, mode: 'textueel', textTemplate: deptTxt });
+                }
+
+                // ── User level ────────────────────────────────────────────────────
                 if (match.userTemplate) {
-                    const key = "flow:user:" + match.id;
+                    const key = `flow:user:${match.id}`;
                     TEMPLATES[key] = match.userTemplate;
-                    items.push({ name: key, label: match.name + " - gebruiker", checked: !hasReplaceAI });
+                    items.push({ name: key, label: match.name + " - gebruiker (template)", checked: key === activeKey, mode: 'template' });
                 }
-                let replaceUsed = false;
+                if (match.userTextTemplate) {
+                    const key = `flow:user-txt:${match.id}`;
+                    TEMPLATES[key] = '__textueel__';
+                    items.push({ name: key, label: match.name + " - gebruiker (textueel)", checked: key === activeKey, mode: 'textueel', textTemplate: match.userTextTemplate });
+                }
+
+                // ── AI rules ──────────────────────────────────────────────────────
                 aiRules.forEach((rule, i) => {
-                    if (!rule.template) return;
-                    const key = "flow:ai:" + match.id + ":" + i;
-                    TEMPLATES[key] = rule.template;
+                    const hasContent = rule.template || rule.textTemplate;
+                    if (!hasContent) return;
                     const isReplace = rule.action === 'replace_template';
-                    const checked = isReplace ? !replaceUsed : true;
-                    if (isReplace) replaceUsed = true;
-                    const suffix = isReplace ? ' (vervangen)' : ' (toevoegen)';
-                    items.push({ name: key, label: match.name + " - AI" + suffix, checked });
+                    const actionSuffix = isReplace ? ' (vervangen)' : ' (toevoegen)';
+
+                    if (rule.template) {
+                        const key = `flow:ai:${match.id}:${i}`;
+                        TEMPLATES[key] = rule.template;
+                        const preChecked = isReplace ? key === activeKey : true;
+                        items.push({ name: key, label: match.name + " - AI" + actionSuffix + " (template)", checked: preChecked, mode: 'template' });
+                    }
+                    if (rule.textTemplate) {
+                        const key = `flow:ai-txt:${match.id}:${i}`;
+                        TEMPLATES[key] = '__textueel__';
+                        const preChecked = isReplace ? key === activeKey : !rule.template;
+                        items.push({ name: key, label: match.name + " - AI" + actionSuffix + " (textueel)", checked: preChecked, mode: 'textueel', textTemplate: rule.textTemplate });
+                    }
                 });
 
-                // Store text template from flow match for use in AI prompts and backup display
-                window._flowTextTemplate = match.textTemplate || '';
+                // ── Store best available text template for AI context ─────────────
+                const bestText = (() => {
+                    for (const rule of aiRules) {
+                        if (rule.textTemplate) return rule.textTemplate;
+                    }
+                    if (match.userTextTemplate) return match.userTextTemplate;
+                    return match.deptTextTemplate || match.textTemplate || '';
+                })();
+                window._flowTextTemplate = bestText;
                 window._flowPresetText = match.presetText || '';
                 window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
                 window._flowTextTemplateLogic = '';
@@ -1486,7 +1551,7 @@
 
                 if (items.length === 0) {
                     if (window._flowTextTemplate) {
-                        showFlowStatus("Onderzoekstype gevonden — geen Tiro-templates ingesteld, enkel textuele back-up beschikbaar", true);
+                        showFlowStatus("Onderzoekstype gevonden — geen templates ingesteld, enkel textuele back-up beschikbaar", true);
                         setDynamicTemplates([]);
                     } else {
                         showFlowStatus("Onderzoekstype gevonden maar nog geen templates ingesteld");
@@ -1866,7 +1931,7 @@
 
                 selected.forEach((name, index) => {
                     const url = TEMPLATES[name];
-                    if (!url) return;
+                    if (!url || url === '__textueel__') return; // textueel entries have no Tiro form
 
                     const updatedParamResource = {
                         ...paramResource,
@@ -1952,10 +2017,25 @@
                 _updateAutofillBtnType();
             }
 
-            // "AI resultaten" en "SNOMED CT" tellen niet mee als echte Tiro-invultemplates
+            // "AI resultaten", "SNOMED CT" en textuele entries tellen niet mee als echte Tiro-invultemplates
             function _hasRealTiroTemplate() {
                 return Array.from(document.querySelectorAll('.template-checkbox:checked'))
-                    .some(cb => cb.value !== 'AI resultaten' && cb.value !== 'SNOMED CT');
+                    .some(cb => {
+                        if (cb.value === 'AI resultaten' || cb.value === 'SNOMED CT') return false;
+                        if (cb.dataset.mode === 'textueel') return false;
+                        if (TEMPLATES[cb.value] === '__textueel__') return false;
+                        return true;
+                    });
+            }
+
+            // Update _flowTextTemplate when user manually toggles a textueel checkbox
+            function _syncTextueleTemplate() {
+                const checked = Array.from(document.querySelectorAll('.template-checkbox:checked'))
+                    .filter(cb => cb.dataset.mode === 'textueel' || TEMPLATES[cb.value] === '__textueel__');
+                if (checked.length > 0 && window._textueleTemplates) {
+                    const tpl = window._textueleTemplates[checked[0].value];
+                    if (tpl) window._flowTextTemplate = tpl;
+                }
             }
             function _updateAutofillBtnType() {
                 const btn = document.getElementById('autofill-btn');
@@ -2060,7 +2140,9 @@
             function updateTextTemplateBackup() {
                 const acc  = document.getElementById('text-template-accordion');
                 const suf  = document.getElementById('text-template-suffix');
-                if ((window._flowTextTemplate || '') && !_hasRealTiroTemplate()) {
+                const hasTextueel = Array.from(document.querySelectorAll('.template-checkbox:checked'))
+                    .some(cb => cb.dataset.mode === 'textueel' || TEMPLATES[cb.value] === '__textueel__');
+                if ((window._flowTextTemplate || '') && (!_hasRealTiroTemplate() || hasTextueel)) {
                     acc.classList.remove('hidden');
                     suf.textContent = '';
                     // Show preview only when the result panel is not already visible

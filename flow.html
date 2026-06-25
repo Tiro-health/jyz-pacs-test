@@ -240,20 +240,72 @@
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <span>📄</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Department template</label>
+                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</label>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard voor de hele afdeling. Geldt voor alle gebruikers tenzij overschreven.</p>
-                    <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag</label>
+                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Textueel standaardverslag</label>
+                            <button id="dept-tt-trigger" onclick="openLevelTtEditor('dept')"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="dept-tt-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-4 pt-0.5">
+                            <span class="text-[10px] text-neutral-400 uppercase tracking-wide flex-shrink-0">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="dept-mode" id="dept-mode-template" value="template" class="accent-cyan-600 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Template</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="dept-mode" id="dept-mode-textueel" value="textueel" class="accent-amber-500 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
+                            </label>
+                        </div>
+                    </div>
+                    <textarea id="edit-dept-text-template" class="hidden"></textarea>
                 </div>
 
                 <!-- User template -->
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <span>👤</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker template override</label>
+                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</label>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Persoonlijke voorkeur — overschrijft de department template. Leeg = geen override.</p>
-                    <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Persoonlijke voorkeur — overschrijft de afdelingsinstelling. Kies template of textueel.</p>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag</label>
+                            <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Textueel standaardverslag</label>
+                            <button id="user-tt-trigger" onclick="openLevelTtEditor('user')"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="user-tt-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-4 pt-0.5">
+                            <span class="text-[10px] text-neutral-400 uppercase tracking-wide flex-shrink-0">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="user-mode" id="user-mode-template" value="template" class="accent-cyan-600 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Template</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="user-mode" id="user-mode-textueel" value="textueel" class="accent-amber-500 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
+                            </label>
+                        </div>
+                    </div>
+                    <textarea id="edit-user-text-template" class="hidden"></textarea>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
@@ -267,26 +319,8 @@
                         </div>
                         <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Nieuwe regel</button>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen. Kies per regel template of textueel.</p>
                     <div id="ai-rules-list" class="space-y-2.5"></div>
-                </div>
-
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-
-                <!-- Text template backup -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>📝</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Textuele back-up template</label>
-                    </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Wordt gebruikt als back-up wanneer de Tiro-link niet beschikbaar is, en als structuurcontext voor AI-prompts.</p>
-                    <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
-                        class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
-                        <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-                    </button>
-                    <textarea id="edit-text-template" class="hidden"></textarea>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
@@ -318,7 +352,7 @@
             <!-- Header -->
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-700 flex-shrink-0 bg-[#0f172a]">
                 <h2 class="text-sm font-semibold text-neutral-100">
-                    📝 Textuele back-up template — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
+                    📝 Textueel standaardverslag — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
                 </h2>
                 <button onclick="closeTtEditor()" class="p-1.5 rounded hover:bg-slate-700 text-neutral-400 hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
             </div>
@@ -799,8 +833,12 @@ XXX` },
             DEFAULT_EXAM_TYPES.forEach(def => {
                 const et = state.examTypes.find(t => t.id === def.id);
                 if (!et) {
-                    // New default exam type not yet in stored state — add it
-                    state.examTypes.push(JSON.parse(JSON.stringify(def)));
+                    // New default exam type not yet in stored state — add it with new fields
+                    const newEntry = JSON.parse(JSON.stringify(def));
+                    if (!newEntry.deptActiveMode) newEntry.deptActiveMode = 'template';
+                    if (!newEntry.userActiveMode) newEntry.userActiveMode = 'template';
+                    if (newEntry.textTemplate && !newEntry.deptTextTemplate) newEntry.deptTextTemplate = newEntry.textTemplate;
+                    state.examTypes.push(newEntry);
                     changed = true;
                     return;
                 }
@@ -830,6 +868,14 @@ XXX` },
                     et.labelsDefaultVisible = true;
                     changed = true;
                 }
+                // Migrate global textTemplate → deptTextTemplate (v2 refactor)
+                if (et.textTemplate && !et.deptTextTemplate) {
+                    et.deptTextTemplate = et.textTemplate;
+                    changed = true;
+                }
+                // Ensure new mode fields exist
+                if (!et.deptActiveMode) { et.deptActiveMode = 'template'; changed = true; }
+                if (!et.userActiveMode) { et.userActiveMode = 'template'; changed = true; }
             });
             if (changed) saveData();
             // Update saved textTemplateLogic if it predates [br] support
@@ -900,10 +946,18 @@ XXX` },
             });
         }
 
-        function flowPill(url, icon, label) {
-            if (!url) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
-            const name = url.split('/').pop() || url;
-            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(url)}">${esc(name)}</span></div>`;
+        function flowPill(tiroUrl, textTpl, mode, icon, label) {
+            const hasAny = tiroUrl || textTpl;
+            if (!hasAny) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
+            const activeMode = mode || 'template';
+            if (activeMode === 'textueel' && textTpl) {
+                return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs font-medium text-amber-600 dark:text-amber-400">📝 textueel</span></div>`;
+            }
+            if (tiroUrl) {
+                const name = tiroUrl.split('/').pop() || tiroUrl;
+                return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(tiroUrl)}">${esc(name)}</span></div>`;
+            }
+            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">📝 (inactief)</span></div>`;
         }
 
         const ARROW = `<svg class="text-neutral-300 dark:text-neutral-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
@@ -959,9 +1013,9 @@ XXX` },
     <div>
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
-        ${flowPill(et.deptTemplate, '📄', 'Afdeling')}
+        ${flowPill(et.deptTemplate, et.deptTextTemplate, et.deptActiveMode, '📄', 'Afdeling')}
         ${ARROW}
-        ${flowPill(et.userTemplate, '👤', 'Gebruiker')}
+        ${flowPill(et.userTemplate, et.userTextTemplate, et.userActiveMode, '👤', 'Gebruiker')}
         ${ARROW}
         <div class="flex flex-col">
           <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
@@ -971,10 +1025,10 @@ XXX` },
         </div>
       </div>
       <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
-        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
+        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}', 'dept')"
           class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-1 min-w-0">
-          <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textuele back-up</span>
-          ${et.textTemplate
+          <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textueel (dept)</span>
+          ${(et.deptTextTemplate || et.textTemplate)
             ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
             : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
         </button>
@@ -1029,19 +1083,20 @@ XXX` },
             document.getElementById('edit-modality').value = et.modality || 'RX';
             document.getElementById('edit-dept-template').value = et.deptTemplate || '';
             document.getElementById('edit-user-template').value = et.userTemplate || '';
-            document.getElementById('edit-text-template').value = et.textTemplate || '';
+            document.getElementById('edit-dept-text-template').value = et.deptTextTemplate || '';
+            document.getElementById('edit-user-text-template').value = et.userTextTemplate || '';
             document.getElementById('edit-preset-text').value = et.presetText || '';
             window._currentEditId = et.id;
-            const ttBadge = document.getElementById('tt-edit-badge');
-            if (ttBadge) {
-                if (et.textTemplate) {
-                    ttBadge.textContent = 'Actief';
-                    ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
-                } else {
-                    ttBadge.textContent = 'Inactief';
-                    ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
-                }
-            }
+
+            // Active mode radios
+            const deptMode = et.deptActiveMode || 'template';
+            document.getElementById('dept-mode-' + deptMode).checked = true;
+            const userMode = et.userActiveMode || 'template';
+            document.getElementById('user-mode-' + userMode).checked = true;
+
+            // Level badges
+            updateLevelBadge('dept', et.deptTextTemplate || '');
+            updateLevelBadge('user', et.userTextTemplate || '');
             document.getElementById('dicom-input').value = '';
             document.getElementById('dicom-suggestions').classList.add('hidden');
 
@@ -1172,8 +1227,28 @@ XXX` },
     </div>
   </div>
   <div>
-    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template URL</label>
+    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag (URL)</label>
     <input type="text" class="ai-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/…" value="${esc(r.template||'')}" data-i="${i}">
+  </div>
+  <div class="pt-1 border-t border-dashed border-neutral-200 dark:border-slate-600">
+    <div class="flex items-center gap-2 mb-1.5">
+      <label class="block text-[10px] uppercase tracking-wide text-neutral-400">Textueel standaardverslag</label>
+      <button type="button" class="ai-tt-trigger flex items-center gap-1.5 px-2 py-0.5 rounded border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 transition-colors text-left" data-i="${i}">
+        <span class="ai-tt-badge text-[10px] font-medium px-1 py-0.5 rounded ${r.textTemplate ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20'}">${r.textTemplate ? 'Actief' : 'Inactief'}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+      </button>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-[10px] text-neutral-400 uppercase tracking-wide flex-shrink-0">Actief:</span>
+      <label class="flex items-center gap-1 cursor-pointer select-none">
+        <input type="radio" name="ai-mode-${i}" value="template" class="ai-mode-radio accent-cyan-600 w-3 h-3" ${(r.activeMode||'template')==='template'?'checked':''} data-i="${i}">
+        <span class="text-xs text-neutral-600 dark:text-neutral-300">Template</span>
+      </label>
+      <label class="flex items-center gap-1 cursor-pointer select-none">
+        <input type="radio" name="ai-mode-${i}" value="textueel" class="ai-mode-radio accent-amber-500 w-3 h-3" ${r.activeMode==='textueel'?'checked':''} data-i="${i}">
+        <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
+      </label>
+    </div>
   </div>
 </div>`;
             }).join('');
@@ -1185,6 +1260,13 @@ XXX` },
                 })
             );
 
+            el.querySelectorAll('.ai-tt-trigger').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    syncAll();
+                    openTtEditor(currentEditId, 'ai-' + btn.dataset.i);
+                })
+            );
+
             function syncAll() {
                 el.querySelectorAll('.ai-rule').forEach(row => {
                     const i = +row.dataset.i;
@@ -1193,17 +1275,22 @@ XXX` },
                     editAiRules[i].condition  = { operator: row.querySelector('.ai-op').value, value: row.querySelector('.ai-val').value };
                     editAiRules[i].action     = row.querySelector('.ai-act').value;
                     editAiRules[i].template   = row.querySelector('.ai-tpl').value;
+                    const modeRadio = row.querySelector('.ai-mode-radio:checked');
+                    editAiRules[i].activeMode = modeRadio?.value || 'template';
                 });
             }
 
             el.querySelectorAll('input, select').forEach(inp =>
                 inp.addEventListener('input', syncAll)
             );
+            el.querySelectorAll('.ai-mode-radio').forEach(r =>
+                r.addEventListener('change', syncAll)
+            );
         }
 
         document.getElementById('add-ai-rule-btn').addEventListener('click', () => {
             const replaceExists = editAiRules.some(r => r.action === 'replace_template');
-            editAiRules.push({ aiSource:'', condition:{ operator:'positive', value:'' }, action: replaceExists ? 'add_template' : 'replace_template', template:'' });
+            editAiRules.push({ aiSource:'', condition:{ operator:'positive', value:'' }, action: replaceExists ? 'add_template' : 'replace_template', template:'', textTemplate:'', activeMode:'template' });
             renderAiRules();
             const body = document.getElementById('panel-body');
             setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior:'smooth' }), 60);
@@ -1219,6 +1306,8 @@ XXX` },
                 editAiRules[i].condition = { operator: row.querySelector('.ai-op').value, value: row.querySelector('.ai-val').value };
                 editAiRules[i].action    = row.querySelector('.ai-act').value;
                 editAiRules[i].template  = row.querySelector('.ai-tpl').value;
+                const modeRadio = row.querySelector('.ai-mode-radio:checked');
+                if (modeRadio) editAiRules[i].activeMode = modeRadio.value;
             });
 
             const name = document.getElementById('edit-name').value.trim();
@@ -1227,17 +1316,22 @@ XXX` },
             if (replaceCount > 1) { alert('Er kan maximaal één AI-regel zijn met de actie "Vervang template". Pas de regels aan.'); return; }
 
             const _existingForSave = state.examTypes.find(t => t.id === currentEditId);
+            const deptTextTpl = document.getElementById('edit-dept-text-template').value.trim();
             const updated = {
-                id:           currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
+                id:              currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
                 name,
-                code:         document.getElementById('edit-code').value.trim(),
-                modality:     document.getElementById('edit-modality').value,
-                dicom:        [...editDicomList],
-                deptTemplate:  document.getElementById('edit-dept-template').value.trim(),
-                userTemplate:  document.getElementById('edit-user-template').value.trim(),
-                textTemplate:  document.getElementById('edit-text-template').value.trim(),
-                presetText:    document.getElementById('edit-preset-text').value.trim(),
-                aiRules:       editAiRules,
+                code:            document.getElementById('edit-code').value.trim(),
+                modality:        document.getElementById('edit-modality').value,
+                dicom:           [...editDicomList],
+                deptTemplate:    document.getElementById('edit-dept-template').value.trim(),
+                deptTextTemplate: deptTextTpl,
+                deptActiveMode:  document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
+                userTemplate:    document.getElementById('edit-user-template').value.trim(),
+                userTextTemplate: document.getElementById('edit-user-text-template').value.trim(),
+                userActiveMode:  document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
+                textTemplate:    deptTextTpl, // backward-compat alias
+                presetText:      document.getElementById('edit-preset-text').value.trim(),
+                aiRules:         editAiRules,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
             };
 
@@ -1320,15 +1414,48 @@ XXX` },
         }
 
         let _ttEditorExamId = null;
+        let _ttEditorLevel = null; // 'dept' | 'user' | 'ai-N' | null
 
-        window.openTtEditor = function(examId) {
+        function updateLevelBadge(level, val) {
+            const badge = document.getElementById(level + '-tt-badge');
+            if (!badge) return;
+            if (val) {
+                badge.textContent = 'Actief';
+                badge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
+            } else {
+                badge.textContent = 'Inactief';
+                badge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
+            }
+        }
+
+        window.openTtEditor = function(examId, level) {
             _ttEditorExamId = examId;
+            _ttEditorLevel = level || null;
             const et = state.examTypes.find(e => e.id === examId);
             if (!et) return;
             document.getElementById('tt-editor-modal').classList.remove('hidden');
-            document.getElementById('tt-editor-exam-name').textContent = et.name;
+
+            const levelLabels = { dept: 'Afdeling', user: 'Gebruiker' };
+            const levelSuffix = level ? (' — ' + (level.startsWith('ai-') ? 'AI regel ' + (parseInt(level.slice(3)) + 1) : (levelLabels[level] || level))) : '';
+            document.getElementById('tt-editor-exam-name').textContent = et.name + levelSuffix;
+
             const ta = document.getElementById('tt-editor-input');
-            ta.value = et.textTemplate || '';
+            const isSlideOpen = document.getElementById('slide-over').classList.contains('open')
+                                 && window._currentEditId === examId;
+
+            if (level === 'dept' || !level) {
+                ta.value = isSlideOpen
+                    ? document.getElementById('edit-dept-text-template').value
+                    : (et.deptTextTemplate || et.textTemplate || '');
+            } else if (level === 'user') {
+                ta.value = isSlideOpen
+                    ? document.getElementById('edit-user-text-template').value
+                    : (et.userTextTemplate || '');
+            } else if (level && level.startsWith('ai-')) {
+                const idx = parseInt(level.slice(3));
+                ta.value = (isSlideOpen ? editAiRules[idx]?.textTemplate : et.aiRules?.[idx]?.textTemplate) || '';
+            }
+
             document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
             syncTtHighlight();
             ta.focus();
@@ -1337,37 +1464,47 @@ XXX` },
         window.closeTtEditor = function() {
             document.getElementById('tt-editor-modal').classList.add('hidden');
             _ttEditorExamId = null;
+            _ttEditorLevel = null;
         };
 
         window.saveTtEditor = function() {
             const ta = document.getElementById('tt-editor-input');
             const val = ta.value.trim();
             if (!_ttEditorExamId) return;
-            // 1. Update examTypes in memory
             const et = state.examTypes.find(e => e.id === _ttEditorExamId);
-            if (et) {
-                et.textTemplate = val;
-                et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
-            }
-            // 2. Save to localStorage
-            saveData();
-            // 3. If slide-over is currently open for this exam, sync the hidden textarea and badge
-            const hiddenTa = document.getElementById('edit-text-template');
-            if (hiddenTa && document.getElementById('slide-over').classList.contains('open') &&
-                window._currentEditId === _ttEditorExamId) {
-                hiddenTa.value = val;
-                const ttBadge = document.getElementById('tt-edit-badge');
-                if (ttBadge) {
-                    if (val) {
-                        ttBadge.textContent = 'Actief';
-                        ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
-                    } else {
-                        ttBadge.textContent = 'Inactief';
-                        ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
-                    }
+            const isSlideOpen = document.getElementById('slide-over').classList.contains('open')
+                                 && window._currentEditId === _ttEditorExamId;
+            const level = _ttEditorLevel;
+
+            if (level === 'dept' || !level) {
+                if (isSlideOpen) {
+                    document.getElementById('edit-dept-text-template').value = val;
+                    updateLevelBadge('dept', val);
+                } else if (et) {
+                    et.deptTextTemplate = val;
+                    et.textTemplate = val; // backward-compat alias
+                    et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
+                    saveData();
+                }
+            } else if (level === 'user') {
+                if (isSlideOpen) {
+                    document.getElementById('edit-user-text-template').value = val;
+                    updateLevelBadge('user', val);
+                } else if (et) {
+                    et.userTextTemplate = val;
+                    saveData();
+                }
+            } else if (level && level.startsWith('ai-')) {
+                const idx = parseInt(level.slice(3));
+                if (isSlideOpen && editAiRules[idx]) {
+                    editAiRules[idx].textTemplate = val;
+                    renderAiRules();
+                } else if (et?.aiRules?.[idx]) {
+                    et.aiRules[idx].textTemplate = val;
+                    saveData();
                 }
             }
-            // 4. Re-render cards
+
             renderCards();
             closeTtEditor();
         };
@@ -1378,8 +1515,8 @@ XXX` },
             pre.innerHTML = highlightTt(ta.value) + '\n';
         }
 
-        window.openTtEditorFromSlideOver = function() {
-            if (window._currentEditId) openTtEditor(window._currentEditId);
+        window.openLevelTtEditor = function(level) {
+            if (window._currentEditId) openTtEditor(window._currentEditId, level);
         };
 
         // Wire input/scroll events
