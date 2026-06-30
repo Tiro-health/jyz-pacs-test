@@ -472,7 +472,7 @@
       { id: "bot", label: "Botlaesie", type: "select",
         opties: [{ v: "0", l: "Blastisch (0)" }, { v: "1", l: "Gemengd (1)" }, { v: "2", l: "Lytisch (2)" }] },
       { id: "alignement", label: "Radiografisch alignement", type: "select",
-        opties: [{ v: "0", l: "Normaal (0)" }, { v: "2", l: "Subluxatie/translatie (2)" }, { v: "4", l: "Nieuwe deformiteit/kyfose-scoliose (4)" }] },
+        opties: [{ v: "0", l: "Normaal alignement (0)" }, { v: "2", l: "De-novo deformiteit (kyfose/scoliose) (2)" }, { v: "4", l: "Subluxatie/translatie (4)" }] },
       { id: "collaps", label: "Wervelcorpuscollaps", type: "select",
         opties: [{ v: "0", l: "Geen, <50% betrokken (0)" }, { v: "1", l: ">50% betrokken zonder collaps (1)" }, { v: "2", l: "<50% collaps (2)" }, { v: "3", l: ">50% collaps (3)" }] },
       { id: "posterolat", label: "Posterolaterale betrokkenheid", type: "select",
@@ -1347,20 +1347,160 @@
     naam: "AO Spine (thoracolumbaal)",
     categorie: "Emergency — trauma (AAST)",
     modaliteit: ["CT", "MR", "RX"],
-    bron: "AOSpine thoracolumbar classification",
-    beschrijving: "Morfologische classificatie van thoracolumbale wervelfracturen (type A/B/C + subtype).",
+    bron: "AO Spine Thoracolumbar Injury Classification System",
+    beschrijving: "Morfologische classificatie van thoracolumbale wervelfracturen (type A compressie / B distractie / C translatie + subtype), met optionele neurologische (N) en case-specifieke (M) modifiers.",
     triggerKeywords: ["ao spine", "wervelfractuur", "burst fractuur", "compressiefractuur", "thoracolumbaal", "vertebrale fractuur"],
     inputs: [
-      { id: "type", label: "Type / subtype", type: "select", opties: AO_TL_OPTS },
+      { id: "type", label: "Morfologisch type / subtype", type: "select", opties: AO_TL_OPTS },
+      { id: "n", label: "Neurologische modifier (N)", type: "select", default: "",
+        opties: [
+          { v: "", l: "Niet gescoord" },
+          { v: "N0", l: "N0 — neurologisch intact" },
+          { v: "N1", l: "N1 — voorbijgaand neurologisch deficit (hersteld)" },
+          { v: "N2", l: "N2 — radiculaire symptomen" },
+          { v: "N3", l: "N3 — incompleet ruggenmerg- of cauda-equina-letsel" },
+          { v: "N4", l: "N4 — compleet ruggenmergletsel" },
+          { v: "NX", l: "NX — niet beoordeelbaar" },
+        ] },
+      { id: "m1", label: "M1 — onbepaald/letsel van posterieur ligamentair complex (PLC) op MRI", type: "checkbox" },
+      { id: "m2", label: "M2 — patiënt-specifieke comorbiditeit (bv. DISH, ankylose, osteoporose)", type: "checkbox" },
     ],
     compute(v) {
       if (!v.type) return fout("Selecteer type/subtype.");
       const label = (AO_TL_OPTS.find((o) => o.v === v.type) || {}).l || v.type;
       const ernstig = v.type === "C" || v.type.startsWith("B") || v.type === "A4";
-      return { ok: true, titel: "AO Spine (TL)", klasse: "Type " + v.type,
-        items: [{ label: "Classificatie", waarde: label }],
-        advies: ernstig ? "Potentieel instabiel — chirurgisch advies." : null,
-        tekst: `Thoracolumbale fractuur, AO Spine ${label}.` };
+      const mods = [];
+      if (v.n) mods.push(v.n);
+      if (v.m1) mods.push("M1");
+      if (v.m2) mods.push("M2");
+      const modStr = mods.length ? " " + mods.join(" ") : "";
+      const ernstigN = ["N3", "N4"].includes(v.n);
+      return { ok: true, titel: "AO Spine (TL)", klasse: "AO Spine " + v.type + modStr,
+        items: [
+          { label: "Classificatie", waarde: label },
+          ...(mods.length ? [{ label: "Modifiers", waarde: mods.join(", ") }] : []),
+        ],
+        advies: (ernstig || ernstigN) ? "Potentieel instabiel en/of neurologisch letsel — chirurgisch advies." : (v.m1 ? "Mogelijk PLC-letsel (M1) — overleg/aanvullende evaluatie." : null),
+        tekst: `Thoracolumbale fractuur, AO Spine ${v.type}${modStr} (${label.replace(/^[A-C0-9]+ — /, "")}).` };
+    },
+  });
+
+  const AO_UC = {
+    I:   { naam: "Occipitale condyl / craniocervicale overgang",
+           A: "geïsoleerd benig letsel (condyl)",
+           B: "niet-verplaatst ligamentair letsel (craniocervicaal)",
+           C: "elk letsel met verplaatsing op beeldvorming" },
+    II:  { naam: "C1-ring en C1–2 gewricht",
+           A: "geïsoleerd benig letsel (boog)",
+           B: "ligamentair letsel (lig. transversum atlantis)",
+           C: "atlanto-axiale instabiliteit / translatie in elk vlak" },
+    III: { naam: "C2 en C2–3 gewricht",
+           A: "enkel benig letsel, zonder ligamentair/tension band/discaal letsel",
+           B: "tension band / ligamentair letsel met of zonder benig letsel",
+           C: "elk letsel dat leidt tot wervellichaamtranslatie in elk vlak" },
+  };
+  CALCULATORS.push({
+    id: "ao-spine-uc",
+    naam: "AO Spine (hoog-cervicaal / C0–C2)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT", "MR", "RX"],
+    bron: "AO Spine Upper Cervical Injury Classification System",
+    beschrijving: "Classificatie van hoog-cervicale letsels per regio (I occipitale condyl/craniocervicaal · II C1-ring/C1–2 · III C2/C2–3) en type (A benig · B ligamentair · C translatie/verplaatsing).",
+    triggerKeywords: ["ao spine", "occipitale condyl", "craniocervicaal", "atlas", "axis", "c1", "c2", "densfractuur", "atlanto-axiaal", "hoog-cervicaal"],
+    inputs: [
+      { id: "regio", label: "Regio", type: "select",
+        opties: [
+          { v: "I", l: "I — occipitale condyl / craniocervicale overgang" },
+          { v: "II", l: "II — C1-ring en C1–2 gewricht" },
+          { v: "III", l: "III — C2 en C2–3 gewricht" },
+        ] },
+      { id: "type", label: "Type", type: "select",
+        opties: [
+          { v: "A", l: "A — benig letsel" },
+          { v: "B", l: "B — ligamentair letsel" },
+          { v: "C", l: "C — translatie / verplaatsing" },
+        ] },
+      { id: "n", label: "Neurologische modifier (N)", type: "select", default: "",
+        opties: [
+          { v: "", l: "Niet gescoord" },
+          { v: "N0", l: "N0 — neurologisch intact" },
+          { v: "N1", l: "N1 — voorbijgaand deficit (hersteld)" },
+          { v: "N2", l: "N2 — radiculaire symptomen" },
+          { v: "N3", l: "N3 — incompleet ruggenmerg-/cauda-letsel" },
+          { v: "N4", l: "N4 — compleet ruggenmergletsel" },
+          { v: "NX", l: "NX — niet beoordeelbaar" },
+        ] },
+    ],
+    compute(v) {
+      if (!v.regio || !v.type) return fout("Selecteer regio en type.");
+      const reg = AO_UC[v.regio];
+      const beschrijving = reg[v.type];
+      const code = v.regio + v.type;
+      const nStr = v.n ? " " + v.n : "";
+      const ernstig = v.type === "C" || ["N3", "N4"].includes(v.n);
+      return { ok: true, titel: "AO Spine (hoog-cervicaal)", klasse: "AO Spine " + code + nStr,
+        items: [
+          { label: "Regio", waarde: v.regio + " — " + reg.naam },
+          { label: "Type", waarde: code + " — " + beschrijving },
+          ...(v.n ? [{ label: "Neurologie", waarde: v.n }] : []),
+        ],
+        advies: ernstig ? "Potentieel instabiel en/of neurologisch letsel — chirurgisch/spine-advies." : null,
+        tekst: `Hoog-cervicaal letsel, AO Spine ${code}${nStr} (${reg.naam}: ${beschrijving}).` };
+    },
+  });
+
+  const AO_SUB_OPTS = [
+    { v: "A0", l: "A0 — geen/klinisch insignificante fractuur" },
+    { v: "A1", l: "A1 — wig-impactie" },
+    { v: "A2", l: "A2 — split" },
+    { v: "A3", l: "A3 — incomplete burst" },
+    { v: "A4", l: "A4 — complete burst" },
+    { v: "B1", l: "B1 — posterieure tension band, benig" },
+    { v: "B2", l: "B2 — posterieure tension band, (capsulo)ligamentair" },
+    { v: "B3", l: "B3 — anterieure tension band" },
+    { v: "C", l: "C — translatie/dislocatie in elke richting" },
+    { v: "F1", l: "F1 — niet-verplaatste facetfractuur" },
+    { v: "F2", l: "F2 — facetfractuur met instabiliteitspotentieel" },
+    { v: "F3", l: "F3 — floating lateral mass" },
+    { v: "F4", l: "F4 — pathologische subluxatie of perched/geluxeerd facet" },
+  ];
+  CALCULATORS.push({
+    id: "ao-spine-subaxial",
+    naam: "AO Spine (subaxiaal cervicaal / C3–C7)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT", "MR", "RX"],
+    bron: "AO Spine Subaxial Cervical Injury Classification System",
+    beschrijving: "Classificatie van subaxiale cervicale letsels (C3–C7): type A compressie, B tension band, C translatie, F facetletsel; BL-modifier voor bilateraal facetletsel; optionele N-modifier.",
+    triggerKeywords: ["ao spine", "subaxiaal", "cervicale fractuur", "facetfractuur", "facet", "wervelfractuur", "c3", "c4", "c5", "c6", "c7"],
+    inputs: [
+      { id: "type", label: "Type / subtype", type: "select", opties: AO_SUB_OPTS },
+      { id: "bl", label: "BL — bilateraal letsel (bv. bilateraal facet)", type: "checkbox" },
+      { id: "n", label: "Neurologische modifier (N)", type: "select", default: "",
+        opties: [
+          { v: "", l: "Niet gescoord" },
+          { v: "N0", l: "N0 — neurologisch intact" },
+          { v: "N1", l: "N1 — voorbijgaand deficit (hersteld)" },
+          { v: "N2", l: "N2 — radiculaire symptomen" },
+          { v: "N3", l: "N3 — incompleet ruggenmerg-/cauda-letsel" },
+          { v: "N4", l: "N4 — compleet ruggenmergletsel" },
+          { v: "NX", l: "NX — niet beoordeelbaar" },
+        ] },
+    ],
+    compute(v) {
+      if (!v.type) return fout("Selecteer type/subtype.");
+      const label = (AO_SUB_OPTS.find((o) => o.v === v.type) || {}).l || v.type;
+      const mods = [];
+      if (v.bl) mods.push("BL");
+      if (v.n) mods.push(v.n);
+      const modStr = mods.length ? " " + mods.join(" ") : "";
+      const ernstig = v.type === "C" || v.type.startsWith("B") || v.type === "A4" || ["F3", "F4"].includes(v.type) || ["N3", "N4"].includes(v.n) || v.bl;
+      return { ok: true, titel: "AO Spine (subaxiaal)", klasse: "AO Spine " + v.type + modStr,
+        items: [
+          { label: "Classificatie", waarde: label },
+          ...(mods.length ? [{ label: "Modifiers", waarde: mods.join(", ") }] : []),
+        ],
+        advies: ernstig ? "Potentieel instabiel en/of neurologisch letsel — chirurgisch/spine-advies." : null,
+        tekst: `Subaxiaal cervicaal letsel, AO Spine ${v.type}${modStr} (${label.replace(/^[A-F0-9]+ — /, "")}).` };
     },
   });
 
