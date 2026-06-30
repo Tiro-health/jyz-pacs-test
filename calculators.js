@@ -103,33 +103,34 @@
     beschrijving: "Puntensysteem voor schildkliernoduli → TR1–TR5 + FNA-/follow-up-advies op basis van grootte.",
     triggerKeywords: ["schildkliernodul", "thyroid nodule", "ti-rads", "tirads", "noduul schildklier"],
     inputs: [
-      { id: "compositie", label: "Compositie", type: "select",
+      { id: "compositie", label: "Compositie (kies 1)", type: "select",
         opties: [
-          { v: "0c", l: "Cysteus / volledig spongiform (0)" },
+          { v: "0", l: "Cysteus of bijna volledig cysteus (0)" },
+          { v: "0s", l: "Spongiform (0)" },
           { v: "1", l: "Gemengd cysteus-solide (1)" },
-          { v: "2", l: "Solide / bijna volledig solide (2)" },
+          { v: "2", l: "Solide of bijna volledig solide (2)" },
         ] },
-      { id: "echo", label: "Echogeniciteit", type: "select",
+      { id: "echo", label: "Echogeniciteit (kies 1)", type: "select",
         opties: [
           { v: "0", l: "Anechogeen (0)" },
           { v: "1", l: "Hyperechogeen / isoechogeen (1)" },
           { v: "2", l: "Hypoechogeen (2)" },
           { v: "3", l: "Zeer hypoechogeen (3)" },
         ] },
-      { id: "vorm", label: "Vorm", type: "select",
+      { id: "vorm", label: "Vorm (kies 1)", type: "select",
         opties: [
           { v: "0", l: "Breder dan hoog (0)" },
           { v: "3", l: "Hoger dan breed (3)" },
         ] },
-      { id: "marge", label: "Marge", type: "select",
+      { id: "marge", label: "Marge (kies 1)", type: "select",
         opties: [
-          { v: "0", l: "Glad / slecht afgrensbaar (0)" },
+          { v: "0", l: "Glad (0)" },
+          { v: "0i", l: "Slecht afgrensbaar (0)" },
           { v: "2", l: "Gelobd / irregulair (2)" },
           { v: "3", l: "Extrathyroïdale extensie (3)" },
         ] },
-      { id: "foci", label: "Echogene foci (mag meerdere)", type: "select",
+      { id: "foci", label: "Echogene foci (kies alles wat van toepassing is — tellen op)", type: "checkbox-group",
         opties: [
-          { v: "0", l: "Geen / comet-tail artefact (0)" },
           { v: "1", l: "Macrocalcificaties (1)" },
           { v: "2", l: "Perifere (rim) calcificaties (2)" },
           { v: "3", l: "Punctate echogene foci (3)" },
@@ -137,12 +138,15 @@
       { id: "grootte", label: "Maximale diameter", type: "number", eenheid: "cm", min: 0, step: 0.1 },
     ],
     compute(v) {
-      const comp = v.compositie === "0c" ? 0 : num(v.compositie);
-      const pts = comp + num(v.echo) + num(v.vorm) + num(v.marge) + num(v.foci);
-      if (isNaN(pts)) return fout("Selecteer alle kenmerken.");
+      const comp = (v.compositie === "0s") ? 0 : num(v.compositie);
+      const marge = (v.marge === "0i") ? 0 : num(v.marge);
+      const fociArr = Array.isArray(v.foci) ? v.foci : (v.foci ? [v.foci] : []);
+      const fociPts = fociArr.reduce((a, x) => a + (parseInt(x, 10) || 0), 0);
+      const pts = comp + num(v.echo) + num(v.vorm) + marge + fociPts;
+      if (isNaN(pts)) return fout("Selecteer compositie, echogeniciteit, vorm en marge.");
       let tr, label;
-      if (pts <= 1) { tr = "TR1"; label = "Benigne"; }
-      else if (pts === 2) { tr = "TR2"; label = "Niet verdacht"; }
+      if (pts === 0) { tr = "TR1"; label = "Benigne"; }
+      else if (pts <= 2) { tr = "TR2"; label = "Niet verdacht"; }
       else if (pts === 3) { tr = "TR3"; label = "Mild verdacht"; }
       else if (pts <= 6) { tr = "TR4"; label = "Matig verdacht"; }
       else { tr = "TR5"; label = "Hoog verdacht"; }
@@ -159,7 +163,7 @@
           ...(isNaN(d) ? [] : [{ label: "Diameter", waarde: r1(d) + " cm" }]),
         ],
         advies,
-        tekst: `Schildkliernodulus, ACR TI-RADS ${tr} (${pts} punten, ${label.toLowerCase()})${isNaN(d) ? "" : `, ${r1(d)} cm`}. ${advies}`,
+        tekst: `Schildkliernodulus, ACR TI-RADS ${tr} (${pts} punt${pts === 1 ? "" : "en"}, ${label.toLowerCase()})${isNaN(d) ? "" : `, ${r1(d)} cm`}. ${advies}`,
       };
     },
   });
