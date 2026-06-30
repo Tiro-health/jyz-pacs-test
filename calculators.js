@@ -530,8 +530,8 @@
     naam: "LI-RADS 2018/2024 (CT/MRI)",
     categorie: "Body — hepatobiliair",
     modaliteit: ["CT", "MR"],
-    bron: "ACR LI-RADS v2018",
-    beschrijving: "Categorisering van leverlaesies bij hoog-risicopatiënten (cirrose/HCC-risico) op basis van grootte en major features.",
+    bron: "ACR LI-RADS v2018 (CT/MRI diagnostische tabel)",
+    beschrijving: "Categorisering van leverobservaties bij hoog-risicopatiënten (cirrose/HCC-risico). Volgt de v2018 CT/MRI-grid: grootte × niet-rim APHE × aantal additionele major features (washout, kapsel, drempelgroei). Drempelgroei = ≥50% diametertoename in ≤6 maanden.",
     triggerKeywords: ["li-rads", "lirads", "hcc", "hepatocellulair", "cirrose", "leverlaesie", "levernodul"],
     inputs: [
       { id: "grootte", label: "Diameter", type: "number", eenheid: "mm", min: 0 },
@@ -540,38 +540,37 @@
       { id: "washout", label: "Niet-perifere washout", type: "checkbox" },
       { id: "kapsel", label: "Enhancing kapsel", type: "checkbox" },
       { id: "drempelgroei", label: "Drempelgroei (≥50% in ≤6 mnd)", type: "checkbox" },
-      { id: "tiv", label: "Tumor in vene (TIV)", type: "checkbox" },
+      { id: "tiv", label: "Tumor in vene (LR-TIV)", type: "checkbox" },
+      { id: "lrm", label: "Kenmerken die niet-HCC maligniteit suggereren (rim APHE, targetoid, geleidelijke centripetale enhancement)", type: "checkbox" },
     ],
     compute(v) {
       const d = num(v.grootte);
       if (isNaN(d)) return fout("Geef de diameter in.");
-      if (v.tiv) return res("LR-TIV", "Tumor in vene", "Tumor in vene (LR-TIV) — bespreek multidisciplinair.");
+      const mk = (cat, advies, extra) => ({
+        ok: true, titel: "LI-RADS", klasse: cat,
+        items: [{ label: "Diameter", waarde: d + " mm" }, { label: "Categorie", waarde: cat }],
+        advies,
+        tekst: `Leverobservatie ${d} mm, LI-RADS ${cat}.${extra ? " " + extra : ""} ${advies}`.trim(),
+      });
+      if (v.tiv) return mk("LR-TIV", "Tumor in vene — bespreek multidisciplinair.");
+      if (v.lrm) return mk("LR-M", "Waarschijnlijk/definitief maligne, niet-HCC-specifiek — overweeg biopsie/multidisciplinair overleg.");
       const aphe = v.aps === "ja";
-      const af = (v.washout ? 1 : 0) + (v.kapsel ? 1 : 0) + (v.drempelgroei ? 1 : 0);
+      const W = !!v.washout, C = !!v.kapsel, T = !!v.drempelgroei;
+      const af = (W ? 1 : 0) + (C ? 1 : 0) + (T ? 1 : 0);
       let cat;
       if (!aphe) {
-        // geen APHE: meestal LR-3 (of lager); vereenvoudigd
-        cat = af >= 1 ? "LR-3/4 (overweeg)" : "LR-3";
+        if (d < 20) cat = af >= 2 ? "LR-4" : "LR-3";
+        else cat = af >= 1 ? "LR-4" : "LR-3";
       } else {
         if (d < 10) cat = af >= 1 ? "LR-4" : "LR-3";
-        else if (d < 20) cat = af >= 2 ? "LR-5" : (af === 1 ? "LR-4" : "LR-3");
+        else if (d < 20) cat = af === 0 ? "LR-3" : ((W || T) ? "LR-5" : (af >= 2 ? "LR-5" : "LR-4"));
         else cat = af >= 1 ? "LR-5" : "LR-4";
       }
-      const advies = cat.indexOf("LR-5") >= 0 ? "LR-5 — definitief HCC; multidisciplinair bespreken."
-        : cat.indexOf("LR-4") >= 0 ? "LR-4 — waarschijnlijk HCC; multidisciplinair bespreken."
-        : "LR-3 — intermediaire waarschijnlijkheid; follow-up.";
-      function res(c, k, t) { return { ok: true, titel: "LI-RADS", klasse: c, items: [{ label: "Categorie", waarde: c }], advies: k, tekst: t }; }
-      return {
-        ok: true, titel: "LI-RADS", klasse: cat,
-        items: [
-          { label: "Diameter", waarde: d + " mm" },
-          { label: "APHE", waarde: aphe ? "aanwezig" : "afwezig" },
-          { label: "Additionele major features", waarde: String(af) + " (washout/kapsel/groei)" },
-          { label: "Categorie", waarde: cat },
-        ],
-        advies,
-        tekst: `Leverlaesie ${d} mm, LI-RADS ${cat}. APHE ${aphe ? "aanwezig" : "afwezig"}, ${af} bijkomende major feature(s). ${advies}`,
-      };
+      const advies = cat === "LR-5" ? "Definitief HCC — multidisciplinair bespreken (biopsie meestal niet nodig)."
+        : cat === "LR-4" ? "Waarschijnlijk HCC — multidisciplinair bespreken."
+        : "Intermediaire waarschijnlijkheid — follow-up / aanvullende beeldvorming.";
+      const featTxt = [W && "washout", C && "kapsel", T && "drempelgroei"].filter(Boolean).join(", ") || "geen";
+      return mk(cat, advies, `APHE ${aphe ? "aanwezig" : "afwezig"}; additionele major features: ${featTxt}.`);
     },
   });
 
@@ -827,27 +826,51 @@
     naam: "O-RADS US (2022)",
     categorie: "Body — genito-urinair",
     modaliteit: ["ECHO"],
-    bron: "O-RADS US v2022",
-    beschrijving: "Risicostratificatie van ovariële/adnexiële laesies op echografie.",
+    bron: "O-RADS US v2022 (ACR)",
+    beschrijving: "Geleide risicostratificatie van adnexiële laesies (v2022). Soliede component = ≥3 mm protrusie; kleurscore 1 (geen) – 4 (sterke flow). Voor atypische/klassieke laesies: kies het type rechtstreeks.",
     triggerKeywords: ["o-rads", "orads", "adnex", "ovarieel", "ovariële", "adnexiële massa", "ovariumcyste"],
     inputs: [
-      { id: "cat", label: "O-RADS US categorie", type: "select",
+      { id: "type", label: "Type laesie", type: "select",
         opties: [
-          { v: "0", l: "0 — incompleet onderzoek" },
-          { v: "1", l: "1 — normaal premenopauzaal ovarium" },
-          { v: "2", l: "2 — bijna zeker benigne (<1%)" },
-          { v: "3", l: "3 — laag risico (1–<10%)" },
-          { v: "4", l: "4 — intermediair risico (10–<50%)" },
-          { v: "5", l: "5 — hoog risico (≥50%)" },
+          { v: "fysio", l: "Fysiologisch (follikel ≤3 cm / corpus luteum, premenopauzaal)" },
+          { v: "unilocular", l: "Uniloculaire cyste, gladde wand, geen soliede component" },
+          { v: "multilocular", l: "Multiloculaire cyste, geen soliede component" },
+          { v: "solid-comp", l: "Cyste mét soliede component" },
+          { v: "solid", l: "Soliede laesie (≥80% solide)" },
+          { v: "klassiek", l: "Klassieke benigne laesie (hemorragisch/dermoid/endometrioom)" },
         ] },
+      { id: "grootte", label: "Maximale diameter", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "kleur", label: "Kleurscore (vascularisatie)", type: "select",
+        opties: [{ v: "1", l: "1 — geen flow" }, { v: "2", l: "2 — minimale flow" }, { v: "3", l: "3 — matige flow" }, { v: "4", l: "4 — sterke flow" }] },
+      { id: "wand", label: "Wand/septa", type: "select", default: "glad",
+        opties: [{ v: "glad", l: "Glad (irregulariteit <3 mm)" }, { v: "irreg", l: "Irregulair (≥3 mm) of irregulaire binnenwand" }] },
     ],
     compute(v) {
-      const adv = { "0": "Herhaal/aanvullend onderzoek.", "1": "Geen actie.", "2": "Geen of beperkte follow-up.", "3": "Echografische follow-up of MRI; eventueel gynaecologie.", "4": "MRI of gynaecologische (oncologische) verwijzing.", "5": "Gynaecologisch-oncologische verwijzing." };
-      if (v.cat === undefined || v.cat === "") return fout("Selecteer de categorie.");
-      return { ok: true, titel: "O-RADS US", klasse: "O-RADS " + v.cat,
-        items: [{ label: "Categorie", waarde: v.cat }],
-        advies: adv[v.cat] || null,
-        tekst: `Adnexiële laesie, O-RADS US ${v.cat}. ${adv[v.cat] || ""}`.trim() };
+      if (!v.type) return fout("Selecteer het type laesie.");
+      const d = num(v.grootte);
+      const cs = num(v.kleur);
+      const irreg = v.wand === "irreg";
+      let cat;
+      if (v.type === "fysio") cat = "1";
+      else if (v.type === "klassiek") cat = (!isNaN(d) && d >= 10) ? "3" : "2";
+      else if (v.type === "unilocular") cat = (!isNaN(d) && d >= 10) ? "3" : "2";
+      else if (v.type === "multilocular") {
+        if (irreg || (!isNaN(d) && d >= 10) || cs === 4) cat = "4";
+        else cat = "3";
+      } else if (v.type === "solid-comp") {
+        cat = (cs === 4) ? "5" : "4"; // cyste met soliede component: CS1-3 → 4, CS4 → 5
+      } else if (v.type === "solid") {
+        if (cs >= 4) cat = "5";
+        else if (cs >= 2) cat = "4";
+        else cat = "4"; // gladde soliede laesie CS1 → 4 (uitz. specifieke benigne morfologie)
+      }
+      if (!cat) return fout("Vul grootte en kleurscore aan.");
+      const risk = { "1": "n.v.t.", "2": "<1%", "3": "1–<10%", "4": "10–<50%", "5": "≥50%" }[cat];
+      const adv = { "1": "Geen actie (fysiologisch).", "2": "Bijna zeker benigne — geen/beperkte follow-up.", "3": "Laag risico — echografische follow-up of MRI; eventueel gynaecologie.", "4": "Intermediair risico — MRI of gynaecologisch(-oncologische) verwijzing.", "5": "Hoog risico — gynaecologisch-oncologische verwijzing." }[cat];
+      return { ok: true, titel: "O-RADS US v2022", klasse: "O-RADS " + cat,
+        items: [{ label: "Categorie", waarde: cat }, { label: "Maligniteitsrisico", waarde: risk }],
+        advies: adv,
+        tekst: `Adnexiële laesie, O-RADS US ${cat} (risico ${risk}). ${adv}` };
     },
   });
 
@@ -1145,22 +1168,29 @@
     naam: "NI-RADS (hoofd-hals surveillance)",
     categorie: "Neuroradiologie",
     modaliteit: ["CT", "MR"],
-    bron: "ACR NI-RADS",
-    beschrijving: "Surveillance van behandeld hoofd-halskanker: aparte categorie voor primaire site en hals.",
+    bron: "ACR NI-RADS (white paper, JACR 2018)",
+    beschrijving: "Surveillance van behandeld hoofd-halskanker. Aparte score voor primaire site en hals; categorie 1–4 met gekoppeld management. Categorie 2 onderverdeeld in 2a (oppervlakkig) en 2b (diep/submucosaal).",
     triggerKeywords: ["ni-rads", "nirads", "hoofd-hals", "head and neck", "post-behandeling hals", "recidief hals"],
     inputs: [
       { id: "site", label: "Compartiment", type: "select", default: "primair",
         opties: [{ v: "primair", l: "Primaire site" }, { v: "hals", l: "Hals (lymfeklieren)" }] },
       { id: "cat", label: "NI-RADS categorie", type: "select",
         opties: [
-          { v: "1", l: "1 — geen aanwijzing voor recidief" },
-          { v: "2", l: "2 — laag verdacht (focaal mucosaal/diep)" },
-          { v: "3", l: "3 — hoog verdacht" },
-          { v: "4", l: "4 — bewezen recidief (biopsie/progressie)" },
+          { v: "1", l: "1 — geen aanwijzing voor recidief (verwachte post-behandelingsveranderingen)" },
+          { v: "2a", l: "2a — laag verdacht, oppervlakkig/mucosaal" },
+          { v: "2b", l: "2b — laag verdacht, diep/submucosaal" },
+          { v: "3", l: "3 — hoog verdacht (nieuwe/groeiende massa of klier)" },
+          { v: "4", l: "4 — bewezen recidief (pathologisch/definitieve progressie)" },
         ] },
     ],
     compute(v) {
-      const adv = { "1": "Routine surveillance.", "2": "Korte-termijn follow-up of directe visualisatie/biopsie.", "3": "Biopsie / PET-CT.", "4": "Klinische/oncologische behandeling." };
+      const adv = {
+        "1": "Routine surveillance.",
+        "2a": "Directe visuele inspectie (laryngoscopie/endoscopie) of korte-termijn follow-up.",
+        "2b": "Korte-termijn follow-up beeldvorming of aanvullende modaliteit (bv. PET-CT).",
+        "3": "Biopsie (eventueel met PET-CT).",
+        "4": "Bewezen recidief/progressie — klinische/oncologische behandeling.",
+      };
       if (!v.cat) return fout("Selecteer de categorie.");
       return { ok: true, titel: "NI-RADS", klasse: "NI-RADS " + v.cat,
         items: [{ label: "Compartiment", waarde: v.site === "hals" ? "hals" : "primaire site" }, { label: "Categorie", waarde: v.cat }],
@@ -1178,24 +1208,43 @@
     naam: "Bone-RADS (incidentele botlaesie)",
     categorie: "Musculoskeletaal",
     modaliteit: ["CT", "MR"],
-    bron: "ACR Bone-RADS 2023",
-    beschrijving: "Management van incidentele botlaesies op CT of MRI → categorie 1–3.",
-    triggerKeywords: ["bone-rads", "bonerads", "botlaesie", "bone lesion", "incidentele bot", "botletsel"],
+    bron: "SSR/ACR Bone-RADS (Skeletal Radiology 2022)",
+    beschrijving: "Management van een solitaire incidentele botlaesie bij volwassenen op CT/MRI. Vier managementcategorieën (1–4) via aparte algoritmes per modaliteit en densiteit/T1-signaal.",
+    triggerKeywords: ["bone-rads", "bonerads", "botlaesie", "bone lesion", "incidentele bot", "botletsel", "botmetastase"],
     inputs: [
-      { id: "cat", label: "Bone-RADS categorie", type: "select",
+      { id: "modaliteit", label: "Modaliteit / algoritme", type: "select",
         opties: [
-          { v: "1", l: "1 — benigne, geen verdere actie" },
-          { v: "2", l: "2 — waarschijnlijk benigne / indeterminaat → follow-up of aanvullende beeldvorming" },
-          { v: "3", l: "3 — verdacht → biopsie / oncologische verwijzing" },
+          { v: "ct-lucent", l: "CT — lucente laesie" },
+          { v: "ct-scler", l: "CT — sclerotische/gemengde laesie" },
+          { v: "mr-hoogt1", l: "MRI — hoog T1-signaal" },
+          { v: "mr-laagt1", l: "MRI — laag T1-signaal" },
+        ] },
+      { id: "klassiek", label: "Klassiek benigne (bot-eiland/enostose, typisch enchondroom, FCD, hemangioom, vetbevattende laesie...)", type: "checkbox" },
+      { id: "morf", label: "Morfologie", type: "select",
+        opties: [
+          { v: "nonaggr", l: "Niet-agressief: scherp begrensd, sclerotische rand, geen corticale destructie/periostreactie/weke-delenmassa" },
+          { v: "indeterm", l: "Intermediair/atypisch: scherp begrensd zonder sclerotische rand, of mild/onzeker" },
+          { v: "aggr", l: "Agressief: onscherpe begrenzing, corticale destructie, agressieve periostreactie of weke-delenmassa" },
         ] },
     ],
     compute(v) {
-      const adv = { "1": "Geen verdere actie.", "2": "Aanvullende beeldvorming of follow-up.", "3": "Biopsie / verwijzing." };
-      if (!v.cat) return fout("Selecteer de categorie.");
-      return { ok: true, titel: "Bone-RADS", klasse: "Bone-RADS " + v.cat,
-        items: [{ label: "Categorie", waarde: v.cat }],
-        advies: adv[v.cat] || null,
-        tekst: `Incidentele botlaesie, Bone-RADS ${v.cat}. ${adv[v.cat] || ""}`.trim() };
+      if (!v.modaliteit || !v.morf) return fout("Selecteer modaliteit en morfologie.");
+      let cat, advies;
+      if (v.klassiek) { cat = "1"; advies = "Zeer laag risico (klassiek benigne) — geen verdere beeldvorming of follow-up."; }
+      else if (v.morf === "aggr") { cat = "4"; advies = "Verdacht voor maligniteit — biopsie en/of verwijzing orthopedische/MSK-oncologie."; }
+      else if (v.morf === "indeterm") { cat = "3"; advies = "Indeterminaat — follow-up beeldvorming."; }
+      else {
+        // niet-agressief, niet evident klassiek → aanvullende karakterisatie
+        cat = "2";
+        advies = (v.modaliteit.startsWith("ct"))
+          ? "Waarschijnlijk benigne — aanvullende karakterisatie met andere modaliteit (bv. MRI)."
+          : "Waarschijnlijk benigne — aanvullende karakterisatie/correlatie (bv. röntgen/CT) of follow-up.";
+      }
+      const modL = { "ct-lucent": "CT lucent", "ct-scler": "CT sclerotisch/gemengd", "mr-hoogt1": "MRI hoog T1", "mr-laagt1": "MRI laag T1" }[v.modaliteit];
+      return { ok: true, titel: "Bone-RADS", klasse: "Bone-RADS " + cat,
+        items: [{ label: "Algoritme", waarde: modL }, { label: "Categorie", waarde: cat }],
+        advies,
+        tekst: `Incidentele botlaesie (${modL}), Bone-RADS ${cat}. ${advies}` };
     },
   });
 
