@@ -1006,27 +1006,71 @@
     categorie: "Cardiothoracaal",
     modaliteit: ["CT"],
     bron: "ACR Lung-RADS v2022",
-    beschrijving: "Categorisering bij low-dose CT longkankerscreening.",
+    beschrijving: "Auto-classificatie bij low-dose CT longkankerscreening op basis van noduletype, status (baseline/nieuw/groeiend) en grootte. Grootte = gemiddelde van lange en korte as. Groei = >1,5 mm toename per 12 mnd.",
     triggerKeywords: ["lung-rads", "lungrads", "longkankerscreening", "lcs", "low-dose ct", "screening long"],
     inputs: [
-      { id: "cat", label: "Lung-RADS categorie", type: "select",
+      { id: "type", label: "Noduletype / bevinding", type: "select",
         opties: [
-          { v: "0", l: "0 — incompleet" },
-          { v: "1", l: "1 — negatief" },
-          { v: "2", l: "2 — benigne aspect/gedrag" },
-          { v: "3", l: "3 — waarschijnlijk benigne" },
-          { v: "4A", l: "4A — verdacht" },
-          { v: "4B", l: "4B — verdacht (hoger)" },
-          { v: "4X", l: "4X — verdacht met additionele features" },
+          { v: "geen", l: "Geen nodulus / duidelijk benigne (volledige/centrale/popcorn-calcificatie of vet)" },
+          { v: "solid", l: "Solide nodulus" },
+          { v: "partsolid", l: "Deels solide (part-solid) nodulus" },
+          { v: "nonsolid", l: "Niet-solide / matglas (GGN)" },
+          { v: "incompleet", l: "Incompleet onderzoek / geen vergelijking" },
         ] },
+      { id: "status", label: "Status", type: "select", default: "baseline",
+        opties: [{ v: "baseline", l: "Baseline (eerste screening)" }, { v: "nieuw", l: "Nieuw" }, { v: "groeiend", l: "Groeiend (>1,5 mm/12 mnd)" }, { v: "stabiel", l: "Stabiel / onveranderd" }] },
+      { id: "diam", label: "Gemiddelde diameter (totaal)", type: "number", eenheid: "mm", min: 0, step: 0.1 },
+      { id: "solidcomp", label: "Solide component (enkel part-solid)", type: "number", eenheid: "mm", min: 0, step: 0.1, help: "Gemiddelde diameter van de solide component" },
+      { id: "x", label: "Additionele kenmerken die maligniteit suggereren (spiculatie, lymfadenopathie, snelle groei GGN…) → 4X", type: "checkbox" },
+      { id: "s", label: "Klinisch significante incidentele bevinding (modifier S)", type: "checkbox" },
     ],
     compute(v) {
-      const adv = { "0": "Aanvullend onderzoek / vergelijking.", "1": "Jaarlijkse LDCT.", "2": "Jaarlijkse LDCT.", "3": "LDCT na 6 maanden.", "4A": "LDCT na 3 maanden; PET-CT overwegen bij ≥8 mm solide.", "4B": "PET-CT en/of weefseldiagnose.", "4X": "PET-CT en/of weefseldiagnose." };
-      if (!v.cat) return fout("Selecteer de categorie.");
-      return { ok: true, titel: "Lung-RADS v2022", klasse: "Lung-RADS " + v.cat,
-        items: [{ label: "Categorie", waarde: v.cat }],
-        advies: adv[v.cat] || null,
-        tekst: `Lung-RADS ${v.cat}. ${adv[v.cat] || ""}`.trim() };
+      if (!v.type) return fout("Selecteer het noduletype.");
+      if (v.type === "incompleet") return mkLR("0");
+      if (v.type === "geen") return mkLR("1");
+      const d = num(v.diam);
+      if (isNaN(d)) return fout("Geef de (gemiddelde) diameter in.");
+      const sc = num(v.solidcomp);
+      const nieuwOfGroei = v.status === "nieuw" || v.status === "groeiend";
+      let cat;
+      if (v.type === "solid") {
+        if (!nieuwOfGroei) { // baseline / stabiel
+          if (d < 6) cat = "2"; else if (d < 8) cat = "3"; else if (d < 15) cat = "4A"; else cat = "4B";
+        } else {
+          if (d < 4) cat = "2"; else if (d < 6) cat = "3"; else if (d < 8) cat = "4A"; else cat = "4B";
+        }
+      } else if (v.type === "partsolid") {
+        if (d < 6 && !nieuwOfGroei) cat = "2";
+        else if (isNaN(sc) || sc < 6) cat = (nieuwOfGroei && sc >= 4) ? "4A" : "3";
+        else if (sc < 8) cat = "4A";
+        else cat = "4B";
+      } else { // nonsolid / GGN
+        cat = (d < 30) ? "2" : "3";
+      }
+      // Groei tilt een laaggradige nodulus op tot minstens 4A
+      if (v.status === "groeiend" && (cat === "2" || cat === "3")) cat = "4A";
+      // 4X: cat 3 of 4 met additionele verdachte kenmerken
+      if (v.x && (cat === "3" || cat === "4A" || cat === "4B")) cat = "4X";
+      return mkLR(cat, { d, sc, type: v.type, s: v.s });
+
+      function mkLR(cat, info) {
+        const adv = {
+          "0": "Aanvullend onderzoek / vergelijking met eerdere CT.",
+          "1": "Jaarlijkse LDCT (12 maanden).",
+          "2": "Jaarlijkse LDCT (12 maanden).",
+          "3": "LDCT na 6 maanden.",
+          "4A": "LDCT na 3 maanden; PET-CT overwegen bij solide component ≥8 mm.",
+          "4B": "Weefseldiagnose en/of PET-CT; klinische evaluatie.",
+          "4X": "Verdacht met additionele kenmerken — weefseldiagnose en/of PET-CT.",
+        };
+        const risk = { "0": "—", "1": "<1%", "2": "<1%", "3": "1–2%", "4A": "5–15%", "4B": ">15%", "4X": ">15%" };
+        const sMod = (info && info.s) ? " S" : "";
+        const items = [{ label: "Categorie", waarde: "Lung-RADS " + cat + sMod }, { label: "Maligniteitsrisico", waarde: risk[cat] }];
+        if (info && !isNaN(info.d)) items.splice(1, 0, { label: "Diameter", waarde: r1(info.d) + " mm" + (!isNaN(info.sc) ? " (solide " + r1(info.sc) + " mm)" : "") });
+        return { ok: true, titel: "Lung-RADS v2022", klasse: "Lung-RADS " + cat + sMod,
+          items, advies: adv[cat],
+          tekst: `Lung-RADS ${cat}${sMod}${info && !isNaN(info.d) ? ` (${r1(info.d)} mm${!isNaN(info.sc) ? ", solide component " + r1(info.sc) + " mm" : ""})` : ""}. ${adv[cat]}` };
+      }
     },
   });
 
