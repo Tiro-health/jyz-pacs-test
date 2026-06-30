@@ -827,50 +827,90 @@
     categorie: "Body — genito-urinair",
     modaliteit: ["ECHO"],
     bron: "O-RADS US v2022 (ACR)",
-    beschrijving: "Geleide risicostratificatie van adnexiële laesies (v2022). Soliede component = ≥3 mm protrusie; kleurscore 1 (geen) – 4 (sterke flow). Voor atypische/klassieke laesies: kies het type rechtstreeks.",
+    beschrijving: "Risicostratificatie van adnexiële laesies (v2022) — gemiddeld-risicopatiënt zonder acute symptomen. Kleurscore CS1 (geen) – CS4 (sterke flow). Meet de grootste enkele diameter.",
     triggerKeywords: ["o-rads", "orads", "adnex", "ovarieel", "ovariële", "adnexiële massa", "ovariumcyste"],
     inputs: [
       { id: "type", label: "Type laesie", type: "select",
         opties: [
-          { v: "fysio", l: "Fysiologisch (follikel ≤3 cm / corpus luteum, premenopauzaal)" },
-          { v: "unilocular", l: "Uniloculaire cyste, gladde wand, geen soliede component" },
-          { v: "multilocular", l: "Multiloculaire cyste, geen soliede component" },
-          { v: "solid-comp", l: "Cyste mét soliede component" },
+          { v: "normaal", l: "Normaal ovarium (geen laesie / follikel ≤3 cm / corpus luteum)" },
+          { v: "simple", l: "Simpele cyste" },
+          { v: "smooth-uni-bi", l: "Niet-simpele gladde uniloculaire cyste OF gladde biloculaire cyste" },
+          { v: "uni-irreg", l: "Uniloculaire irregulaire cyste (geen soliede component)" },
+          { v: "bi-irreg", l: "Biloculaire irregulaire cyste (geen soliede component)" },
+          { v: "multiloc", l: "Multiloculaire cyste, GEEN soliede component" },
+          { v: "uni-solid", l: "Uniloculaire cyste MET soliede component / papillaire projecties" },
+          { v: "multi-solid", l: "Bi-/multiloculaire cyste MET soliede component" },
           { v: "solid", l: "Soliede laesie (≥80% solide)" },
-          { v: "klassiek", l: "Klassieke benigne laesie (hemorragisch/dermoid/endometrioom)" },
+          { v: "classic", l: "Klassieke benigne laesie (hemorragisch/dermoid/endometrioom/paraovarieel/peritoneale inclusie/hydrosalpinx)" },
+          { v: "ascites", l: "Ascites en/of peritoneale nodulariteit" },
+          { v: "incompleet", l: "Incomplete evaluatie" },
         ] },
-      { id: "grootte", label: "Maximale diameter", type: "number", eenheid: "cm", min: 0, step: 0.1 },
-      { id: "kleur", label: "Kleurscore (vascularisatie)", type: "select",
-        opties: [{ v: "1", l: "1 — geen flow" }, { v: "2", l: "2 — minimale flow" }, { v: "3", l: "3 — matige flow" }, { v: "4", l: "4 — sterke flow" }] },
-      { id: "wand", label: "Wand/septa", type: "select", default: "glad",
-        opties: [{ v: "glad", l: "Glad (irregulariteit <3 mm)" }, { v: "irreg", l: "Irregulair (≥3 mm) of irregulaire binnenwand" }] },
+      { id: "grootte", label: "Grootste diameter", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "kleur", label: "Kleurscore (CS)", type: "select",
+        opties: [{ v: "1", l: "CS1 — geen flow" }, { v: "2", l: "CS2 — minimale flow" }, { v: "3", l: "CS3 — matige flow" }, { v: "4", l: "CS4 — sterke flow" }] },
+      { id: "wand", label: "Binnenwand / contour", type: "select", default: "glad",
+        opties: [{ v: "glad", l: "Glad" }, { v: "irreg", l: "Irregulaire binnenwand/septa of irregulaire buitencontour" }] },
+      { id: "shadowing", label: "Akoestische schaduw (soliede laesie)", type: "select", default: "nee",
+        opties: [{ v: "nee", l: "Geen schaduw" }, { v: "ja", l: "Schaduw aanwezig" }] },
+      { id: "papillair", label: "Papillaire projecties (uniloculair met soliede component)", type: "select", default: "0",
+        opties: [{ v: "0", l: "Geen / n.v.t." }, { v: "1-3", l: "1–3 papillaire projecties" }, { v: "4+", l: "≥4 papillaire projecties" }] },
+      { id: "menopauze", label: "Menopauzestatus (voor follow-up)", type: "select", default: "pre",
+        opties: [{ v: "pre", l: "Premenopauzaal" }, { v: "post", l: "Postmenopauzaal" }] },
     ],
     compute(v) {
       if (!v.type) return fout("Selecteer het type laesie.");
       const d = num(v.grootte);
       const cs = num(v.kleur);
       const irreg = v.wand === "irreg";
+      const shadow = v.shadowing === "ja";
       let cat;
-      if (v.type === "fysio") cat = "1";
-      else if (v.type === "klassiek") cat = (!isNaN(d) && d >= 10) ? "3" : "2";
-      else if (v.type === "unilocular") cat = (!isNaN(d) && d >= 10) ? "3" : "2";
-      else if (v.type === "multilocular") {
-        if (irreg || (!isNaN(d) && d >= 10) || cs === 4) cat = "4";
-        else cat = "3";
-      } else if (v.type === "solid-comp") {
-        cat = (cs === 4) ? "5" : "4"; // cyste met soliede component: CS1-3 → 4, CS4 → 5
-      } else if (v.type === "solid") {
-        if (cs >= 4) cat = "5";
-        else if (cs >= 2) cat = "4";
-        else cat = "4"; // gladde soliede laesie CS1 → 4 (uitz. specifieke benigne morfologie)
+      switch (v.type) {
+        case "incompleet": cat = "0"; break;
+        case "normaal": cat = "1"; break;
+        case "ascites": cat = "5"; break;
+        case "simple": cat = (!isNaN(d) && d > 10) ? "3" : "2"; break;
+        case "smooth-uni-bi": cat = (!isNaN(d) && d > 10) ? "3" : "2"; break;
+        case "classic": cat = (!isNaN(d) && d >= 10) ? "3" : "2"; break;
+        case "uni-irreg": cat = "3"; break;                       // uniloculaire irregulaire cyste → 3
+        case "bi-irreg": cat = "4"; break;                        // biloculaire irregulaire cyste → 4
+        case "multiloc":
+          if (irreg || cs === 4 || (!isNaN(d) && d > 10)) cat = "4";
+          else cat = "3";                                          // glad, <10 cm, CS1-3 → 3
+          break;
+        case "uni-solid":
+          cat = (v.papillair === "4+") ? "5" : "4";                // ≥4 papillair → 5; 1-3 → 4
+          break;
+        case "multi-solid":
+          cat = (cs >= 3) ? "5" : "4";                             // CS3-4 → 5; CS1-2 → 4
+          break;
+        case "solid":
+          if (irreg) cat = "5";                                    // irregulaire contour → 5
+          else if (cs === 4) cat = "5";                            // glad, CS4 → 5
+          else if (shadow) cat = "3";                              // glad, schaduw, CS1-3 → 3
+          else cat = (cs === 1) ? "3" : "4";                       // glad, non-shadowing: CS1 → 3, CS2-3 → 4
+          break;
       }
-      if (!cat) return fout("Vul grootte en kleurscore aan.");
-      const risk = { "1": "n.v.t.", "2": "<1%", "3": "1–<10%", "4": "10–<50%", "5": "≥50%" }[cat];
-      const adv = { "1": "Geen actie (fysiologisch).", "2": "Bijna zeker benigne — geen/beperkte follow-up.", "3": "Laag risico — echografische follow-up of MRI; eventueel gynaecologie.", "4": "Intermediair risico — MRI of gynaecologisch(-oncologische) verwijzing.", "5": "Hoog risico — gynaecologisch-oncologische verwijzing." }[cat];
+      if (!cat) return fout("Vul de relevante kenmerken aan.");
+      const risk = { "0": "—", "1": "n.v.t.", "2": "<1%", "3": "1–<10%", "4": "10–<50%", "5": "≥50%" }[cat];
+      const adv = {
+        "0": "Incomplete evaluatie — herhaal/aanvullend onderzoek.",
+        "1": "Normaal ovarium — geen actie.",
+        "2": "Bijna zeker benigne (<1%) — follow-up afhankelijk van type/grootte/menopauze.",
+        "3": "Laag risico (1–<10%) — 6-maanden echografische follow-up; bij soliede laesie verwijzing US-specialist of MRI.",
+        "4": "Intermediair risico (10–<50%) — US-specialist of MRI + gynaecoloog met gynaecologisch-oncologische ondersteuning.",
+        "5": "Hoog risico (≥50%) — verwijzing gynaecologisch-oncoloog.",
+      }[cat];
+      // Beknopte follow-up voor categorie 2 (menopauze-afhankelijk)
+      let fu = "";
+      if (cat === "2" && v.type === "simple" && !isNaN(d)) {
+        if (d <= 3) fu = v.menopauze === "post" ? " Geen follow-up." : " Geen follow-up (O-RADS 1-equivalent).";
+        else if (d <= 5) fu = v.menopauze === "post" ? " 1-jaar follow-up echo." : " Geen follow-up.";
+        else fu = " 1-jaar follow-up echo.";
+      }
       return { ok: true, titel: "O-RADS US v2022", klasse: "O-RADS " + cat,
         items: [{ label: "Categorie", waarde: cat }, { label: "Maligniteitsrisico", waarde: risk }],
-        advies: adv,
-        tekst: `Adnexiële laesie, O-RADS US ${cat} (risico ${risk}). ${adv}` };
+        advies: adv + fu,
+        tekst: `Adnexiële laesie, O-RADS US ${cat} (risico ${risk}).${!isNaN(d) ? " Grootste diameter " + r1(d) + " cm." : ""} ${adv}${fu}`.trim() };
     },
   });
 
@@ -1011,44 +1051,67 @@
     inputs: [
       { id: "type", label: "Noduletype / bevinding", type: "select",
         opties: [
-          { v: "geen", l: "Geen nodulus / duidelijk benigne (volledige/centrale/popcorn-calcificatie of vet)" },
+          { v: "geen", l: "Geen nodulus / duidelijk benigne (volledige/centrale/popcorn/concentrische calcificatie of vet)" },
           { v: "solid", l: "Solide nodulus" },
           { v: "partsolid", l: "Deels solide (part-solid) nodulus" },
           { v: "nonsolid", l: "Niet-solide / matglas (GGN)" },
-          { v: "incompleet", l: "Incompleet onderzoek / geen vergelijking" },
+          { v: "airway", l: "Airway nodulus (endobronchiaal)" },
+          { v: "cyst", l: "Atypische longcyste" },
+          { v: "incompleet", l: "Incompleet / infectie-inflammatie / geen vergelijking" },
         ] },
       { id: "status", label: "Status", type: "select", default: "baseline",
         opties: [{ v: "baseline", l: "Baseline (eerste screening)" }, { v: "nieuw", l: "Nieuw" }, { v: "groeiend", l: "Groeiend (>1,5 mm/12 mnd)" }, { v: "stabiel", l: "Stabiel / onveranderd" }] },
-      { id: "diam", label: "Gemiddelde diameter (totaal)", type: "number", eenheid: "mm", min: 0, step: 0.1 },
-      { id: "solidcomp", label: "Solide component (enkel part-solid)", type: "number", eenheid: "mm", min: 0, step: 0.1, help: "Gemiddelde diameter van de solide component" },
-      { id: "x", label: "Additionele kenmerken die maligniteit suggereren (spiculatie, lymfadenopathie, snelle groei GGN…) → 4X", type: "checkbox" },
-      { id: "s", label: "Klinisch significante incidentele bevinding (modifier S)", type: "checkbox" },
+      { id: "diam", label: "Gemiddelde diameter (totaal)", type: "number", eenheid: "mm", min: 0, step: 0.1, help: "Gemiddelde van lange + korte as (solide/part-solid/GGN)" },
+      { id: "solidcomp", label: "Solide component (enkel part-solid)", type: "number", eenheid: "mm", min: 0, step: 0.1 },
+      { id: "juxtapleuraal", label: "Juxtapleurale typische lymfeklier (<10 mm, glad, ovaal/lentiform/triangulair)", type: "checkbox" },
+      { id: "airwayLoc", label: "Airway-locatie (enkel airway nodulus)", type: "select",
+        opties: [{ v: "subseg", l: "Subsegmentaal" }, { v: "segproximaal", l: "Segmentaal of meer proximaal" }] },
+      { id: "cystFeat", label: "Cyste-kenmerk (enkel atypische cyste)", type: "select",
+        opties: [
+          { v: "enlarging", l: "Vergrotende cysteuze component (dikwandig)" },
+          { v: "thickmulti", l: "Dikwandig OF multiloculair (baseline)" },
+          { v: "progress", l: "Toenemende wanddikte/nodulariteit OF groeiend multiloculair" },
+        ] },
+      { id: "x", label: "Additionele maligne kenmerken (spiculatie, GGN-verdubbeling in 1 jaar, vergrote regionale klieren) → 4X", type: "checkbox" },
+      { id: "s", label: "Klinisch (potentieel) significante niet-longkanker bevinding (modifier S)", type: "checkbox" },
     ],
     compute(v) {
       if (!v.type) return fout("Selecteer het noduletype.");
-      if (v.type === "incompleet") return mkLR("0");
-      if (v.type === "geen") return mkLR("1");
+      if (v.type === "incompleet") return mkLR("0", { s: v.s });
+      if (v.type === "geen") return mkLR("1", { s: v.s });
+      if (v.juxtapleuraal) return mkLR("2", { s: v.s, note: "juxtapleurale typische intrapulmonale lymfeklier" });
       const d = num(v.diam);
-      if (isNaN(d)) return fout("Geef de (gemiddelde) diameter in.");
       const sc = num(v.solidcomp);
+      const baseline = v.status === "baseline" || v.status === "stabiel";
       const nieuwOfGroei = v.status === "nieuw" || v.status === "groeiend";
       let cat;
-      if (v.type === "solid") {
-        if (!nieuwOfGroei) { // baseline / stabiel
-          if (d < 6) cat = "2"; else if (d < 8) cat = "3"; else if (d < 15) cat = "4A"; else cat = "4B";
-        } else {
-          if (d < 4) cat = "2"; else if (d < 6) cat = "3"; else if (d < 8) cat = "4A"; else cat = "4B";
-        }
+      if (v.type === "airway") {
+        if (v.airwayLoc === "subseg") cat = "2";
+        else cat = baseline ? "4A" : "4B"; // segmentaal/proximaal: baseline 4A; stabiel/groeiend 4B
+      } else if (v.type === "cyst") {
+        cat = v.cystFeat === "enlarging" ? "3" : (v.cystFeat === "thickmulti" ? "4A" : "4B");
+      } else if (v.type === "solid") {
+        if (isNaN(d)) return fout("Geef de diameter in.");
+        if (v.status === "groeiend") cat = d < 8 ? "4A" : "4B";
+        else if (baseline) { if (d < 6) cat = "2"; else if (d < 8) cat = "3"; else if (d < 15) cat = "4A"; else cat = "4B"; }
+        else { if (d < 4) cat = "2"; else if (d < 6) cat = "3"; else if (d < 8) cat = "4A"; else cat = "4B"; } // nieuw
       } else if (v.type === "partsolid") {
-        if (d < 6 && !nieuwOfGroei) cat = "2";
-        else if (isNaN(sc) || sc < 6) cat = (nieuwOfGroei && sc >= 4) ? "4A" : "3";
-        else if (sc < 8) cat = "4A";
-        else cat = "4B";
+        if (isNaN(d)) return fout("Geef de totale diameter in.");
+        if (baseline) {
+          if (d < 6) cat = "2";
+          else if (isNaN(sc) || sc < 6) cat = "3";
+          else if (sc < 8) cat = "4A";
+          else cat = "4B";
+        } else { // nieuw of groeiend
+          if (d < 6 && (isNaN(sc) || sc === 0)) cat = "3";
+          else if (isNaN(sc) || sc < 4) cat = "4A";
+          else cat = "4B";
+        }
       } else { // nonsolid / GGN
-        cat = (d < 30) ? "2" : "3";
+        if (isNaN(d)) return fout("Geef de diameter in.");
+        if (d < 30) cat = "2";
+        else cat = (v.status === "stabiel") ? "2" : "3"; // ≥30: stabiel/traag → 2; baseline/nieuw/groeiend → 3
       }
-      // Groei tilt een laaggradige nodulus op tot minstens 4A
-      if (v.status === "groeiend" && (cat === "2" || cat === "3")) cat = "4A";
       // 4X: cat 3 of 4 met additionele verdachte kenmerken
       if (v.x && (cat === "3" || cat === "4A" || cat === "4B")) cat = "4X";
       return mkLR(cat, { d, sc, type: v.type, s: v.s });
@@ -1065,11 +1128,13 @@
         };
         const risk = { "0": "—", "1": "<1%", "2": "<1%", "3": "1–2%", "4A": "5–15%", "4B": ">15%", "4X": ">15%" };
         const sMod = (info && info.s) ? " S" : "";
+        const hasD = info && !isNaN(info.d) && (info.type === "solid" || info.type === "partsolid" || info.type === "nonsolid");
         const items = [{ label: "Categorie", waarde: "Lung-RADS " + cat + sMod }, { label: "Maligniteitsrisico", waarde: risk[cat] }];
-        if (info && !isNaN(info.d)) items.splice(1, 0, { label: "Diameter", waarde: r1(info.d) + " mm" + (!isNaN(info.sc) ? " (solide " + r1(info.sc) + " mm)" : "") });
+        if (hasD) items.splice(1, 0, { label: "Diameter", waarde: r1(info.d) + " mm" + (!isNaN(info.sc) ? " (solide " + r1(info.sc) + " mm)" : "") });
+        if (info && info.note) items.push({ label: "Opmerking", waarde: info.note });
         return { ok: true, titel: "Lung-RADS v2022", klasse: "Lung-RADS " + cat + sMod,
           items, advies: adv[cat],
-          tekst: `Lung-RADS ${cat}${sMod}${info && !isNaN(info.d) ? ` (${r1(info.d)} mm${!isNaN(info.sc) ? ", solide component " + r1(info.sc) + " mm" : ""})` : ""}. ${adv[cat]}` };
+          tekst: `Lung-RADS ${cat}${sMod}${hasD ? ` (${r1(info.d)} mm${!isNaN(info.sc) ? ", solide component " + r1(info.sc) + " mm" : ""})` : ""}${info && info.note ? " — " + info.note : ""}. ${adv[cat]}` };
       }
     },
   });
@@ -1079,29 +1144,59 @@
     naam: "CAD-RADS 2.0 (2022)",
     categorie: "Cardiothoracaal",
     modaliteit: ["CT"],
-    bron: "CAD-RADS 2.0",
-    beschrijving: "Coronaire stenosegradering op coronaire CTA + modifiers.",
+    bron: "CAD-RADS 2.0 (2022, JACC/SCCT)",
+    beschrijving: "Coronaire stenosegradering op coronaire CTA met 4A/4B-onderscheid, categorie N (niet-diagnostisch) en modifiers (P plaqueburden, HRP, I ischemie, S stent, G graft, E exceptie). Interpretatie/management in de context van acute pijn op de borst (ACS).",
     triggerKeywords: ["cad-rads", "cadrads", "coronaire cta", "ccta", "coronair", "kransslagader", "stenose coronair"],
     inputs: [
-      { id: "stenose", label: "Maximale stenose", type: "select",
+      { id: "cat", label: "Maximale coronaire stenose", type: "select",
         opties: [
           { v: "0", l: "0% — geen plaque (CAD-RADS 0)" },
           { v: "1", l: "1–24% — minimaal (1)" },
           { v: "2", l: "25–49% — mild (2)" },
           { v: "3", l: "50–69% — matig (3)" },
-          { v: "4", l: "70–99% — ernstig (4)" },
-          { v: "5", l: "100% — occlusie (5)" },
+          { v: "4A", l: "70–99% — ernstig (4A)" },
+          { v: "4B", l: "Linker hoofdstam ≥50% of 3-takslijden (4B)" },
+          { v: "5", l: "100% — totale occlusie (5)" },
           { v: "N", l: "Niet-diagnostisch (N)" },
         ] },
+      { id: "P", label: "Plaqueburden (modifier P)", type: "select", default: "",
+        opties: [{ v: "", l: "Niet bepaald" }, { v: "P1", l: "P1 — licht" }, { v: "P2", l: "P2 — matig" }, { v: "P3", l: "P3 — uitgebreid" }, { v: "P4", l: "P4 — extensief" }] },
+      { id: "hrp", label: "Hoog-risico plaque (HRP)", type: "checkbox" },
+      { id: "i", label: "Ischemie (I+, bv. CT-FFR/perfusie positief)", type: "checkbox" },
+      { id: "s", label: "Stent aanwezig (S)", type: "checkbox" },
+      { id: "g", label: "Bypassgraft aanwezig (G)", type: "checkbox" },
+      { id: "e", label: "Exceptie / niet-atherosclerotisch (E)", type: "checkbox" },
     ],
     compute(v) {
-      const adv = { "0": "Geen verdere cardiale work-up.", "1": "Geen verdere work-up; preventie.", "2": "Niet-obstructief; overweeg preventie.", "3": "Functionele test of optimalisatie overwegen.", "4": "Functionele test / ICA overwegen.", "5": "ICA / revascularisatie overwegen.", "N": "Onderzoek niet-diagnostisch — aanvullende beeldvorming." };
-      if (!v.stenose) return fout("Selecteer de stenosecategorie.");
-      const c = v.stenose;
-      return { ok: true, titel: "CAD-RADS 2.0", klasse: "CAD-RADS " + c,
-        items: [{ label: "Categorie", waarde: c }],
-        advies: adv[c] || null,
-        tekst: `CAD-RADS ${c}. ${adv[c] || ""}`.trim() };
+      if (!v.cat) return fout("Selecteer de stenosecategorie.");
+      const c = v.cat;
+      const info = {
+        "0":  { sten: "0%", interp: "ACS hoogst onwaarschijnlijk", mgmt: "Geruststelling; geen verdere cardiale work-up." },
+        "1":  { sten: "1–24%", interp: "ACS onwaarschijnlijk", mgmt: "Ambulante follow-up voor risicofactor-modificatie en preventieve farmacotherapie (P3/P4: agressief)." },
+        "2":  { sten: "25–49%", interp: "ACS minder waarschijnlijk", mgmt: "Geen verdere ACS-evaluatie vereist; preventie. Bij hoge klinische verdenking, Tn+ of HRP: overweeg opname + cardiologie." },
+        "3":  { sten: "50–69%", interp: "ACS mogelijk", mgmt: "Overweeg opname + cardiologisch consult; functionele evaluatie. Bij I+: overweeg ICA. Preventieve (agressieve) farmacotherapie." },
+        "4A": { sten: "70–99%", interp: "ACS waarschijnlijk", mgmt: "Opname + cardiologisch consult; overweeg ICA of functionele evaluatie. Agressieve preventie ± revascularisatie." },
+        "4B": { sten: "LH ≥50% of 3-takslijden", interp: "ACS waarschijnlijk", mgmt: "Opname + cardiologisch consult; ICA aanbevolen. Agressieve preventie ± revascularisatie." },
+        "5":  { sten: "100% occlusie", interp: "ACS zeer waarschijnlijk", mgmt: "Opname + cardiologisch consult; versnelde ICA en revascularisatie bij verdenking acute occlusie." },
+        "N":  { sten: "niet-diagnostisch", interp: "ACS kan niet uitgesloten worden", mgmt: "Aanvullende of alternatieve evaluatie voor ACS nodig." },
+      }[c];
+      // modifier-string
+      const mods = [];
+      if (v.P) mods.push(v.P);
+      if (v.hrp) mods.push("HRP");
+      if (v.i) mods.push("I+");
+      if (v.s) mods.push("S");
+      if (v.g) mods.push("G");
+      if (v.e) mods.push("E");
+      const modStr = mods.length ? "/" + mods.join("/") : "";
+      return { ok: true, titel: "CAD-RADS 2.0", klasse: "CAD-RADS " + c + modStr,
+        items: [
+          { label: "Categorie", waarde: "CAD-RADS " + c + modStr },
+          { label: "Maximale stenose", waarde: info.sten },
+          { label: "Interpretatie", waarde: info.interp },
+        ],
+        advies: info.mgmt,
+        tekst: `CAD-RADS ${c}${modStr} (${info.sten}) — ${info.interp}. ${info.mgmt}` };
     },
   });
 
@@ -1252,43 +1347,62 @@
     naam: "Bone-RADS (incidentele botlaesie)",
     categorie: "Musculoskeletaal",
     modaliteit: ["CT", "MR"],
-    bron: "SSR/ACR Bone-RADS (Skeletal Radiology 2022)",
-    beschrijving: "Management van een solitaire incidentele botlaesie bij volwassenen op CT/MRI. Vier managementcategorieën (1–4) via aparte algoritmes per modaliteit en densiteit/T1-signaal.",
+    bron: "SSR Bone-RADS white paper (Chang et al., Skeletal Radiol 2022)",
+    beschrijving: "Management van een solitaire incidentele botlaesie bij volwassenen, via de 4 Bone-RADS-flowcharts. Volgorde: agressieve kenmerken → maligniteitsvoorgeschiedenis → specifieke karakterisatie.",
     triggerKeywords: ["bone-rads", "bonerads", "botlaesie", "bone lesion", "incidentele bot", "botletsel", "botmetastase"],
     inputs: [
-      { id: "modaliteit", label: "Modaliteit / algoritme", type: "select",
+      { id: "algoritme", label: "Algoritme", type: "select",
         opties: [
           { v: "ct-lucent", l: "CT — lucente laesie" },
-          { v: "ct-scler", l: "CT — sclerotische/gemengde laesie" },
-          { v: "mr-hoogt1", l: "MRI — hoog T1-signaal" },
-          { v: "mr-laagt1", l: "MRI — laag T1-signaal" },
+          { v: "ct-scler", l: "CT — sclerotisch/gemengd" },
+          { v: "mr-hight1", l: "MRI — hoog T1-signaal" },
+          { v: "mr-lowt1", l: "MRI — laag T1-signaal" },
         ] },
-      { id: "klassiek", label: "Klassiek benigne (bot-eiland/enostose, typisch enchondroom, FCD, hemangioom, vetbevattende laesie...)", type: "checkbox" },
-      { id: "morf", label: "Morfologie", type: "select",
+      { id: "aggressief", label: "Agressieve kenmerken (pijn toe te schrijven aan laesie, corticale betrokkenheid, weke-delenextensie, pathologische fractuur, agressieve periostreactie, omgevend mergoedeem, solide massa-achtige aankleuring)", type: "checkbox" },
+      { id: "maligniteit", label: "Voorgeschiedenis maligniteit met propensiteit tot botmetastasen (of sternumlaesie bij borstkanker / verhoogd PSA)", type: "checkbox" },
+      { id: "bevinding", label: "Specifieke karakterisatie", type: "select",
         opties: [
-          { v: "nonaggr", l: "Niet-agressief: scherp begrensd, sclerotische rand, geen corticale destructie/periostreactie/weke-delenmassa" },
-          { v: "indeterm", l: "Intermediair/atypisch: scherp begrensd zonder sclerotische rand, of mild/onzeker" },
-          { v: "aggr", l: "Agressief: onscherpe begrenzing, corticale destructie, agressieve periostreactie of weke-delenmassa" },
+          { v: "fat", l: "Vet / macroscopisch vet / −120 tot −30 HU" },
+          { v: "groundglass", l: "Ground glass (fibreuze dysplasie)" },
+          { v: "classic", l: "Klassiek benigne morfologie (FD, NOF, enostose, hemangioom, enchondroom, subchondrale cyste/geode, osteochondroom)" },
+          { v: "redmarrow", l: "Signaalverlies op in/out-of-phase (rood merg)" },
+          { v: "thin-enh", l: "Geen/dunne perifere aankleuring" },
+          { v: "nodular-enh", l: "Nodulaire/centrale aankleuring" },
+          { v: "cortical-aggr", l: "Corticaal, consistent met osteoid osteoom/osteoblastoom/corticale metastase" },
+          { v: "cart-concern", l: "Kraakbeenmatrix MÉT concerning features (endostale scalloping, expansie, corticale doorbraak, periostreactie, weke-delenmassa, incomplete mineralisatie, epifysair, axiaal)" },
+          { v: "cart-benign", l: "Kraakbeenmatrix ZONDER concerning features (enchondroom)" },
+          { v: "indeterm", l: "Niet eenduidig te karakteriseren" },
         ] },
+      { id: "grootte", label: "Grootte (voor kraakbeenlaesie)", type: "number", eenheid: "cm", min: 0, step: 0.1, help: "Enchondroom: >5 cm → Bone-RADS 3; ≤5 cm → Bone-RADS 1" },
     ],
     compute(v) {
-      if (!v.modaliteit || !v.morf) return fout("Selecteer modaliteit en morfologie.");
-      let cat, advies;
-      if (v.klassiek) { cat = "1"; advies = "Zeer laag risico (klassiek benigne) — geen verdere beeldvorming of follow-up."; }
-      else if (v.morf === "aggr") { cat = "4"; advies = "Verdacht voor maligniteit — biopsie en/of verwijzing orthopedische/MSK-oncologie."; }
-      else if (v.morf === "indeterm") { cat = "3"; advies = "Indeterminaat — follow-up beeldvorming."; }
-      else {
-        // niet-agressief, niet evident klassiek → aanvullende karakterisatie
-        cat = "2";
-        advies = (v.modaliteit.startsWith("ct"))
-          ? "Waarschijnlijk benigne — aanvullende karakterisatie met andere modaliteit (bv. MRI)."
-          : "Waarschijnlijk benigne — aanvullende karakterisatie/correlatie (bv. röntgen/CT) of follow-up.";
+      if (!v.algoritme) return fout("Selecteer het algoritme.");
+      const modL = { "ct-lucent": "CT lucent", "ct-scler": "CT sclerotisch/gemengd", "mr-hight1": "MRI hoog T1", "mr-lowt1": "MRI laag T1" }[v.algoritme];
+      const adv = {
+        "1": "Bone-RADS 1 — benigne; geen verdere beeldvorming nodig.",
+        "2": "Bone-RADS 2 — aanvullende beeldvorming met andere modaliteit (bv. MRI / chemical shift / röntgen-bottscan).",
+        "3": "Bone-RADS 3 — follow-up beeldvorming.",
+        "4": "Bone-RADS 4 — biopsie en/of oncologische verwijzing (overweeg metastase, myeloom, primaire bottumor, infectie).",
+      };
+      let cat, note = "";
+      if (v.aggressief) cat = "4";
+      else if (v.maligniteit) { cat = "3"; note = "indeterminaat (Bone-RADS 2 of 3 — overweeg bottscan/PET + MRI)"; }
+      else if (!v.bevinding) return fout("Selecteer een specifieke karakterisatie.");
+      else switch (v.bevinding) {
+        case "fat": case "groundglass": case "classic": case "redmarrow": case "thin-enh": cat = "1"; break;
+        case "nodular-enh": case "cortical-aggr": case "cart-concern": cat = "4"; break;
+        case "cart-benign": {
+          const d = num(v.grootte);
+          cat = (!isNaN(d) && d > 5) ? "3" : "1";
+          note = (!isNaN(d) && d > 5) ? "enchondroom >5 cm" : "enchondroom ≤5 cm";
+          break;
+        }
+        default: cat = (v.algoritme === "ct-scler") ? "3" : "2"; // niet eenduidig
       }
-      const modL = { "ct-lucent": "CT lucent", "ct-scler": "CT sclerotisch/gemengd", "mr-hoogt1": "MRI hoog T1", "mr-laagt1": "MRI laag T1" }[v.modaliteit];
       return { ok: true, titel: "Bone-RADS", klasse: "Bone-RADS " + cat,
-        items: [{ label: "Algoritme", waarde: modL }, { label: "Categorie", waarde: cat }],
-        advies,
-        tekst: `Incidentele botlaesie (${modL}), Bone-RADS ${cat}. ${advies}` };
+        items: [{ label: "Algoritme", waarde: modL }, { label: "Categorie", waarde: "Bone-RADS " + cat }, ...(note ? [{ label: "Toelichting", waarde: note }] : [])],
+        advies: adv[cat],
+        tekst: `Incidentele botlaesie (${modL}), Bone-RADS ${cat}${note ? " — " + note : ""}. ${adv[cat]}` };
     },
   });
 
