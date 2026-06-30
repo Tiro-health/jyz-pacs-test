@@ -1,0 +1,1379 @@
+/* ============================================================================
+ * calculators.js — Radiologie-calculatoren catalogus
+ * ----------------------------------------------------------------------------
+ * Single source of truth voor radiology.tiro.health.
+ * Geladen door flow.html (koppeling per examentype) en launch.html (gebruik).
+ *
+ * Pure data + logica — GEEN DOM-afhankelijkheden. De render-engine en het
+ * resultaatvenster leven in launch.html.
+ *
+ * Elke calculator:
+ *   {
+ *     id            : uniek, stabiel (gebruikt in flowConfig)
+ *     naam          : weergavenaam
+ *     categorie     : groepering
+ *     modaliteit    : ['CT','MR','ECHO',...]  (voor filtering/auto-koppeling)
+ *     bron          : richtlijn/publicatie
+ *     beschrijving  : korte uitleg
+ *     triggerKeywords: [] termen waarop de tekstscan deze calc voorstelt
+ *     inputs        : [ {id,label,type,eenheid?,opties?,min?,max?,step?,default?,help?} ]
+ *                     type ∈ 'number' | 'select' | 'radio' | 'checkbox'
+ *     compute(v)    : v = {inputId: waarde}; returnt resultaatobject (zie hieronder)
+ *   }
+ *
+ * compute() resultaatobject:
+ *   {
+ *     ok      : boolean        // false bij ontbrekende/ongeldige invoer
+ *     fout    : string         // melding indien !ok
+ *     titel   : string         // kop
+ *     klasse  : string|null    // headline classificatie (bv. "Categorie 4A")
+ *     items   : [{label,waarde}] // tussenresultaten voor weergave
+ *     advies  : string|null    // management/aanbeveling
+ *     tekst   : string         // kant-en-klare verslagsnippet (kopieer/naar dictaat)
+ *   }
+ * ========================================================================== */
+(function () {
+  "use strict";
+
+  // ---- kleine helpers ------------------------------------------------------
+  const num = (x) => {
+    if (x === "" || x === null || x === undefined) return NaN;
+    return typeof x === "number" ? x : parseFloat(String(x).replace(",", "."));
+  };
+  const r0 = (x) => Math.round(x);
+  const r1 = (x) => Math.round(x * 10) / 10;
+  const r2 = (x) => Math.round(x * 100) / 100;
+  const fout = (msg) => ({ ok: false, fout: msg, titel: "", klasse: null, items: [], advies: null, tekst: "" });
+
+  // ellipsoïde-volume in mL; lengtes in cm; coëfficiënt standaard 0.52 (π/6)
+  const ellipsoid = (a, b, c, k = 0.52) => k * a * b * c;
+
+  const CALCULATORS = [];
+
+  /* ==========================================================================
+   * BODY — ENDOCRIEN
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "thyroid-volume",
+    naam: "Schildkliervolume",
+    categorie: "Body — endocrien",
+    modaliteit: ["ECHO", "CT", "MR"],
+    bron: "Ellipsoïde-methode (Brunn)",
+    beschrijving: "Volume per kwab via ellipsoïde-formule (0,52 × L × B × D), som van beide kwabben.",
+    triggerKeywords: ["schildklier", "thyroid", "struma", "thyreoïd", "goiter"],
+    inputs: [
+      { id: "rL", label: "Rechts — lengte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "rB", label: "Rechts — breedte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "rD", label: "Rechts — diepte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "lL", label: "Links — lengte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "lB", label: "Links — breedte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "lD", label: "Links — diepte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "geslacht", label: "Geslacht (voor referentie)", type: "select", default: "v",
+        opties: [{ v: "v", l: "Vrouw (norm ≤18 mL)" }, { v: "m", l: "Man (norm ≤25 mL)" }] },
+    ],
+    compute(v) {
+      const r = ellipsoid(num(v.rL), num(v.rB), num(v.rD));
+      const l = ellipsoid(num(v.lL), num(v.lB), num(v.lD));
+      if (isNaN(r) && isNaN(l)) return fout("Geef minstens de afmetingen van één kwab in.");
+      const rV = isNaN(r) ? 0 : r, lV = isNaN(l) ? 0 : l;
+      const tot = rV + lV;
+      const grens = v.geslacht === "m" ? 25 : 18;
+      const vergroot = tot > grens;
+      return {
+        ok: true, titel: "Schildkliervolume", klasse: vergroot ? "Vergroot" : "Normaal volume",
+        items: [
+          { label: "Rechter kwab", waarde: r1(rV) + " mL" },
+          { label: "Linker kwab", waarde: r1(lV) + " mL" },
+          { label: "Totaal volume", waarde: r1(tot) + " mL" },
+          { label: "Bovengrens norm", waarde: grens + " mL" },
+        ],
+        advies: vergroot ? "Volume boven de referentiegrens — correleer klinisch (struma)." : null,
+        tekst: `Schildkliervolume: rechts ${r1(rV)} mL, links ${r1(lV)} mL, totaal ${r1(tot)} mL (referentie ≤${grens} mL).`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "ti-rads",
+    naam: "ACR TI-RADS",
+    categorie: "Body — endocrien",
+    modaliteit: ["ECHO"],
+    bron: "ACR TI-RADS (Tessler 2017)",
+    beschrijving: "Puntensysteem voor schildkliernoduli → TR1–TR5 + FNA-/follow-up-advies op basis van grootte.",
+    triggerKeywords: ["schildkliernodul", "thyroid nodule", "ti-rads", "tirads", "noduul schildklier"],
+    inputs: [
+      { id: "compositie", label: "Compositie", type: "select",
+        opties: [
+          { v: "0c", l: "Cysteus / volledig spongiform (0)" },
+          { v: "1", l: "Gemengd cysteus-solide (1)" },
+          { v: "2", l: "Solide / bijna volledig solide (2)" },
+        ] },
+      { id: "echo", label: "Echogeniciteit", type: "select",
+        opties: [
+          { v: "0", l: "Anechogeen (0)" },
+          { v: "1", l: "Hyperechogeen / isoechogeen (1)" },
+          { v: "2", l: "Hypoechogeen (2)" },
+          { v: "3", l: "Zeer hypoechogeen (3)" },
+        ] },
+      { id: "vorm", label: "Vorm", type: "select",
+        opties: [
+          { v: "0", l: "Breder dan hoog (0)" },
+          { v: "3", l: "Hoger dan breed (3)" },
+        ] },
+      { id: "marge", label: "Marge", type: "select",
+        opties: [
+          { v: "0", l: "Glad / slecht afgrensbaar (0)" },
+          { v: "2", l: "Gelobd / irregulair (2)" },
+          { v: "3", l: "Extrathyroïdale extensie (3)" },
+        ] },
+      { id: "foci", label: "Echogene foci (mag meerdere)", type: "select",
+        opties: [
+          { v: "0", l: "Geen / comet-tail artefact (0)" },
+          { v: "1", l: "Macrocalcificaties (1)" },
+          { v: "2", l: "Perifere (rim) calcificaties (2)" },
+          { v: "3", l: "Punctate echogene foci (3)" },
+        ] },
+      { id: "grootte", label: "Maximale diameter", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+    ],
+    compute(v) {
+      const comp = v.compositie === "0c" ? 0 : num(v.compositie);
+      const pts = comp + num(v.echo) + num(v.vorm) + num(v.marge) + num(v.foci);
+      if (isNaN(pts)) return fout("Selecteer alle kenmerken.");
+      let tr, label;
+      if (pts <= 1) { tr = "TR1"; label = "Benigne"; }
+      else if (pts === 2) { tr = "TR2"; label = "Niet verdacht"; }
+      else if (pts === 3) { tr = "TR3"; label = "Mild verdacht"; }
+      else if (pts <= 6) { tr = "TR4"; label = "Matig verdacht"; }
+      else { tr = "TR5"; label = "Hoog verdacht"; }
+      const d = num(v.grootte);
+      let advies = "Geen FNA volgens grootte-criteria.";
+      if (tr === "TR5") advies = !isNaN(d) && d >= 1.0 ? "FNA aanbevolen (≥1 cm)." : (!isNaN(d) && d >= 0.5 ? "Follow-up (≥0,5 cm)." : "Geen actie volgens grootte.");
+      else if (tr === "TR4") advies = !isNaN(d) && d >= 1.5 ? "FNA aanbevolen (≥1,5 cm)." : (!isNaN(d) && d >= 1.0 ? "Follow-up (≥1 cm)." : "Geen actie volgens grootte.");
+      else if (tr === "TR3") advies = !isNaN(d) && d >= 2.5 ? "FNA aanbevolen (≥2,5 cm)." : (!isNaN(d) && d >= 1.5 ? "Follow-up (≥1,5 cm)." : "Geen actie volgens grootte.");
+      return {
+        ok: true, titel: "ACR TI-RADS", klasse: tr + " — " + label,
+        items: [
+          { label: "Totaal punten", waarde: String(pts) },
+          { label: "Categorie", waarde: tr + " (" + label + ")" },
+          ...(isNaN(d) ? [] : [{ label: "Diameter", waarde: r1(d) + " cm" }]),
+        ],
+        advies,
+        tekst: `Schildkliernodulus, ACR TI-RADS ${tr} (${pts} punten, ${label.toLowerCase()})${isNaN(d) ? "" : `, ${r1(d)} cm`}. ${advies}`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "adrenal-washout",
+    naam: "Bijniernodulus — CT washout",
+    categorie: "Body — endocrien",
+    modaliteit: ["CT"],
+    bron: "Adrenal CT washout (Korobkin/Caoili)",
+    beschrijving: "Absolute (APW) en relatieve (RPW) contrastuitwas voor karakterisatie bijnieradenoom.",
+    triggerKeywords: ["bijnier", "adrenal", "bijniernodul", "adrenale", "incidentaloom bijnier"],
+    inputs: [
+      { id: "blanco", label: "Blanco (unenhanced)", type: "number", eenheid: "HU", help: "Laat leeg indien niet beschikbaar" },
+      { id: "portaal", label: "Portaal/veneus (~60–70s)", type: "number", eenheid: "HU" },
+      { id: "delayed", label: "Delayed (15 min)", type: "number", eenheid: "HU" },
+    ],
+    compute(v) {
+      const U = num(v.blanco), E = num(v.portaal), D = num(v.delayed);
+      if (isNaN(E) || isNaN(D)) return fout("Geef minstens de veneuze en delayed HU-waarden in.");
+      const items = [];
+      let adenoom = false, tekst = "", advies = null;
+      if (!isNaN(U) && U <= 10) { adenoom = true; items.push({ label: "Blanco", waarde: r1(U) + " HU (≤10 → lipiderijk adenoom)" }); }
+      else if (!isNaN(U)) items.push({ label: "Blanco", waarde: r1(U) + " HU" });
+      if (!isNaN(U) && (E - U) !== 0) {
+        const apw = ((E - D) / (E - U)) * 100;
+        items.push({ label: "Absolute washout (APW)", waarde: r0(apw) + "%" });
+        if (apw >= 60) adenoom = true;
+        advies = apw >= 60 ? "APW ≥60% → consistent met adenoom." : "APW <60% → niet diagnostisch voor adenoom; verdere evaluatie.";
+      }
+      const rpw = (E !== 0) ? ((E - D) / E) * 100 : NaN;
+      if (!isNaN(rpw)) {
+        items.push({ label: "Relatieve washout (RPW)", waarde: r0(rpw) + "%" });
+        if (rpw >= 40) adenoom = true;
+        if (advies === null) advies = rpw >= 40 ? "RPW ≥40% → consistent met adenoom." : "RPW <40% → niet diagnostisch voor adenoom.";
+      }
+      tekst = `Bijnierlaesie, CT-washout: ${items.map(i => i.label + " " + i.waarde).join(", ")}. ` +
+        (adenoom ? "Bevindingen consistent met een adenoom." : "Niet diagnostisch voor adenoom — overweeg verdere karakterisatie.");
+      return { ok: true, titel: "Bijnier CT-washout", klasse: adenoom ? "Consistent met adenoom" : "Niet-diagnostisch", items, advies, tekst };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "adrenal-chemical-shift",
+    naam: "Bijniernodulus — chemical shift MRI",
+    categorie: "Body — endocrien",
+    modaliteit: ["MR"],
+    bron: "Chemical shift MRI (SII / adrenal-spleen ratio)",
+    beschrijving: "Signaalintensiteitsindex (SII) en adrenal-to-spleen ratio (ASR) voor lipiderijk adenoom.",
+    triggerKeywords: ["bijnier", "adrenal", "chemical shift", "in-phase", "out-of-phase", "in fase", "uit fase"],
+    inputs: [
+      { id: "inAdr", label: "Bijnier — in-phase SI", type: "number" },
+      { id: "outAdr", label: "Bijnier — out-of-phase SI", type: "number" },
+      { id: "inSpl", label: "Milt — in-phase SI", type: "number", help: "Optioneel, voor ASR" },
+      { id: "outSpl", label: "Milt — out-of-phase SI", type: "number", help: "Optioneel, voor ASR" },
+    ],
+    compute(v) {
+      const iA = num(v.inAdr), oA = num(v.outAdr);
+      if (isNaN(iA) || isNaN(oA) || iA === 0) return fout("Geef in- en out-of-phase SI van de bijnier in.");
+      const sii = ((iA - oA) / iA) * 100;
+      const items = [{ label: "Signaalintensiteitsindex (SII)", waarde: r1(sii) + "%" }];
+      let adenoom = sii > 16.5;
+      const iS = num(v.inSpl), oS = num(v.outSpl);
+      if (!isNaN(iS) && !isNaN(oS) && iS !== 0 && oS !== 0) {
+        const asr = (oA / oS) / (iA / iS);
+        items.push({ label: "Adrenal-spleen ratio (ASR)", waarde: r2(asr) });
+        if (asr < 0.71) adenoom = true;
+      }
+      return {
+        ok: true, titel: "Bijnier chemical shift MRI", klasse: adenoom ? "Lipiderijk adenoom" : "Geen significant signaalverlies",
+        items,
+        advies: adenoom ? "Signaalverlies op out-of-phase → lipiderijk adenoom." : "Geen significant signaalverlies — geen lipiderijk adenoom; correleer/karakteriseer verder.",
+        tekst: `Bijnierlaesie, chemical shift MRI: SII ${r1(sii)}%${items.length > 1 ? ", ASR " + items[1].waarde : ""}. ` +
+          (adenoom ? "Significant signaalverlies, consistent met een lipiderijk adenoom." : "Geen significant signaalverlies."),
+      };
+    },
+  });
+
+  /* ==========================================================================
+   * BODY — GENITO-URINAIR
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "prostate-volume-psad",
+    naam: "Prostaatvolume + PSA-densiteit",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["MR", "ECHO", "CT"],
+    bron: "Ellipsoïde-methode + PSA-densiteit",
+    beschrijving: "Prostaatvolume (0,52 × L × B × H) en PSA-densiteit (PSA/volume; drempel 0,15 ng/mL/cc).",
+    triggerKeywords: ["prostaat", "prostate", "prostaatvolume", "psa", "psa-densiteit"],
+    inputs: [
+      { id: "L", label: "Lengte (craniocaudaal)", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "B", label: "Breedte (transversaal)", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "H", label: "Hoogte (AP)", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "psa", label: "Serum PSA", type: "number", eenheid: "ng/mL", min: 0, step: 0.1, help: "Optioneel, voor densiteit" },
+    ],
+    compute(v) {
+      const vol = ellipsoid(num(v.L), num(v.B), num(v.H));
+      if (isNaN(vol)) return fout("Geef de drie afmetingen in.");
+      const items = [{ label: "Prostaatvolume", waarde: r1(vol) + " mL" }];
+      let advies = null, psadStr = "";
+      const psa = num(v.psa);
+      if (!isNaN(psa) && vol > 0) {
+        const psad = psa / vol;
+        items.push({ label: "PSA-densiteit", waarde: r2(psad) + " ng/mL/cc" });
+        const hoog = psad >= 0.15;
+        advies = hoog ? "PSA-densiteit ≥0,15 → verhoogd risico, correleer met PI-RADS." : "PSA-densiteit <0,15.";
+        psadStr = `, PSA-densiteit ${r2(psad)} ng/mL/cc`;
+      }
+      return {
+        ok: true, titel: "Prostaatvolume + PSA-densiteit", klasse: null, items, advies,
+        tekst: `Prostaatvolume ${r1(vol)} mL (ellipsoïde)${psadStr}.`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "bladder-volume",
+    naam: "Blaasvolume",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["ECHO", "CT"],
+    bron: "Ellipsoïde-methode",
+    beschrijving: "Blaasvolume via 0,52 × L × B × H; bruikbaar voor residu-bepaling.",
+    triggerKeywords: ["blaas", "bladder", "residu", "mictie", "post-mictie", "retentie"],
+    inputs: [
+      { id: "L", label: "Lengte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "B", label: "Breedte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "H", label: "Hoogte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+    ],
+    compute(v) {
+      const vol = ellipsoid(num(v.L), num(v.B), num(v.H));
+      if (isNaN(vol)) return fout("Geef de drie afmetingen in.");
+      return {
+        ok: true, titel: "Blaasvolume", klasse: null,
+        items: [{ label: "Geschat volume", waarde: r0(vol) + " mL" }],
+        advies: vol > 100 ? "Residu >100 mL kan klinisch relevant zijn — correleer." : null,
+        tekst: `Geschat blaasvolume ${r0(vol)} mL (ellipsoïde-methode).`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "gonadal-volume",
+    naam: "Gonadaal volume (testis/ovarium)",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["ECHO", "MR"],
+    bron: "Lambert (testis 0,71) / ellipsoïde (ovarium 0,52)",
+    beschrijving: "Testisvolume (Lambert 0,71 × L × B × H) of ovariumvolume (0,52 × L × B × H).",
+    triggerKeywords: ["testis", "testikel", "ovarium", "ovary", "gonad", "scrotaal", "adnex"],
+    inputs: [
+      { id: "orgaan", label: "Orgaan", type: "select", default: "testis",
+        opties: [{ v: "testis", l: "Testis (×0,71)" }, { v: "ovarium", l: "Ovarium (×0,52)" }] },
+      { id: "L", label: "Lengte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "B", label: "Breedte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "H", label: "Hoogte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+    ],
+    compute(v) {
+      const k = v.orgaan === "ovarium" ? 0.52 : 0.71;
+      const vol = ellipsoid(num(v.L), num(v.B), num(v.H), k);
+      if (isNaN(vol)) return fout("Geef de drie afmetingen in.");
+      const isOv = v.orgaan === "ovarium";
+      const grens = isOv ? 10 : null; // ovarium postmenopauzaal-referentie indicatief
+      return {
+        ok: true, titel: "Gonadaal volume", klasse: null,
+        items: [{ label: (isOv ? "Ovariumvolume" : "Testisvolume"), waarde: r1(vol) + " mL" }],
+        advies: (isOv && vol > grens) ? "Ovariumvolume >10 mL — context-afhankelijk relevant." : null,
+        tekst: `${isOv ? "Ovarium" : "Testis"}volume ${r1(vol)} mL (${isOv ? "ellipsoïde 0,52" : "Lambert 0,71"}).`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "renal-resistive-index",
+    naam: "Resistive index (Doppler)",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["ECHO"],
+    bron: "Resistive index (Pourcelot)",
+    beschrijving: "RI = (PSV − EDV)/PSV. Renale norm <0,70.",
+    triggerKeywords: ["resistive index", "doppler", "psv", "edv", "weerstandsindex", "ri "],
+    inputs: [
+      { id: "psv", label: "Piek-systolische snelheid (PSV)", type: "number", eenheid: "cm/s", min: 0 },
+      { id: "edv", label: "Einddiastolische snelheid (EDV)", type: "number", eenheid: "cm/s", min: 0 },
+    ],
+    compute(v) {
+      const psv = num(v.psv), edv = num(v.edv);
+      if (isNaN(psv) || isNaN(edv) || psv === 0) return fout("Geef PSV en EDV in.");
+      const ri = (psv - edv) / psv;
+      const hoog = ri >= 0.70;
+      return {
+        ok: true, titel: "Resistive index", klasse: hoog ? "Verhoogd (≥0,70)" : "Normaal (<0,70)",
+        items: [{ label: "RI", waarde: r2(ri) }],
+        advies: hoog ? "RI ≥0,70 — verhoogde vasculaire weerstand; correleer klinisch." : null,
+        tekst: `Resistive index ${r2(ri)} (PSV ${r0(psv)}, EDV ${r0(edv)} cm/s).`,
+      };
+    },
+  });
+
+  /* ==========================================================================
+   * NEURORADIOLOGIE
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "ich-volume-abc2",
+    naam: "ICH-volume (ABC/2)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT", "MR"],
+    bron: "ABC/2 (Kothari 1996)",
+    beschrijving: "Geschat intracerebraal hematoomvolume = (A × B × C)/2, lengtes in cm.",
+    triggerKeywords: ["bloeding", "hematoom", "ich", "intracerebraal", "hemorrhage", "haemorragie", "hersenbloeding"],
+    inputs: [
+      { id: "A", label: "A — grootste diameter", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "B", label: "B — loodrecht op A", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "C", label: "C — aantal coupes × coupedikte", type: "number", eenheid: "cm", min: 0, step: 0.1,
+        help: "Of meet de craniocaudale uitbreiding rechtstreeks" },
+    ],
+    compute(v) {
+      const A = num(v.A), B = num(v.B), C = num(v.C);
+      if (isNaN(A) || isNaN(B) || isNaN(C)) return fout("Geef A, B en C in.");
+      const vol = (A * B * C) / 2;
+      return {
+        ok: true, titel: "ICH-volume (ABC/2)", klasse: null,
+        items: [{ label: "Geschat hematoomvolume", waarde: r1(vol) + " mL" }],
+        advies: vol >= 30 ? "Volume ≥30 mL — geassocieerd met slechtere prognose." : null,
+        tekst: `Geschat intracerebraal hematoomvolume ${r1(vol)} mL (ABC/2-methode).`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "carotid-stenosis",
+    naam: "Carotisstenose (NASCET/ECST)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT", "MR", "ECHO"],
+    bron: "NASCET & ECST",
+    beschrijving: "Stenosegraad volgens NASCET (t.o.v. distaal normaal lumen) en ECST (t.o.v. bulbus-diameter).",
+    triggerKeywords: ["carotis", "carotid", "stenose", "nascet", "ecst", "ica", "arteria carotis"],
+    inputs: [
+      { id: "rest", label: "Residueel lumen (smalste)", type: "number", eenheid: "mm", min: 0, step: 0.1 },
+      { id: "distaal", label: "Distaal normaal lumen (NASCET)", type: "number", eenheid: "mm", min: 0, step: 0.1 },
+      { id: "bulbus", label: "Oorspronkelijke bulbusdiameter (ECST)", type: "number", eenheid: "mm", min: 0, step: 0.1, help: "Optioneel" },
+    ],
+    compute(v) {
+      const rest = num(v.rest), dist = num(v.distaal), bulb = num(v.bulbus);
+      if (isNaN(rest) || isNaN(dist) || dist === 0) return fout("Geef residueel en distaal normaal lumen in.");
+      const nascet = (1 - rest / dist) * 100;
+      const items = [{ label: "NASCET", waarde: r0(nascet) + "%" }];
+      if (!isNaN(bulb) && bulb !== 0) items.push({ label: "ECST", waarde: r0((1 - rest / bulb) * 100) + "%" });
+      let graad;
+      if (nascet < 50) graad = "lichte stenose (<50%)";
+      else if (nascet < 70) graad = "matige stenose (50–69%)";
+      else if (nascet < 100) graad = "ernstige stenose (70–99%)";
+      else graad = "occlusie";
+      return {
+        ok: true, titel: "Carotisstenose", klasse: graad,
+        items,
+        advies: nascet >= 70 ? "Ernstige stenose — bespreek revascularisatie bij symptomatische patiënt." : null,
+        tekst: `Carotisstenose NASCET ${r0(nascet)}%${items.length > 1 ? " (ECST " + items[1].waarde + ")" : ""} — ${graad}.`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "aspects",
+    naam: "ASPECTS",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT"],
+    bron: "Alberta Stroke Program Early CT Score",
+    beschrijving: "10-puntsscore voor vroege ischemische veranderingen in het MCA-territorium; trek 1 punt af per aangetast gebied.",
+    triggerKeywords: ["aspects", "infarct", "ischemie", "mca", "stroke", "cva", "beroerte"],
+    inputs: [
+      { id: "regios", label: "Aangetaste regio's", type: "checkbox-group",
+        opties: [
+          { v: "C", l: "Caudatus" }, { v: "L", l: "Lentiform nucleus" }, { v: "IC", l: "Capsula interna" },
+          { v: "I", l: "Insula" }, { v: "M1", l: "M1" }, { v: "M2", l: "M2" }, { v: "M3", l: "M3" },
+          { v: "M4", l: "M4" }, { v: "M5", l: "M5" }, { v: "M6", l: "M6" },
+        ] },
+    ],
+    compute(v) {
+      const arr = Array.isArray(v.regios) ? v.regios : (v.regios ? [v.regios] : []);
+      const score = 10 - arr.length;
+      return {
+        ok: true, titel: "ASPECTS", klasse: "ASPECTS " + score + "/10",
+        items: [
+          { label: "Aangetaste regio's", waarde: arr.length ? arr.join(", ") : "geen" },
+          { label: "Score", waarde: score + "/10" },
+        ],
+        advies: score <= 5 ? "ASPECTS ≤5 — uitgebreide vroege ischemie; bespreek met stroke-team." : null,
+        tekst: `ASPECTS ${score}/10${arr.length ? " (aangetast: " + arr.join(", ") + ")" : ""}.`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "sins",
+    naam: "SINS (spinale instabiliteit)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT", "MR", "RX"],
+    bron: "Spinal Instability Neoplastic Score (Fisher 2010)",
+    beschrijving: "Som van 6 componenten (0–18) → stabiel / indeterminaat / instabiel.",
+    triggerKeywords: ["sins", "spinale instabiliteit", "wervelmetastase", "vertebrale metastase", "spinal instability"],
+    inputs: [
+      { id: "locatie", label: "Locatie", type: "select",
+        opties: [{ v: "0", l: "Rigide (S2–S5) (0)" }, { v: "1", l: "Semi-rigide (T3–T10) (1)" }, { v: "2", l: "Mobiel (C3–C6, L2–L4) (2)" }, { v: "3", l: "Junctioneel (O–C2, C7–T2, T11–L1, L5–S1) (3)" }] },
+      { id: "pijn", label: "Pijn", type: "select",
+        opties: [{ v: "0", l: "Geen pijn (0)" }, { v: "1", l: "Occasioneel, niet-mechanisch (1)" }, { v: "3", l: "Mechanische/houdingsgebonden pijn (3)" }] },
+      { id: "bot", label: "Botlaesie", type: "select",
+        opties: [{ v: "0", l: "Blastisch (0)" }, { v: "1", l: "Gemengd (1)" }, { v: "2", l: "Lytisch (2)" }] },
+      { id: "alignement", label: "Radiografisch alignement", type: "select",
+        opties: [{ v: "0", l: "Normaal (0)" }, { v: "2", l: "Subluxatie/translatie (2)" }, { v: "4", l: "Nieuwe deformiteit/kyfose-scoliose (4)" }] },
+      { id: "collaps", label: "Wervelcorpuscollaps", type: "select",
+        opties: [{ v: "0", l: "Geen, <50% betrokken (0)" }, { v: "1", l: ">50% betrokken zonder collaps (1)" }, { v: "2", l: "<50% collaps (2)" }, { v: "3", l: ">50% collaps (3)" }] },
+      { id: "posterolat", label: "Posterolaterale betrokkenheid", type: "select",
+        opties: [{ v: "0", l: "Geen (0)" }, { v: "1", l: "Unilateraal (1)" }, { v: "3", l: "Bilateraal (3)" }] },
+    ],
+    compute(v) {
+      const keys = ["locatie", "pijn", "bot", "alignement", "collaps", "posterolat"];
+      let s = 0; for (const k of keys) { const n = num(v[k]); if (isNaN(n)) return fout("Selecteer alle componenten."); s += n; }
+      let klasse, advies;
+      if (s <= 6) { klasse = "Stabiel (0–6)"; advies = "Stabiel."; }
+      else if (s <= 12) { klasse = "Indeterminaat (7–12)"; advies = "Indeterminaat — chirurgisch advies aanbevolen."; }
+      else { klasse = "Instabiel (13–18)"; advies = "Instabiel — chirurgisch advies aanbevolen."; }
+      return {
+        ok: true, titel: "SINS", klasse: "SINS " + s + " — " + klasse,
+        items: [{ label: "Totaalscore", waarde: s + "/18" }],
+        advies,
+        tekst: `SINS ${s}/18 — ${klasse.toLowerCase()}. ${advies}`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "knosp",
+    naam: "Knosp-classificatie (hypofyse)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["MR"],
+    bron: "Knosp (cavernous sinus invasie)",
+    beschrijving: "Graad 0–4 voor parasellaire/cavernous sinus extensie van hypofyseadenoom t.o.v. ICA-tangenten.",
+    triggerKeywords: ["knosp", "hypofyse", "pituitary", "macroadenoom", "sella", "cavernous sinus"],
+    inputs: [
+      { id: "graad", label: "Relatie tot ICA-tangenten", type: "select",
+        opties: [
+          { v: "0", l: "Graad 0 — binnen mediale tangent, geen extensie" },
+          { v: "1", l: "Graad 1 — tot mediane (intercarotid) lijn" },
+          { v: "2", l: "Graad 2 — voorbij mediane lijn tot laterale tangent" },
+          { v: "3", l: "Graad 3 — voorbij laterale tangent" },
+          { v: "4", l: "Graad 4 — totale omsluiting van de ICA" },
+        ] },
+    ],
+    compute(v) {
+      const g = v.graad;
+      if (g === undefined || g === "") return fout("Selecteer de graad.");
+      const invasie = (g === "3" || g === "4") ? "waarschijnlijke cavernous sinus invasie" : (g === "2" ? "mogelijke invasie" : "geen invasie");
+      return {
+        ok: true, titel: "Knosp-classificatie", klasse: "Knosp graad " + g,
+        items: [{ label: "Graad", waarde: g }, { label: "Interpretatie", waarde: invasie }],
+        advies: (g === "3" || g === "4") ? "Hoge kans op cavernous sinus invasie." : null,
+        tekst: `Hypofyseadenoom, Knosp graad ${g} — ${invasie}.`,
+      };
+    },
+  });
+
+  /* ==========================================================================
+   * BODY — HEPATOBILIAIR
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "li-rads",
+    naam: "LI-RADS 2018/2024 (CT/MRI)",
+    categorie: "Body — hepatobiliair",
+    modaliteit: ["CT", "MR"],
+    bron: "ACR LI-RADS v2018",
+    beschrijving: "Categorisering van leverlaesies bij hoog-risicopatiënten (cirrose/HCC-risico) op basis van grootte en major features.",
+    triggerKeywords: ["li-rads", "lirads", "hcc", "hepatocellulair", "cirrose", "leverlaesie", "levernodul"],
+    inputs: [
+      { id: "grootte", label: "Diameter", type: "number", eenheid: "mm", min: 0 },
+      { id: "aps", label: "Niet-rim arteriële hyperenhancement (APHE)", type: "select",
+        opties: [{ v: "ja", l: "Aanwezig" }, { v: "nee", l: "Afwezig" }] },
+      { id: "washout", label: "Niet-perifere washout", type: "checkbox" },
+      { id: "kapsel", label: "Enhancing kapsel", type: "checkbox" },
+      { id: "drempelgroei", label: "Drempelgroei (≥50% in ≤6 mnd)", type: "checkbox" },
+      { id: "tiv", label: "Tumor in vene (TIV)", type: "checkbox" },
+    ],
+    compute(v) {
+      const d = num(v.grootte);
+      if (isNaN(d)) return fout("Geef de diameter in.");
+      if (v.tiv) return res("LR-TIV", "Tumor in vene", "Tumor in vene (LR-TIV) — bespreek multidisciplinair.");
+      const aphe = v.aps === "ja";
+      const af = (v.washout ? 1 : 0) + (v.kapsel ? 1 : 0) + (v.drempelgroei ? 1 : 0);
+      let cat;
+      if (!aphe) {
+        // geen APHE: meestal LR-3 (of lager); vereenvoudigd
+        cat = af >= 1 ? "LR-3/4 (overweeg)" : "LR-3";
+      } else {
+        if (d < 10) cat = af >= 1 ? "LR-4" : "LR-3";
+        else if (d < 20) cat = af >= 2 ? "LR-5" : (af === 1 ? "LR-4" : "LR-3");
+        else cat = af >= 1 ? "LR-5" : "LR-4";
+      }
+      const advies = cat.indexOf("LR-5") >= 0 ? "LR-5 — definitief HCC; multidisciplinair bespreken."
+        : cat.indexOf("LR-4") >= 0 ? "LR-4 — waarschijnlijk HCC; multidisciplinair bespreken."
+        : "LR-3 — intermediaire waarschijnlijkheid; follow-up.";
+      function res(c, k, t) { return { ok: true, titel: "LI-RADS", klasse: c, items: [{ label: "Categorie", waarde: c }], advies: k, tekst: t }; }
+      return {
+        ok: true, titel: "LI-RADS", klasse: cat,
+        items: [
+          { label: "Diameter", waarde: d + " mm" },
+          { label: "APHE", waarde: aphe ? "aanwezig" : "afwezig" },
+          { label: "Additionele major features", waarde: String(af) + " (washout/kapsel/groei)" },
+          { label: "Categorie", waarde: cat },
+        ],
+        advies,
+        tekst: `Leverlaesie ${d} mm, LI-RADS ${cat}. APHE ${aphe ? "aanwezig" : "afwezig"}, ${af} bijkomende major feature(s). ${advies}`,
+      };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "liver-steatosis",
+    naam: "Leversteatose (CT/MRI)",
+    categorie: "Body — hepatobiliair",
+    modaliteit: ["CT", "MR"],
+    bron: "CT-attenuatie (L−S) / MRI proton density fat fraction",
+    beschrijving: "CT: leverattenuatie en lever-milt-verschil. MRI: PDFF-gradering.",
+    triggerKeywords: ["steatose", "steatosis", "leververvetting", "vette lever", "nafld", "pdff", "fat fraction"],
+    inputs: [
+      { id: "methode", label: "Methode", type: "select", default: "ct",
+        opties: [{ v: "ct", l: "CT (HU)" }, { v: "pdff", l: "MRI PDFF (%)" }] },
+      { id: "lever", label: "Leverattenuatie (CT)", type: "number", eenheid: "HU", help: "Bij CT" },
+      { id: "milt", label: "Miltattenuatie (CT)", type: "number", eenheid: "HU", help: "Bij CT, optioneel" },
+      { id: "pdff", label: "PDFF (MRI)", type: "number", eenheid: "%", help: "Bij MRI" },
+    ],
+    compute(v) {
+      if (v.methode === "pdff") {
+        const p = num(v.pdff);
+        if (isNaN(p)) return fout("Geef de PDFF-waarde in.");
+        let graad;
+        if (p < 5) graad = "geen significante steatose";
+        else if (p < 10) graad = "milde steatose";
+        else if (p < 20) graad = "matige steatose";
+        else graad = "ernstige steatose";
+        return { ok: true, titel: "Leversteatose (MRI PDFF)", klasse: graad,
+          items: [{ label: "PDFF", waarde: r1(p) + "%" }],
+          advies: p >= 5 ? "PDFF ≥5% → hepatische steatose." : null,
+          tekst: `Leversteatose op MRI: PDFF ${r1(p)}% — ${graad}.` };
+      }
+      const L = num(v.lever), S = num(v.milt);
+      if (isNaN(L)) return fout("Geef de leverattenuatie in.");
+      const items = [{ label: "Leverattenuatie", waarde: r0(L) + " HU" }];
+      let steatose = L < 40;
+      if (!isNaN(S)) {
+        const diff = L - S;
+        items.push({ label: "Milt", waarde: r0(S) + " HU" });
+        items.push({ label: "Lever − milt", waarde: r0(diff) + " HU" });
+        if (diff <= -10) steatose = true;
+      }
+      return { ok: true, titel: "Leversteatose (CT)", klasse: steatose ? "Steatose waarschijnlijk" : "Geen steatose",
+        items,
+        advies: steatose ? "Leverattenuatie <40 HU of lever−milt ≤−10 HU → hepatische steatose." : null,
+        tekst: `Leverattenuatie ${r0(L)} HU${isNaN(S) ? "" : `, milt ${r0(S)} HU (verschil ${r0(L - S)} HU)`} — ${steatose ? "suggestief voor hepatische steatose" : "geen aanwijzing voor steatose"}.` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "liver-volume",
+    naam: "Standaard levervolume (Vauthey)",
+    categorie: "Body — hepatobiliair",
+    modaliteit: ["CT", "MR"],
+    bron: "Vauthey 2002 (SLV uit lichaamsoppervlak)",
+    beschrijving: "Standaard levervolume = −794 + 1267 × BSA (Mosteller). Voor restlevervolume-ratio bij resectieplanning.",
+    triggerKeywords: ["levervolume", "liver volume", "restlevervolume", "future liver remnant", "hepatectomie", "leverresectie"],
+    inputs: [
+      { id: "lengte", label: "Lengte", type: "number", eenheid: "cm", min: 0 },
+      { id: "gewicht", label: "Gewicht", type: "number", eenheid: "kg", min: 0 },
+      { id: "remnant", label: "Gemeten restlevervolume (optioneel)", type: "number", eenheid: "mL", help: "Voor FLR-ratio" },
+    ],
+    compute(v) {
+      const h = num(v.lengte), w = num(v.gewicht);
+      if (isNaN(h) || isNaN(w)) return fout("Geef lengte en gewicht in.");
+      const bsa = Math.sqrt((h * w) / 3600); // Mosteller
+      const slv = -794 + 1267 * bsa;
+      const items = [
+        { label: "BSA (Mosteller)", waarde: r2(bsa) + " m²" },
+        { label: "Standaard levervolume", waarde: r0(slv) + " mL" },
+      ];
+      let advies = null;
+      const rem = num(v.remnant);
+      if (!isNaN(rem) && slv > 0) {
+        const ratio = (rem / slv) * 100;
+        items.push({ label: "FLR-ratio (gemeten/SLV)", waarde: r1(ratio) + "%" });
+        advies = ratio < 20 ? "FLR <20% — verhoogd risico op leverfalen (normaal parenchym)." : null;
+      }
+      return { ok: true, titel: "Standaard levervolume", klasse: null, items, advies,
+        tekst: `Standaard levervolume ${r0(slv)} mL (BSA ${r2(bsa)} m², Vauthey)${isNaN(rem) ? "" : `; restlevervolume-ratio ${r1((rem / slv) * 100)}%`}.` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "spleen-volume-index",
+    naam: "Miltvolume + miltindex",
+    categorie: "Body — hepatobiliair",
+    modaliteit: ["CT", "MR", "ECHO"],
+    bron: "Ellipsoïde-volume / miltindex",
+    beschrijving: "Miltvolume (0,52 × L × B × D) en miltindex (L × B × D). Splenomegalie-referenties.",
+    triggerKeywords: ["milt", "spleen", "splenomegalie", "miltvolume", "miltindex"],
+    inputs: [
+      { id: "L", label: "Lengte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "B", label: "Breedte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+      { id: "D", label: "Dikte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+    ],
+    compute(v) {
+      const L = num(v.L), B = num(v.B), D = num(v.D);
+      if (isNaN(L) || isNaN(B) || isNaN(D)) return fout("Geef de drie afmetingen in.");
+      const vol = ellipsoid(L, B, D);
+      const index = L * B * D;
+      const splenomeg = vol > 314; // ~bovengrens normaal volwassene
+      return { ok: true, titel: "Miltvolume + index", klasse: splenomeg ? "Splenomegalie" : "Normaal",
+        items: [
+          { label: "Miltvolume", waarde: r0(vol) + " mL" },
+          { label: "Miltindex", waarde: r0(index) + " cm³" },
+        ],
+        advies: splenomeg ? "Volume boven referentie (~314 mL) → splenomegalie." : null,
+        tekst: `Miltvolume ${r0(vol)} mL, miltindex ${r0(index)} cm³${splenomeg ? " — splenomegalie" : ""}.` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "acute-cholecystitis-us",
+    naam: "Acute cholecystitis (echografie)",
+    categorie: "Body — hepatobiliair",
+    modaliteit: ["ECHO"],
+    bron: "Sonografische criteria",
+    beschrijving: "Checklist van sonografische bevindingen → waarschijnlijkheid acute cholecystitis.",
+    triggerKeywords: ["cholecystitis", "galblaas", "gallbladder", "galsteen", "murphy", "galblaaswand"],
+    inputs: [
+      { id: "stenen", label: "Galstenen / sludge", type: "checkbox" },
+      { id: "wand", label: "Wandverdikking >3 mm", type: "checkbox" },
+      { id: "murphy", label: "Sonografisch teken van Murphy", type: "checkbox" },
+      { id: "vocht", label: "Pericholecystisch vocht", type: "checkbox" },
+      { id: "distensie", label: "Hydrops/distensie (>4 cm transvers)", type: "checkbox" },
+    ],
+    compute(v) {
+      const major = (v.stenen ? 1 : 0) + (v.murphy ? 1 : 0);
+      const minor = (v.wand ? 1 : 0) + (v.vocht ? 1 : 0) + (v.distensie ? 1 : 0);
+      const tot = major + minor;
+      let klasse;
+      if (v.stenen && v.murphy && minor >= 1) klasse = "Hoge waarschijnlijkheid";
+      else if (tot >= 3) klasse = "Matige waarschijnlijkheid";
+      else if (tot >= 1) klasse = "Lage-matige waarschijnlijkheid";
+      else klasse = "Geen sonografische tekenen";
+      const aanw = [];
+      if (v.stenen) aanw.push("galstenen/sludge");
+      if (v.wand) aanw.push("wandverdikking >3 mm");
+      if (v.murphy) aanw.push("positief teken van Murphy");
+      if (v.vocht) aanw.push("pericholecystisch vocht");
+      if (v.distensie) aanw.push("distensie");
+      return { ok: true, titel: "Acute cholecystitis (US)", klasse,
+        items: [{ label: "Bevindingen", waarde: aanw.length ? aanw.join(", ") : "geen" }],
+        advies: klasse.indexOf("Hoge") === 0 ? "Beeld consistent met acute cholecystitis — correleer klinisch/labo." : null,
+        tekst: `Galblaas: ${aanw.length ? aanw.join(", ") : "geen specifieke tekenen"} — ${klasse.toLowerCase()} voor acute cholecystitis.` };
+    },
+  });
+
+  /* ==========================================================================
+   * BODY — GASTRO-INTESTINAAL
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "c-rads",
+    naam: "C-RADS (CT-colografie)",
+    categorie: "Body — gastro-intestinaal",
+    modaliteit: ["CT"],
+    bron: "CT Colonography Reporting and Data System",
+    beschrijving: "Colonische (C0–C4) en extracolonische (E0–E4) categorisering.",
+    triggerKeywords: ["c-rads", "crads", "ct-colografie", "ct colonography", "virtuele colo", "coloscopie"],
+    inputs: [
+      { id: "colon", label: "Colonische bevinding", type: "select",
+        opties: [
+          { v: "C0", l: "C0 — inadequaat / in afwachting" },
+          { v: "C1", l: "C1 — normaal / benigne" },
+          { v: "C2", l: "C2 — intermediaire poliep (6–9 mm, <3)" },
+          { v: "C3", l: "C3 — poliep ≥10 mm of ≥3 van 6–9 mm" },
+          { v: "C4", l: "C4 — vermoedelijk maligne massa" },
+        ] },
+      { id: "extra", label: "Extracolonische bevinding", type: "select",
+        opties: [
+          { v: "E0", l: "E0 — beperkt onderzoek" },
+          { v: "E1", l: "E1 — normaal / anatomische variant" },
+          { v: "E2", l: "E2 — klinisch onbelangrijk" },
+          { v: "E3", l: "E3 — waarschijnlijk onbelangrijk, incompleet gekarakteriseerd" },
+          { v: "E4", l: "E4 — potentieel belangrijk" },
+        ] },
+    ],
+    compute(v) {
+      if (!v.colon) return fout("Selecteer de colonische categorie.");
+      const adviesMap = { C0: "Onvolledig — herhaal/aanvullend onderzoek.", C1: "Routine screening.", C2: "Surveillance/coloscopie volgens beleid.", C3: "Coloscopie aanbevolen.", C4: "Coloscopie/oncologische verwijzing." };
+      return { ok: true, titel: "C-RADS", klasse: v.colon + (v.extra ? " / " + v.extra : ""),
+        items: [{ label: "Colon", waarde: v.colon }, ...(v.extra ? [{ label: "Extracolonisch", waarde: v.extra }] : [])],
+        advies: adviesMap[v.colon] || null,
+        tekst: `C-RADS ${v.colon}${v.extra ? " / " + v.extra : ""}. ${adviesMap[v.colon] || ""}`.trim() };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "pancreatic-collections",
+    naam: "Pancreatische collecties (Atlanta)",
+    categorie: "Body — gastro-intestinaal",
+    modaliteit: ["CT", "MR"],
+    bron: "Herziene Atlanta-classificatie 2012",
+    beschrijving: "Benoeming van peripancreatische collecties op basis van inhoud, encapsulatie en tijd.",
+    triggerKeywords: ["pancreatitis", "pancreas", "collectie", "pseudocyste", "necrose", "walled-off", "won", "apfc"],
+    inputs: [
+      { id: "necrose", label: "Bevat necrose?", type: "select",
+        opties: [{ v: "nee", l: "Nee — enkel vocht (interstitieel oedemateuze pancreatitis)" }, { v: "ja", l: "Ja — necrotiserende pancreatitis" }] },
+      { id: "tijd", label: "Tijd sinds onset", type: "select",
+        opties: [{ v: "vroeg", l: "≤4 weken (niet-geëncapsuleerd)" }, { v: "laat", l: ">4 weken (geëncapsuleerd)" }] },
+    ],
+    compute(v) {
+      if (!v.necrose || !v.tijd) return fout("Selecteer beide opties.");
+      let naam;
+      if (v.necrose === "nee") naam = v.tijd === "vroeg" ? "Acute peripancreatische vochtcollectie (APFC)" : "Pseudocyste";
+      else naam = v.tijd === "vroeg" ? "Acute necrotische collectie (ANC)" : "Walled-off necrose (WON)";
+      return { ok: true, titel: "Pancreatische collectie", klasse: naam,
+        items: [{ label: "Type", waarde: naam }],
+        advies: null,
+        tekst: `Peripancreatische collectie: ${naam} (herziene Atlanta-classificatie).` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "bosniak-2019",
+    naam: "Bosniak 2019 (cysteuze niermassa)",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["CT", "MR"],
+    bron: "Bosniak-classificatie versie 2019",
+    beschrijving: "Classificatie van cysteuze niermassa's → maligniteitsrisico + beleid.",
+    triggerKeywords: ["bosniak", "cysteuze niermassa", "niercyste", "renale cyste", "complexe cyste"],
+    inputs: [
+      { id: "klasse", label: "Bosniak-klasse", type: "select",
+        opties: [
+          { v: "I", l: "I — eenvoudige cyste (dunne gladde wand, geen septa/enhancement)" },
+          { v: "II", l: "II — minimaal complex (enkele dunne septa / fijne calcificatie)" },
+          { v: "IIF", l: "IIF — meerdere dunne septa of minimale wandverdikking" },
+          { v: "III", l: "III — dikke/irregulaire wand of septa met enhancement" },
+          { v: "IV", l: "IV — enhancing weke-delen-noduli" },
+        ] },
+    ],
+    compute(v) {
+      const map = {
+        I: { risk: "~0%", beleid: "Geen follow-up.", },
+        II: { risk: "~0%", beleid: "Geen follow-up.", },
+        IIF: { risk: "~5%", beleid: "Follow-up beeldvorming (bv. 6 mnd, dan jaarlijks tot 5 jaar)." },
+        III: { risk: "~50%", beleid: "Urologische verwijzing — resectie/ablatie of actieve surveillance." },
+        IV: { risk: "~90%", beleid: "Urologische verwijzing — behandeling." },
+      };
+      const m = map[v.klasse];
+      if (!m) return fout("Selecteer de Bosniak-klasse.");
+      return { ok: true, titel: "Bosniak 2019", klasse: "Bosniak " + v.klasse,
+        items: [{ label: "Klasse", waarde: v.klasse }, { label: "Maligniteitsrisico", waarde: m.risk }],
+        advies: m.beleid,
+        tekst: `Cysteuze niermassa, Bosniak ${v.klasse} (maligniteitsrisico ${m.risk}). ${m.beleid}` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "o-rads-us",
+    naam: "O-RADS US (2022)",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["ECHO"],
+    bron: "O-RADS US v2022",
+    beschrijving: "Risicostratificatie van ovariële/adnexiële laesies op echografie.",
+    triggerKeywords: ["o-rads", "orads", "adnex", "ovarieel", "ovariële", "adnexiële massa", "ovariumcyste"],
+    inputs: [
+      { id: "cat", label: "O-RADS US categorie", type: "select",
+        opties: [
+          { v: "0", l: "0 — incompleet onderzoek" },
+          { v: "1", l: "1 — normaal premenopauzaal ovarium" },
+          { v: "2", l: "2 — bijna zeker benigne (<1%)" },
+          { v: "3", l: "3 — laag risico (1–<10%)" },
+          { v: "4", l: "4 — intermediair risico (10–<50%)" },
+          { v: "5", l: "5 — hoog risico (≥50%)" },
+        ] },
+    ],
+    compute(v) {
+      const adv = { "0": "Herhaal/aanvullend onderzoek.", "1": "Geen actie.", "2": "Geen of beperkte follow-up.", "3": "Echografische follow-up of MRI; eventueel gynaecologie.", "4": "MRI of gynaecologische (oncologische) verwijzing.", "5": "Gynaecologisch-oncologische verwijzing." };
+      if (v.cat === undefined || v.cat === "") return fout("Selecteer de categorie.");
+      return { ok: true, titel: "O-RADS US", klasse: "O-RADS " + v.cat,
+        items: [{ label: "Categorie", waarde: v.cat }],
+        advies: adv[v.cat] || null,
+        tekst: `Adnexiële laesie, O-RADS US ${v.cat}. ${adv[v.cat] || ""}`.trim() };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "pi-rads",
+    naam: "PI-RADS v2.1 (prostaat-MRI)",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["MR"],
+    bron: "PI-RADS v2.1",
+    beschrijving: "Bepaalt de PI-RADS-assessmentcategorie op basis van zone, dominante sequentie en DCE.",
+    triggerKeywords: ["pi-rads", "pirads", "prostaat mri", "prostaatkanker", "mpmri prostaat", "prostaatcarcinoom"],
+    inputs: [
+      { id: "zone", label: "Zone van de laesie", type: "select",
+        opties: [{ v: "pz", l: "Perifere zone (PZ) — DWI dominant" }, { v: "tz", l: "Transitiezone (TZ) — T2 dominant" }] },
+      { id: "dwi", label: "DWI-score (PZ)", type: "select",
+        opties: [{ v: "1", l: "1" }, { v: "2", l: "2" }, { v: "3", l: "3" }, { v: "4", l: "4" }, { v: "5", l: "5" }] },
+      { id: "dce", label: "DCE (enkel PZ, bij DWI=3)", type: "select", default: "neg",
+        opties: [{ v: "neg", l: "Negatief" }, { v: "pos", l: "Positief (focale vroege enhancement)" }] },
+      { id: "t2", label: "T2-score (TZ)", type: "select",
+        opties: [{ v: "1", l: "1" }, { v: "2", l: "2" }, { v: "3", l: "3" }, { v: "4", l: "4" }, { v: "5", l: "5" }] },
+      { id: "dwiTz", label: "DWI-score (TZ, bij T2=3)", type: "select", default: "",
+        opties: [{ v: "", l: "n.v.t." }, { v: "le4", l: "≤4" }, { v: "5", l: "5" }] },
+    ],
+    compute(v) {
+      let cat;
+      if (v.zone === "pz") {
+        const d = num(v.dwi);
+        if (isNaN(d)) return fout("Geef de DWI-score in.");
+        cat = d;
+        if (d === 3 && v.dce === "pos") cat = 4; // DCE-positief upgradet PZ DWI3 → 4
+      } else if (v.zone === "tz") {
+        const t = num(v.t2);
+        if (isNaN(t)) return fout("Geef de T2-score in.");
+        cat = t;
+        if (t === 3) cat = (v.dwiTz === "5") ? 4 : 3; // T2=3 + DWI≥5 → 4
+      } else return fout("Selecteer de zone.");
+      const adv = { 1: "Zeer laag — klinisch significante kanker hoogst onwaarschijnlijk.", 2: "Laag — onwaarschijnlijk.", 3: "Intermediair — equivocaal.", 4: "Hoog — waarschijnlijk; biopsie overwegen.", 5: "Zeer hoog — zeer waarschijnlijk; biopsie." };
+      return { ok: true, titel: "PI-RADS v2.1", klasse: "PI-RADS " + cat,
+        items: [{ label: "Zone", waarde: v.zone === "pz" ? "PZ" : "TZ" }, { label: "Assessmentcategorie", waarde: String(cat) }],
+        advies: adv[cat] || null,
+        tekst: `Prostaatlaesie in ${v.zone === "pz" ? "perifere zone" : "transitiezone"}, PI-RADS ${cat}. ${adv[cat] || ""}`.trim() };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "renal-nephrometry",
+    naam: "RENAL nefrometrie-score",
+    categorie: "Body — genito-urinair",
+    modaliteit: ["CT", "MR"],
+    bron: "RENAL Nephrometry Score (Kutikov 2009)",
+    beschrijving: "Complexiteit van een niertumor (R-E-N-L) → laag/matig/hoog complex.",
+    triggerKeywords: ["renal score", "nefrometrie", "nephrometry", "niertumor", "renaal carcinoom", "niermassa"],
+    inputs: [
+      { id: "R", label: "R — maximale diameter", type: "select",
+        opties: [{ v: "1", l: "≤4 cm (1)" }, { v: "2", l: ">4–7 cm (2)" }, { v: "3", l: ">7 cm (3)" }] },
+      { id: "E", label: "E — exofytisch/endofytisch", type: "select",
+        opties: [{ v: "1", l: "≥50% exofytisch (1)" }, { v: "2", l: "<50% exofytisch (2)" }, { v: "3", l: "Volledig endofytisch (3)" }] },
+      { id: "N", label: "N — nabijheid verzamelsysteem/sinus", type: "select",
+        opties: [{ v: "1", l: "≥7 mm (1)" }, { v: "2", l: ">4–<7 mm (2)" }, { v: "3", l: "≤4 mm (3)" }] },
+      { id: "L", label: "L — locatie t.o.v. poollijnen", type: "select",
+        opties: [{ v: "1", l: "Volledig boven/onder poollijn (1)" }, { v: "2", l: "Kruist poollijn (2)" }, { v: "3", l: ">50% kruist as / tussen poollijnen (3)" }] },
+      { id: "A", label: "Suffix — ligging", type: "select", default: "x",
+        opties: [{ v: "a", l: "Anterieur (a)" }, { v: "p", l: "Posterieur (p)" }, { v: "x", l: "Onbepaald (x)" }] },
+      { id: "h", label: "Hilaire tumor (h-suffix)", type: "checkbox" },
+    ],
+    compute(v) {
+      const parts = ["R", "E", "N", "L"].map((k) => num(v[k]));
+      if (parts.some(isNaN)) return fout("Selecteer R, E, N en L.");
+      const sum = parts.reduce((a, b) => a + b, 0);
+      const suffix = (v.A || "x") + (v.h ? "h" : "");
+      let cx;
+      if (sum <= 6) cx = "laag complex (4–6)";
+      else if (sum <= 9) cx = "matig complex (7–9)";
+      else cx = "hoog complex (10–12)";
+      return { ok: true, titel: "RENAL nefrometrie", klasse: sum + suffix + " — " + cx,
+        items: [{ label: "Totaalscore", waarde: sum + " (" + suffix + ")" }, { label: "Complexiteit", waarde: cx }],
+        advies: null,
+        tekst: `RENAL nefrometrie-score ${sum}${suffix} — ${cx}.` };
+    },
+  });
+
+  /* ==========================================================================
+   * CARDIOTHORACAAL
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "fleischner-2017",
+    naam: "Fleischner 2017 (pulmonale noduli)",
+    categorie: "Cardiothoracaal",
+    modaliteit: ["CT"],
+    bron: "Fleischner Society 2017",
+    beschrijving: "Follow-up van incidentele pulmonale noduli (≥35 jaar, geen screening/immuun­compromis/maligniteit).",
+    triggerKeywords: ["noduul", "nodulus", "nodule", "fleischner", "pulmonale nodus", "longnodul", "micronodul", "matglas", "ground glass", "ggn"],
+    inputs: [
+      { id: "type", label: "Type nodulus", type: "select",
+        opties: [{ v: "solid", l: "Solide" }, { v: "ggn", l: "Pure matglasnodus (GGN)" }, { v: "partsolid", l: "Deels solide (part-solid)" }] },
+      { id: "aantal", label: "Aantal", type: "select", opties: [{ v: "single", l: "Solitair" }, { v: "multiple", l: "Multipel" }] },
+      { id: "grootte", label: "Gemiddelde diameter", type: "number", eenheid: "mm", min: 0, step: 0.1 },
+      { id: "risico", label: "Risicoprofiel", type: "select", opties: [{ v: "laag", l: "Laag risico" }, { v: "hoog", l: "Hoog risico" }] },
+    ],
+    compute(v) {
+      const d = num(v.grootte);
+      if (isNaN(d)) return fout("Geef de diameter in.");
+      const hoog = v.risico === "hoog";
+      const mult = v.aantal === "multiple";
+      let advies = "";
+      if (v.type === "solid") {
+        if (d < 6) advies = hoog ? "Geen routine follow-up; bij hoog risico optioneel CT na 12 mnd." : "Geen routine follow-up.";
+        else if (d <= 8) advies = mult ? "CT na 3–6 mnd, dan na 18–24 mnd." : "CT na 6–12 mnd, dan na 18–24 mnd.";
+        else advies = mult ? "CT na 3–6 mnd, dan na 18–24 mnd." : "CT na 3 mnd, PET-CT of biopsie overwegen.";
+      } else if (v.type === "ggn") {
+        if (d < 6) advies = "Geen routine follow-up.";
+        else advies = "CT na 6–12 mnd, dan om de 2 jaar tot 5 jaar.";
+      } else { // part-solid
+        if (d < 6) advies = "Geen routine follow-up.";
+        else advies = "CT na 3–6 mnd; bij persistentie en solide component ≥6 mm sterk verdacht — PET-CT/biopsie/resectie.";
+      }
+      const typeL = { solid: "solide", ggn: "pure matglas", partsolid: "deels solide" }[v.type];
+      return { ok: true, titel: "Fleischner 2017", klasse: null,
+        items: [
+          { label: "Type", waarde: typeL + (mult ? ", multipel" : ", solitair") },
+          { label: "Diameter", waarde: r1(d) + " mm" },
+          { label: "Risico", waarde: hoog ? "hoog" : "laag" },
+        ],
+        advies,
+        tekst: `${mult ? "Multipele" : "Solitaire"} ${typeL} pulmonale nodulus van ${r1(d)} mm (${hoog ? "hoog" : "laag"} risico). Fleischner 2017: ${advies}` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "lung-rads-2022",
+    naam: "Lung-RADS v2022",
+    categorie: "Cardiothoracaal",
+    modaliteit: ["CT"],
+    bron: "ACR Lung-RADS v2022",
+    beschrijving: "Categorisering bij low-dose CT longkankerscreening.",
+    triggerKeywords: ["lung-rads", "lungrads", "longkankerscreening", "lcs", "low-dose ct", "screening long"],
+    inputs: [
+      { id: "cat", label: "Lung-RADS categorie", type: "select",
+        opties: [
+          { v: "0", l: "0 — incompleet" },
+          { v: "1", l: "1 — negatief" },
+          { v: "2", l: "2 — benigne aspect/gedrag" },
+          { v: "3", l: "3 — waarschijnlijk benigne" },
+          { v: "4A", l: "4A — verdacht" },
+          { v: "4B", l: "4B — verdacht (hoger)" },
+          { v: "4X", l: "4X — verdacht met additionele features" },
+        ] },
+    ],
+    compute(v) {
+      const adv = { "0": "Aanvullend onderzoek / vergelijking.", "1": "Jaarlijkse LDCT.", "2": "Jaarlijkse LDCT.", "3": "LDCT na 6 maanden.", "4A": "LDCT na 3 maanden; PET-CT overwegen bij ≥8 mm solide.", "4B": "PET-CT en/of weefseldiagnose.", "4X": "PET-CT en/of weefseldiagnose." };
+      if (!v.cat) return fout("Selecteer de categorie.");
+      return { ok: true, titel: "Lung-RADS v2022", klasse: "Lung-RADS " + v.cat,
+        items: [{ label: "Categorie", waarde: v.cat }],
+        advies: adv[v.cat] || null,
+        tekst: `Lung-RADS ${v.cat}. ${adv[v.cat] || ""}`.trim() };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "cad-rads-2022",
+    naam: "CAD-RADS 2.0 (2022)",
+    categorie: "Cardiothoracaal",
+    modaliteit: ["CT"],
+    bron: "CAD-RADS 2.0",
+    beschrijving: "Coronaire stenosegradering op coronaire CTA + modifiers.",
+    triggerKeywords: ["cad-rads", "cadrads", "coronaire cta", "ccta", "coronair", "kransslagader", "stenose coronair"],
+    inputs: [
+      { id: "stenose", label: "Maximale stenose", type: "select",
+        opties: [
+          { v: "0", l: "0% — geen plaque (CAD-RADS 0)" },
+          { v: "1", l: "1–24% — minimaal (1)" },
+          { v: "2", l: "25–49% — mild (2)" },
+          { v: "3", l: "50–69% — matig (3)" },
+          { v: "4", l: "70–99% — ernstig (4)" },
+          { v: "5", l: "100% — occlusie (5)" },
+          { v: "N", l: "Niet-diagnostisch (N)" },
+        ] },
+    ],
+    compute(v) {
+      const adv = { "0": "Geen verdere cardiale work-up.", "1": "Geen verdere work-up; preventie.", "2": "Niet-obstructief; overweeg preventie.", "3": "Functionele test of optimalisatie overwegen.", "4": "Functionele test / ICA overwegen.", "5": "ICA / revascularisatie overwegen.", "N": "Onderzoek niet-diagnostisch — aanvullende beeldvorming." };
+      if (!v.stenose) return fout("Selecteer de stenosecategorie.");
+      const c = v.stenose;
+      return { ok: true, titel: "CAD-RADS 2.0", klasse: "CAD-RADS " + c,
+        items: [{ label: "Categorie", waarde: c }],
+        advies: adv[c] || null,
+        tekst: `CAD-RADS ${c}. ${adv[c] || ""}`.trim() };
+    },
+  });
+
+  /* ==========================================================================
+   * EMERGENCY — TRAUMA (AAST 2018)
+   * ======================================================================== */
+
+  function aastCalc(cfg) {
+    return {
+      id: cfg.id, naam: cfg.naam, categorie: "Emergency — trauma (AAST)",
+      modaliteit: ["CT"], bron: "AAST Organ Injury Scale 2018",
+      beschrijving: cfg.beschrijving, triggerKeywords: cfg.keywords,
+      inputs: [{ id: "graad", label: "AAST-graad", type: "select", opties: cfg.opties }],
+      compute(v) {
+        if (!v.graad) return fout("Selecteer de AAST-graad.");
+        const label = (cfg.opties.find((o) => o.v === v.graad) || {}).l || v.graad;
+        const hoog = ["IV", "V"].includes(v.graad);
+        return { ok: true, titel: cfg.naam, klasse: "AAST graad " + v.graad,
+          items: [{ label: "Graad", waarde: v.graad }, { label: "Criterium", waarde: label.replace(/^[IVX]+ — /, "") }],
+          advies: hoog ? "Hooggradig letsel — overleg traumachirurgie/interventieradiologie." : null,
+          tekst: `${cfg.orgaan}letsel, AAST graad ${v.graad}: ${label.replace(/^[IVX]+ — /, "")}.` };
+      },
+    };
+  }
+
+  CALCULATORS.push(aastCalc({
+    id: "aast-liver", naam: "Levertrauma (AAST)", orgaan: "Lever",
+    beschrijving: "AAST 2018 gradering van levertrauma op CT.",
+    keywords: ["levertrauma", "leverletsel", "liver trauma", "leverlaceratie", "leverruptuur"],
+    opties: [
+      { v: "I", l: "I — subcapsulair hematoom <10% oppervlak; laceratie <1 cm diep" },
+      { v: "II", l: "II — subcapsulair 10–50%; intraparenchymateus <10 cm; laceratie 1–3 cm diep" },
+      { v: "III", l: "III — subcapsulair >50% of ruptuur; intraparenchymateus ≥10 cm; laceratie >3 cm; vasculair letsel binnen lever / actieve bloeding" },
+      { v: "IV", l: "IV — parenchymdisruptie 25–75% van een lob; actieve bloeding tot in peritoneum" },
+      { v: "V", l: "V — parenchymdisruptie >75% van een lob; juxtahepatisch veneus letsel" },
+    ],
+  }));
+
+  CALCULATORS.push(aastCalc({
+    id: "aast-spleen", naam: "Milttrauma (AAST)", orgaan: "Milt",
+    beschrijving: "AAST 2018 gradering van milttrauma op CT.",
+    keywords: ["milttrauma", "miltletsel", "spleen trauma", "miltlaceratie", "miltruptuur"],
+    opties: [
+      { v: "I", l: "I — subcapsulair hematoom <10%; laceratie <1 cm diep" },
+      { v: "II", l: "II — subcapsulair 10–50%; intraparenchymateus <5 cm; laceratie 1–3 cm" },
+      { v: "III", l: "III — subcapsulair >50% of ruptuur; intraparenchymateus ≥5 cm; laceratie >3 cm" },
+      { v: "IV", l: "IV — vasculair letsel / actieve bloeding binnen capsule; devascularisatie >25%" },
+      { v: "V", l: "V — versplinterde milt; actieve bloeding tot in peritoneum; hilair vasculair letsel met devascularisatie" },
+    ],
+  }));
+
+  CALCULATORS.push(aastCalc({
+    id: "aast-kidney", naam: "Niertrauma (AAST)", orgaan: "Nier",
+    beschrijving: "AAST 2018 gradering van niertrauma op CT.",
+    keywords: ["niertrauma", "nierletsel", "kidney trauma", "nierlaceratie", "renaal trauma"],
+    opties: [
+      { v: "I", l: "I — contusie en/of subcapsulair hematoom, geen laceratie" },
+      { v: "II", l: "II — perirenaal hematoom binnen Gerota; laceratie ≤1 cm zonder urine-extravasatie" },
+      { v: "III", l: "III — laceratie >1 cm zonder collectorsysteemruptuur; vasculair letsel/bloeding binnen Gerota" },
+      { v: "IV", l: "IV — laceratie tot in collectorsysteem met urine-extravasatie; segmentaal vaatletsel/infarct; bloeding voorbij Gerota" },
+      { v: "V", l: "V — versplinterde nier; hoofdvaatletsel/avulsie hilus; gedevasculariseerde nier" },
+    ],
+  }));
+
+  /* ==========================================================================
+   * EMERGENCY / NEURO — AO SPINE
+   * ======================================================================== */
+
+  const AO_TL_OPTS = [
+    { v: "A0", l: "A0 — geen/klinisch insignificante fractuur (proc. transversus/spinosus)" },
+    { v: "A1", l: "A1 — wig-impactie, één eindplaat, geen achterwand" },
+    { v: "A2", l: "A2 — split/pincer, beide eindplaten, geen achterwand" },
+    { v: "A3", l: "A3 — incomplete burst (één eindplaat, achterwand)" },
+    { v: "A4", l: "A4 — complete burst (beide eindplaten, achterwand)" },
+    { v: "B1", l: "B1 — transossale tension band (Chance)" },
+    { v: "B2", l: "B2 — posterieure ligamentaire tension band-disruptie" },
+    { v: "B3", l: "B3 — hyperextensie (anterieure disruptie)" },
+    { v: "C", l: "C — translatie/dislocatie in elk vlak" },
+  ];
+  CALCULATORS.push({
+    id: "ao-spine-tl",
+    naam: "AO Spine (thoracolumbaal)",
+    categorie: "Emergency — trauma (AAST)",
+    modaliteit: ["CT", "MR", "RX"],
+    bron: "AOSpine thoracolumbar classification",
+    beschrijving: "Morfologische classificatie van thoracolumbale wervelfracturen (type A/B/C + subtype).",
+    triggerKeywords: ["ao spine", "wervelfractuur", "burst fractuur", "compressiefractuur", "thoracolumbaal", "vertebrale fractuur"],
+    inputs: [
+      { id: "type", label: "Type / subtype", type: "select", opties: AO_TL_OPTS },
+    ],
+    compute(v) {
+      if (!v.type) return fout("Selecteer type/subtype.");
+      const label = (AO_TL_OPTS.find((o) => o.v === v.type) || {}).l || v.type;
+      const ernstig = v.type === "C" || v.type.startsWith("B") || v.type === "A4";
+      return { ok: true, titel: "AO Spine (TL)", klasse: "Type " + v.type,
+        items: [{ label: "Classificatie", waarde: label }],
+        advies: ernstig ? "Potentieel instabiel — chirurgisch advies." : null,
+        tekst: `Thoracolumbale fractuur, AO Spine ${label}.` };
+    },
+  });
+
+  /* ==========================================================================
+   * NEURO / HOOFD-HALS — NI-RADS
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "ni-rads",
+    naam: "NI-RADS (hoofd-hals surveillance)",
+    categorie: "Neuroradiologie",
+    modaliteit: ["CT", "MR"],
+    bron: "ACR NI-RADS",
+    beschrijving: "Surveillance van behandeld hoofd-halskanker: aparte categorie voor primaire site en hals.",
+    triggerKeywords: ["ni-rads", "nirads", "hoofd-hals", "head and neck", "post-behandeling hals", "recidief hals"],
+    inputs: [
+      { id: "site", label: "Compartiment", type: "select", default: "primair",
+        opties: [{ v: "primair", l: "Primaire site" }, { v: "hals", l: "Hals (lymfeklieren)" }] },
+      { id: "cat", label: "NI-RADS categorie", type: "select",
+        opties: [
+          { v: "1", l: "1 — geen aanwijzing voor recidief" },
+          { v: "2", l: "2 — laag verdacht (focaal mucosaal/diep)" },
+          { v: "3", l: "3 — hoog verdacht" },
+          { v: "4", l: "4 — bewezen recidief (biopsie/progressie)" },
+        ] },
+    ],
+    compute(v) {
+      const adv = { "1": "Routine surveillance.", "2": "Korte-termijn follow-up of directe visualisatie/biopsie.", "3": "Biopsie / PET-CT.", "4": "Klinische/oncologische behandeling." };
+      if (!v.cat) return fout("Selecteer de categorie.");
+      return { ok: true, titel: "NI-RADS", klasse: "NI-RADS " + v.cat,
+        items: [{ label: "Compartiment", waarde: v.site === "hals" ? "hals" : "primaire site" }, { label: "Categorie", waarde: v.cat }],
+        advies: adv[v.cat] || null,
+        tekst: `NI-RADS ${v.cat} (${v.site === "hals" ? "hals" : "primaire site"}). ${adv[v.cat] || ""}`.trim() };
+    },
+  });
+
+  /* ==========================================================================
+   * MUSCULOSKELETAAL — BONE-RADS
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "bone-rads",
+    naam: "Bone-RADS (incidentele botlaesie)",
+    categorie: "Musculoskeletaal",
+    modaliteit: ["CT", "MR"],
+    bron: "ACR Bone-RADS 2023",
+    beschrijving: "Management van incidentele botlaesies op CT of MRI → categorie 1–3.",
+    triggerKeywords: ["bone-rads", "bonerads", "botlaesie", "bone lesion", "incidentele bot", "botletsel"],
+    inputs: [
+      { id: "cat", label: "Bone-RADS categorie", type: "select",
+        opties: [
+          { v: "1", l: "1 — benigne, geen verdere actie" },
+          { v: "2", l: "2 — waarschijnlijk benigne / indeterminaat → follow-up of aanvullende beeldvorming" },
+          { v: "3", l: "3 — verdacht → biopsie / oncologische verwijzing" },
+        ] },
+    ],
+    compute(v) {
+      const adv = { "1": "Geen verdere actie.", "2": "Aanvullende beeldvorming of follow-up.", "3": "Biopsie / verwijzing." };
+      if (!v.cat) return fout("Selecteer de categorie.");
+      return { ok: true, titel: "Bone-RADS", klasse: "Bone-RADS " + v.cat,
+        items: [{ label: "Categorie", waarde: v.cat }],
+        advies: adv[v.cat] || null,
+        tekst: `Incidentele botlaesie, Bone-RADS ${v.cat}. ${adv[v.cat] || ""}`.trim() };
+    },
+  });
+
+  /* ==========================================================================
+   * NUCLEAIRE GENEESKUNDE
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "mibg-curie",
+    naam: "mIBG Curie-score (neuroblastoom)",
+    categorie: "Nucleaire geneeskunde",
+    modaliteit: ["NM"],
+    bron: "Curie-score (semikwantitatief mIBG)",
+    beschrijving: "Skelet verdeeld in 9 sectoren + zachte weefsels; scoor elk 0–3. Totaal 0–30.",
+    triggerKeywords: ["mibg", "curie", "neuroblastoom", "neuroblastoma", "mibg-scintigrafie"],
+    inputs: [
+      { id: "info", label: "Scoring per segment", type: "info",
+        tekst: "0 = geen opname · 1 = één laesie · 2 = meer dan één laesie · 3 = diffuus (>50% van segment)" },
+      ...["Hoofd", "Thorax", "Wervelkolom", "Bekken", "Bovenarm/schouder L", "Bovenarm/schouder R", "Onderbeen/femur L", "Onderbeen/femur R", "Overig skelet"].map((seg, i) => ({
+        id: "s" + i, label: "Skelet — " + seg, type: "select", default: "0",
+        opties: [{ v: "0", l: "0" }, { v: "1", l: "1" }, { v: "2", l: "2" }, { v: "3", l: "3" }],
+      })),
+      { id: "soft", label: "Zacht weefsel", type: "select", default: "0",
+        opties: [{ v: "0", l: "0" }, { v: "1", l: "1" }, { v: "2", l: "2" }, { v: "3", l: "3" }] },
+    ],
+    compute(v) {
+      let sum = 0;
+      for (let i = 0; i < 9; i++) sum += num(v["s" + i]) || 0;
+      sum += num(v.soft) || 0;
+      return { ok: true, titel: "mIBG Curie-score", klasse: "Curie-score " + sum + "/30",
+        items: [{ label: "Totaalscore", waarde: sum + "/30" }],
+        advies: null,
+        tekst: `mIBG Curie-score ${sum}/30.` };
+    },
+  });
+
+  /* ==========================================================================
+   * VASCULAIR
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "pesi",
+    naam: "PESI (longembolie-ernst)",
+    categorie: "Vasculair",
+    modaliteit: ["CT"],
+    bron: "Pulmonary Embolism Severity Index",
+    beschrijving: "Risicostratificatie bij acute longembolie → klasse I–V (30-dagen­mortaliteit).",
+    triggerKeywords: ["longembolie", "pulmonale embolie", "pe ", "pesi", "embool", "ctpa"],
+    inputs: [
+      { id: "leeftijd", label: "Leeftijd", type: "number", eenheid: "jaar", min: 0 },
+      { id: "man", label: "Mannelijk geslacht (+10)", type: "checkbox" },
+      { id: "kanker", label: "Kanker (+30)", type: "checkbox" },
+      { id: "hartfalen", label: "Chronisch hartfalen (+10)", type: "checkbox" },
+      { id: "long", label: "Chronische longziekte (+10)", type: "checkbox" },
+      { id: "hr110", label: "Hartfrequentie ≥110/min (+20)", type: "checkbox" },
+      { id: "sbp100", label: "Systolische BD <100 mmHg (+30)", type: "checkbox" },
+      { id: "rr30", label: "Ademhalingsfrequentie ≥30/min (+20)", type: "checkbox" },
+      { id: "temp36", label: "Temperatuur <36 °C (+20)", type: "checkbox" },
+      { id: "ams", label: "Veranderde mentale status (+60)", type: "checkbox" },
+      { id: "sao290", label: "SaO₂ <90% (+20)", type: "checkbox" },
+    ],
+    compute(v) {
+      const age = num(v.leeftijd);
+      if (isNaN(age)) return fout("Geef de leeftijd in.");
+      let s = age;
+      s += v.man ? 10 : 0; s += v.kanker ? 30 : 0; s += v.hartfalen ? 10 : 0; s += v.long ? 10 : 0;
+      s += v.hr110 ? 20 : 0; s += v.sbp100 ? 30 : 0; s += v.rr30 ? 20 : 0; s += v.temp36 ? 20 : 0;
+      s += v.ams ? 60 : 0; s += v.sao290 ? 20 : 0;
+      let klasse, mort;
+      if (s <= 65) { klasse = "Klasse I (zeer laag)"; mort = "0–1,6%"; }
+      else if (s <= 85) { klasse = "Klasse II (laag)"; mort = "1,7–3,5%"; }
+      else if (s <= 105) { klasse = "Klasse III (matig)"; mort = "3,2–7,1%"; }
+      else if (s <= 125) { klasse = "Klasse IV (hoog)"; mort = "4,0–11,4%"; }
+      else { klasse = "Klasse V (zeer hoog)"; mort = "10,0–24,5%"; }
+      return { ok: true, titel: "PESI", klasse: klasse,
+        items: [{ label: "Totaalscore", waarde: String(s) }, { label: "30-dagenmortaliteit", waarde: mort }],
+        advies: s <= 85 ? "Laag risico — overweeg (ambulante) behandeling volgens beleid." : "Verhoogd risico — klinische observatie/behandeling.",
+        tekst: `PESI-score ${s} — ${klasse}, geschatte 30-dagenmortaliteit ${mort}.` };
+    },
+  });
+
+  CALCULATORS.push({
+    id: "villalta",
+    naam: "Villalta-score (PTS)",
+    categorie: "Vasculair",
+    modaliteit: ["ECHO"],
+    bron: "Villalta-schaal (post-trombotisch syndroom)",
+    beschrijving: "5 symptomen + 6 klinische tekenen (elk 0–3); ulcus = ernstig.",
+    triggerKeywords: ["villalta", "post-trombotisch", "pts", "veneuze insufficiëntie", "post-thrombotic"],
+    inputs: [
+      ...[["pijn", "Pijn"], ["kramp", "Krampen"], ["zwaarte", "Zwaartegevoel"], ["paresthesie", "Paresthesie"], ["jeuk", "Pruritus"],
+      ["oedeem", "Pretibiaal oedeem"], ["induratie", "Huidinduratie"], ["pigment", "Hyperpigmentatie"], ["roodheid", "Roodheid"], ["ectasie", "Veneuze ectasie"], ["compressie", "Pijn bij kuitcompressie"]].map(([id, label]) => ({
+        id, label, type: "select", default: "0",
+        opties: [{ v: "0", l: "0 — afwezig" }, { v: "1", l: "1 — mild" }, { v: "2", l: "2 — matig" }, { v: "3", l: "3 — ernstig" }],
+      })),
+      { id: "ulcus", label: "Veneus ulcus aanwezig", type: "checkbox" },
+    ],
+    compute(v) {
+      const keys = ["pijn", "kramp", "zwaarte", "paresthesie", "jeuk", "oedeem", "induratie", "pigment", "roodheid", "ectasie", "compressie"];
+      let s = 0; for (const k of keys) s += num(v[k]) || 0;
+      let klasse;
+      if (v.ulcus || s >= 15) klasse = "Ernstig PTS";
+      else if (s >= 10) klasse = "Matig PTS";
+      else if (s >= 5) klasse = "Mild PTS";
+      else klasse = "Geen PTS";
+      return { ok: true, titel: "Villalta-score", klasse: klasse + (v.ulcus ? " (ulcus)" : ""),
+        items: [{ label: "Totaalscore", waarde: s + "/33" }, ...(v.ulcus ? [{ label: "Ulcus", waarde: "aanwezig" }] : [])],
+        advies: null,
+        tekst: `Villalta-score ${s}${v.ulcus ? " met veneus ulcus" : ""} — ${klasse.toLowerCase()}.` };
+    },
+  });
+
+  /* ==========================================================================
+   * PEDIATRISCH
+   * ======================================================================== */
+
+  CALCULATORS.push({
+    id: "ped-spleen-length",
+    naam: "Miltlengte pediatrisch (percentiel)",
+    categorie: "Pediatrisch",
+    modaliteit: ["ECHO"],
+    bron: "Rosenberg et al. (sonografische bovengrens naar leeftijd)",
+    beschrijving: "Vergelijkt gemeten miltlengte met de leeftijdsgebonden bovengrens van normaal.",
+    triggerKeywords: ["milt", "spleen", "pediatrisch", "splenomegalie", "kind milt"],
+    inputs: [
+      { id: "leeftijd", label: "Leeftijd", type: "number", eenheid: "jaar", min: 0, step: 0.1, help: "Gebruik decimalen voor maanden (bv. 0,5)" },
+      { id: "lengte", label: "Gemeten miltlengte", type: "number", eenheid: "cm", min: 0, step: 0.1 },
+    ],
+    compute(v) {
+      const a = num(v.leeftijd), len = num(v.lengte);
+      if (isNaN(a) || isNaN(len)) return fout("Geef leeftijd en miltlengte in.");
+      // bovengrens normaal (cm) naar leeftijd (Rosenberg 1991)
+      let uln;
+      if (a < 0.25) uln = 6.0;
+      else if (a < 0.5) uln = 6.5;
+      else if (a < 1) uln = 7.0;
+      else if (a < 2) uln = 8.0;
+      else if (a < 4) uln = 9.0;
+      else if (a < 6) uln = 9.5;
+      else if (a < 8) uln = 10.0;
+      else if (a < 10) uln = 11.0;
+      else if (a < 12) uln = 11.5;
+      else if (a < 15) uln = 12.0;
+      else uln = 12.0; // vrouwen ~12, mannen ~13 (volwassen)
+      const groot = len > uln;
+      return { ok: true, titel: "Miltlengte pediatrisch", klasse: groot ? "Boven bovengrens (splenomegalie)" : "Binnen norm",
+        items: [{ label: "Gemeten lengte", waarde: r1(len) + " cm" }, { label: "Bovengrens (leeftijd)", waarde: uln + " cm" }],
+        advies: groot ? "Miltlengte boven leeftijdsgebonden bovengrens → splenomegalie." : null,
+        tekst: `Miltlengte ${r1(len)} cm bij ${a} jaar (bovengrens ${uln} cm) — ${groot ? "splenomegalie" : "binnen de norm"}.` };
+    },
+  });
+
+  // expose
+  const api = {
+    version: "1.0",
+    calculators: CALCULATORS,
+    all() { return CALCULATORS.slice(); },
+    byId(id) { return CALCULATORS.find((c) => c.id === id) || null; },
+    byModality(mod) { return CALCULATORS.filter((c) => (c.modaliteit || []).includes(mod)); },
+    categories() { return [...new Set(CALCULATORS.map((c) => c.categorie))]; },
+    /* Tekstscan: geeft array van {calc, hits[]} terug, gesorteerd op aantal hits.
+       opts.restrictIds = beperk tot deze calc-id's (bv. gekoppeld aan examentype). */
+    detect(text, opts) {
+      opts = opts || {};
+      const t = (text || "").toLowerCase();
+      if (!t.trim()) return [];
+      let pool = CALCULATORS;
+      if (opts.restrictIds && opts.restrictIds.length) pool = pool.filter((c) => opts.restrictIds.includes(c.id));
+      const out = [];
+      for (const c of pool) {
+        const hits = (c.triggerKeywords || []).filter((k) => t.includes(k.toLowerCase()));
+        if (hits.length) out.push({ calc: c, hits });
+      }
+      out.sort((a, b) => b.hits.length - a.hits.length);
+      return out;
+    },
+  };
+
+  if (typeof window !== "undefined") window.RADCALC = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
+})();
