@@ -733,21 +733,27 @@
     naam: "C-RADS (CT-colografie)",
     categorie: "Body — gastro-intestinaal",
     modaliteit: ["CT"],
-    bron: "CT Colonography Reporting and Data System",
-    beschrijving: "Colonische (C0–C4) en extracolonische (E0–E4) categorisering.",
+    bron: "C-RADS v2023 (CT Colonography Reporting and Data System)",
+    beschrijving: "Auto-classificatie van de colonische bevinding (C0–C4, met C2a/C2b) op basis van poliepgrootte/aantal, plus aparte extracolonische categorie (E0–E4).",
     triggerKeywords: ["c-rads", "crads", "ct-colografie", "ct colonography", "virtuele colo", "coloscopie"],
     inputs: [
-      { id: "colon", label: "Colonische bevinding", type: "select",
+      { id: "bevinding", label: "Colonische bevinding", type: "select",
         opties: [
-          { v: "C0", l: "C0 — inadequaat / in afwachting" },
-          { v: "C1", l: "C1 — normaal / benigne" },
-          { v: "C2", l: "C2 — intermediaire poliep (6–9 mm, <3)" },
-          { v: "C3", l: "C3 — poliep ≥10 mm of ≥3 van 6–9 mm" },
-          { v: "C4", l: "C4 — vermoedelijk maligne massa" },
+          { v: "inadequaat", l: "Inadequaat onderzoek / in afwachting van vergelijking (C0)" },
+          { v: "normaal", l: "Normaal colon / benigne (geen poliep ≥6 mm, lipoom, inverted diverticulum, nonneoplastisch)" },
+          { v: "poliep", l: "Poliep(en) — classificeer op grootte/aantal" },
+          { v: "diverticulair", l: "Waarschijnlijk benigne diverticulaire bevinding (mass-like myochosis/hypertrofie/strictuur)" },
+          { v: "maligne", l: "Vermoedelijk maligne massa (≥30 mm polypoïd, lumencompromittering of extracolonische invasie)" },
         ] },
-      { id: "extra", label: "Extracolonische bevinding", type: "select",
+      { id: "grootte", label: "Grootste poliep / laesie", type: "number", eenheid: "mm", min: 0, step: 0.1 },
+      { id: "aantal69", label: "Aantal poliepen van 6–9 mm", type: "select", default: "0",
+        opties: [{ v: "0", l: "0" }, { v: "1-2", l: "1–2 (minder dan 3)" }, { v: "3+", l: "≥3" }] },
+      { id: "c2bzeker", label: "Diverticulaire bevinding — zekerheid", type: "select", default: "benigne",
+        opties: [{ v: "benigne", l: "Waarschijnlijk benigne" }, { v: "onzeker", l: "Onzeker benigne" }] },
+      { id: "extra", label: "Extracolonische bevinding (E)", type: "select", default: "",
         opties: [
-          { v: "E0", l: "E0 — beperkt onderzoek" },
+          { v: "", l: "Niet gescoord" },
+          { v: "E0", l: "E0 — beperkt/inadequaat" },
           { v: "E1", l: "E1 — normaal / anatomische variant" },
           { v: "E2", l: "E2 — klinisch onbelangrijk" },
           { v: "E3", l: "E3 — waarschijnlijk onbelangrijk, incompleet gekarakteriseerd" },
@@ -755,12 +761,36 @@
         ] },
     ],
     compute(v) {
-      if (!v.colon) return fout("Selecteer de colonische categorie.");
-      const adviesMap = { C0: "Onvolledig — herhaal/aanvullend onderzoek.", C1: "Routine screening.", C2: "Surveillance/coloscopie volgens beleid.", C3: "Coloscopie aanbevolen.", C4: "Coloscopie/oncologische verwijzing." };
-      return { ok: true, titel: "C-RADS", klasse: v.colon + (v.extra ? " / " + v.extra : ""),
-        items: [{ label: "Colon", waarde: v.colon }, ...(v.extra ? [{ label: "Extracolonisch", waarde: v.extra }] : [])],
-        advies: adviesMap[v.colon] || null,
-        tekst: `C-RADS ${v.colon}${v.extra ? " / " + v.extra : ""}. ${adviesMap[v.colon] || ""}`.trim() };
+      if (!v.bevinding) return fout("Selecteer de colonische bevinding.");
+      const d = num(v.grootte);
+      let c, label;
+      if (v.bevinding === "inadequaat") { c = "C0"; label = "inadequaat onderzoek"; }
+      else if (v.bevinding === "normaal") { c = "C1"; label = "normaal colon / benigne"; }
+      else if (v.bevinding === "diverticulair") { c = "C2b"; label = "waarschijnlijk benigne diverticulaire bevinding"; }
+      else if (v.bevinding === "maligne") { c = "C4"; label = "vermoedelijk maligne massa"; }
+      else { // poliep
+        if (!isNaN(d) && d >= 30) { c = "C4"; label = "polypoïde massa ≥30 mm"; }
+        else if (!isNaN(d) && d >= 10) { c = "C3"; label = "poliep ≥10 mm"; }
+        else if (!isNaN(d) && d >= 6) {
+          if (v.aantal69 === "3+") { c = "C3"; label = "≥3 poliepen van 6–9 mm"; }
+          else { c = "C2a"; label = "intermediaire poliep 6–9 mm, <3 in aantal"; }
+        } else { c = "C1"; label = "geen poliep ≥6 mm"; }
+      }
+      const adviesMap = {
+        C0: "In afwachting van vergelijking; herhaal CTC of overweeg alternatieve screeningstest.",
+        C1: "Routine screening (elke 5–10 jaar).",
+        C2a: "Herhaal CTC na 3 jaar of coloscopie-verwijzing (poliepectomie te overwegen).",
+        C2b: v.c2bzeker === "onzeker" ? "Onzeker benigne: herhaal CTC binnen ≤3 jaar." : "Waarschijnlijk benigne: herhaal CTC na 5 jaar.",
+        C3: "Coloscopie-verwijzing aanbevolen.",
+        C4: "Coloscopie + chirurgische/oncologische verwijzing aanbevolen.",
+      };
+      return { ok: true, titel: "C-RADS v2023", klasse: c + (v.extra ? " / " + v.extra : ""),
+        items: [
+          { label: "Colon", waarde: c + " — " + label },
+          ...(v.extra ? [{ label: "Extracolonisch", waarde: v.extra }] : []),
+        ],
+        advies: adviesMap[c] || null,
+        tekst: `C-RADS ${c}${v.extra ? " / " + v.extra : ""} (${label}). ${adviesMap[c] || ""}`.trim() };
     },
   });
 
@@ -795,33 +825,53 @@
     naam: "Bosniak 2019 (cysteuze niermassa)",
     categorie: "Body — genito-urinair",
     modaliteit: ["CT", "MR"],
-    bron: "Bosniak-classificatie versie 2019",
-    beschrijving: "Classificatie van cysteuze niermassa's → maligniteitsrisico + beleid.",
+    bron: "Bosniak-classificatie versie 2019 (CT)",
+    beschrijving: "Feature-gebaseerde classificatie van een cysteuze niermassa (CT). De meest verdachte feature (wand, septa of noduli) bepaalt de klasse. Wanddikte: dun ≤2 mm · minimaal verdikt 3 mm · dik ≥4 mm.",
     triggerKeywords: ["bosniak", "cysteuze niermassa", "niercyste", "renale cyste", "complexe cyste"],
     inputs: [
-      { id: "klasse", label: "Bosniak-klasse", type: "select",
+      { id: "wand", label: "Wand", type: "select",
         opties: [
-          { v: "I", l: "I — eenvoudige cyste (dunne gladde wand, geen septa/enhancement)" },
-          { v: "II", l: "II — minimaal complex (enkele dunne septa / fijne calcificatie)" },
-          { v: "IIF", l: "IIF — meerdere dunne septa of minimale wandverdikking" },
-          { v: "III", l: "III — dikke/irregulaire wand of septa met enhancement" },
-          { v: "IV", l: "IV — enhancing weke-delen-noduli" },
+          { v: "1", l: "Glad, dun (≤2 mm) — mag aankleuren" },
+          { v: "iif", l: "Glad, minimaal verdikt (3 mm), aankleurend" },
+          { v: "iii", l: "Dik (≥4 mm) of irregulair (≤3 mm obtuus-begrensde protrusie)" },
         ] },
+      { id: "septa", label: "Septa", type: "select", default: "0",
+        opties: [
+          { v: "0", l: "Geen septa" },
+          { v: "ii", l: "1–3 dunne (≤2 mm) aankleurende septa" },
+          { v: "iif4", l: "≥4 dunne (≤2 mm) aankleurende septa" },
+          { v: "iif3", l: "Glad, minimaal verdikt (3 mm) septum/septa" },
+          { v: "iii", l: "Dik (≥4 mm) of irregulair (≤3 mm obtuus-begrensde protrusie)" },
+        ] },
+      { id: "nodule", label: "Noduli / protrusies", type: "select", default: "0",
+        opties: [
+          { v: "0", l: "Geen" },
+          { v: "iii", l: "Obtuus-begrensde ≤3 mm convexe protrusie (wand/septa)" },
+          { v: "iv", l: "Aankleurend noduul (≥4 mm obtuus-begrensde protrusie, of protrusie van elke grootte met scherpe marges)" },
+        ] },
+      { id: "typeII", label: "Homogene type-II massa (≥70 HU blanco / 21–30 HU PVP / niet-aankleurend >20 HU / te klein te karakteriseren)", type: "checkbox" },
     ],
     compute(v) {
+      if (!v.wand) return fout("Selecteer minstens de wandkenmerken.");
+      // klasse-rang: I=1, II=2, IIF=2.5, III=3, IV=4 — neem de meest verdachte feature
+      let rang = 1;
+      const wandR = { "1": 1, "iif": 2.5, "iii": 3 }[v.wand] || 1;
+      const septaR = { "0": 1, "ii": 2, "iif4": 2.5, "iif3": 2.5, "iii": 3 }[v.septa] || 1;
+      const nodR = { "0": 1, "iii": 3, "iv": 4 }[v.nodule] || 1;
+      rang = Math.max(wandR, septaR, nodR, v.typeII ? 2 : 1);
+      const klasse = rang >= 4 ? "IV" : rang >= 3 ? "III" : rang >= 2.5 ? "IIF" : rang >= 2 ? "II" : "I";
       const map = {
-        I: { risk: "~0%", beleid: "Geen follow-up.", },
-        II: { risk: "~0%", beleid: "Geen follow-up.", },
-        IIF: { risk: "~5%", beleid: "Follow-up beeldvorming (bv. 6 mnd, dan jaarlijks tot 5 jaar)." },
+        I:   { risk: "0% (benigne)", beleid: "Geen follow-up." },
+        II:  { risk: "<1%", beleid: "Geen follow-up." },
+        IIF: { risk: "~5% (1–10%)", beleid: "Follow-up beeldvorming (bv. 6 mnd, dan jaarlijks tot 5 jaar)." },
         III: { risk: "~50%", beleid: "Urologische verwijzing — resectie/ablatie of actieve surveillance." },
-        IV: { risk: "~90%", beleid: "Urologische verwijzing — behandeling." },
+        IV:  { risk: "~90%", beleid: "Urologische verwijzing — behandeling." },
       };
-      const m = map[v.klasse];
-      if (!m) return fout("Selecteer de Bosniak-klasse.");
-      return { ok: true, titel: "Bosniak 2019", klasse: "Bosniak " + v.klasse,
-        items: [{ label: "Klasse", waarde: v.klasse }, { label: "Maligniteitsrisico", waarde: m.risk }],
+      const m = map[klasse];
+      return { ok: true, titel: "Bosniak 2019", klasse: "Bosniak " + klasse,
+        items: [{ label: "Klasse", waarde: klasse }, { label: "Maligniteitsrisico", waarde: m.risk }],
         advies: m.beleid,
-        tekst: `Cysteuze niermassa, Bosniak ${v.klasse} (maligniteitsrisico ${m.risk}). ${m.beleid}` };
+        tekst: `Cysteuze niermassa, Bosniak ${klasse} (maligniteitsrisico ${m.risk}). ${m.beleid}` };
     },
   });
 
@@ -924,19 +974,31 @@
     categorie: "Body — genito-urinair",
     modaliteit: ["MR"],
     bron: "PI-RADS v2.1",
-    beschrijving: "Bepaalt de PI-RADS-assessmentcategorie op basis van zone, dominante sequentie en DCE.",
+    beschrijving: "PI-RADS-assessmentcategorie. PZ: DWI/ADC dominant (DCE-positief tilt DWI 3 → 4). TZ: T2WI dominant (DWI=5 tilt T2 3 → 4). Score 5 = zoals 4 maar ≥1,5 cm of duidelijke extraprostatische extensie.",
     triggerKeywords: ["pi-rads", "pirads", "prostaat mri", "prostaatkanker", "mpmri prostaat", "prostaatcarcinoom"],
     inputs: [
       { id: "zone", label: "Zone van de laesie", type: "select",
-        opties: [{ v: "pz", l: "Perifere zone (PZ) — DWI dominant" }, { v: "tz", l: "Transitiezone (TZ) — T2 dominant" }] },
-      { id: "dwi", label: "DWI-score (PZ)", type: "select",
-        opties: [{ v: "1", l: "1" }, { v: "2", l: "2" }, { v: "3", l: "3" }, { v: "4", l: "4" }, { v: "5", l: "5" }] },
-      { id: "dce", label: "DCE (enkel PZ, bij DWI=3)", type: "select", default: "neg",
-        opties: [{ v: "neg", l: "Negatief" }, { v: "pos", l: "Positief (focale vroege enhancement)" }] },
-      { id: "t2", label: "T2-score (TZ)", type: "select",
-        opties: [{ v: "1", l: "1" }, { v: "2", l: "2" }, { v: "3", l: "3" }, { v: "4", l: "4" }, { v: "5", l: "5" }] },
-      { id: "dwiTz", label: "DWI-score (TZ, bij T2=3)", type: "select", default: "",
-        opties: [{ v: "", l: "n.v.t." }, { v: "le4", l: "≤4" }, { v: "5", l: "5" }] },
+        opties: [{ v: "pz", l: "Perifere zone (PZ) — DWI/ADC dominant" }, { v: "tz", l: "Transitiezone (TZ) — T2WI dominant" }] },
+      { id: "dwi", label: "DWI/ADC-score (perifere zone)", type: "select",
+        opties: [
+          { v: "1", l: "1 — DWI/ADC normaal" },
+          { v: "2", l: "2 — onscherp hypointens (indistinct)" },
+          { v: "3", l: "3 — ADC focaal mild/matig hypointens, DWI iso/mild hyperintens" },
+          { v: "4", l: "4 — ADC focaal duidelijk hypointens, DWI duidelijk hyperintens (<1,5 cm)" },
+          { v: "5", l: "5 — zoals 4 maar ≥1,5 cm of duidelijke EPE" },
+        ] },
+      { id: "dce", label: "DCE (enkel PZ, relevant bij DWI=3)", type: "select", default: "neg",
+        opties: [{ v: "neg", l: "Negatief (DCE−)" }, { v: "pos", l: "Positief (DCE+, focale vroege enhancement)" }] },
+      { id: "t2", label: "T2WI-score (transitiezone)", type: "select",
+        opties: [
+          { v: "1", l: "1 — normaal" },
+          { v: "2", l: "2 — omschreven hypointens of heterogeen ingekapseld noduul (BPH)" },
+          { v: "3", l: "3 — heterogeen signaal met onscherpe marges (valt niet in andere categorie)" },
+          { v: "4", l: "4 — lenticulair/niet-omschreven, homogeen matig hypointens, <1,5 cm" },
+          { v: "5", l: "5 — zoals 4 maar ≥1,5 cm of duidelijke EPE" },
+        ] },
+      { id: "dwiTz", label: "DWI-score (enkel TZ, relevant bij T2=3)", type: "select", default: "",
+        opties: [{ v: "", l: "n.v.t." }, { v: "le4", l: "DWI ≤4" }, { v: "5", l: "DWI = 5" }] },
     ],
     compute(v) {
       let cat;
