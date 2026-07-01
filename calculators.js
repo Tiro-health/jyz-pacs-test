@@ -1351,7 +1351,7 @@
     beschrijving: "Morfologische classificatie van thoracolumbale wervelfracturen (type A compressie / B distractie / C translatie + subtype), met optionele neurologische (N) en case-specifieke (M) modifiers.",
     triggerKeywords: ["ao spine", "wervelfractuur", "burst fractuur", "compressiefractuur", "thoracolumbaal", "vertebrale fractuur"],
     inputs: [
-      { id: "type", label: "Morfologisch type / subtype", type: "select", opties: AO_TL_OPTS },
+      { id: "type", label: "Morfologisch type / subtype", type: "visual-select", visual: "aospine-tl", opties: AO_TL_OPTS },
       { id: "n", label: "Neurologische modifier (N)", type: "select", default: "",
         opties: [
           { v: "", l: "Niet gescoord" },
@@ -1761,6 +1761,70 @@
     },
   });
 
+  // ── Schematische figuren (zelf-gegenereerde SVG, geen externe/auteursrechtelijke beelden) ──
+  function aoSpineTLSvg(type) {
+    const BONE = "#efe4c8", EDGE = "#a8926a", DISC = "#cfe0ea", RED = "#dc2626";
+    const yT = 12, yM = 60, yB = 108, bh = 30;
+    const shift = type === "C" ? 20 : 0;
+    const vert = (y, dx) => {
+      const bx = 14 + dx, bw = 66;
+      return `<rect x="${bx}" y="${y}" width="${bw}" height="${bh}" rx="5" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +
+        `<path d="M${bx + bw} ${y + 4} h16 a4 4 0 0 1 4 4 v14 a4 4 0 0 1 -4 4 h-16 z" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +
+        `<path d="M${bx + bw + 18} ${y + 12} l14 9" stroke="${EDGE}" stroke-width="3.5" stroke-linecap="round"/>`;
+    };
+    const p = [];
+    p.push(`<rect x="14" y="${yT + bh}" width="66" height="${yM - yT - bh}" fill="${DISC}" opacity="0.7"/>`);
+    p.push(`<rect x="14" y="${yM + bh}" width="66" height="${yB - yM - bh}" fill="${DISC}" opacity="0.7"/>`);
+    p.push(vert(yB, 0), vert(yM, shift), vert(yT, shift));
+    const cx = 14, cw = 66, mT = yM, mB = yM + bh, mMid = yM + bh / 2, post = cx + cw;
+    const L = (x1, y1, x2, y2, w = 3) => `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${RED}" stroke-width="${w}" stroke-linecap="round"/>`;
+    const r = [];
+    switch (type) {
+      case "A0": // minor: proc. spinosus/transversus fractuur — duidelijk fragment
+        r.push(L(post + 30, mMid - 2, post + 22, mMid + 12, 3));
+        r.push(`<path d="M${post + 26} ${mMid + 10} l10 3 l-4 9 z" fill="${RED}" opacity="0.85"/>`);
+        break;
+      case "A1":
+        r.push(`<path d="M${cx} ${mT} L${cx + cw} ${mT} L${cx + cw} ${mT + 4} L${cx} ${mT + 12} Z" fill="${RED}" opacity="0.25"/>`);
+        r.push(L(cx, mT + 12, cx + cw, mT + 2));
+        break;
+      case "A2":
+        r.push(L(cx + cw / 2, mT, cx + cw / 2, mB));
+        break;
+      case "A3":
+        r.push(L(cx, mT + 2, cx + cw, mT + 2));
+        r.push(L(cx + 12, mT + 2, cx + 26, mMid, 2.5));
+        r.push(`<path d="M${post - 6} ${mT + 4} l10 8 l-10 8 z" fill="${RED}" opacity="0.8"/>`);
+        break;
+      case "A4":
+        r.push(L(cx, mT + 2, cx + cw, mT + 2));
+        r.push(L(cx, mB - 2, cx + cw, mB - 2));
+        r.push(L(cx + 22, mT + 4, cx + 30, mB - 4, 2));
+        r.push(L(cx + 44, mT + 4, cx + 38, mB - 4, 2));
+        r.push(`<path d="M${post - 6} ${mT + 6} l12 9 l-12 9 z" fill="${RED}" opacity="0.8"/>`);
+        break;
+      case "B1":
+        r.push(L(cx - 2, mMid, post + 34, mMid, 3.2));
+        break;
+      case "B2": // posterieure tension band: prominente interspinale gap + gescheurd ligament
+        r.push(`<path d="M${post + 24} ${yT + bh + 2} L${post + 30} ${yM + 10}" stroke="${RED}" stroke-width="2" stroke-dasharray="3 3"/>`);
+        r.push(L(post + 18, yT + bh + 4, post + 30, yT + bh + 4, 3));
+        r.push(L(post + 20, yM + 8, post + 32, yM + 8, 3));
+        r.push(`<path d="M${post + 26} ${yT + bh + 8} l-7 5 l7 5 M${post + 26} ${yM + 4} l-7 -5 l7 -5" fill="none" stroke="${RED}" stroke-width="2"/>`);
+        break;
+      case "B3":
+        r.push(`<path d="M${cx} ${mT} L${cx + 24} ${mT} L${cx + 6} ${mT - 12} Z" fill="${RED}" opacity="0.3"/>`);
+        r.push(L(cx, mT, cx + 4, mT - 14, 3));
+        break;
+      case "C":
+        r.push(`<path d="M${cx + 4} ${mB + 8} h${shift + 8}" stroke="${RED}" stroke-width="3" marker-end="url(#aoar)"/>`);
+        break;
+    }
+    return `<svg viewBox="0 0 150 152" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">` +
+      `<defs><marker id="aoar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="${RED}"/></marker></defs>` +
+      p.join("") + r.join("") + `</svg>`;
+  }
+
   // expose
   const api = {
     version: "1.0",
@@ -1769,6 +1833,11 @@
     byId(id) { return CALCULATORS.find((c) => c.id === id) || null; },
     byModality(mod) { return CALCULATORS.filter((c) => (c.modaliteit || []).includes(mod)); },
     categories() { return [...new Set(CALCULATORS.map((c) => c.categorie))]; },
+    /* Zelf-gegenereerde schematische SVG voor een visual-select optie. */
+    svg(kind, value) {
+      if (kind === "aospine-tl") return aoSpineTLSvg(value);
+      return "";
+    },
     /* Tekstscan: geeft array van {calc, hits[]} terug, gesorteerd op aantal hits.
        opts.restrictIds = beperk tot deze calc-id's (bv. gekoppeld aan examentype). */
     detect(text, opts) {

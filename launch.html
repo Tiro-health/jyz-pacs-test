@@ -2180,6 +2180,18 @@
                     ).join('');
                     return `<div>${lbl(inp.label)}<div class="grid grid-cols-2 gap-1.5">${boxes}</div>${help}</div>`;
                 }
+                if (inp.type === 'visual-select') {
+                    const RC = window.RADCALC;
+                    const cards = (inp.opties || []).map(o => {
+                        const svg = (RC && RC.svg) ? RC.svg(inp.visual, o.v) : '';
+                        const short = String(o.l).replace(/ — .*/, '');
+                        return `<button type="button" class="calc-visual-opt flex flex-col items-center gap-1 rounded-md border-2 border-neutral-200 dark:border-slate-700 hover:border-cyan-400 bg-white dark:bg-background p-1.5 transition-colors" data-iid="${inp.id}" data-val="${String(o.v).replace(/"/g,'&quot;')}" title="${String(o.l).replace(/"/g,'&quot;')}">
+                            <span class="block w-full" style="height:78px">${svg}</span>
+                            <span class="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">${short}</span>
+                        </button>`;
+                    }).join('');
+                    return `<div>${lbl(inp.label)}<div class="grid grid-cols-3 gap-1.5" data-visual-iid="${inp.id}">${cards}</div><input type="hidden" id="${id}" class="calc-input" data-iid="${inp.id}" value="">${help}</div>`;
+                }
                 return '';
             }
 
@@ -2258,6 +2270,21 @@
                 if (inputs) {
                     inputs.addEventListener('input', computeCalc);
                     inputs.addEventListener('change', computeCalc);
+                    // Visual-select figuurkaarten: klik selecteert (single-select per input)
+                    inputs.addEventListener('click', (e) => {
+                        const card = e.target.closest('.calc-visual-opt');
+                        if (!card) return;
+                        const iid = card.dataset.iid;
+                        inputs.querySelectorAll(`.calc-visual-opt[data-iid="${iid}"]`).forEach(c => {
+                            c.classList.remove('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                            c.classList.add('border-neutral-200', 'dark:border-slate-700');
+                        });
+                        card.classList.add('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                        card.classList.remove('border-neutral-200', 'dark:border-slate-700');
+                        const hidden = document.getElementById('calc-in-' + iid);
+                        if (hidden) hidden.value = card.dataset.val;
+                        computeCalc();
+                    });
                 }
                 const picker = document.getElementById('calc-picker');
                 if (picker) picker.addEventListener('change', () => { _calcCurrentKey = picker.value; renderCalcForm(picker.value); });
