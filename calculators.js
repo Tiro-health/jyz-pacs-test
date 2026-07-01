@@ -1473,7 +1473,7 @@
     beschrijving: "Classificatie van subaxiale cervicale letsels (C3–C7): type A compressie, B tension band, C translatie, F facetletsel; BL-modifier voor bilateraal facetletsel; optionele N-modifier.",
     triggerKeywords: ["ao spine", "subaxiaal", "cervicale fractuur", "facetfractuur", "facet", "wervelfractuur", "c3", "c4", "c5", "c6", "c7"],
     inputs: [
-      { id: "type", label: "Type / subtype", type: "select", opties: AO_SUB_OPTS },
+      { id: "type", label: "Type / subtype", type: "visual-select", visual: "aospine-subaxial", opties: AO_SUB_OPTS },
       { id: "bl", label: "BL — bilateraal letsel (bv. bilateraal facet)", type: "checkbox" },
       { id: "n", label: "Neurologische modifier (N)", type: "select", default: "",
         opties: [
@@ -1862,6 +1862,25 @@
     return "";
   }
 
+  // AO Spine subaxiaal: A/B/C hergebruiken TL-morfologie; F1–F4 = facetletsel-schema's.
+  function aoSpineSubaxialSvg(value) {
+    if (["A0", "A1", "A2", "A3", "A4", "B1", "B2", "B3", "C"].includes(value)) return aoSpineTLSvg(value);
+    const BONE = "#efe4c8", EDGE = "#a8926a", RED = "#dc2626";
+    const mass = (y, dx) => { const x = 52 + dx; return `<path d="M${x} ${y} L${x + 40} ${y} L${x + 32} ${y + 28} L${x - 8} ${y + 28} Z" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>`; };
+    const L = (x1, y1, x2, y2, w = 3) => `<path d="M${x1} ${y1} L${x2} ${y2}" stroke="${RED}" stroke-width="${w}" stroke-linecap="round"/>`;
+    const yT = 14, yM = 54, yB = 94, mh = 28, mx = 52, mw = 40;
+    const shift = value === "F4" ? -16 : 0;
+    const p = [mass(yB, 0), mass(yM, shift), mass(yT, shift)];
+    const r = [];
+    if (value === "F1") r.push(L(mx + 6, yM + 6, mx + 30, yM + 22, 3));
+    else if (value === "F2") { r.push(L(mx + 4, yM + 5, mx + 28, yM + 20, 3)); r.push(`<path d="M${mx + 24} ${yM + 16} l10 2 l-3 9 z" fill="${RED}" opacity="0.85"/>`); }
+    else if (value === "F3") { r.push(L(mx - 8, yM - 2, mx + 40, yM - 2, 3)); r.push(L(mx - 8, yM + mh + 2, mx + 40, yM + mh + 2, 3)); }
+    else if (value === "F4") { r.push(`<path d="M${mx + 20} ${yM + mh + 6} l-${16 + 6} 0" stroke="${RED}" stroke-width="3" marker-end="url(#subar)"/>`); }
+    return `<svg viewBox="0 0 150 152" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">` +
+      `<defs><marker id="subar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6 z" fill="${RED}"/></marker></defs>` +
+      p.join("") + r.join("") + `</svg>`;
+  }
+
   // expose
   const api = {
     version: "1.0",
@@ -1873,6 +1892,7 @@
     /* Zelf-gegenereerde schematische SVG voor een visual-select optie. */
     svg(kind, value) {
       if (kind === "aospine-tl") return aoSpineTLSvg(value);
+      if (kind === "aospine-subaxial") return aoSpineSubaxialSvg(value);
       if (kind && kind.indexOf("bosniak-") === 0) return bosniakSvg(kind, value);
       return "";
     },
