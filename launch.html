@@ -2221,11 +2221,26 @@
             }
 
             // Strip any AI-returned HTML markup and extract clean corrected text
+            // Modaliteits-aanduidingen: een regel die met een van deze woorden begint én op ":" eindigt,
+            // is de titel van het type onderzoek → volledig in HOOFDLETTERS zetten.
+            // \b na het woord matcht ook vóór een "-" (bv. "RX-abdomen:"); /i vangt kleine letters.
+            const _EXAM_MODALITEIT = /^\s*(RX|CT|CTA|MR|MRI|MRA|NMR|ECHO|ECHOGRAFIE|US|DOPPLER|MAMMO|MAMMOGRAFIE|TOMOSYNTHESE|PET|PET-CT|SPECT|SCINTIGRAFIE|BOTSCAN|DEXA|DOORLICHTING|SCOPIE|ANGIO|ARTROGRAFIE|MYELOGRAFIE|HSG|IVU)\b/i;
+            function uppercaseExamHeadings(text) {
+                if (!text) return text;
+                return text.split('\n').map(line => {
+                    const trimmedEnd = line.replace(/\s+$/, '');
+                    // Alleen titelregels die eindigen op ":" en beginnen met een modaliteit (niet ".", niet midden in een zin)
+                    if (/:$/.test(trimmedEnd) && _EXAM_MODALITEIT.test(line)) return line.toUpperCase();
+                    return line;
+                }).join('\n');
+            }
+
             function extractCleanCorrection(text) {
-                return text
+                const cleaned = text
                     .replace(/<del[^>]*>[\s\S]*?<\/del>/gi, '')   // remove deletions
                     .replace(/<ins[^>]*>([\s\S]*?)<\/ins>/gi, '$1') // keep insertions
                     .replace(/<[^>]+>/g, '');                        // strip remaining tags
+                return uppercaseExamHeadings(cleaned);              // type onderzoek → HOOFDLETTERS
             }
 
             function computeDiffHTML(origText, corrText) {
