@@ -1115,7 +1115,7 @@
     beschrijving: "Auto-classificatie bij low-dose CT longkankerscreening op basis van noduletype, status (baseline/nieuw/groeiend) en grootte. Grootte = gemiddelde van lange en korte as. Groei = >1,5 mm toename per 12 mnd.",
     triggerKeywords: ["lung-rads", "lungrads", "longkankerscreening", "lcs", "low-dose ct", "screening long"],
     inputs: [
-      { id: "type", label: "Noduletype / bevinding", type: "select",
+      { id: "type", label: "Noduletype / bevinding", type: "visual-select", visual: "lungrads-type",
         opties: [
           { v: "geen", l: "Geen nodulus / duidelijk benigne (volledige/centrale/popcorn/concentrische calcificatie of vet)" },
           { v: "solid", l: "Solide nodulus" },
@@ -1881,6 +1881,30 @@
       p.join("") + r.join("") + `</svg>`;
   }
 
+  // Lung-RADS noduletypes: schematische nodule-figuren (compositie is het onderscheid).
+  function lungRadsTypeSvg(value) {
+    const LUNG = "#eef2f7", SOLID = "#64748b", CORE = "#334155", GGN = "#cbd5e1", WALL = "#475569";
+    const cx = 75, cy = 78;
+    const wrap = (inner) => `<svg viewBox="0 0 150 152" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"><rect x="8" y="10" width="134" height="130" rx="14" fill="${LUNG}"/>${inner}</svg>`;
+    switch (value) {
+      case "geen": // benigne: kleine nodule met centrale/popcorn-calcificatie
+        return wrap(`<circle cx="${cx}" cy="${cy}" r="17" fill="${SOLID}"/><circle cx="${cx}" cy="${cy}" r="6" fill="#f8fafc"/>`);
+      case "solid":
+        return wrap(`<circle cx="${cx}" cy="${cy}" r="26" fill="${SOLID}" stroke="${WALL}" stroke-width="1.5"/>`);
+      case "partsolid": // matglas-halo + solide kern
+        return wrap(`<circle cx="${cx}" cy="${cy}" r="32" fill="${GGN}" opacity="0.6"/><circle cx="${cx}" cy="${cy}" r="14" fill="${CORE}"/>`);
+      case "nonsolid": // pure matglas (hazy, gestippeld)
+        return wrap(`<circle cx="${cx}" cy="${cy}" r="30" fill="${GGN}" opacity="0.55" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4 4"/>`);
+      case "airway": // endobronchiale nodule in een bronchus
+        return wrap(`<path d="M60 20 L60 80 M90 20 L90 80" stroke="${WALL}" stroke-width="3" fill="none"/><circle cx="${cx}" cy="86" r="18" fill="${SOLID}"/>`);
+      case "cyst": // dunwandige cyste (ring)
+        return wrap(`<circle cx="${cx}" cy="${cy}" r="28" fill="#ffffff" stroke="${WALL}" stroke-width="2.5"/>`);
+      case "incompleet":
+        return wrap(`<circle cx="${cx}" cy="${cy}" r="26" fill="none" stroke="#94a3b8" stroke-width="2.5" stroke-dasharray="5 5"/><text x="${cx}" y="${cy + 9}" text-anchor="middle" font-size="30" fill="#94a3b8" font-family="sans-serif">?</text>`);
+    }
+    return wrap("");
+  }
+
   // expose
   const api = {
     version: "1.0",
@@ -1893,6 +1917,7 @@
     svg(kind, value) {
       if (kind === "aospine-tl") return aoSpineTLSvg(value);
       if (kind === "aospine-subaxial") return aoSpineSubaxialSvg(value);
+      if (kind === "lungrads-type") return lungRadsTypeSvg(value);
       if (kind && kind.indexOf("bosniak-") === 0) return bosniakSvg(kind, value);
       return "";
     },
