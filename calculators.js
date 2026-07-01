@@ -1806,15 +1806,14 @@
       case "B1":
         r.push(L(cx - 2, mMid, post + 34, mMid, 3.2));
         break;
-      case "B2": // posterieure tension band: prominente interspinale gap + gescheurd ligament
-        r.push(`<path d="M${post + 24} ${yT + bh + 2} L${post + 30} ${yM + 10}" stroke="${RED}" stroke-width="2" stroke-dasharray="3 3"/>`);
-        r.push(L(post + 18, yT + bh + 4, post + 30, yT + bh + 4, 3));
-        r.push(L(post + 20, yM + 8, post + 32, yM + 8, 3));
-        r.push(`<path d="M${post + 26} ${yT + bh + 8} l-7 5 l7 5 M${post + 26} ${yM + 4} l-7 -5 l7 -5" fill="none" stroke="${RED}" stroke-width="2"/>`);
+      case "B2": // posterieure tension band: benig (fractuur door arcus) én/of ligamentair (interspinale distractie)
+        r.push(L(83, 67, 94, 81, 3.2));                    // fractuurlijn door de posterieure benige arcus (bony)
+        r.push(`<path d="M104 46 l-7 5 l7 5 M104 60 l-7 -5 l7 -5" fill="none" stroke="${RED}" stroke-width="2.5"/>`); // interspinale ligamentaire distractie
+        r.push(`<path d="M${cx} ${mT} L${cx + cw} ${mT} L${cx + cw} ${mT + 3} L${cx} ${mT + 9} Z" fill="${RED}" opacity="0.2"/>`); // frequente anterieure compressie (A-component)
         break;
-      case "B3":
-        r.push(`<path d="M${cx} ${mT} L${cx + 24} ${mT} L${cx + 6} ${mT - 12} Z" fill="${RED}" opacity="0.3"/>`);
-        r.push(L(cx, mT, cx + 4, mT - 14, 3));
+      case "B3": // hyperextensie: anterieure distractie, dikwijls transossaal (bony)
+        r.push(`<path d="M${cx - 2} ${mT - 2} L${cx + 16} ${mT + 2} L${cx + 16} ${mT + 12} L${cx - 2} ${mT + 18} Z" fill="${RED}" opacity="0.25"/>`); // anterieure opening (wijd vooraan)
+        r.push(L(cx - 2, mT + 8, cx + cw, mT + 6, 3.2));    // transversale fractuurlijn door het corpus (bony)
         break;
       case "C":
         r.push(`<path d="M${cx + 4} ${mB + 8} h${shift + 8}" stroke="${RED}" stroke-width="3" marker-end="url(#aoar)"/>`);
