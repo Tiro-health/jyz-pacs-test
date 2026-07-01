@@ -2182,15 +2182,18 @@
                 }
                 if (inp.type === 'visual-select') {
                     const RC = window.RADCALC;
+                    const def = inp.default != null ? String(inp.default) : '';
                     const cards = (inp.opties || []).map(o => {
                         const svg = (RC && RC.svg) ? RC.svg(inp.visual, o.v) : '';
                         const short = String(o.l).replace(/ — .*/, '');
-                        return `<button type="button" class="calc-visual-opt flex flex-col items-center gap-1 rounded-md border-2 border-neutral-200 dark:border-slate-700 hover:border-cyan-400 bg-white dark:bg-background p-1.5 transition-colors" data-iid="${inp.id}" data-val="${String(o.v).replace(/"/g,'&quot;')}" title="${String(o.l).replace(/"/g,'&quot;')}">
+                        const sel = String(o.v) === def;
+                        const selCls = sel ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30' : 'border-neutral-200 dark:border-slate-700';
+                        return `<button type="button" class="calc-visual-opt flex flex-col items-center gap-1 rounded-md border-2 ${selCls} hover:border-cyan-400 bg-white dark:bg-background p-1.5 transition-colors" data-iid="${inp.id}" data-val="${String(o.v).replace(/"/g,'&quot;')}" title="${String(o.l).replace(/"/g,'&quot;')}">
                             <span class="block w-full" style="height:78px">${svg}</span>
                             <span class="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">${short}</span>
                         </button>`;
                     }).join('');
-                    return `<div>${lbl(inp.label)}<div class="grid grid-cols-3 gap-1.5" data-visual-iid="${inp.id}">${cards}</div><input type="hidden" id="${id}" class="calc-input" data-iid="${inp.id}" value="">${help}</div>`;
+                    return `<div>${lbl(inp.label)}<div class="grid grid-cols-3 gap-1.5" data-visual-iid="${inp.id}">${cards}</div><input type="hidden" id="${id}" class="calc-input" data-iid="${inp.id}" value="${def}">${help}</div>`;
                 }
                 return '';
             }

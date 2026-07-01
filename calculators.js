@@ -829,25 +829,25 @@
     beschrijving: "Feature-gebaseerde classificatie van een cysteuze niermassa (CT). De meest verdachte feature (wand, septa of noduli) bepaalt de klasse. Wanddikte: dun ≤2 mm · minimaal verdikt 3 mm · dik ≥4 mm.",
     triggerKeywords: ["bosniak", "cysteuze niermassa", "niercyste", "renale cyste", "complexe cyste"],
     inputs: [
-      { id: "wand", label: "Wand", type: "select",
+      { id: "wand", label: "Wand", type: "visual-select", visual: "bosniak-wall",
         opties: [
           { v: "1", l: "Glad, dun (≤2 mm) — mag aankleuren" },
           { v: "iif", l: "Glad, minimaal verdikt (3 mm), aankleurend" },
-          { v: "iii", l: "Dik (≥4 mm) of irregulair (≤3 mm obtuus-begrensde protrusie)" },
+          { v: "iii", l: "Dik (≥4 mm) of irregulair" },
         ] },
-      { id: "septa", label: "Septa", type: "select", default: "0",
+      { id: "septa", label: "Septa", type: "visual-select", visual: "bosniak-septa", default: "0",
         opties: [
           { v: "0", l: "Geen septa" },
-          { v: "ii", l: "1–3 dunne (≤2 mm) aankleurende septa" },
-          { v: "iif4", l: "≥4 dunne (≤2 mm) aankleurende septa" },
-          { v: "iif3", l: "Glad, minimaal verdikt (3 mm) septum/septa" },
-          { v: "iii", l: "Dik (≥4 mm) of irregulair (≤3 mm obtuus-begrensde protrusie)" },
+          { v: "ii", l: "1–3 dunne (≤2 mm)" },
+          { v: "iif4", l: "≥4 dunne (≤2 mm)" },
+          { v: "iif3", l: "Glad 3 mm (minimaal verdikt)" },
+          { v: "iii", l: "Dik (≥4 mm) of irregulair" },
         ] },
-      { id: "nodule", label: "Noduli / protrusies", type: "select", default: "0",
+      { id: "nodule", label: "Noduli / protrusies", type: "visual-select", visual: "bosniak-nodule", default: "0",
         opties: [
           { v: "0", l: "Geen" },
-          { v: "iii", l: "Obtuus-begrensde ≤3 mm convexe protrusie (wand/septa)" },
-          { v: "iv", l: "Aankleurend noduul (≥4 mm obtuus-begrensde protrusie, of protrusie van elke grootte met scherpe marges)" },
+          { v: "iii", l: "Obtuus-begrensde ≤3 mm protrusie" },
+          { v: "iv", l: "Aankleurend noduul (≥4 mm / scherpe marges)" },
         ] },
       { id: "typeII", label: "Homogene type-II massa (≥70 HU blanco / 21–30 HU PVP / niet-aankleurend >20 HU / te klein te karakteriseren)", type: "checkbox" },
     ],
@@ -1825,6 +1825,43 @@
       p.join("") + r.join("") + `</svg>`;
   }
 
+  // Bosniak — schematische cyste-figuren per feature (cirkel = cyste; rood = verdacht kenmerk).
+  function bosniakSvg(kind, value) {
+    const F = "#dbeafe", B = "#3b82f6", RED = "#dc2626", AM = "#d97706";
+    const cx = 75, cy = 76, R = 48;
+    const wrap = (inner) => `<svg viewBox="0 0 150 152" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
+    const circ = (sw, stroke) => `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${F}" stroke="${stroke}" stroke-width="${sw}"/>`;
+    // chord tussen twee hoeken (graden)
+    const pt = (a) => [cx + R * Math.cos(a * Math.PI / 180), cy + R * Math.sin(a * Math.PI / 180)];
+    const chord = (a1, a2, w, col, dash) => {
+      const [x1, y1] = pt(a1), [x2, y2] = pt(a2);
+      return `<path d="M${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)}" stroke="${col}" stroke-width="${w}" ${dash ? `stroke-dasharray="${dash}"` : ""}/>`;
+    };
+    if (kind === "bosniak-wall") {
+      if (value === "1") return wrap(circ(2, B));
+      if (value === "iif") return wrap(circ(5, AM));
+      // iii: dikke/irregulaire wand
+      return wrap(circ(8, RED) + `<path d="M${cx + R - 4} ${cy - 14} a12 12 0 0 1 0 24" fill="${RED}" opacity="0.8"/>`);
+    }
+    if (kind === "bosniak-septa") {
+      const base = circ(2, B);
+      if (value === "0") return wrap(base);
+      if (value === "ii") return wrap(base + chord(200, 340, 2, B) + chord(120, 60, 2, B));
+      if (value === "iif4") return wrap(base + chord(200, 340, 2, B) + chord(120, 60, 2, B) + chord(160, 20, 2, B) + chord(250, 290, 2, B) + chord(100, 80, 2, B));
+      if (value === "iif3") return wrap(base + chord(180, 0, 4.5, AM));
+      // iii: dik/irregulair septum
+      return wrap(base + `<path d="M${pt(180)[0]} ${pt(180)[1]} L${cx} ${cy - 8} L${cx + 10} ${cy + 6} L${pt(0)[0]} ${pt(0)[1]}" fill="none" stroke="${RED}" stroke-width="6" stroke-linejoin="round"/>`);
+    }
+    if (kind === "bosniak-nodule") {
+      const base = circ(2, B);
+      if (value === "0") return wrap(base);
+      if (value === "iii") return wrap(base + `<path d="M${cx + R - 2} ${cy - 8} a7 7 0 0 1 0 16 z" fill="${AM}"/>`); // ≤3mm obtuse protrusie
+      // iv: aankleurend noduul
+      return wrap(base + `<circle cx="${cx + R - 6}" cy="${cy}" r="13" fill="${RED}"/>`);
+    }
+    return "";
+  }
+
   // expose
   const api = {
     version: "1.0",
@@ -1836,6 +1873,7 @@
     /* Zelf-gegenereerde schematische SVG voor een visual-select optie. */
     svg(kind, value) {
       if (kind === "aospine-tl") return aoSpineTLSvg(value);
+      if (kind && kind.indexOf("bosniak-") === 0) return bosniakSvg(kind, value);
       return "";
     },
     /* Tekstscan: geeft array van {calc, hits[]} terug, gesorteerd op aantal hits.
