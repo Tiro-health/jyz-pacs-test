@@ -4607,15 +4607,21 @@ negated bevindingen
                     return b;
                 };
 
-                const mkSendBtn = (getTextFn) => {
+                const mkSendBtn = (getTextFn, panelToClose) => {
                     const b = mkBtn('inline-flex items-center justify-center w-[28px] h-[28px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer flex-shrink-0', '', () => {
                         const text = getTextFn();
                         if (!text || !text.trim()) return;
+                        // Onderdruk her-triggering van de realtime check: markeer deze tekst als "al gezien"
+                        _pipRealtimeLastText = text.trim();
+                        _pipRealtimeAbort?.abort();
+                        clearTimeout(_pipRealtimeDebounce);
                         setNativeValue(ta, text);
                         _autoGrow();
                         setDictationText(text);
+                        // Sluit het bronpaneel (verslag check / real time verslag check)
+                        if (panelToClose) panelToClose.style.display = 'none';
                     });
-                    b.title = 'Stuur naar DMO dicteerveld';
+                    b.title = 'Stuur naar DMO dicteerveld & sluit paneel';
                     b.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>';
                     return b;
                 };
@@ -4758,11 +4764,13 @@ negated bevindingen
                     mkBtn(S, 'Kopiëren', (e) => {
                         const btn = e.currentTarget;
                         const textToCopy = _pipInlineMode ? getCeText() : ta.value;
+                        if (!textToCopy || !textToCopy.trim()) return;
                         pipCopy(textToCopy);
-                        const orig = btn.textContent;
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
-                        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                        // Reset het PiP-venster voor het volgende verslag
+                        _pipReset();
+                        setTimeout(() => { btn.textContent = 'Kopiëren'; btn.style.color = ''; }, 2000);
                     }),
                     presetBtn,
                     sentInd,
@@ -4916,7 +4924,7 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                const rtSendBtn = mkSendBtn(() => _rtShowingOrig ? (_rtOrigText || '') : getRealtimeText(rtContent));
+                const rtSendBtn = mkSendBtn(() => _rtShowingOrig ? (_rtOrigText || '') : getRealtimeText(rtContent), rtPanel);
                 rtActions.append(rtOrigBtn, rtCopyBtn, rtSendBtn);
                 rtPanel.append(rtHead, rtContent, rtActions);
                 wrap.appendChild(rtPanel);
@@ -4966,7 +4974,7 @@ negated bevindingen
                     vcPanel.style.display = 'none';
                 });
 
-                const vcSendBtn = mkSendBtn(() => _vcShowingOrig ? (_vcOrigText || '') : getRealtimeText(vcContent));
+                const vcSendBtn = mkSendBtn(() => _vcShowingOrig ? (_vcOrigText || '') : getRealtimeText(vcContent), vcPanel);
                 vcActions.append(vcOrigBtn, vcCopyBtn, vcSendBtn, vcCloseBtn);
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
@@ -5338,6 +5346,29 @@ negated bevindingen
                     _inlineDebounce = setTimeout(() => checkInlineLines(true), 1500);
                     setDictationText(getCeText());
                 });
+
+                // Reset het PiP-venster naar een lege staat (bv. na kopiëren van het verslag naar PACS)
+                function _pipReset() {
+                    _pipRealtimeAbort?.abort();
+                    if (typeof _vcAbort !== 'undefined') _vcAbort?.abort();
+                    clearTimeout(_pipRealtimeDebounce);
+                    _pipRealtimeLastText = '';
+                    // dicteervelden leegmaken (textarea + contenteditable)
+                    setNativeValue(ta, '');
+                    _autoGrow();
+                    ce.innerHTML = '';
+                    const _d = pipWindow.document.createElement('div');
+                    _d.innerHTML = '<br>';
+                    ce.appendChild(_d);
+                    setDictationText('');
+                    // resultaatpanelen verbergen
+                    trPanel.style.display = 'none';
+                    rtPanel.style.display = 'none';
+                    vcPanel.style.display = 'none';
+                    pipTtPanel.style.display = 'none';
+                    sentInd.classList.add('hidden');
+                    sentInd.classList.remove('inline-flex');
+                }
 
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
