@@ -103,21 +103,21 @@
     beschrijving: "Puntensysteem voor schildkliernoduli → TR1–TR5 + FNA-/follow-up-advies op basis van grootte.",
     triggerKeywords: ["schildkliernodul", "thyroid nodule", "ti-rads", "tirads", "noduul schildklier"],
     inputs: [
-      { id: "compositie", label: "Compositie (kies 1)", type: "select",
+      { id: "compositie", label: "Compositie (kies 1)", type: "visual-select", visual: "tirads-composition",
         opties: [
           { v: "0", l: "Cysteus of bijna volledig cysteus (0)" },
           { v: "0s", l: "Spongiform (0)" },
           { v: "1", l: "Gemengd cysteus-solide (1)" },
           { v: "2", l: "Solide of bijna volledig solide (2)" },
         ] },
-      { id: "echo", label: "Echogeniciteit (kies 1)", type: "select",
+      { id: "echo", label: "Echogeniciteit (kies 1)", type: "visual-select", visual: "tirads-echo",
         opties: [
           { v: "0", l: "Anechogeen (0)" },
           { v: "1", l: "Hyperechogeen / isoechogeen (1)" },
           { v: "2", l: "Hypoechogeen (2)" },
           { v: "3", l: "Zeer hypoechogeen (3)" },
         ] },
-      { id: "vorm", label: "Vorm (kies 1)", type: "select",
+      { id: "vorm", label: "Vorm (kies 1)", type: "visual-select", visual: "tirads-shape",
         opties: [
           { v: "0", l: "Breder dan hoog (0)" },
           { v: "3", l: "Hoger dan breed (3)" },
@@ -1905,6 +1905,34 @@
     return wrap("");
   }
 
+  // TI-RADS: schematische schildkliernodule-figuren (compositie / echogeniciteit / vorm).
+  function tiradsSvg(kind, value) {
+    const cx = 75, cy = 76;
+    const wrap = (bg, inner) => `<svg viewBox="0 0 150 152" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"><rect x="8" y="10" width="134" height="130" rx="14" fill="${bg}"/>${inner}</svg>`;
+    const FLUID = "#bfdbfe", SOLID = "#94a3b8", EDGE = "#475569", TISSUE = "#e2e8f0", THYR = "#9ca3af";
+    if (kind === "tirads-composition") {
+      if (value === "0") return wrap(TISSUE, `<circle cx="${cx}" cy="${cy}" r="30" fill="${FLUID}" stroke="${EDGE}" stroke-width="1.5"/>`); // cysteus
+      if (value === "0s") { // spongiform: veel kleine belletjes
+        let b = ""; const pts = [[-14,-10],[6,-14],[16,2],[-4,4],[-16,12],[8,14],[-2,-2],[18,-8]];
+        pts.forEach(([dx,dy]) => b += `<circle cx="${cx+dx}" cy="${cy+dy}" r="5" fill="#ffffff"/>`);
+        return wrap(TISSUE, `<circle cx="${cx}" cy="${cy}" r="30" fill="${FLUID}" stroke="${EDGE}" stroke-width="1.5"/>${b}`);
+      }
+      if (value === "1") return wrap(TISSUE, `<circle cx="${cx}" cy="${cy}" r="30" fill="${SOLID}" stroke="${EDGE}" stroke-width="1.5"/><path d="M${cx} ${cy-30} A30 30 0 0 0 ${cx} ${cy+30} Z" fill="${FLUID}"/>`); // gemengd
+      return wrap(TISSUE, `<circle cx="${cx}" cy="${cy}" r="30" fill="${SOLID}" stroke="${EDGE}" stroke-width="1.5"/>`); // solide
+    }
+    if (kind === "tirads-echo") {
+      // nodule t.o.v. schildklierweefsel (achtergrond THYR)
+      const fill = { "0": "#0b1220", "1": "#d1d5db", "2": "#5b6674", "3": "#1e293b" }[value] || SOLID;
+      return wrap(THYR, `<circle cx="${cx}" cy="${cy}" r="30" fill="${fill}" stroke="${EDGE}" stroke-width="1.5"/>`);
+    }
+    if (kind === "tirads-shape") {
+      if (value === "0") return wrap(TISSUE, `<ellipse cx="${cx}" cy="${cy}" rx="38" ry="22" fill="${SOLID}" stroke="${EDGE}" stroke-width="1.5"/>`); // breder dan hoog
+      // hoger dan breed (verdacht) — amber rand
+      return wrap(TISSUE, `<ellipse cx="${cx}" cy="${cy}" rx="20" ry="38" fill="${SOLID}" stroke="#d97706" stroke-width="3"/>`);
+    }
+    return wrap("#e2e8f0", "");
+  }
+
   // expose
   const api = {
     version: "1.0",
@@ -1918,6 +1946,7 @@
       if (kind === "aospine-tl") return aoSpineTLSvg(value);
       if (kind === "aospine-subaxial") return aoSpineSubaxialSvg(value);
       if (kind === "lungrads-type") return lungRadsTypeSvg(value);
+      if (kind && kind.indexOf("tirads-") === 0) return tiradsSvg(kind, value);
       if (kind && kind.indexOf("bosniak-") === 0) return bosniakSvg(kind, value);
       return "";
     },
