@@ -1408,7 +1408,7 @@
     beschrijving: "Classificatie van hoog-cervicale letsels per regio (I occipitale condyl/craniocervicaal · II C1-ring/C1–2 · III C2/C2–3) en type (A benig · B ligamentair · C translatie/verplaatsing).",
     triggerKeywords: ["ao spine", "occipitale condyl", "craniocervicaal", "atlas", "axis", "c1", "c2", "densfractuur", "atlanto-axiaal", "hoog-cervicaal"],
     inputs: [
-      { id: "regio", label: "Regio", type: "select",
+      { id: "regio", label: "Regio", type: "visual-select", visual: "aospine-uc-region",
         opties: [
           { v: "I", l: "I — occipitale condyl / craniocervicale overgang" },
           { v: "II", l: "II — C1-ring en C1–2 gewricht" },
@@ -1932,6 +1932,36 @@
     return wrap("#e2e8f0", "");
   }
 
+  // AO Spine hoog-cervicaal: regio-iconen (anatomische landmark per regio; geen fractuur-morfologie).
+  function aoSpineUCregionSvg(regio) {
+    const BONE = "#efe4c8", EDGE = "#a8926a", CANAL = "#ffffff";
+    const wrap = (inner) => `<svg viewBox="0 0 150 152" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">${inner}</svg>`;
+    if (regio === "I") { // occipitale condyl / craniocervicale overgang
+      return wrap(
+        `<path d="M20 60 A56 46 0 0 1 130 60 Z" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +   // occiput (schedelbasis)
+        `<ellipse cx="58" cy="64" rx="11" ry="7" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +  // condyl L
+        `<ellipse cx="92" cy="64" rx="11" ry="7" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +  // condyl R
+        `<rect x="38" y="80" width="74" height="16" rx="8" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +   // atlas (C1)
+        `<rect x="46" y="104" width="58" height="18" rx="6" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>`     // axis (C2)
+      );
+    }
+    if (regio === "II") { // C1-ring (atlas), axiaal
+      return wrap(
+        `<ellipse cx="75" cy="84" rx="52" ry="38" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` + // atlasring
+        `<ellipse cx="75" cy="88" rx="28" ry="21" fill="${CANAL}"/>` +                                    // wervelkanaal
+        `<path d="M55 56 A22 14 0 0 1 95 56" fill="none" stroke="${EDGE}" stroke-width="1.5"/>` +          // voorste boog
+        `<circle cx="75" cy="60" r="9" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>`               // dens (odontoid) in voorste ring
+      );
+    }
+    // III — C2 (axis) met dens / C2–3
+    return wrap(
+      `<path d="M62 84 L62 40 Q62 30 73 30 Q84 30 84 40 L84 84 Z" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` + // dens (odontoid)
+      `<rect x="42" y="82" width="66" height="40" rx="6" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` +          // corpus C2
+      `<path d="M108 90 h16 a4 4 0 0 1 4 4 v10 a4 4 0 0 1 -4 4 h-16 z" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5"/>` + // posterieure arcus
+      `<rect x="46" y="128" width="58" height="12" rx="4" fill="${BONE}" stroke="${EDGE}" stroke-width="1.5" opacity="0.7"/>`  // C3 (aanzet)
+    );
+  }
+
   // expose
   const api = {
     version: "1.0",
@@ -1945,6 +1975,7 @@
       if (kind === "aospine-tl") return aoSpineTLSvg(value);
       if (kind === "aospine-subaxial") return aoSpineSubaxialSvg(value);
       if (kind === "lungrads-type") return lungRadsTypeSvg(value);
+      if (kind === "aospine-uc-region") return aoSpineUCregionSvg(value);
       if (kind && kind.indexOf("tirads-") === 0) return tiradsSvg(kind, value);
       if (kind && kind.indexOf("bosniak-") === 0) return bosniakSvg(kind, value);
       return "";
