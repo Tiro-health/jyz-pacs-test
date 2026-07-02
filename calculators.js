@@ -225,7 +225,7 @@
       if (isNaN(iA) || isNaN(oA) || iA === 0) return fout("Geef in- en out-of-phase SI van de bijnier in.");
       const sii = ((iA - oA) / iA) * 100;
       const items = [{ label: "Signaalintensiteitsindex (SII)", waarde: r1(sii) + "%" }];
-      let adenoom = sii > 16.5;
+      let adenoom = sii >= 16.5;
       const iS = num(v.inSpl), oS = num(v.outSpl);
       if (!isNaN(iS) && !isNaN(oS) && iS !== 0 && oS !== 0) {
         const asr = (oA / oS) / (iA / iS);
@@ -630,7 +630,7 @@
     categorie: "Body — hepatobiliair",
     modaliteit: ["CT", "MR"],
     bron: "Vauthey 2002 (SLV uit lichaamsoppervlak)",
-    beschrijving: "Standaard levervolume = −794 + 1267 × BSA (Mosteller). Voor restlevervolume-ratio bij resectieplanning.",
+    beschrijving: "Standaard levervolume = −794,41 + 1267,28 × BSA (Mosteller). Voor restlevervolume-ratio bij resectieplanning.",
     triggerKeywords: ["levervolume", "liver volume", "restlevervolume", "future liver remnant", "hepatectomie", "leverresectie"],
     inputs: [
       { id: "lengte", label: "Lengte", type: "number", eenheid: "cm", min: 0 },
@@ -641,7 +641,7 @@
       const h = num(v.lengte), w = num(v.gewicht);
       if (isNaN(h) || isNaN(w)) return fout("Geef lengte en gewicht in.");
       const bsa = Math.sqrt((h * w) / 3600); // Mosteller
-      const slv = -794 + 1267 * bsa;
+      const slv = -794.41 + 1267.28 * bsa;
       const items = [
         { label: "BSA (Mosteller)", waarde: r2(bsa) + " m²" },
         { label: "Standaard levervolume", waarde: r0(slv) + " mL" },
