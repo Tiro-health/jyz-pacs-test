@@ -151,9 +151,13 @@
                     Nieuw type
                 </button>
             </div>
-            <div class="flex justify-end gap-5 px-4 pb-2.5">
+            <div class="flex justify-end gap-5 px-4 pb-1">
                 <button id="dicom-list-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Dicom lijst</button>
                 <button id="logic-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Textueel back-up logica</button>
+            </div>
+            <div class="flex justify-end gap-4 px-4 pb-2.5">
+                <button id="calc-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🧮 Calculatoren</button>
+                <button id="ai-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🤖 AI-regels</button>
             </div>
 
             <!-- Search + modality tabs -->
@@ -495,6 +499,34 @@
                         <button id="logic-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- ── Calculatoren-overzicht modal ────────────────────────────────────── -->
+        <div id="calc-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🧮 Calculatoren — overzicht &amp; koppelingen</h2>
+                    <button id="calc-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Calculatoren koppel je <b>per onderzoekstype</b> (sectie "Calculatoren" in de editor). Klik <b>Bewerk</b> om een koppeling aan te passen of toe te voegen.</p>
+                </div>
+                <div id="calc-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- ── AI-regels-overzicht modal ───────────────────────────────────────── -->
+        <div id="ai-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🤖 AI-regels — overzicht</h2>
+                    <button id="ai-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">AI-regels stel je <b>per onderzoekstype</b> in (sectie "AI-gebaseerde regels" in de editor). Klik <b>Bewerk</b> om aan te passen of toe te voegen.</p>
+                </div>
+                <div id="ai-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
             </div>
         </div>
 
@@ -864,7 +896,7 @@ XXX` },
             if (has('hersenen', 'schedel', 'cerebr', 'cva', 'stroke', 'beroerte') && mod === 'CT') add('aspects', 'ich-volume-abc2');
             if (has('carotis', 'carotid', 'hals') && (mod === 'CT' || mod === 'MR' || mod === 'ECHO')) add('carotid-stenosis');
             if (has('adnex', 'ovarium', 'gynaeco', 'bekken vrouw') && mod === 'ECHO') add('o-rads-us');
-            if (has('blaas', 'bladder')) add('bladder-volume');
+            if (/\bblaas\b/.test(n) || n.includes('bladder')) add('bladder-volume'); // woordgrens: matcht "blaas" maar niet "galblaas"
             if (has('scrotum', 'testis', 'testikel')) add('gonadal-volume');
             if (has('wervel', 'spine', 'lumbaal', 'cervic', 'thoracaal') && (mod === 'CT' || mod === 'MR')) add('ao-spine-tl', 'sins');
             if (has('milt', 'spleen')) add('spleen-volume-index');
@@ -931,6 +963,19 @@ XXX` },
                 if (!et.userActiveMode) { et.userActiveMode = 'template'; changed = true; }
             });
             // Seed calculator-koppelingen (eenmalig, enkel wanneer nog niet ingesteld)
+            // Eenmalige correctie: verwijder foutieve blaasvolume-koppeling op galblaas-onderzoeken
+            // (oude heuristiek matchte "galblaas" op substring "blaas")
+            if (!localStorage.getItem('calcGalblaasFix_v1')) {
+                state.examTypes.forEach(et => {
+                    const n = ((et.name || '') + ' ' + (et.dicom || []).join(' ')).toLowerCase();
+                    if (/galblaas/.test(n) && !/\bblaas\b/.test(n) && Array.isArray(et.calculators)) {
+                        const before = et.calculators.length;
+                        et.calculators = et.calculators.filter(c => c.calcId !== 'bladder-volume');
+                        if (et.calculators.length !== before) changed = true;
+                    }
+                });
+                localStorage.setItem('calcGalblaasFix_v1', '1');
+            }
             state.examTypes.forEach(et => {
                 if (et.calculators === undefined) {
                     et.calculators = autoLinkCalculators(et).map(id => ({ calcId: id, tiroTemplateUrl: '' }));
@@ -1778,6 +1823,78 @@ XXX` },
         document.getElementById('logic-modal').addEventListener('click', e => {
             if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
         });
+
+        // ── Calculatoren-overzicht modal ─────────────────────────────────────────
+        function _overviewRow(et, innerHtml) {
+            return `<div class="flex items-start gap-3 py-2.5 border-b border-neutral-100 dark:border-slate-700/50 last:border-0">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">${badge(et.modality)}<span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">${esc(et.name)}</span></div>
+                    <div class="flex flex-wrap gap-1">${innerHtml}</div>
+                </div>
+                <button class="ov-edit flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-600 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors" data-id="${esc(et.id)}">Bewerk</button>
+            </div>`;
+        }
+        function renderCalcOverview() {
+            const el = document.getElementById('calc-overview-content');
+            const RC = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
+            const withCalc = state.examTypes.filter(et => (et.calculators || []).length);
+            let html = '';
+            if (withCalc.length) {
+                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Gekoppeld aan onderzoekstype (${withCalc.length})</p>`;
+                html += withCalc.map(et => _overviewRow(et, et.calculators.map(c => {
+                    const d = RC ? RC.byId(c.calcId) : null;
+                    return `<span class="px-2 py-0.5 text-[11px] rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/30">${esc(d ? d.naam : c.calcId)}${c.tiroTemplateUrl ? ' 🔗' : ''}</span>`;
+                }).join(''))).join('');
+            } else {
+                html += `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-3">Nog geen calculatoren gekoppeld. Open een onderzoekstype en gebruik de sectie "Calculatoren".</p>`;
+            }
+            // Catalogus-referentie
+            if (RC) {
+                const cats = {};
+                RC.all().forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c.naam); });
+                html += `<details class="mt-4"><summary class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 cursor-pointer">Beschikbare calculatoren (${RC.all().length})</summary><div class="mt-2 space-y-2">` +
+                    Object.keys(cats).map(cat => `<div><div class="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">${esc(cat)}</div><div class="text-[11px] text-neutral-500 dark:text-neutral-400">${cats[cat].map(esc).join(' · ')}</div></div>`).join('') +
+                    `</div></details>`;
+            }
+            el.innerHTML = html;
+            el.querySelectorAll('.ov-edit').forEach(b => b.addEventListener('click', () => {
+                document.getElementById('calc-overview-modal').classList.add('hidden');
+                openEditor(b.dataset.id);
+            }));
+        }
+        document.getElementById('calc-overview-btn').addEventListener('click', () => {
+            document.getElementById('calc-overview-modal').classList.remove('hidden');
+            renderCalcOverview();
+        });
+        document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
+        document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+        // ── AI-regels-overzicht modal ────────────────────────────────────────────
+        function renderAiOverview() {
+            const el = document.getElementById('ai-overview-content');
+            const withAi = state.examTypes.filter(et => (et.aiRules || []).length);
+            let html = '';
+            if (withAi.length) {
+                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Onderzoekstypes met AI-regels (${withAi.length})</p>`;
+                html += withAi.map(et => _overviewRow(et, et.aiRules.map(r => {
+                    const act = r.action === 'replace_template' ? 'vervang' : 'voeg toe';
+                    return `<span class="px-2 py-0.5 text-[11px] rounded bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/30 font-mono">${esc(r.aiSource || '?')} ${esc(r.condition?.operator || '')} ${esc(r.condition?.value || '')} → ${act}</span>`;
+                }).join(''))).join('');
+            } else {
+                html += `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-3">Nog geen AI-regels ingesteld. Open een onderzoekstype en gebruik de sectie "AI-gebaseerde regels".</p>`;
+            }
+            el.innerHTML = html;
+            el.querySelectorAll('.ov-edit').forEach(b => b.addEventListener('click', () => {
+                document.getElementById('ai-overview-modal').classList.add('hidden');
+                openEditor(b.dataset.id);
+            }));
+        }
+        document.getElementById('ai-overview-btn').addEventListener('click', () => {
+            document.getElementById('ai-overview-modal').classList.remove('hidden');
+            renderAiOverview();
+        });
+        document.getElementById('ai-overview-close').addEventListener('click', () => document.getElementById('ai-overview-modal').classList.add('hidden'));
+        document.getElementById('ai-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
         </script>
 
 
