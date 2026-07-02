@@ -151,9 +151,13 @@
                     Nieuw type
                 </button>
             </div>
-            <div class="flex justify-end gap-5 px-4 pb-2.5">
+            <div class="flex justify-end gap-5 px-4 pb-1">
                 <button id="dicom-list-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Dicom lijst</button>
                 <button id="logic-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Textueel back-up logica</button>
+            </div>
+            <div class="flex justify-end gap-4 px-4 pb-2.5">
+                <button id="calc-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🧮 Calculatoren</button>
+                <button id="ai-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🤖 AI-regels</button>
             </div>
 
             <!-- Search + modality tabs -->
@@ -240,20 +244,72 @@
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <span>📄</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Department template</label>
+                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</label>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard voor de hele afdeling. Geldt voor alle gebruikers tenzij overschreven.</p>
-                    <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag</label>
+                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Textueel standaardverslag</label>
+                            <button id="dept-tt-trigger" onclick="openLevelTtEditor('dept')"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="dept-tt-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-4 pt-0.5">
+                            <span class="text-[10px] text-neutral-400 uppercase tracking-wide flex-shrink-0">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="dept-mode" id="dept-mode-template" value="template" class="accent-cyan-600 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Template</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="dept-mode" id="dept-mode-textueel" value="textueel" class="accent-amber-500 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
+                            </label>
+                        </div>
+                    </div>
+                    <textarea id="edit-dept-text-template" class="hidden"></textarea>
                 </div>
 
                 <!-- User template -->
                 <div>
                     <div class="flex items-center gap-2 mb-1">
                         <span>👤</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker template override</label>
+                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</label>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Persoonlijke voorkeur — overschrijft de department template. Leeg = geen override.</p>
-                    <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Persoonlijke voorkeur — overschrijft de afdelingsinstelling. Kies template of textueel.</p>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag</label>
+                            <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Textueel standaardverslag</label>
+                            <button id="user-tt-trigger" onclick="openLevelTtEditor('user')"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="user-tt-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-4 pt-0.5">
+                            <span class="text-[10px] text-neutral-400 uppercase tracking-wide flex-shrink-0">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="user-mode" id="user-mode-template" value="template" class="accent-cyan-600 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Template</span>
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                                <input type="radio" name="user-mode" id="user-mode-textueel" value="textueel" class="accent-amber-500 w-3.5 h-3.5">
+                                <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
+                            </label>
+                        </div>
+                    </div>
+                    <textarea id="edit-user-text-template" class="hidden"></textarea>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
@@ -267,26 +323,23 @@
                         </div>
                         <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Nieuwe regel</button>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen. Kies per regel template of textueel.</p>
                     <div id="ai-rules-list" class="space-y-2.5"></div>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
-                <!-- Text template backup -->
+                <!-- Calculatoren -->
                 <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>📝</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Textuele back-up template</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                            <span>🧮</span>
+                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Calculatoren</label>
+                        </div>
+                        <button id="add-calculator-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Calculator</button>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Wordt gebruikt als back-up wanneer de Tiro-link niet beschikbaar is, en als structuurcontext voor AI-prompts.</p>
-                    <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
-                        class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
-                        <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-                    </button>
-                    <textarea id="edit-text-template" class="hidden"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Koppel radiologische calculatoren aan dit onderzoekstype. Ze verschijnen bij "Actieve template" en worden voorgesteld op basis van de gedicteerde tekst. Optioneel kan een Tiro-template-URL gekoppeld worden.</p>
+                    <div id="calculators-list" class="space-y-2.5"></div>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
@@ -318,7 +371,7 @@
             <!-- Header -->
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-700 flex-shrink-0 bg-[#0f172a]">
                 <h2 class="text-sm font-semibold text-neutral-100">
-                    📝 Textuele back-up template — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
+                    📝 Textueel standaardverslag — <span id="tt-editor-exam-name" class="text-cyan-400"></span>
                 </h2>
                 <button onclick="closeTtEditor()" class="p-1.5 rounded hover:bg-slate-700 text-neutral-400 hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
             </div>
@@ -449,7 +502,36 @@
             </div>
         </div>
 
+        <!-- ── Calculatoren-overzicht modal ────────────────────────────────────── -->
+        <div id="calc-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🧮 Calculatoren — overzicht &amp; koppelingen</h2>
+                    <button id="calc-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Calculatoren koppel je <b>per onderzoekstype</b> (sectie "Calculatoren" in de editor). Klik <b>Bewerk</b> om een koppeling aan te passen of toe te voegen.</p>
+                </div>
+                <div id="calc-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- ── AI-regels-overzicht modal ───────────────────────────────────────── -->
+        <div id="ai-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🤖 AI-regels — overzicht</h2>
+                    <button id="ai-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">AI-regels stel je <b>per onderzoekstype</b> in (sectie "AI-gebaseerde regels" in de editor). Klik <b>Bewerk</b> om aan te passen of toe te voegen.</p>
+                </div>
+                <div id="ai-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
+            </div>
+        </div>
+
         <!-- ── Script ─────────────────────────────────────────────────────────── -->
+        <script src="calculators.js"></script>
         <script>
         const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
 
@@ -793,14 +875,55 @@ XXX` },
         // ── App state ────────────────────────────────────────────────────────────
         let state = loadData();
 
+        // Auto-koppel logische calculatoren aan een onderzoekstype op basis van naam + modaliteit.
+        function autoLinkCalculators(et) {
+            const cat = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
+            if (!cat) return [];
+            const n = (et.name || '').toLowerCase() + ' ' + (et.dicom || []).join(' ').toLowerCase();
+            const mod = et.modality;
+            const has = (...kw) => kw.some(k => n.includes(k));
+            const ids = new Set();
+            const add = (...x) => x.forEach(i => { if (cat.byId(i)) ids.add(i); });
+
+            if (has('prostaat', 'prostate')) { if (mod === 'MR') add('pi-rads'); add('prostate-volume-psad'); }
+            if (has('lever', 'liver') && (mod === 'CT' || mod === 'MR')) add('li-rads', 'liver-steatosis');
+            if (has('bijnier', 'adrenal')) { add(mod === 'MR' ? 'adrenal-chemical-shift' : 'adrenal-washout'); }
+            if (has('thorax', 'longen', 'long', 'chest', 'pulmonale') && mod === 'CT') add('fleischner-2017');
+            if (has('longkankerscreening', 'screening long', 'low-dose') && mod === 'CT') add('lung-rads-2022');
+            if (has('longembolie', 'ctpa', 'embolie', 'pulmonale angio')) add('pesi');
+            if (has('nier', 'kidney', 'renaal', 'renal') && (mod === 'CT' || mod === 'MR')) add('bosniak-2019', 'renal-nephrometry');
+            if (has('schildklier', 'thyroid', 'thyreoid') || (has('hals') && mod === 'ECHO')) add('ti-rads', 'thyroid-volume');
+            if (has('hersenen', 'schedel', 'cerebr', 'cva', 'stroke', 'beroerte') && mod === 'CT') add('aspects', 'ich-volume-abc2');
+            if (has('carotis', 'carotid', 'hals') && (mod === 'CT' || mod === 'MR' || mod === 'ECHO')) add('carotid-stenosis');
+            if (has('adnex', 'ovarium', 'gynaeco', 'bekken vrouw') && mod === 'ECHO') add('o-rads-us');
+            if (/\bblaas\b/.test(n) || n.includes('bladder')) add('bladder-volume'); // woordgrens: matcht "blaas" maar niet "galblaas"
+            if (has('scrotum', 'testis', 'testikel')) add('gonadal-volume');
+            if (has('wervel', 'spine', 'lumbaal', 'cervic', 'thoracaal') && (mod === 'CT' || mod === 'MR')) add('ao-spine-tl', 'sins');
+            if (has('milt', 'spleen')) add('spleen-volume-index');
+            if (has('pancreas')) add('pancreatic-collections');
+            if (has('coronair', 'coronar', 'cardiac', 'hart', 'coronary') && mod === 'CT') add('cad-rads-2022');
+            if (has('colon', 'colografie', 'colonography')) add('c-rads');
+            if (has('galblaas', 'cholecyst', 'rechter bovenbuik') && mod === 'ECHO') add('acute-cholecystitis-us');
+            if (has('abdomen', 'buik') && mod === 'ECHO') add('acute-cholecystitis-us', 'spleen-volume-index');
+            if (has('abdomen', 'buik') && (mod === 'CT' || mod === 'MR')) add('li-rads', 'liver-steatosis', 'spleen-volume-index');
+            if (has('trauma', 'polytrauma') && mod === 'CT') add('aast-liver', 'aast-spleen', 'aast-kidney');
+            if (has('hoofd-hals', 'head and neck', 'larynx', 'farynx')) add('ni-rads');
+            if (has('neuroblastoom', 'mibg')) add('mibg-curie');
+            return [...ids];
+        }
+
         // Migrate: sync templates from DEFAULT_EXAM_TYPES and add new entries
         (function migrate() {
             let changed = false;
             DEFAULT_EXAM_TYPES.forEach(def => {
                 const et = state.examTypes.find(t => t.id === def.id);
                 if (!et) {
-                    // New default exam type not yet in stored state — add it
-                    state.examTypes.push(JSON.parse(JSON.stringify(def)));
+                    // New default exam type not yet in stored state — add it with new fields
+                    const newEntry = JSON.parse(JSON.stringify(def));
+                    if (!newEntry.deptActiveMode) newEntry.deptActiveMode = 'template';
+                    if (!newEntry.userActiveMode) newEntry.userActiveMode = 'template';
+                    if (newEntry.textTemplate && !newEntry.deptTextTemplate) newEntry.deptTextTemplate = newEntry.textTemplate;
+                    state.examTypes.push(newEntry);
                     changed = true;
                     return;
                 }
@@ -830,6 +953,34 @@ XXX` },
                     et.labelsDefaultVisible = true;
                     changed = true;
                 }
+                // Migrate global textTemplate → deptTextTemplate (v2 refactor)
+                if (et.textTemplate && !et.deptTextTemplate) {
+                    et.deptTextTemplate = et.textTemplate;
+                    changed = true;
+                }
+                // Ensure new mode fields exist
+                if (!et.deptActiveMode) { et.deptActiveMode = 'template'; changed = true; }
+                if (!et.userActiveMode) { et.userActiveMode = 'template'; changed = true; }
+            });
+            // Seed calculator-koppelingen (eenmalig, enkel wanneer nog niet ingesteld)
+            // Eenmalige correctie: verwijder foutieve blaasvolume-koppeling op galblaas-onderzoeken
+            // (oude heuristiek matchte "galblaas" op substring "blaas")
+            if (!localStorage.getItem('calcGalblaasFix_v1')) {
+                state.examTypes.forEach(et => {
+                    const n = ((et.name || '') + ' ' + (et.dicom || []).join(' ')).toLowerCase();
+                    if (/galblaas/.test(n) && !/\bblaas\b/.test(n) && Array.isArray(et.calculators)) {
+                        const before = et.calculators.length;
+                        et.calculators = et.calculators.filter(c => c.calcId !== 'bladder-volume');
+                        if (et.calculators.length !== before) changed = true;
+                    }
+                });
+                localStorage.setItem('calcGalblaasFix_v1', '1');
+            }
+            state.examTypes.forEach(et => {
+                if (et.calculators === undefined) {
+                    et.calculators = autoLinkCalculators(et).map(id => ({ calcId: id, tiroTemplateUrl: '' }));
+                    changed = true;
+                }
             });
             if (changed) saveData();
             // Update saved textTemplateLogic if it predates [br] support
@@ -843,6 +994,7 @@ XXX` },
         let searchQuery = '';
         let editDicomList = [];
         let editAiRules = [];
+        let editCalculators = [];
 
         // ── Modality config ──────────────────────────────────────────────────────
         const MODALITIES = ['ALLE','RX','CT','MR','ECHO','MAMMO','OVERIG'];
@@ -900,10 +1052,18 @@ XXX` },
             });
         }
 
-        function flowPill(url, icon, label) {
-            if (!url) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
-            const name = url.split('/').pop() || url;
-            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(url)}">${esc(name)}</span></div>`;
+        function flowPill(tiroUrl, textTpl, mode, icon, label) {
+            const hasAny = tiroUrl || textTpl;
+            if (!hasAny) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
+            const activeMode = mode || 'template';
+            if (activeMode === 'textueel' && textTpl) {
+                return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs font-medium text-amber-600 dark:text-amber-400">📝 textueel</span></div>`;
+            }
+            if (tiroUrl) {
+                const name = tiroUrl.split('/').pop() || tiroUrl;
+                return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(tiroUrl)}">${esc(name)}</span></div>`;
+            }
+            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">📝 (inactief)</span></div>`;
         }
 
         const ARROW = `<svg class="text-neutral-300 dark:text-neutral-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
@@ -928,6 +1088,8 @@ XXX` },
             container.innerHTML = types.map(et => {
                 const isOpen = openIds.has(et.id);
                 const aiCount = (et.aiRules || []).length;
+                const calcCount = (et.calculators || []).length;
+                const calcCat = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
 
                 return `
 <details class="group rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-[#1a2530] overflow-hidden" ${isOpen ? 'open' : ''} data-id="${esc(et.id)}">
@@ -937,6 +1099,7 @@ XXX` },
     <span class="hidden sm:block text-[11px] text-neutral-400 mr-1">${et.dicom.length} code${et.dicom.length !== 1 ? 's' : ''}</span>
     ${et.deptTemplate ? '<span class="hidden md:block text-[10px] font-medium text-cyan-600 dark:text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1.5 py-0.5 rounded mr-1">DEPT</span>' : ''}
     ${aiCount ? `<span class="hidden md:block text-[10px] font-medium text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded mr-1">AI ${aiCount}</span>` : ''}
+    ${calcCount ? `<span class="hidden md:block text-[10px] font-medium text-cyan-600 dark:text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1.5 py-0.5 rounded mr-1">🧮 ${calcCount}</span>` : ''}
     <button class="edit-btn inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-600 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors flex-shrink-0" data-id="${esc(et.id)}">
       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
       Bewerk
@@ -959,9 +1122,9 @@ XXX` },
     <div>
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
-        ${flowPill(et.deptTemplate, '📄', 'Afdeling')}
+        ${flowPill(et.deptTemplate, et.deptTextTemplate, et.deptActiveMode, '📄', 'Afdeling')}
         ${ARROW}
-        ${flowPill(et.userTemplate, '👤', 'Gebruiker')}
+        ${flowPill(et.userTemplate, et.userTextTemplate, et.userActiveMode, '👤', 'Gebruiker')}
         ${ARROW}
         <div class="flex flex-col">
           <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
@@ -971,10 +1134,10 @@ XXX` },
         </div>
       </div>
       <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
-        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
+        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}', 'dept')"
           class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-1 min-w-0">
-          <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textuele back-up</span>
-          ${et.textTemplate
+          <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textueel (dept)</span>
+          ${(et.deptTextTemplate || et.textTemplate)
             ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
             : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
         </button>
@@ -999,6 +1162,19 @@ XXX` },
           </span>
         </div>
       `).join('')}
+    </div>` : ''}
+
+    <!-- Calculatoren preview -->
+    ${calcCount ? `
+    <div>
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">🧮 Calculatoren</p>
+      <div class="flex flex-wrap gap-1">
+        ${et.calculators.map(c => {
+          const def = calcCat ? calcCat.byId(c.calcId) : null;
+          const naam = def ? def.naam : c.calcId;
+          return `<span class="px-2 py-0.5 text-[11px] rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/30">${esc(naam)}${c.tiroTemplateUrl ? ' 🔗' : ''}</span>`;
+        }).join('')}
+      </div>
     </div>` : ''}
   </div>
 </details>`;
@@ -1029,19 +1205,20 @@ XXX` },
             document.getElementById('edit-modality').value = et.modality || 'RX';
             document.getElementById('edit-dept-template').value = et.deptTemplate || '';
             document.getElementById('edit-user-template').value = et.userTemplate || '';
-            document.getElementById('edit-text-template').value = et.textTemplate || '';
+            document.getElementById('edit-dept-text-template').value = et.deptTextTemplate || '';
+            document.getElementById('edit-user-text-template').value = et.userTextTemplate || '';
             document.getElementById('edit-preset-text').value = et.presetText || '';
             window._currentEditId = et.id;
-            const ttBadge = document.getElementById('tt-edit-badge');
-            if (ttBadge) {
-                if (et.textTemplate) {
-                    ttBadge.textContent = 'Actief';
-                    ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
-                } else {
-                    ttBadge.textContent = 'Inactief';
-                    ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
-                }
-            }
+
+            // Active mode radios
+            const deptMode = et.deptActiveMode || 'template';
+            document.getElementById('dept-mode-' + deptMode).checked = true;
+            const userMode = et.userActiveMode || 'template';
+            document.getElementById('user-mode-' + userMode).checked = true;
+
+            // Level badges
+            updateLevelBadge('dept', et.deptTextTemplate || '');
+            updateLevelBadge('user', et.userTextTemplate || '');
             document.getElementById('dicom-input').value = '';
             document.getElementById('dicom-suggestions').classList.add('hidden');
 
@@ -1050,6 +1227,9 @@ XXX` },
 
             editAiRules = JSON.parse(JSON.stringify(et.aiRules || []));
             renderAiRules();
+
+            editCalculators = JSON.parse(JSON.stringify(et.calculators || []));
+            renderCalculators();
 
             document.getElementById('delete-btn').style.visibility = isNew ? 'hidden' : 'visible';
 
@@ -1172,8 +1352,28 @@ XXX` },
     </div>
   </div>
   <div>
-    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template URL</label>
+    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag (URL)</label>
     <input type="text" class="ai-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/…" value="${esc(r.template||'')}" data-i="${i}">
+  </div>
+  <div class="pt-1 border-t border-dashed border-neutral-200 dark:border-slate-600">
+    <div class="flex items-center gap-2 mb-1.5">
+      <label class="block text-[10px] uppercase tracking-wide text-neutral-400">Textueel standaardverslag</label>
+      <button type="button" class="ai-tt-trigger flex items-center gap-1.5 px-2 py-0.5 rounded border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 transition-colors text-left" data-i="${i}">
+        <span class="ai-tt-badge text-[10px] font-medium px-1 py-0.5 rounded ${r.textTemplate ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20' : 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20'}">${r.textTemplate ? 'Actief' : 'Inactief'}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+      </button>
+    </div>
+    <div class="flex items-center gap-3">
+      <span class="text-[10px] text-neutral-400 uppercase tracking-wide flex-shrink-0">Actief:</span>
+      <label class="flex items-center gap-1 cursor-pointer select-none">
+        <input type="radio" name="ai-mode-${i}" value="template" class="ai-mode-radio accent-cyan-600 w-3 h-3" ${(r.activeMode||'template')==='template'?'checked':''} data-i="${i}">
+        <span class="text-xs text-neutral-600 dark:text-neutral-300">Template</span>
+      </label>
+      <label class="flex items-center gap-1 cursor-pointer select-none">
+        <input type="radio" name="ai-mode-${i}" value="textueel" class="ai-mode-radio accent-amber-500 w-3 h-3" ${r.activeMode==='textueel'?'checked':''} data-i="${i}">
+        <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
+      </label>
+    </div>
   </div>
 </div>`;
             }).join('');
@@ -1185,6 +1385,13 @@ XXX` },
                 })
             );
 
+            el.querySelectorAll('.ai-tt-trigger').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    syncAll();
+                    openTtEditor(currentEditId, 'ai-' + btn.dataset.i);
+                })
+            );
+
             function syncAll() {
                 el.querySelectorAll('.ai-rule').forEach(row => {
                     const i = +row.dataset.i;
@@ -1193,18 +1400,86 @@ XXX` },
                     editAiRules[i].condition  = { operator: row.querySelector('.ai-op').value, value: row.querySelector('.ai-val').value };
                     editAiRules[i].action     = row.querySelector('.ai-act').value;
                     editAiRules[i].template   = row.querySelector('.ai-tpl').value;
+                    const modeRadio = row.querySelector('.ai-mode-radio:checked');
+                    editAiRules[i].activeMode = modeRadio?.value || 'template';
                 });
             }
 
             el.querySelectorAll('input, select').forEach(inp =>
                 inp.addEventListener('input', syncAll)
             );
+            el.querySelectorAll('.ai-mode-radio').forEach(r =>
+                r.addEventListener('change', syncAll)
+            );
         }
 
         document.getElementById('add-ai-rule-btn').addEventListener('click', () => {
             const replaceExists = editAiRules.some(r => r.action === 'replace_template');
-            editAiRules.push({ aiSource:'', condition:{ operator:'positive', value:'' }, action: replaceExists ? 'add_template' : 'replace_template', template:'' });
+            editAiRules.push({ aiSource:'', condition:{ operator:'positive', value:'' }, action: replaceExists ? 'add_template' : 'replace_template', template:'', textTemplate:'', activeMode:'template' });
             renderAiRules();
+            const body = document.getElementById('panel-body');
+            setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior:'smooth' }), 60);
+        });
+
+        // ── Calculatoren ─────────────────────────────────────────────────────────
+        function calcCatalog() {
+            return (window.RADCALC && window.RADCALC.calculators) ? window.RADCALC.calculators : [];
+        }
+        function calcOptionsHtml(selectedId) {
+            const cats = {};
+            calcCatalog().forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c); });
+            let html = `<option value="">— kies calculator —</option>`;
+            Object.keys(cats).forEach(cat => {
+                html += `<optgroup label="${esc(cat)}">` +
+                    cats[cat].map(c => `<option value="${esc(c.id)}" ${c.id===selectedId?'selected':''}>${esc(c.naam)}</option>`).join('') +
+                    `</optgroup>`;
+            });
+            return html;
+        }
+        function renderCalculators() {
+            const el = document.getElementById('calculators-list');
+            if (!calcCatalog().length) {
+                el.innerHTML = `<p class="text-xs text-red-400 italic py-1">Calculator-catalogus (calculators.js) niet geladen.</p>`;
+                return;
+            }
+            if (!editCalculators.length) {
+                el.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-1">Geen calculatoren gekoppeld.</p>`;
+                return;
+            }
+            el.innerHTML = editCalculators.map((c, i) => `
+<div class="calc-row border border-neutral-200 dark:border-slate-700 rounded-lg p-3 space-y-2 bg-neutral-50/60 dark:bg-[#161f27]/50" data-i="${i}">
+  <div class="flex items-center justify-between">
+    <span class="text-[10px] font-bold uppercase tracking-wide text-cyan-600 dark:text-cyan-500">Calculator ${i+1}</span>
+    <button type="button" class="rm-calc text-[11px] text-red-500 hover:text-red-600 hover:underline" data-i="${i}">Verwijder</button>
+  </div>
+  <div>
+    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Calculator</label>
+    <select class="calc-id w-full text-xs rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-white dark:bg-background" data-i="${i}">
+      ${calcOptionsHtml(c.calcId)}
+    </select>
+  </div>
+  <div>
+    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Tiro-template (URL, optioneel)</label>
+    <input type="text" class="calc-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/… (optioneel)" value="${esc(c.tiroTemplateUrl||'')}" data-i="${i}">
+  </div>
+</div>`).join('');
+
+            function syncCalc() {
+                el.querySelectorAll('.calc-row').forEach(row => {
+                    const i = +row.dataset.i;
+                    if (!editCalculators[i]) return;
+                    editCalculators[i].calcId = row.querySelector('.calc-id').value;
+                    editCalculators[i].tiroTemplateUrl = row.querySelector('.calc-tpl').value.trim();
+                });
+            }
+            el.querySelectorAll('.rm-calc').forEach(btn =>
+                btn.addEventListener('click', () => { editCalculators.splice(+btn.dataset.i, 1); renderCalculators(); })
+            );
+            el.querySelectorAll('input, select').forEach(inp => inp.addEventListener('input', syncCalc));
+        }
+        document.getElementById('add-calculator-btn').addEventListener('click', () => {
+            editCalculators.push({ calcId: '', tiroTemplateUrl: '' });
+            renderCalculators();
             const body = document.getElementById('panel-body');
             setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior:'smooth' }), 60);
         });
@@ -1219,7 +1494,18 @@ XXX` },
                 editAiRules[i].condition = { operator: row.querySelector('.ai-op').value, value: row.querySelector('.ai-val').value };
                 editAiRules[i].action    = row.querySelector('.ai-act').value;
                 editAiRules[i].template  = row.querySelector('.ai-tpl').value;
+                const modeRadio = row.querySelector('.ai-mode-radio:checked');
+                if (modeRadio) editAiRules[i].activeMode = modeRadio.value;
             });
+
+            // Flush any pending calculator edits and drop empty rows
+            document.getElementById('calculators-list').querySelectorAll('.calc-row').forEach(row => {
+                const i = +row.dataset.i;
+                if (!editCalculators[i]) return;
+                editCalculators[i].calcId = row.querySelector('.calc-id').value;
+                editCalculators[i].tiroTemplateUrl = row.querySelector('.calc-tpl').value.trim();
+            });
+            editCalculators = editCalculators.filter(c => c.calcId);
 
             const name = document.getElementById('edit-name').value.trim();
             if (!name) { alert('Naam is verplicht.'); return; }
@@ -1227,17 +1513,23 @@ XXX` },
             if (replaceCount > 1) { alert('Er kan maximaal één AI-regel zijn met de actie "Vervang template". Pas de regels aan.'); return; }
 
             const _existingForSave = state.examTypes.find(t => t.id === currentEditId);
+            const deptTextTpl = document.getElementById('edit-dept-text-template').value.trim();
             const updated = {
-                id:           currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
+                id:              currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
                 name,
-                code:         document.getElementById('edit-code').value.trim(),
-                modality:     document.getElementById('edit-modality').value,
-                dicom:        [...editDicomList],
-                deptTemplate:  document.getElementById('edit-dept-template').value.trim(),
-                userTemplate:  document.getElementById('edit-user-template').value.trim(),
-                textTemplate:  document.getElementById('edit-text-template').value.trim(),
-                presetText:    document.getElementById('edit-preset-text').value.trim(),
-                aiRules:       editAiRules,
+                code:            document.getElementById('edit-code').value.trim(),
+                modality:        document.getElementById('edit-modality').value,
+                dicom:           [...editDicomList],
+                deptTemplate:    document.getElementById('edit-dept-template').value.trim(),
+                deptTextTemplate: deptTextTpl,
+                deptActiveMode:  document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
+                userTemplate:    document.getElementById('edit-user-template').value.trim(),
+                userTextTemplate: document.getElementById('edit-user-text-template').value.trim(),
+                userActiveMode:  document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
+                textTemplate:    deptTextTpl, // backward-compat alias
+                presetText:      document.getElementById('edit-preset-text').value.trim(),
+                aiRules:         editAiRules,
+                calculators:     editCalculators,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
             };
 
@@ -1320,15 +1612,48 @@ XXX` },
         }
 
         let _ttEditorExamId = null;
+        let _ttEditorLevel = null; // 'dept' | 'user' | 'ai-N' | null
 
-        window.openTtEditor = function(examId) {
+        function updateLevelBadge(level, val) {
+            const badge = document.getElementById(level + '-tt-badge');
+            if (!badge) return;
+            if (val) {
+                badge.textContent = 'Actief';
+                badge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
+            } else {
+                badge.textContent = 'Inactief';
+                badge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
+            }
+        }
+
+        window.openTtEditor = function(examId, level) {
             _ttEditorExamId = examId;
+            _ttEditorLevel = level || null;
             const et = state.examTypes.find(e => e.id === examId);
             if (!et) return;
             document.getElementById('tt-editor-modal').classList.remove('hidden');
-            document.getElementById('tt-editor-exam-name').textContent = et.name;
+
+            const levelLabels = { dept: 'Afdeling', user: 'Gebruiker' };
+            const levelSuffix = level ? (' — ' + (level.startsWith('ai-') ? 'AI regel ' + (parseInt(level.slice(3)) + 1) : (levelLabels[level] || level))) : '';
+            document.getElementById('tt-editor-exam-name').textContent = et.name + levelSuffix;
+
             const ta = document.getElementById('tt-editor-input');
-            ta.value = et.textTemplate || '';
+            const isSlideOpen = document.getElementById('slide-over').classList.contains('open')
+                                 && window._currentEditId === examId;
+
+            if (level === 'dept' || !level) {
+                ta.value = isSlideOpen
+                    ? document.getElementById('edit-dept-text-template').value
+                    : (et.deptTextTemplate || et.textTemplate || '');
+            } else if (level === 'user') {
+                ta.value = isSlideOpen
+                    ? document.getElementById('edit-user-text-template').value
+                    : (et.userTextTemplate || '');
+            } else if (level && level.startsWith('ai-')) {
+                const idx = parseInt(level.slice(3));
+                ta.value = (isSlideOpen ? editAiRules[idx]?.textTemplate : et.aiRules?.[idx]?.textTemplate) || '';
+            }
+
             document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
             syncTtHighlight();
             ta.focus();
@@ -1337,37 +1662,47 @@ XXX` },
         window.closeTtEditor = function() {
             document.getElementById('tt-editor-modal').classList.add('hidden');
             _ttEditorExamId = null;
+            _ttEditorLevel = null;
         };
 
         window.saveTtEditor = function() {
             const ta = document.getElementById('tt-editor-input');
             const val = ta.value.trim();
             if (!_ttEditorExamId) return;
-            // 1. Update examTypes in memory
             const et = state.examTypes.find(e => e.id === _ttEditorExamId);
-            if (et) {
-                et.textTemplate = val;
-                et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
-            }
-            // 2. Save to localStorage
-            saveData();
-            // 3. If slide-over is currently open for this exam, sync the hidden textarea and badge
-            const hiddenTa = document.getElementById('edit-text-template');
-            if (hiddenTa && document.getElementById('slide-over').classList.contains('open') &&
-                window._currentEditId === _ttEditorExamId) {
-                hiddenTa.value = val;
-                const ttBadge = document.getElementById('tt-edit-badge');
-                if (ttBadge) {
-                    if (val) {
-                        ttBadge.textContent = 'Actief';
-                        ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
-                    } else {
-                        ttBadge.textContent = 'Inactief';
-                        ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
-                    }
+            const isSlideOpen = document.getElementById('slide-over').classList.contains('open')
+                                 && window._currentEditId === _ttEditorExamId;
+            const level = _ttEditorLevel;
+
+            if (level === 'dept' || !level) {
+                if (isSlideOpen) {
+                    document.getElementById('edit-dept-text-template').value = val;
+                    updateLevelBadge('dept', val);
+                } else if (et) {
+                    et.deptTextTemplate = val;
+                    et.textTemplate = val; // backward-compat alias
+                    et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
+                    saveData();
+                }
+            } else if (level === 'user') {
+                if (isSlideOpen) {
+                    document.getElementById('edit-user-text-template').value = val;
+                    updateLevelBadge('user', val);
+                } else if (et) {
+                    et.userTextTemplate = val;
+                    saveData();
+                }
+            } else if (level && level.startsWith('ai-')) {
+                const idx = parseInt(level.slice(3));
+                if (isSlideOpen && editAiRules[idx]) {
+                    editAiRules[idx].textTemplate = val;
+                    renderAiRules();
+                } else if (et?.aiRules?.[idx]) {
+                    et.aiRules[idx].textTemplate = val;
+                    saveData();
                 }
             }
-            // 4. Re-render cards
+
             renderCards();
             closeTtEditor();
         };
@@ -1378,8 +1713,8 @@ XXX` },
             pre.innerHTML = highlightTt(ta.value) + '\n';
         }
 
-        window.openTtEditorFromSlideOver = function() {
-            if (window._currentEditId) openTtEditor(window._currentEditId);
+        window.openLevelTtEditor = function(level) {
+            if (window._currentEditId) openTtEditor(window._currentEditId, level);
         };
 
         // Wire input/scroll events
@@ -1488,6 +1823,78 @@ XXX` },
         document.getElementById('logic-modal').addEventListener('click', e => {
             if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
         });
+
+        // ── Calculatoren-overzicht modal ─────────────────────────────────────────
+        function _overviewRow(et, innerHtml) {
+            return `<div class="flex items-start gap-3 py-2.5 border-b border-neutral-100 dark:border-slate-700/50 last:border-0">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">${badge(et.modality)}<span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">${esc(et.name)}</span></div>
+                    <div class="flex flex-wrap gap-1">${innerHtml}</div>
+                </div>
+                <button class="ov-edit flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-600 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors" data-id="${esc(et.id)}">Bewerk</button>
+            </div>`;
+        }
+        function renderCalcOverview() {
+            const el = document.getElementById('calc-overview-content');
+            const RC = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
+            const withCalc = state.examTypes.filter(et => (et.calculators || []).length);
+            let html = '';
+            if (withCalc.length) {
+                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Gekoppeld aan onderzoekstype (${withCalc.length})</p>`;
+                html += withCalc.map(et => _overviewRow(et, et.calculators.map(c => {
+                    const d = RC ? RC.byId(c.calcId) : null;
+                    return `<span class="px-2 py-0.5 text-[11px] rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/30">${esc(d ? d.naam : c.calcId)}${c.tiroTemplateUrl ? ' 🔗' : ''}</span>`;
+                }).join(''))).join('');
+            } else {
+                html += `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-3">Nog geen calculatoren gekoppeld. Open een onderzoekstype en gebruik de sectie "Calculatoren".</p>`;
+            }
+            // Catalogus-referentie
+            if (RC) {
+                const cats = {};
+                RC.all().forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c.naam); });
+                html += `<details class="mt-4"><summary class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 cursor-pointer">Beschikbare calculatoren (${RC.all().length})</summary><div class="mt-2 space-y-2">` +
+                    Object.keys(cats).map(cat => `<div><div class="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">${esc(cat)}</div><div class="text-[11px] text-neutral-500 dark:text-neutral-400">${cats[cat].map(esc).join(' · ')}</div></div>`).join('') +
+                    `</div></details>`;
+            }
+            el.innerHTML = html;
+            el.querySelectorAll('.ov-edit').forEach(b => b.addEventListener('click', () => {
+                document.getElementById('calc-overview-modal').classList.add('hidden');
+                openEditor(b.dataset.id);
+            }));
+        }
+        document.getElementById('calc-overview-btn').addEventListener('click', () => {
+            document.getElementById('calc-overview-modal').classList.remove('hidden');
+            renderCalcOverview();
+        });
+        document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
+        document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+        // ── AI-regels-overzicht modal ────────────────────────────────────────────
+        function renderAiOverview() {
+            const el = document.getElementById('ai-overview-content');
+            const withAi = state.examTypes.filter(et => (et.aiRules || []).length);
+            let html = '';
+            if (withAi.length) {
+                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Onderzoekstypes met AI-regels (${withAi.length})</p>`;
+                html += withAi.map(et => _overviewRow(et, et.aiRules.map(r => {
+                    const act = r.action === 'replace_template' ? 'vervang' : 'voeg toe';
+                    return `<span class="px-2 py-0.5 text-[11px] rounded bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/30 font-mono">${esc(r.aiSource || '?')} ${esc(r.condition?.operator || '')} ${esc(r.condition?.value || '')} → ${act}</span>`;
+                }).join(''))).join('');
+            } else {
+                html += `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-3">Nog geen AI-regels ingesteld. Open een onderzoekstype en gebruik de sectie "AI-gebaseerde regels".</p>`;
+            }
+            el.innerHTML = html;
+            el.querySelectorAll('.ov-edit').forEach(b => b.addEventListener('click', () => {
+                document.getElementById('ai-overview-modal').classList.add('hidden');
+                openEditor(b.dataset.id);
+            }));
+        }
+        document.getElementById('ai-overview-btn').addEventListener('click', () => {
+            document.getElementById('ai-overview-modal').classList.remove('hidden');
+            renderAiOverview();
+        });
+        document.getElementById('ai-overview-close').addEventListener('click', () => document.getElementById('ai-overview-modal').classList.add('hidden'));
+        document.getElementById('ai-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
         </script>
 
 
