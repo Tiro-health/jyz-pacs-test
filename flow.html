@@ -157,7 +157,6 @@
             </div>
             <div class="flex justify-end gap-4 px-4 pb-2.5">
                 <button id="calc-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🧮 Calculatoren</button>
-                <button id="ai-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🤖 AI-regels</button>
             </div>
 
             <!-- Search + modality tabs -->
@@ -238,16 +237,19 @@
                     </div>
                 </div>
 
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+                <!-- Instelbare hoofdstukken (inklapbaar, standaard dicht) -->
+                <div class="space-y-2">
 
-                <!-- Department template -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
+                <!-- Afdeling -->
+                <details class="group border border-neutral-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1a2530]/40">
+                    <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:bg-neutral-50 dark:hover:bg-slate-800/40 rounded-lg">
                         <span>📄</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</label>
-                    </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
-                    <div class="space-y-2">
+                        <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 flex-1">Afdeling</span>
+                        <span id="dept-section-status" class="ftr-status text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                        <svg class="w-4 h-4 text-neutral-400 transition-transform duration-200 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="px-3 pb-3 pt-2 border-t border-neutral-200 dark:border-slate-700 space-y-2">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
                         <div>
                             <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag</label>
                             <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
@@ -272,18 +274,20 @@
                                 <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
                             </label>
                         </div>
+                        <textarea id="edit-dept-text-template" class="hidden"></textarea>
                     </div>
-                    <textarea id="edit-dept-text-template" class="hidden"></textarea>
-                </div>
+                </details>
 
-                <!-- User template -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
+                <!-- Gebruiker -->
+                <details class="group border border-neutral-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1a2530]/40">
+                    <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:bg-neutral-50 dark:hover:bg-slate-800/40 rounded-lg">
                         <span>👤</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</label>
-                    </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Persoonlijke voorkeur — overschrijft de afdelingsinstelling. Kies template of textueel.</p>
-                    <div class="space-y-2">
+                        <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 flex-1">Gebruiker override</span>
+                        <span id="user-section-status" class="ftr-status text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                        <svg class="w-4 h-4 text-neutral-400 transition-transform duration-200 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="px-3 pb-3 pt-2 border-t border-neutral-200 dark:border-slate-700 space-y-2">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Persoonlijke voorkeur — overschrijft de afdelingsinstelling. Kies template of textueel.</p>
                         <div>
                             <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template standaardverslag</label>
                             <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
@@ -308,50 +312,58 @@
                                 <span class="text-xs text-neutral-600 dark:text-neutral-300">Textueel</span>
                             </label>
                         </div>
+                        <textarea id="edit-user-text-template" class="hidden"></textarea>
                     </div>
-                    <textarea id="edit-user-text-template" class="hidden"></textarea>
-                </div>
+                </details>
 
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-
-                <!-- AI Rules -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center gap-2">
-                            <span>🤖</span>
-                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</label>
+                <!-- AI-regels -->
+                <details class="group border border-neutral-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1a2530]/40">
+                    <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:bg-neutral-50 dark:hover:bg-slate-800/40 rounded-lg">
+                        <span>🤖</span>
+                        <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 flex-1">AI-gebaseerde regels</span>
+                        <span id="ai-section-status" class="ftr-status text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                        <svg class="w-4 h-4 text-neutral-400 transition-transform duration-200 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="px-3 pb-3 pt-2 border-t border-neutral-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                            <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Nieuwe regel</button>
                         </div>
-                        <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Nieuwe regel</button>
+                        <div id="ai-rules-list" class="space-y-2.5"></div>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen. Kies per regel template of textueel.</p>
-                    <div id="ai-rules-list" class="space-y-2.5"></div>
-                </div>
-
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+                </details>
 
                 <!-- Calculatoren -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center gap-2">
-                            <span>🧮</span>
-                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Calculatoren</label>
+                <details class="group border border-neutral-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1a2530]/40">
+                    <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:bg-neutral-50 dark:hover:bg-slate-800/40 rounded-lg">
+                        <span>🧮</span>
+                        <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 flex-1">Calculatoren</span>
+                        <span id="calc-section-status" class="ftr-status text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                        <svg class="w-4 h-4 text-neutral-400 transition-transform duration-200 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="px-3 pb-3 pt-2 border-t border-neutral-200 dark:border-slate-700">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Verschijnen bij "Actieve template" en worden voorgesteld op basis van de gedicteerde tekst. Optioneel een Tiro-template-URL.</p>
+                            <button id="add-calculator-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Calculator</button>
                         </div>
-                        <button id="add-calculator-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Calculator</button>
+                        <div id="calculators-list" class="space-y-2.5"></div>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Koppel radiologische calculatoren aan dit onderzoekstype. Ze verschijnen bij "Actieve template" en worden voorgesteld op basis van de gedicteerde tekst. Optioneel kan een Tiro-template-URL gekoppeld worden.</p>
-                    <div id="calculators-list" class="space-y-2.5"></div>
-                </div>
+                </details>
 
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-
-                <!-- Preset verslag -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
+                <!-- Standaard verslag (preset) -->
+                <details class="group border border-neutral-200 dark:border-slate-700 rounded-lg bg-white dark:bg-[#1a2530]/40">
+                    <summary class="flex items-center gap-2 px-3 py-2.5 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden hover:bg-neutral-50 dark:hover:bg-slate-800/40 rounded-lg">
                         <span>📋</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Preset verslag</label>
+                        <span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 flex-1">Standaard verslag</span>
+                        <span id="preset-section-status" class="ftr-status text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                        <svg class="w-4 h-4 text-neutral-400 transition-transform duration-200 group-open:rotate-180" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="px-3 pb-3 pt-2 border-t border-neutral-200 dark:border-slate-700">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard verslagtekst voor de 📋 Preset knop in het PiP dicteerscherm. Wordt ongewijzigd in het dicteerveld geplakt.</p>
+                        <textarea id="edit-preset-text" rows="4" placeholder="bv. Normale bevindingen. Geen significante pathologie aantoonbaar." class="w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y text-neutral-800 dark:text-neutral-200 placeholder-neutral-400"></textarea>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard verslagtekst voor de 📋 Preset knop in het PiP dicteerscherm. Wordt ongewijzigd in het dicteerveld geplakt.</p>
-                    <textarea id="edit-preset-text" rows="4" placeholder="bv. Normale bevindingen. Geen significante pathologie aantoonbaar." class="w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y text-neutral-800 dark:text-neutral-200 placeholder-neutral-400"></textarea>
+                </details>
+
                 </div>
 
             </div><!-- /panel-body -->
@@ -506,27 +518,16 @@
         <div id="calc-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
-                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🧮 Calculatoren — overzicht &amp; koppelingen</h2>
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🧮 Calculatoren — catalogus</h2>
                     <button id="calc-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
                 </div>
                 <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Calculatoren koppel je <b>per onderzoekstype</b> (sectie "Calculatoren" in de editor). Klik <b>Bewerk</b> om een koppeling aan te passen of toe te voegen.</p>
+                    <div class="relative">
+                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <input id="calc-catalog-search" type="text" placeholder="Zoek calculator…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    </div>
                 </div>
                 <div id="calc-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
-            </div>
-        </div>
-
-        <!-- ── AI-regels-overzicht modal ───────────────────────────────────────── -->
-        <div id="ai-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
-                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
-                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🤖 AI-regels — overzicht</h2>
-                    <button id="ai-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
-                </div>
-                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500">AI-regels stel je <b>per onderzoekstype</b> in (sectie "AI-gebaseerde regels" in de editor). Klik <b>Bewerk</b> om aan te passen of toe te voegen.</p>
-                </div>
-                <div id="ai-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
             </div>
         </div>
 
@@ -1233,10 +1234,46 @@ XXX` },
 
             document.getElementById('delete-btn').style.visibility = isNew ? 'hidden' : 'visible';
 
+            updateSectionStatuses();
+
             document.getElementById('slide-overlay').classList.add('open');
             document.getElementById('slide-over').classList.add('open');
             document.getElementById('panel-body').scrollTop = 0;
         }
+
+        // Statuslabels in de ingeklapte hoofdstuk-koppen (leest de huidige formulierstaat)
+        function updateSectionStatuses() {
+            const set = (id, text, kind) => {
+                const e = document.getElementById(id); if (!e) return;
+                const styles = {
+                    muted: 'text-neutral-400 dark:text-neutral-500 bg-neutral-100 dark:bg-slate-700/50',
+                    cyan:  'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-900/20',
+                    amber: 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
+                };
+                e.textContent = text;
+                e.className = 'ftr-status text-[10px] font-medium px-1.5 py-0.5 rounded ' + (styles[kind] || styles.muted);
+            };
+            const val = id => (document.getElementById(id)?.value || '').trim();
+            const lvl = (tpl, txt, mode, emptyLbl) => {
+                if (!tpl && !txt) return { t: emptyLbl, k: 'muted' };
+                if (mode === 'textueel' && txt) return { t: 'Textueel', k: 'amber' };
+                if (tpl) return { t: 'Template', k: 'cyan' };
+                return { t: 'Textueel', k: 'amber' };
+            };
+            const d = lvl(val('edit-dept-template'), val('edit-dept-text-template'), document.querySelector('input[name="dept-mode"]:checked')?.value, 'leeg');
+            set('dept-section-status', d.t, d.k);
+            const u = lvl(val('edit-user-template'), val('edit-user-text-template'), document.querySelector('input[name="user-mode"]:checked')?.value, 'geen override');
+            set('user-section-status', u.t, u.k);
+            const aiN = (editAiRules || []).length;
+            set('ai-section-status', aiN ? (aiN + ' regel' + (aiN > 1 ? 's' : '')) : 'geen', aiN ? 'amber' : 'muted');
+            const cN = (editCalculators || []).filter(c => c.calcId).length;
+            set('calc-section-status', cN ? (cN + ' gekoppeld') : 'geen', cN ? 'cyan' : 'muted');
+            const preset = val('edit-preset-text');
+            set('preset-section-status', preset ? 'ingesteld' : 'geen', preset ? 'cyan' : 'muted');
+        }
+        // Live bijwerken bij elke wijziging in het bewerkpaneel
+        document.getElementById('panel-body').addEventListener('input', updateSectionStatuses);
+        document.getElementById('panel-body').addEventListener('change', updateSectionStatuses);
 
         window.closeSlideOver = function () {
             document.getElementById('slide-overlay').classList.remove('open');
@@ -1311,6 +1348,7 @@ XXX` },
         ];
 
         function renderAiRules() {
+            if (typeof updateSectionStatuses === 'function') updateSectionStatuses();
             const el = document.getElementById('ai-rules-list');
             if (!editAiRules.length) {
                 el.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-1">Geen AI-regels ingesteld.</p>`;
@@ -1437,6 +1475,7 @@ XXX` },
             return html;
         }
         function renderCalculators() {
+            if (typeof updateSectionStatuses === 'function') updateSectionStatuses();
             const el = document.getElementById('calculators-list');
             if (!calcCatalog().length) {
                 el.innerHTML = `<p class="text-xs text-red-400 italic py-1">Calculator-catalogus (calculators.js) niet geladen.</p>`;
@@ -1624,6 +1663,7 @@ XXX` },
                 badge.textContent = 'Inactief';
                 badge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
             }
+            if (typeof updateSectionStatuses === 'function') updateSectionStatuses();
         }
 
         window.openTtEditor = function(examId, level) {
@@ -1824,77 +1864,56 @@ XXX` },
             if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
         });
 
-        // ── Calculatoren-overzicht modal ─────────────────────────────────────────
-        function _overviewRow(et, innerHtml) {
-            return `<div class="flex items-start gap-3 py-2.5 border-b border-neutral-100 dark:border-slate-700/50 last:border-0">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2 mb-1">${badge(et.modality)}<span class="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">${esc(et.name)}</span></div>
-                    <div class="flex flex-wrap gap-1">${innerHtml}</div>
-                </div>
-                <button class="ov-edit flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-600 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors" data-id="${esc(et.id)}">Bewerk</button>
-            </div>`;
+        // ── Calculatoren-catalogus modal (bekijken) ──────────────────────────────
+        function _calcInputSummary(inp) {
+            if (inp.type === 'info') return null;
+            const bits = [];
+            const typeLbl = { number: 'getal', select: 'keuze', radio: 'keuze', checkbox: 'aan/uit', 'checkbox-group': 'meerkeuze', 'visual-select': 'keuze (figuur)' }[inp.type] || inp.type;
+            bits.push(typeLbl);
+            if (inp.eenheid) bits.push(inp.eenheid);
+            if ((inp.opties || []).length) bits.push((inp.opties.length) + ' opties');
+            return `<li class="text-[11px] text-neutral-600 dark:text-neutral-300"><span class="font-medium">${esc(inp.label)}</span> <span class="text-neutral-400">(${bits.join(', ')})</span></li>`;
         }
-        function renderCalcOverview() {
+        function renderCalcCatalog(filter) {
             const el = document.getElementById('calc-overview-content');
-            const RC = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
-            const withCalc = state.examTypes.filter(et => (et.calculators || []).length);
-            let html = '';
-            if (withCalc.length) {
-                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Gekoppeld aan onderzoekstype (${withCalc.length})</p>`;
-                html += withCalc.map(et => _overviewRow(et, et.calculators.map(c => {
-                    const d = RC ? RC.byId(c.calcId) : null;
-                    return `<span class="px-2 py-0.5 text-[11px] rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/30">${esc(d ? d.naam : c.calcId)}${c.tiroTemplateUrl ? ' 🔗' : ''}</span>`;
-                }).join(''))).join('');
-            } else {
-                html += `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-3">Nog geen calculatoren gekoppeld. Open een onderzoekstype en gebruik de sectie "Calculatoren".</p>`;
-            }
-            // Catalogus-referentie
-            if (RC) {
-                const cats = {};
-                RC.all().forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c.naam); });
-                html += `<details class="mt-4"><summary class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 cursor-pointer">Beschikbare calculatoren (${RC.all().length})</summary><div class="mt-2 space-y-2">` +
-                    Object.keys(cats).map(cat => `<div><div class="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">${esc(cat)}</div><div class="text-[11px] text-neutral-500 dark:text-neutral-400">${cats[cat].map(esc).join(' · ')}</div></div>`).join('') +
-                    `</div></details>`;
-            }
-            el.innerHTML = html;
-            el.querySelectorAll('.ov-edit').forEach(b => b.addEventListener('click', () => {
-                document.getElementById('calc-overview-modal').classList.add('hidden');
-                openEditor(b.dataset.id);
-            }));
+            const RC = (window.RADCALC && window.RADCALC.all) ? window.RADCALC : null;
+            if (!RC) { el.innerHTML = `<p class="text-sm text-red-400 py-3">Calculator-catalogus (calculators.js) niet geladen.</p>`; return; }
+            const q = (filter || '').toLowerCase().trim();
+            const all = RC.all().filter(c => !q ||
+                c.naam.toLowerCase().includes(q) || (c.categorie || '').toLowerCase().includes(q) ||
+                (c.bron || '').toLowerCase().includes(q) || (c.triggerKeywords || []).some(k => k.toLowerCase().includes(q)));
+            if (!all.length) { el.innerHTML = `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-4 text-center">Geen calculatoren gevonden</p>`; return; }
+            const cats = {};
+            all.forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c); });
+            el.innerHTML = `<p class="text-[11px] text-neutral-400 dark:text-neutral-500 mb-3">${all.length} calculator${all.length !== 1 ? 'en' : ''} beschikbaar. Klik een calculator open voor de details. Koppelen aan een onderzoekstype doe je in de editor van dat type.</p>` +
+                Object.keys(cats).map(cat => `
+                <div class="mb-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">${esc(cat)}</p>
+                    ${cats[cat].map(c => {
+                        const inputs = (c.inputs || []).map(_calcInputSummary).filter(Boolean);
+                        return `<details class="border border-neutral-200 dark:border-slate-700 rounded-md mb-1.5 bg-neutral-50/50 dark:bg-[#161f27]/40">
+                            <summary class="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm text-neutral-800 dark:text-neutral-100 select-none">
+                                <span class="font-medium flex-1">${esc(c.naam)}</span>
+                                <span class="text-[10px] text-neutral-400 font-mono">${(c.modaliteit || []).join('/')}</span>
+                            </summary>
+                            <div class="px-3 pb-3 pt-1 space-y-2 border-t border-neutral-200 dark:border-slate-700">
+                                ${c.bron ? `<p class="text-[11px] text-neutral-500 dark:text-neutral-400"><span class="font-semibold">Bron:</span> ${esc(c.bron)}</p>` : ''}
+                                ${c.beschrijving ? `<p class="text-[11px] text-neutral-600 dark:text-neutral-300">${esc(c.beschrijving)}</p>` : ''}
+                                ${inputs.length ? `<div><p class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400 mb-0.5">Invoervelden</p><ul class="list-disc pl-4 space-y-0.5">${inputs.join('')}</ul></div>` : ''}
+                                ${(c.triggerKeywords || []).length ? `<p class="text-[10px] text-neutral-400"><span class="font-semibold">Trefwoorden (tekstscan):</span> ${c.triggerKeywords.map(esc).join(', ')}</p>` : ''}
+                            </div>
+                        </details>`;
+                    }).join('')}
+                </div>`).join('');
         }
         document.getElementById('calc-overview-btn').addEventListener('click', () => {
             document.getElementById('calc-overview-modal').classList.remove('hidden');
-            renderCalcOverview();
+            document.getElementById('calc-catalog-search').value = '';
+            renderCalcCatalog('');
         });
+        document.getElementById('calc-catalog-search').addEventListener('input', e => renderCalcCatalog(e.target.value));
         document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
         document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
-
-        // ── AI-regels-overzicht modal ────────────────────────────────────────────
-        function renderAiOverview() {
-            const el = document.getElementById('ai-overview-content');
-            const withAi = state.examTypes.filter(et => (et.aiRules || []).length);
-            let html = '';
-            if (withAi.length) {
-                html += `<p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-2">Onderzoekstypes met AI-regels (${withAi.length})</p>`;
-                html += withAi.map(et => _overviewRow(et, et.aiRules.map(r => {
-                    const act = r.action === 'replace_template' ? 'vervang' : 'voeg toe';
-                    return `<span class="px-2 py-0.5 text-[11px] rounded bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/30 font-mono">${esc(r.aiSource || '?')} ${esc(r.condition?.operator || '')} ${esc(r.condition?.value || '')} → ${act}</span>`;
-                }).join(''))).join('');
-            } else {
-                html += `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-3">Nog geen AI-regels ingesteld. Open een onderzoekstype en gebruik de sectie "AI-gebaseerde regels".</p>`;
-            }
-            el.innerHTML = html;
-            el.querySelectorAll('.ov-edit').forEach(b => b.addEventListener('click', () => {
-                document.getElementById('ai-overview-modal').classList.add('hidden');
-                openEditor(b.dataset.id);
-            }));
-        }
-        document.getElementById('ai-overview-btn').addEventListener('click', () => {
-            document.getElementById('ai-overview-modal').classList.remove('hidden');
-            renderAiOverview();
-        });
-        document.getElementById('ai-overview-close').addEventListener('click', () => document.getElementById('ai-overview-modal').classList.add('hidden'));
-        document.getElementById('ai-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
         </script>
 
 
