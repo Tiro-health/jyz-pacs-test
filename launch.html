@@ -985,7 +985,7 @@
                         <div id="dynamic-templates" class="flex flex-col gap-1.5"></div>
                         <div class="flex items-center gap-2 my-1">
                             <div class="flex-1 border-t border-dashed border-neutral-300 dark:border-slate-700"></div>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">AI</span>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">AI en Calculatoren</span>
                             <div class="flex-1 border-t border-dashed border-neutral-300 dark:border-slate-700"></div>
                         </div>
                         <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
@@ -996,6 +996,8 @@
                             <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="SNOMED CT" checked />
                             SNOMED CT
                         </label>
+                        <!-- Calculatoren — gekoppeld aan het onderzoekstype (onder de AI en Calculatoren-lijn) -->
+                        <div id="calc-templates" class="flex flex-col gap-1.5"></div>
                     </div>
                 </div>
             </details>
@@ -1449,8 +1451,14 @@
                         window._flowCalculators[t.name] = { calcId: t.calcId, tiroTemplateUrl: t.tiroTemplateUrl || '', naam: t.label || t.calcId };
                     }
                 });
+                // Flow-templates in #dynamic-templates (boven de lijn); calculatoren in #calc-templates (onder "AI en Calculatoren")
+                const tplItems  = items.filter(t => t.mode !== 'calculator');
+                const calcItems = items.filter(t => t.mode === 'calculator');
                 document.getElementById("dynamic-templates").innerHTML =
-                    items.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked, t.mode, t.calcId)).join("");
+                    tplItems.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked, t.mode, t.calcId)).join("");
+                const calcEl = document.getElementById("calc-templates");
+                if (calcEl) calcEl.innerHTML =
+                    calcItems.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked, t.mode, t.calcId)).join("");
                 updateActiveTemplateSuffix();
                 if (typeof renderCalcPicker === 'function') renderCalcPicker();
             }
@@ -5042,7 +5050,10 @@ negated bevindingen
                     }
                 });
 
-                fontBtns.append(btnPipAI, btnPipVc, btnPipCam, btnFontDown, btnFontUp);
+                const btnPipCalc = mk('button', 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors cursor-pointer', '🧮');
+                btnPipCalc.type = 'button';
+                btnPipCalc.title = 'Calculator';
+                fontBtns.append(btnPipAI, btnPipVc, btnPipCalc, btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -5425,6 +5436,118 @@ negated bevindingen
                 vcActions.append(vcOrigBtn, vcCopyBtn, vcSendBtn, vcCloseBtn);
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
+
+                // ── Calculator paneel (PiP-variant, zelfde functionaliteit als hoofdvenster) ──
+                let _pipCalcKey = null, _pipCalcLastText = '';
+                const calcPanel = mk('div', 'rounded-lg border border-cyan-200 dark:border-cyan-900/40 overflow-hidden');
+                calcPanel.style.display = 'none';
+                const calcHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const calcTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', '🧮 Calculator');
+                const calcHeadClose = mk('button', 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base', '×');
+                calcHeadClose.type = 'button'; calcHeadClose.title = 'Sluiten';
+                calcHeadClose.addEventListener('click', () => { calcPanel.style.display = 'none'; });
+                calcHead.append(calcTitle, calcHeadClose);
+                const calcBody = mk('div', 'px-3 py-2 space-y-2');
+                const calcPicker = mk('select', 'w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500');
+                const calcBron = mk('p', 'text-[11px] text-neutral-400 dark:text-neutral-500');
+                const calcInputs = mk('div', 'space-y-2.5');
+                const calcResult = mk('div', 'rounded-md border border-cyan-200 dark:border-cyan-900/40 bg-cyan-50/60 dark:bg-cyan-900/10 px-3 py-2.5 space-y-1.5');
+                calcResult.style.display = 'none';
+                const calcActions = mk('div', 'flex items-center gap-2 flex-wrap');
+                calcActions.style.display = 'none';
+                const calcCopyBtn = mkBtn(SM, 'Kopiëren', () => {
+                    if (!_pipCalcLastText) return;
+                    pipCopy(_pipCalcLastText);
+                    calcPanel.style.display = 'none';                 // kopiëren sluit het venster
+                });
+                const calcSendBtn = mkBtn(SM, '↑ Naar dictaat', () => {
+                    if (!_pipCalcLastText) return;
+                    // Belangrijk: TOEVOEGEN achteraan (niet overschrijven) — anders dan bij verslag check
+                    const cur = ta.value || '';
+                    const merged = cur.trim() ? (cur.replace(/\s+$/, '') + '\n' + _pipCalcLastText) : _pipCalcLastText;
+                    _pipRealtimeLastText = merged.trim();             // onderdruk realtime her-trigger
+                    _pipRealtimeAbort?.abort();
+                    clearTimeout(_pipRealtimeDebounce);
+                    setNativeValue(ta, merged);
+                    _autoGrow();
+                    setDictationText(merged);
+                    calcPanel.style.display = 'none';                 // pijltje sluit het venster
+                });
+                calcActions.append(calcCopyBtn, calcSendBtn);
+                calcBody.append(calcPicker, calcBron, calcInputs, calcResult, calcActions);
+                calcPanel.append(calcHead, calcBody);
+                wrap.appendChild(calcPanel);
+
+                function pipCalcGather(calc) {
+                    const doc = pipWindow.document; const v = {};
+                    (calc.inputs || []).forEach(inp => {
+                        if (inp.type === 'info') return;
+                        if (inp.type === 'checkbox') { const e = doc.getElementById('calc-in-' + inp.id); v[inp.id] = !!(e && e.checked); }
+                        else if (inp.type === 'checkbox-group') { v[inp.id] = Array.from(calcInputs.querySelectorAll(`.calc-input-multi[data-iid="${inp.id}"]:checked`)).map(c => c.dataset.val); }
+                        else { const e = doc.getElementById('calc-in-' + inp.id); v[inp.id] = e ? e.value : ''; }
+                    });
+                    return v;
+                }
+                function pipCalcCompute() {
+                    const info = (window._flowCalculators || {})[_pipCalcKey]; const RC = window.RADCALC;
+                    if (!info || !RC) return; const calc = RC.byId(info.calcId); if (!calc) return;
+                    let r; try { r = calc.compute(pipCalcGather(calc)); } catch (e) { r = { ok: false, fout: 'Berekening mislukt: ' + e.message }; }
+                    if (!r || !r.ok) {
+                        calcResult.style.display = ''; calcResult.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic">${(r && r.fout) || 'Vul de velden in.'}</p>`;
+                        calcActions.style.display = 'none'; _pipCalcLastText = ''; return;
+                    }
+                    _pipCalcLastText = r.tekst || '';
+                    const items = (r.items || []).map(it => `<div class="flex items-baseline justify-between gap-3 text-sm"><span class="text-neutral-500 dark:text-neutral-400">${it.label}</span><span class="font-medium text-neutral-800 dark:text-neutral-100 text-right">${it.waarde}</span></div>`).join('');
+                    calcResult.style.display = '';
+                    calcResult.innerHTML = (r.klasse ? `<div class="text-sm font-semibold text-cyan-700 dark:text-cyan-300">${r.klasse}</div>` : '') + items +
+                        (r.advies ? `<div class="text-xs text-neutral-600 dark:text-neutral-300 pt-1 mt-1 border-t border-cyan-200/50 dark:border-cyan-900/30">${r.advies}</div>` : '') +
+                        `<div class="text-xs text-neutral-500 dark:text-neutral-400 italic pt-1.5 mt-1 border-t border-cyan-200/50 dark:border-cyan-900/30">📝 ${r.tekst}</div>`;
+                    calcActions.style.display = 'flex';
+                }
+                function pipCalcRenderForm() {
+                    const info = (window._flowCalculators || {})[_pipCalcKey]; const RC = window.RADCALC;
+                    if (!info || !RC) { calcInputs.innerHTML = ''; return; }
+                    const calc = RC.byId(info.calcId);
+                    if (!calc) { calcInputs.innerHTML = `<p class="text-xs text-red-500">Calculator niet gevonden.</p>`; return; }
+                    calcBron.textContent = (calc.beschrijving || '') + (calc.bron ? '  ·  ' + calc.bron : '');
+                    calcInputs.innerHTML = (calc.inputs || []).map(_calcInputHtml).join('');
+                    calcResult.style.display = 'none'; calcActions.style.display = 'none';
+                    pipCalcCompute();
+                }
+                function pipCalcRenderPicker() {
+                    const entries = Object.entries(window._flowCalculators || {});
+                    if (!entries.length) {
+                        calcPicker.innerHTML = ''; calcBron.textContent = '';
+                        calcInputs.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 py-2">Geen calculatoren gekoppeld aan dit onderzoekstype.</p>`;
+                        calcResult.style.display = 'none'; calcActions.style.display = 'none'; return;
+                    }
+                    calcPicker.innerHTML = entries.map(([key, info]) => `<option value="${String(key).replace(/"/g,'&quot;')}">${info.naam || info.calcId}</option>`).join('');
+                    if (!entries.some(([k]) => k === _pipCalcKey)) _pipCalcKey = entries[0][0];
+                    calcPicker.value = _pipCalcKey;
+                    pipCalcRenderForm();
+                }
+                calcPicker.addEventListener('change', () => { _pipCalcKey = calcPicker.value; pipCalcRenderForm(); });
+                calcInputs.addEventListener('input', pipCalcCompute);
+                calcInputs.addEventListener('change', pipCalcCompute);
+                calcInputs.addEventListener('click', (e) => {
+                    const card = e.target.closest('.calc-visual-opt'); if (!card) return;
+                    const iid = card.dataset.iid;
+                    calcInputs.querySelectorAll(`.calc-visual-opt[data-iid="${iid}"]`).forEach(c => {
+                        c.classList.remove('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                        c.classList.add('border-neutral-200', 'dark:border-slate-700');
+                    });
+                    card.classList.add('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                    card.classList.remove('border-neutral-200', 'dark:border-slate-700');
+                    const hidden = pipWindow.document.getElementById('calc-in-' + iid);
+                    if (hidden) hidden.value = card.dataset.val;
+                    pipCalcCompute();
+                });
+                btnPipCalc.addEventListener('click', () => {
+                    const open = calcPanel.style.display !== 'none';
+                    if (open) { calcPanel.style.display = 'none'; return; }
+                    calcPanel.style.display = '';
+                    pipCalcRenderPicker();
+                });
 
 
                 // ── Textuele back-up resultaat panel ────────────────
