@@ -236,24 +236,30 @@
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
-                <!-- Department template -->
+                <!-- Department templates -->
                 <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>📄</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Department template</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                            <span>📄</span>
+                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Department templates</label>
+                        </div>
+                        <button id="add-dept-tpl-btn" type="button" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Voeg toe</button>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard voor de hele afdeling. Geldt voor alle gebruikers tenzij overschreven.</p>
-                    <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard voor de hele afdeling. Eerste template is altijd de standaard. Extra templates verschijnen als keuze in het actieve-template venster.</p>
+                    <div id="dept-tpl-list" class="space-y-2"></div>
                 </div>
 
-                <!-- User template -->
+                <!-- User templates -->
                 <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>👤</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker template override</label>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                            <span>👤</span>
+                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker template override</label>
+                        </div>
+                        <button id="add-user-tpl-btn" type="button" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Voeg toe</button>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Persoonlijke voorkeur — overschrijft de department template. Leeg = geen override.</p>
-                    <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Persoonlijke voorkeur — overschrijft de department template. Eerste template is standaard; extras beschikbaar als keuze.</p>
+                    <div id="user-tpl-list" class="space-y-2"></div>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
@@ -795,23 +801,58 @@ XXX` },
         // ── App state ────────────────────────────────────────────────────────────
         let state = loadData();
 
+        // Helper: normalize template field to array
+        function toTemplateArray(val) {
+            if (Array.isArray(val)) return val.filter(Boolean);
+            if (val && typeof val === 'string') return [val];
+            return [];
+        }
+
+        // Helper: get first template URL (for display / compat)
+        function firstTemplate(arr) {
+            return Array.isArray(arr) ? (arr[0] || '') : (arr || '');
+        }
+
         // Migrate: sync templates from DEFAULT_EXAM_TYPES and add new entries
         (function migrate() {
             let changed = false;
+
+            // Step 1: convert all stored entries from old string fields to arrays
+            state.examTypes.forEach(et => {
+                if (!Array.isArray(et.deptTemplates)) {
+                    et.deptTemplates = toTemplateArray(et.deptTemplate || '');
+                    delete et.deptTemplate;
+                    changed = true;
+                }
+                if (!Array.isArray(et.userTemplates)) {
+                    et.userTemplates = toTemplateArray(et.userTemplate || '');
+                    delete et.userTemplate;
+                    changed = true;
+                }
+            });
+
             DEFAULT_EXAM_TYPES.forEach(def => {
                 const et = state.examTypes.find(t => t.id === def.id);
                 if (!et) {
-                    // New default exam type not yet in stored state — add it
-                    state.examTypes.push(JSON.parse(JSON.stringify(def)));
+                    // New default exam type not yet in stored state — add it (convert to arrays)
+                    const copy = JSON.parse(JSON.stringify(def));
+                    copy.deptTemplates = toTemplateArray(copy.deptTemplate || '');
+                    copy.userTemplates = toTemplateArray(copy.userTemplate || '');
+                    delete copy.deptTemplate;
+                    delete copy.userTemplate;
+                    state.examTypes.push(copy);
                     changed = true;
                     return;
                 }
-                if (def.deptTemplate && et.deptTemplate !== def.deptTemplate) {
-                    et.deptTemplate = def.deptTemplate;
+                // Sync default deptTemplate → deptTemplates[0] only if stored has none
+                const defDept = def.deptTemplate || '';
+                if (defDept && et.deptTemplates.length === 0) {
+                    et.deptTemplates = [defDept];
                     changed = true;
                 }
-                if (def.userTemplate && et.userTemplate !== def.userTemplate) {
-                    et.userTemplate = def.userTemplate;
+                const defUser = def.userTemplate || '';
+                if (defUser && et.userTemplates.length === 0) {
+                    et.userTemplates = [defUser];
                     changed = true;
                 }
                 if (def.textTemplate && !et.textTemplate) {
@@ -845,6 +886,8 @@ XXX` },
         let searchQuery = '';
         let editDicomList = [];
         let editAiRules = [];
+        let editDeptTemplates = [];
+        let editUserTemplates = [];
 
         // ── Modality config ──────────────────────────────────────────────────────
         const MODALITIES = ['ALLE','RX','CT','MR','ECHO','MAMMO','OVERIG'];
@@ -902,10 +945,13 @@ XXX` },
             });
         }
 
-        function flowPill(url, icon, label) {
-            if (!url) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
-            const name = url.split('/').pop() || url;
-            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(url)}">${esc(name)}</span></div>`;
+        function flowPill(templates, icon, label) {
+            const urls = Array.isArray(templates) ? templates.filter(Boolean) : (templates ? [templates] : []);
+            if (!urls.length) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
+            const first = urls[0];
+            const name = first.split('/').pop() || first;
+            const extra = urls.length > 1 ? ` <span class="text-[9px] font-bold text-cyan-500 dark:text-cyan-400">+${urls.length - 1}</span>` : '';
+            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(first)}">${esc(name)}${extra}</span></div>`;
         }
 
         const ARROW = `<svg class="text-neutral-300 dark:text-neutral-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
@@ -937,7 +983,7 @@ XXX` },
     ${badge(et.modality)}
     <span class="flex-1 text-sm font-semibold text-neutral-800 dark:text-neutral-100 truncate">${esc(et.name)}</span>
     <span class="hidden sm:block text-[11px] text-neutral-400 mr-1">${et.dicom.length} code${et.dicom.length !== 1 ? 's' : ''}</span>
-    ${et.deptTemplate ? '<span class="hidden md:block text-[10px] font-medium text-cyan-600 dark:text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1.5 py-0.5 rounded mr-1">DEPT</span>' : ''}
+    ${(et.deptTemplates && et.deptTemplates.length) ? '<span class="hidden md:block text-[10px] font-medium text-cyan-600 dark:text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1.5 py-0.5 rounded mr-1">DEPT</span>' : ''}
     ${aiCount ? `<span class="hidden md:block text-[10px] font-medium text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded mr-1">AI ${aiCount}</span>` : ''}
     <button class="edit-btn inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-600 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors flex-shrink-0" data-id="${esc(et.id)}">
       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
@@ -961,9 +1007,9 @@ XXX` },
     <div>
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
-        ${flowPill(et.deptTemplate, '📄', 'Afdeling')}
+        ${flowPill(et.deptTemplates, '📄', 'Afdeling')}
         ${ARROW}
-        ${flowPill(et.userTemplate, '👤', 'Gebruiker')}
+        ${flowPill(et.userTemplates, '👤', 'Gebruiker')}
         ${ARROW}
         <div class="flex flex-col">
           <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
@@ -1016,11 +1062,40 @@ XXX` },
         }
 
         // ── Slide-over ───────────────────────────────────────────────────────────
+        function renderTemplateList(containerId, list, addBtnId) {
+            const el = document.getElementById(containerId);
+            if (!list.length) {
+                el.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic">Geen templates gekoppeld.</p>`;
+            } else {
+                el.innerHTML = list.map((url, i) => `
+<div class="flex items-center gap-2 tpl-row" data-section="${containerId}" data-i="${i}">
+  <span class="flex-shrink-0 text-[10px] font-bold ${i === 0 ? 'text-cyan-600 dark:text-cyan-400' : 'text-neutral-400'} w-14 text-right">${i === 0 ? 'Standaard' : 'Extra ' + i}</span>
+  <input type="text" class="tpl-url flex-1 text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" value="${esc(url)}" placeholder="tiro://templates/…" data-i="${i}" data-section="${containerId}">
+  <button type="button" class="rm-tpl flex-shrink-0 text-neutral-400 hover:text-red-500 p-1 rounded transition-colors" data-i="${i}" data-section="${containerId}">
+    <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+</div>`).join('');
+            }
+
+            // Wire events
+            el.querySelectorAll('.tpl-url').forEach(inp => inp.addEventListener('input', () => {
+                const section = inp.dataset.section;
+                const arr = section === 'dept-tpl-list' ? editDeptTemplates : editUserTemplates;
+                arr[+inp.dataset.i] = inp.value;
+            }));
+            el.querySelectorAll('.rm-tpl').forEach(btn => btn.addEventListener('click', () => {
+                const section = btn.dataset.section;
+                const arr = section === 'dept-tpl-list' ? editDeptTemplates : editUserTemplates;
+                arr.splice(+btn.dataset.i, 1);
+                renderTemplateList(containerId, arr, addBtnId);
+            }));
+        }
+
         function openEditor(id) {
             currentEditId = id;
             const isNew = id === '__new__';
             const et = isNew
-                ? { id:'', name:'', code:'', modality:'RX', dicom:[], deptTemplate:'', userTemplate:'', aiRules:[] }
+                ? { id:'', name:'', code:'', modality:'RX', dicom:[], deptTemplates:[], userTemplates:[], aiRules:[] }
                 : state.examTypes.find(t => t.id === id);
             if (!et) return;
 
@@ -1029,11 +1104,14 @@ XXX` },
             document.getElementById('edit-name').value = et.name;
             document.getElementById('edit-code').value = et.code || '';
             document.getElementById('edit-modality').value = et.modality || 'RX';
-            document.getElementById('edit-dept-template').value = et.deptTemplate || '';
-            document.getElementById('edit-user-template').value = et.userTemplate || '';
             document.getElementById('edit-text-template').value = et.textTemplate || '';
             document.getElementById('edit-preset-text').value = et.presetText || '';
             window._currentEditId = et.id;
+
+            editDeptTemplates = [...(et.deptTemplates || [])];
+            editUserTemplates = [...(et.userTemplates || [])];
+            renderTemplateList('dept-tpl-list', editDeptTemplates, 'add-dept-tpl-btn');
+            renderTemplateList('user-tpl-list', editUserTemplates, 'add-user-tpl-btn');
             const ttBadge = document.getElementById('tt-edit-badge');
             if (ttBadge) {
                 if (et.textTemplate) {
@@ -1228,15 +1306,23 @@ XXX` },
             const replaceCount = editAiRules.filter(r => r.action === 'replace_template' && r.template).length;
             if (replaceCount > 1) { alert('Er kan maximaal één AI-regel zijn met de actie "Vervang template". Pas de regels aan.'); return; }
 
+            // Flush any pending template URL edits from DOM
+            document.getElementById('dept-tpl-list').querySelectorAll('.tpl-url').forEach(inp => {
+                editDeptTemplates[+inp.dataset.i] = inp.value;
+            });
+            document.getElementById('user-tpl-list').querySelectorAll('.tpl-url').forEach(inp => {
+                editUserTemplates[+inp.dataset.i] = inp.value;
+            });
+
             const _existingForSave = state.examTypes.find(t => t.id === currentEditId);
             const updated = {
-                id:           currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
+                id:            currentEditId === '__new__' ? ('et-' + Date.now()) : currentEditId,
                 name,
-                code:         document.getElementById('edit-code').value.trim(),
-                modality:     document.getElementById('edit-modality').value,
-                dicom:        [...editDicomList],
-                deptTemplate:  document.getElementById('edit-dept-template').value.trim(),
-                userTemplate:  document.getElementById('edit-user-template').value.trim(),
+                code:          document.getElementById('edit-code').value.trim(),
+                modality:      document.getElementById('edit-modality').value,
+                dicom:         [...editDicomList],
+                deptTemplates: editDeptTemplates.filter(u => u.trim()),
+                userTemplates: editUserTemplates.filter(u => u.trim()),
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
                 presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
@@ -1260,6 +1346,21 @@ XXX` },
             saveData();
             closeSlideOver();
             renderCards();
+        });
+
+        document.getElementById('add-dept-tpl-btn').addEventListener('click', () => {
+            editDeptTemplates.push('');
+            renderTemplateList('dept-tpl-list', editDeptTemplates, 'add-dept-tpl-btn');
+            // Focus new input
+            const inputs = document.getElementById('dept-tpl-list').querySelectorAll('.tpl-url');
+            if (inputs.length) inputs[inputs.length - 1].focus();
+        });
+
+        document.getElementById('add-user-tpl-btn').addEventListener('click', () => {
+            editUserTemplates.push('');
+            renderTemplateList('user-tpl-list', editUserTemplates, 'add-user-tpl-btn');
+            const inputs = document.getElementById('user-tpl-list').querySelectorAll('.tpl-url');
+            if (inputs.length) inputs[inputs.length - 1].focus();
         });
 
         document.getElementById('add-btn').addEventListener('click', () => openEditor('__new__'));
