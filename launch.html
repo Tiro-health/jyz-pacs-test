@@ -3953,7 +3953,7 @@ negated bevindingen
             // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
                 el.innerHTML = el.innerHTML.replace(
-                    /\[([^\]]+:)\]/g,
+                    /\[([^\]]+?:)\s*\]/g,
                     '<span class="tt-section-label">$1</span>'
                 );
             }
@@ -3965,7 +3965,7 @@ negated bevindingen
                 // (no BR sibling), we insert one inside the span ourselves.
                 const template = window._flowTextTemplate || window._flowUserTextTemplate || '';
                 const compactLabels = new Set();
-                const re = /\[([^\]]+:)\]\[br\]/g;
+                const re = /\[([^\]]+?:)\s*\]\[br\]/g;
                 let m;
                 while ((m = re.exec(template)) !== null) compactLabels.add(m[1].trim());
                 if (!compactLabels.size) return;
@@ -4142,7 +4142,7 @@ negated bevindingen
                     // Wrap [Label:] patterns and show toggle button if any labels are present.
                     // Use backupPlainText (phase 1 output) to detect labels so the button shows
                     // even when the verslag check (phase 2) strips them from the final output.
-                    const hasLabels = /\[[^\]]+:\]/.test(backupPlainText);
+                    const hasLabels = /\[[^\]]+?:\s*\]/.test(backupPlainText);
                     if (isMain) {
                         _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
                         wrapSectionLabels(ttContent);
