@@ -1459,7 +1459,7 @@ XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
 Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
             { id:'ech-sch', name:'ECHO SCHOUDER',               code:'echsch',   modality:'ECHO',
-              dicom:['echo schouder links','echo schouder rechts','echo schouder'], deptTemplate:'', userTemplate:'', aiRules:[], labelsDefaultVisible: true,
+              dicom:['echo schouder links','echo schouder rechts','echo schouder','echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], labelsDefaultVisible: true,
               textTemplate:`[ AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
 "- Normaal voorkomen van het AC-gewricht." // Beschrijf hier de bevindingen van het AC gewricht inclusief opzetting van het kapsel, degeneratie van het AC gewricht met subchondrale sclerose en osteofytose vorming en eventuele hydrops of Geyser sign.
 "- Geen argumenten voor subacromiale impingement." // Beschrijf hier de bevindingen met betrekking van subacromiale impingement tijdens dynamisch echografische controle.
@@ -2008,7 +2008,7 @@ BESLUIT:
 XXX` },
 
             // ── CT — nieuwe entries ───────────────────────────────────────────────
-            { id:'ct-aorta',  name:'CT AORTABOOG',              code:'ctaorta',  modality:'CT',
+            { id:'ct-aorta',  name:'CT AORTABOOG',              code:'ctaorboo', modality:'CT',
               dicom:['CT aorta'], deptTemplate:'', userTemplate:'', aiRules:[], textTemplate:`CT AORTABOOG:
 [- Aorta ascendens diameter: ]XXX mm // Meting aorta ascendens
 [- Aortaboog diameter: ]XXX mm // Meting aortaboog
@@ -2020,7 +2020,7 @@ XXX` },
 
 BESLUIT:
 XXX` },
-            { id:'ct-tavi',   name:'CT PRE-TAVI',               code:'cttavi',   modality:'CT',
+            { id:'ct-tavi',   name:'CT PRE-TAVI',               code:'cttav',    modality:'CT',
               dicom:['CT TAVI'], deptTemplate:'', userTemplate:'', aiRules:[], textTemplate:`CT PRE-TAVI:
 [- Aortawortel diameter (sinus of Valsalva): ]XXX mm // Meting aortawortel
 [- Aortaklep annulus diameter: ]XXX mm // Meting annulus
@@ -2053,7 +2053,7 @@ BESLUIT:
 XXX` },
 
             // ── RX — nieuwe entries ───────────────────────────────────────────────
-            { id:'rx-botden', name:'BOTDENSITOMETRIE DEXA',     code:'botdens',  modality:'OVERIG',
+            { id:'rx-botden', name:'BOTDENSITOMETRIE DEXA',     code:'rxbotden', modality:'RX',
               dicom:['botdensitometrie','botdensitometrie met terugbetaling'], deptTemplate:'', userTemplate:'', aiRules:[], textTemplate:`BOTDENSITOMETRIE:
 
 Onderzoek verricht volgens de DEXA methode op de lumbale zuil (L1 tot L4) en de beide heupen:
@@ -2072,7 +2072,7 @@ Volgens het FRAX-model ([www.shef.ac.uk/frax](http://www.shef.ac.uk/frax)) is he
 [- Risico op majeure osteoporotische fractuur (thv. wervel, heup, schouder, pols) in de volgende 10 jaren: ]XXX procent. // Bespreek hier het resultaat betreffende de kans op  majeure osteoporotische fractuur. 
 [- Risico op heupfractuur in de volgende 10 jaren: ]XXX procent. // Bespreek hier het resultaat betreffende de kans op heupfractuur binnen de 10 jaar.` },
             { id:'rx-smd',    name:'RX SLOKDARM-MAAG-DUODENUM', code:'rxsmd',    modality:'RX',
-              dicom:['slokdarm - maag - duodenum','Slokdarm - maag - duodenum - transit'], deptTemplate:'', userTemplate:'', aiRules:[], textTemplate:`RX PREPROCEDURAAL:
+              dicom:['slokdarm - maag - duodenum','Slokdarm - maag - duodenum - transit','maag - duodenum - transit'], deptTemplate:'', userTemplate:'', aiRules:[], textTemplate:`RX PREPROCEDURAAL:
 - "Geen significante afwijkingen aantoonbaar." // Beschrijf hier eventuele post-operatieve status. Zoals faecale residu's, gedilateerde darmlissen, intra-abdominaal vrij lucht of andere bevindingen die zich kunnen uiten op een RX abdomen.
 
 SLOKDARM:
