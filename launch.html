@@ -981,6 +981,11 @@
                     <div id="template-checkboxes" class="flex flex-col gap-1.5">
                         <!-- Flow status message -->
                         <div id="flow-status-msg" class="hidden text-xs rounded px-2 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200/60 dark:border-amber-800/30 text-amber-700 dark:text-amber-400"></div>
+                        <!-- Multi-type selector (shown when multiple flow types share same DICOM code) -->
+                        <div id="flow-selector" class="hidden flex-col gap-1 mb-0.5">
+                            <span class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400">Onderzoekstype</span>
+                            <div id="flow-selector-btns" class="flex flex-wrap gap-1"></div>
+                        </div>
                         <!-- Dynamic templates — rebuilt from flow config when study type is known -->
                         <div id="dynamic-templates" class="flex flex-col gap-1.5"></div>
                         <div class="flex items-center gap-2 my-1">
@@ -1476,43 +1481,7 @@
                 }
             }
 
-            function updateTemplatesFromFlow(typeOnderzoek) {
-                if (!typeOnderzoek || !typeOnderzoek.trim()) {
-                    showFlowStatus(null);
-                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
-                    createTemplateForms();
-                    window._flowTextTemplate = '';
-                    window._flowTextTemplateLogic = '';
-                    window._flowPresetText = '';
-                    updateTextTemplateBackup();
-                    return;
-                }
-                let flowConfig;
-                try { flowConfig = JSON.parse(localStorage.getItem("flowConfig_v1")); } catch (_) {}
-
-                const q = typeOnderzoek.toLowerCase().trim();
-                const examTypes = flowConfig?.examTypes || [];
-                const match = examTypes.find(et =>
-                    (et.name || "").toLowerCase().trim() === q ||
-                    (et.dicom || []).some(d => d.toLowerCase().trim() === q)
-                );
-
-                console.log("[flow] lookup:", JSON.stringify(q), "→", match ? match.name : "geen match", "| config geladen:", examTypes.length, "types");
-
-                if (!match) {
-                    const hint = examTypes.length === 0
-                        ? "Flow configuratie leeg – bezoek eerst de Flow pagina"
-                        : `"${typeOnderzoek}" niet gevonden (${examTypes.length} types geladen)`;
-                    showFlowStatus(hint);
-                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
-                    createTemplateForms();
-                    window._flowTextTemplate = '';
-                    window._flowTextTemplateLogic = '';
-                    window._flowPresetText = '';
-                    updateTextTemplateBackup();
-                    return;
-                }
-
+            function applyFlowMatch(match) {
                 showFlowStatus(null);
                 const items = [];
 
@@ -1633,6 +1602,87 @@
                 setDynamicTemplates(items);
                 createTemplateForms();
                 updateTextTemplateBackup();
+            }
+
+            function showFlowSelector(matches, q, activeId) {
+                const sel = document.getElementById("flow-selector");
+                const btns = document.getElementById("flow-selector-btns");
+                sel.classList.remove("hidden");
+                sel.classList.add("flex");
+                btns.innerHTML = matches.map(m => {
+                    const active = m.id === activeId;
+                    return `<button class="flow-sel-btn px-2 py-0.5 text-[11px] font-medium rounded border transition-colors ${
+                        active
+                            ? 'bg-cyan-600 border-cyan-600 text-white'
+                            : 'bg-white dark:bg-muted border-neutral-300 dark:border-slate-600 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent'
+                    }" data-id="${m.id}">${m.name}</button>`;
+                }).join('');
+                btns.querySelectorAll('.flow-sel-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const chosen = matches.find(m => m.id === btn.dataset.id);
+                        if (!chosen) return;
+                        try { localStorage.setItem('flowSelector:' + q, chosen.id); } catch(_) {}
+                        showFlowSelector(matches, q, chosen.id);
+                        applyFlowMatch(chosen);
+                    });
+                });
+            }
+
+            function hideFlowSelector() {
+                const sel = document.getElementById("flow-selector");
+                sel.classList.add("hidden");
+                sel.classList.remove("flex");
+            }
+
+            function updateTemplatesFromFlow(typeOnderzoek) {
+                if (!typeOnderzoek || !typeOnderzoek.trim()) {
+                    showFlowStatus(null);
+                    hideFlowSelector();
+                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    createTemplateForms();
+                    window._flowTextTemplate = '';
+                    window._flowTextTemplateLogic = '';
+                    window._flowPresetText = '';
+                    updateTextTemplateBackup();
+                    return;
+                }
+                let flowConfig;
+                try { flowConfig = JSON.parse(localStorage.getItem("flowConfig_v1")); } catch (_) {}
+
+                const q = typeOnderzoek.toLowerCase().trim();
+                const examTypes = flowConfig?.examTypes || [];
+                const matches = examTypes.filter(et =>
+                    (et.name || "").toLowerCase().trim() === q ||
+                    (et.dicom || []).some(d => d.toLowerCase().trim() === q)
+                );
+
+                console.log("[flow] lookup:", JSON.stringify(q), "→", matches.length, "match(es) | config geladen:", examTypes.length, "types");
+
+                if (matches.length === 0) {
+                    hideFlowSelector();
+                    const hint = examTypes.length === 0
+                        ? "Flow configuratie leeg – bezoek eerst de Flow pagina"
+                        : `"${typeOnderzoek}" niet gevonden (${examTypes.length} types geladen)`;
+                    showFlowStatus(hint);
+                    setDynamicTemplates(DEFAULT_FLOW_TEMPLATES);
+                    createTemplateForms();
+                    window._flowTextTemplate = '';
+                    window._flowTextTemplateLogic = '';
+                    window._flowPresetText = '';
+                    updateTextTemplateBackup();
+                    return;
+                }
+
+                if (matches.length > 1) {
+                    // Multiple exam types share this DICOM code — show selector
+                    const savedId = (() => { try { return localStorage.getItem('flowSelector:' + q); } catch(_) { return null; } })();
+                    const preferred = matches.find(m => m.id === savedId) || matches[0];
+                    showFlowSelector(matches, q, preferred.id);
+                    applyFlowMatch(preferred);
+                } else {
+                    hideFlowSelector();
+                    applyFlowMatch(matches[0]);
+                }
             }
 
             // Initialise with defaults
