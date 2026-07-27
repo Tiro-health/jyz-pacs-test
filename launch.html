@@ -809,6 +809,33 @@
                 </div>
             </details>
 
+            <!-- Calculator-venster (zichtbaar wanneer ≥1 calculator actief is) -->
+            <details
+                id="calc-accordion"
+                open
+                class="w-full bg-white dark:bg-background border border-cyan-200 dark:border-cyan-900/40 rounded-lg mb-3 hidden"
+            >
+                <summary class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg">
+                    <span>🧮</span>
+                    Calculator
+                    <span id="calc-suffix" class="ml-1 font-normal text-neutral-400 dark:text-neutral-500 text-xs truncate"></span>
+                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                </summary>
+                <div class="border-t border-neutral-200 dark:border-neutral-800 p-3 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <select id="calc-picker" class="flex-1 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 text-neutral-800 dark:text-neutral-200"></select>
+                    </div>
+                    <p id="calc-bron" class="text-[11px] text-neutral-400 dark:text-neutral-500"></p>
+                    <div id="calc-inputs" class="space-y-2.5"></div>
+                    <div id="calc-result" class="hidden rounded-md border border-cyan-200 dark:border-cyan-900/40 bg-cyan-50/60 dark:bg-cyan-900/10 px-3 py-2.5 space-y-1.5"></div>
+                    <div id="calc-actions" class="hidden items-center gap-2 flex-wrap">
+                        <button id="calc-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                        <button id="calc-send" type="button" title="Voeg toe aan dictatie" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg> Naar dictatie</button>
+                        <a id="calc-tiro-link" href="#" target="_blank" rel="noopener" class="hidden px-3 py-1.5 text-xs font-medium rounded-md border border-cyan-300 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 hover:bg-cyan-100 dark:hover:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 transition-colors">Open Tiro-template ↗</a>
+                    </div>
+                </div>
+            </details>
+
             <!-- Report Form -->
             <details
                 id="template-accordion"
@@ -963,7 +990,7 @@
                         <div id="dynamic-templates" class="flex flex-col gap-1.5"></div>
                         <div class="flex items-center gap-2 my-1">
                             <div class="flex-1 border-t border-dashed border-neutral-300 dark:border-slate-700"></div>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">AI</span>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">AI en Calculatoren</span>
                             <div class="flex-1 border-t border-dashed border-neutral-300 dark:border-slate-700"></div>
                         </div>
                         <label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
@@ -974,6 +1001,8 @@
                             <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="SNOMED CT" checked />
                             SNOMED CT
                         </label>
+                        <!-- Calculatoren — gekoppeld aan het onderzoekstype (onder de AI en Calculatoren-lijn) -->
+                        <div id="calc-templates" class="flex flex-col gap-1.5"></div>
                     </div>
                 </div>
             </details>
@@ -1346,6 +1375,7 @@
 
         <!-- Tiro Web SDK IIFE Bundle -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
+        <script src="calculators.js"></script>
 
         <script>
             // ============================================
@@ -1365,6 +1395,11 @@
             window._flowTextTemplateLogic = '';
             window._flowPresetText = '';
             window._flowLabelsDefaultVisible = false;
+            // Map: checkbox-key → { calcId, tiroTemplateUrl, naam } for active calculator items
+            window._flowCalculators = {};
+            // Calculator-venster state (declared early — renderCalcPicker runs during init)
+            let _calcLastText = '';
+            let _calcCurrentKey = null;
 
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
@@ -1373,6 +1408,7 @@
                     updateActiveTemplateSuffix();
                     updateSnomedCtBtn();
                     updateAiResultatenBtn();
+                    _syncCalculatorWindow(e.target);
                 }
             });
 
@@ -1383,19 +1419,49 @@
                 { name: "Echo Abdomen",                 label: "Echo Abdomen" },
             ];
 
-            function renderFlowCheckboxItem(name, label, checked) {
+            function renderFlowCheckboxItem(name, label, checked, mode, calcId) {
                 const v = name.replace(/"/g, "&quot;");
                 const l = label.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                return `<label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer">
-                    <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500" value="${v}"${checked ? " checked" : ""}>
-                    ${l}
+                const isTextueel = mode === 'textueel';
+                const isCalc = mode === 'calculator';
+                let textColor = 'text-neutral-700 dark:text-neutral-300';
+                let checkboxColor = 'text-cyan-600 focus:ring-cyan-500';
+                let dataAttr = '';
+                let prefix = '';
+                if (isTextueel) {
+                    textColor = 'text-amber-700 dark:text-amber-400';
+                    checkboxColor = 'accent-amber-500';
+                    dataAttr = ' data-mode="textueel"';
+                } else if (isCalc) {
+                    textColor = 'text-cyan-700 dark:text-cyan-400';
+                    checkboxColor = 'accent-cyan-600';
+                    dataAttr = ` data-mode="calculator" data-calc-id="${(calcId||'').replace(/"/g,'&quot;')}"`;
+                    prefix = '🧮 ';
+                }
+                return `<label class="flex items-center gap-2 text-sm ${textColor} cursor-pointer">
+                    <input type="checkbox" class="template-checkbox w-4 h-4 rounded border-neutral-300 dark:border-slate-700 ${checkboxColor}" value="${v}"${checked ? " checked" : ""}${dataAttr}>
+                    ${prefix}${l}
                 </label>`;
             }
 
             function setDynamicTemplates(items) {
+                // Store calculator info keyed by checkbox value
+                window._flowCalculators = {};
+                items.forEach(t => {
+                    if (t.mode === 'calculator' && t.calcId) {
+                        window._flowCalculators[t.name] = { calcId: t.calcId, tiroTemplateUrl: t.tiroTemplateUrl || '', naam: t.label || t.calcId };
+                    }
+                });
+                // Flow-templates in #dynamic-templates (boven de lijn); calculatoren in #calc-templates (onder "AI en Calculatoren")
+                const tplItems  = items.filter(t => t.mode !== 'calculator');
+                const calcItems = items.filter(t => t.mode === 'calculator');
                 document.getElementById("dynamic-templates").innerHTML =
-                    items.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked)).join("");
+                    tplItems.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked, t.mode, t.calcId)).join("");
+                const calcEl = document.getElementById("calc-templates");
+                if (calcEl) calcEl.innerHTML =
+                    calcItems.map(t => renderFlowCheckboxItem(t.name, t.label || t.name, !!t.checked, t.mode, t.calcId)).join("");
                 updateActiveTemplateSuffix();
+                if (typeof renderCalcPicker === 'function') renderCalcPicker();
             }
 
             function showFlowStatus(msg, info) {
@@ -1445,6 +1511,18 @@
                     if (isReplace) replaceUsed = true;
                     const suffix = isReplace ? ' (vervangen)' : ' (toevoegen)';
                     items.push({ name: key, label: match.name + " - AI" + suffix, checked });
+                });
+
+                // ── Calculatoren ──────────────────────────────────────────────────
+                const calcs = match.calculators || [];
+                const RC = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
+                calcs.forEach(c => {
+                    if (!c.calcId) return;
+                    const def = RC ? RC.byId(c.calcId) : null;
+                    const naam = def ? def.naam : c.calcId;
+                    const key = `flow:calc:${match.id}:${c.calcId}`;
+                    TEMPLATES[key] = '__calculator__';
+                    items.push({ name: key, label: naam, checked: false, mode: 'calculator', calcId: c.calcId, tiroTemplateUrl: c.tiroTemplateUrl || '' });
                 });
 
                 // Store text template from flow match for use in AI prompts and backup display
@@ -1922,7 +2000,7 @@
 
                 selected.forEach((name, index) => {
                     const url = TEMPLATES[name];
-                    if (!url) return;
+                    if (!url || url === '__calculator__') return; // calculator entries have no Tiro form
 
                     const updatedParamResource = {
                         ...paramResource,
@@ -2011,13 +2089,308 @@
             // "AI resultaten" en "SNOMED CT" tellen niet mee als echte Tiro-invultemplates
             function _hasRealTiroTemplate() {
                 return Array.from(document.querySelectorAll('.template-checkbox:checked'))
-                    .some(cb => cb.value !== 'AI resultaten' && cb.value !== 'SNOMED CT');
+                    .some(cb => {
+                        if (cb.value === 'AI resultaten' || cb.value === 'SNOMED CT') return false;
+                        if (cb.dataset.mode === 'calculator') return false;
+                        if (TEMPLATES[cb.value] === '__calculator__') return false;
+                        return true;
+                    });
             }
             function _updateAutofillBtnType() {
                 const btn = document.getElementById('autofill-btn');
                 if (btn) btn.type = _hasRealTiroTemplate() ? 'submit' : 'button';
                 updateTextTemplateBackup();
             }
+
+            // ============================================
+            // Calculator-venster
+            // ============================================
+            function _activeCalcCheckboxes() {
+                return Array.from(document.querySelectorAll('.template-checkbox:checked'))
+                    .filter(cb => cb.dataset.mode === 'calculator' && cb.dataset.calcId);
+            }
+
+            function renderCalcPicker() {
+                const acc = document.getElementById('calc-accordion');
+                const picker = document.getElementById('calc-picker');
+                if (!acc || !picker) return;
+                const active = _activeCalcCheckboxes();
+                if (!active.length) {
+                    acc.classList.add('hidden');
+                    document.getElementById('calc-inputs').innerHTML = '';
+                    document.getElementById('calc-result').classList.add('hidden');
+                    document.getElementById('calc-actions').classList.add('hidden');
+                    _calcCurrentKey = null;
+                    return;
+                }
+                acc.classList.remove('hidden');
+                picker.innerHTML = active.map(cb => {
+                    const info = (window._flowCalculators || {})[cb.value] || {};
+                    return `<option value="${cb.value.replace(/"/g,'&quot;')}">${(info.naam || cb.dataset.calcId)}</option>`;
+                }).join('');
+                // keep current selection if still active, else pick first
+                if (!active.some(cb => cb.value === _calcCurrentKey)) _calcCurrentKey = active[0].value;
+                picker.value = _calcCurrentKey;
+                renderCalcForm(_calcCurrentKey);
+            }
+
+            // Called from the change handler whenever any template checkbox toggles
+            function _syncCalculatorWindow(cb) {
+                renderCalcPicker();
+                if (cb && cb.dataset.mode === 'calculator' && cb.checked) {
+                    _calcCurrentKey = cb.value;
+                    const picker = document.getElementById('calc-picker');
+                    if (picker) picker.value = cb.value;
+                    renderCalcForm(cb.value);
+                    const acc = document.getElementById('calc-accordion');
+                    if (acc) { acc.setAttribute('open', ''); acc.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+                }
+            }
+
+            // Open the window for a specific calculator id (used by text-scan toast)
+            function openCalculatorWindow(calcId) {
+                const cb = _activeCalcCheckboxes().find(c => c.dataset.calcId === calcId);
+                if (cb) { _calcCurrentKey = cb.value; renderCalcPicker(); }
+                const acc = document.getElementById('calc-accordion');
+                if (acc) { acc.classList.remove('hidden'); acc.setAttribute('open', ''); acc.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+            }
+
+            function _calcInputHtml(inp) {
+                const id = 'calc-in-' + inp.id;
+                const baseCls = 'w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 text-neutral-800 dark:text-neutral-200';
+                const lbl = (txt) => `<label class="block text-[11px] font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400 mb-1">${txt}${inp.eenheid ? ` <span class="text-neutral-400 normal-case">(${inp.eenheid})</span>` : ''}</label>`;
+                const help = inp.help ? `<p class="text-[10px] text-neutral-400 mt-0.5">${inp.help}</p>` : '';
+                if (inp.type === 'info') {
+                    return `<div class="text-[11px] text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-muted rounded px-2 py-1.5">${inp.tekst || ''}</div>`;
+                }
+                if (inp.type === 'number') {
+                    return `<div>${lbl(inp.label)}<input type="number" id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}" ${inp.min!=null?`min="${inp.min}"`:''} ${inp.max!=null?`max="${inp.max}"`:''} step="${inp.step||'any'}" ${inp.default!=null?`value="${inp.default}"`:''}>${help}</div>`;
+                }
+                if (inp.type === 'select' || inp.type === 'radio') {
+                    const opts = (inp.opties || []).map(o => `<option value="${String(o.v).replace(/"/g,'&quot;')}" ${inp.default===o.v?'selected':''}>${o.l}</option>`).join('');
+                    return `<div>${lbl(inp.label)}<select id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}"><option value="">— kies —</option>${opts}</select>${help}</div>`;
+                }
+                if (inp.type === 'checkbox') {
+                    return `<label class="flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300 cursor-pointer"><input type="checkbox" id="${id}" class="calc-input w-4 h-4 rounded accent-cyan-600" data-iid="${inp.id}" ${inp.default?'checked':''}>${inp.label}</label>${help}`;
+                }
+                if (inp.type === 'checkbox-group') {
+                    const boxes = (inp.opties || []).map(o =>
+                        `<label class="flex items-center gap-1.5 text-xs text-neutral-700 dark:text-neutral-300 cursor-pointer"><input type="checkbox" class="calc-input-multi w-3.5 h-3.5 rounded accent-cyan-600" data-iid="${inp.id}" data-val="${String(o.v).replace(/"/g,'&quot;')}">${o.l}</label>`
+                    ).join('');
+                    return `<div>${lbl(inp.label)}<div class="grid grid-cols-2 gap-1.5">${boxes}</div>${help}</div>`;
+                }
+                if (inp.type === 'visual-select') {
+                    const RC = window.RADCALC;
+                    const def = inp.default != null ? String(inp.default) : '';
+                    const cards = (inp.opties || []).map(o => {
+                        const svg = (RC && RC.svg) ? RC.svg(inp.visual, o.v) : '';
+                        const short = String(o.l).replace(/ — .*/, '');
+                        const sel = String(o.v) === def;
+                        const selCls = sel ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/30' : 'border-neutral-200 dark:border-slate-700';
+                        return `<button type="button" class="calc-visual-opt flex flex-col items-center gap-1 rounded-md border-2 ${selCls} hover:border-cyan-400 bg-white dark:bg-background p-1.5 transition-colors" data-iid="${inp.id}" data-val="${String(o.v).replace(/"/g,'&quot;')}" title="${String(o.l).replace(/"/g,'&quot;')}">
+                            <span class="block w-full" style="height:78px">${svg}</span>
+                            <span class="text-[11px] font-semibold text-neutral-700 dark:text-neutral-200">${short}</span>
+                        </button>`;
+                    }).join('');
+                    return `<div>${lbl(inp.label)}<div class="grid grid-cols-3 gap-1.5" data-visual-iid="${inp.id}">${cards}</div><input type="hidden" id="${id}" class="calc-input" data-iid="${inp.id}" value="${def}">${help}</div>`;
+                }
+                return '';
+            }
+
+            function renderCalcForm(key) {
+                const info = (window._flowCalculators || {})[key];
+                const RC = window.RADCALC;
+                const container = document.getElementById('calc-inputs');
+                const bronEl = document.getElementById('calc-bron');
+                if (!info || !RC) { container.innerHTML = ''; return; }
+                const calc = RC.byId(info.calcId);
+                if (!calc) { container.innerHTML = `<p class="text-xs text-red-500">Calculator "${info.calcId}" niet gevonden.</p>`; return; }
+                document.getElementById('calc-suffix').textContent = '— ' + calc.naam;
+                bronEl.textContent = (calc.beschrijving || '') + (calc.bron ? '  ·  ' + calc.bron : '');
+                container.innerHTML = (calc.inputs || []).map(_calcInputHtml).join('');
+                // Tiro template link
+                const link = document.getElementById('calc-tiro-link');
+                if (info.tiroTemplateUrl) { link.href = info.tiroTemplateUrl; link.classList.remove('hidden'); }
+                else { link.classList.add('hidden'); }
+                document.getElementById('calc-result').classList.add('hidden');
+                document.getElementById('calc-actions').classList.add('hidden');
+                computeCalc();
+            }
+
+            function _gatherCalcValues(calc) {
+                const v = {};
+                (calc.inputs || []).forEach(inp => {
+                    if (inp.type === 'info') return;
+                    if (inp.type === 'checkbox') {
+                        const el = document.getElementById('calc-in-' + inp.id);
+                        v[inp.id] = !!(el && el.checked);
+                    } else if (inp.type === 'checkbox-group') {
+                        v[inp.id] = Array.from(document.querySelectorAll(`.calc-input-multi[data-iid="${inp.id}"]:checked`)).map(c => c.dataset.val);
+                    } else {
+                        const el = document.getElementById('calc-in-' + inp.id);
+                        v[inp.id] = el ? el.value : '';
+                    }
+                });
+                return v;
+            }
+
+            function computeCalc() {
+                const info = (window._flowCalculators || {})[_calcCurrentKey];
+                const RC = window.RADCALC;
+                if (!info || !RC) return;
+                const calc = RC.byId(info.calcId);
+                if (!calc) return;
+                const resEl = document.getElementById('calc-result');
+                const actEl = document.getElementById('calc-actions');
+                let r;
+                try { r = calc.compute(_gatherCalcValues(calc)); }
+                catch (e) { r = { ok: false, fout: 'Berekening mislukt: ' + e.message }; }
+                if (!r || !r.ok) {
+                    resEl.classList.remove('hidden');
+                    resEl.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic">${(r && r.fout) || 'Vul de velden in.'}</p>`;
+                    actEl.classList.add('hidden');
+                    _calcLastText = '';
+                    return;
+                }
+                _calcLastText = r.tekst || '';
+                const itemsHtml = (r.items || []).map(it =>
+                    `<div class="flex items-baseline justify-between gap-3 text-sm"><span class="text-neutral-500 dark:text-neutral-400">${it.label}</span><span class="font-medium text-neutral-800 dark:text-neutral-100 text-right">${it.waarde}</span></div>`
+                ).join('');
+                resEl.classList.remove('hidden');
+                resEl.innerHTML =
+                    (r.klasse ? `<div class="text-sm font-semibold text-cyan-700 dark:text-cyan-300">${r.klasse}</div>` : '') +
+                    itemsHtml +
+                    (r.advies ? `<div class="text-xs text-neutral-600 dark:text-neutral-300 pt-1 mt-1 border-t border-cyan-200/50 dark:border-cyan-900/30">${r.advies}</div>` : '') +
+                    `<div class="text-xs text-neutral-500 dark:text-neutral-400 italic pt-1.5 mt-1 border-t border-cyan-200/50 dark:border-cyan-900/30">📝 ${r.tekst}</div>`;
+                actEl.classList.remove('hidden');
+                actEl.classList.add('flex');
+            }
+
+            // Live recompute on any input change within the calculator window
+            (function wireCalcWindow() {
+                const inputs = document.getElementById('calc-inputs');
+                if (inputs) {
+                    inputs.addEventListener('input', computeCalc);
+                    inputs.addEventListener('change', computeCalc);
+                    // Visual-select figuurkaarten: klik selecteert (single-select per input)
+                    inputs.addEventListener('click', (e) => {
+                        const card = e.target.closest('.calc-visual-opt');
+                        if (!card) return;
+                        const iid = card.dataset.iid;
+                        inputs.querySelectorAll(`.calc-visual-opt[data-iid="${iid}"]`).forEach(c => {
+                            c.classList.remove('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                            c.classList.add('border-neutral-200', 'dark:border-slate-700');
+                        });
+                        card.classList.add('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                        card.classList.remove('border-neutral-200', 'dark:border-slate-700');
+                        const hidden = document.getElementById('calc-in-' + iid);
+                        if (hidden) hidden.value = card.dataset.val;
+                        computeCalc();
+                    });
+                }
+                const picker = document.getElementById('calc-picker');
+                if (picker) picker.addEventListener('change', () => { _calcCurrentKey = picker.value; renderCalcForm(picker.value); });
+                const copyBtn = document.getElementById('calc-copy');
+                if (copyBtn) copyBtn.addEventListener('click', () => {
+                    if (!_calcLastText) return;
+                    navigator.clipboard?.writeText(_calcLastText);
+                    copyBtn.textContent = 'Gekopieerd ✓';
+                    setTimeout(() => { copyBtn.textContent = 'Kopiëren'; }, 1500);
+                });
+                const sendBtn = document.getElementById('calc-send');
+                if (sendBtn) sendBtn.addEventListener('click', () => {
+                    if (!_calcLastText) return;
+                    const cur = (typeof readDictationText === 'function' ? readDictationText() : '') || '';
+                    const merged = cur ? (cur.replace(/\s+$/,'') + '\n' + _calcLastText) : _calcLastText;
+                    sendToDictationFields(merged);
+                });
+            })();
+
+            // ============================================
+            // Tekstscan → niet-invasieve toast
+            // ============================================
+            const _calcToastState = { dismissed: new Set(), shown: new Set() };
+            let _calcScanTimer = null;
+
+            function _scheduleCalcScan() {
+                clearTimeout(_calcScanTimer);
+                _calcScanTimer = setTimeout(runCalcScan, 1200);
+            }
+
+            function _calcToastContainer() {
+                let c = document.getElementById('calc-toast-container');
+                if (!c) {
+                    c = document.createElement('div');
+                    c.id = 'calc-toast-container';
+                    c.className = 'fixed bottom-4 right-4 z-[70] flex flex-col gap-2 w-72 max-w-[90vw] pointer-events-none';
+                    document.body.appendChild(c);
+                }
+                return c;
+            }
+
+            function runCalcScan() {
+                const RC = window.RADCALC;
+                if (!RC || !RC.detect) return;
+                // Calculators linked to the current exam type (i.e. with a checkbox present)
+                const linked = Array.from(document.querySelectorAll('.template-checkbox'))
+                    .filter(cb => cb.dataset.mode === 'calculator' && cb.dataset.calcId);
+                if (!linked.length) return;
+                const checkedIds = new Set(linked.filter(cb => cb.checked).map(cb => cb.dataset.calcId));
+                const restrictIds = linked.map(cb => cb.dataset.calcId);
+                const text = (typeof readDictationText === 'function' ? readDictationText() : '') || latestDictationText || '';
+                if (!text.trim()) return;
+                const hits = RC.detect(text, { restrictIds });
+                hits.forEach(h => {
+                    const id = h.calc.id;
+                    if (checkedIds.has(id)) return;                 // already active
+                    if (_calcToastState.dismissed.has(id)) return;  // user dismissed this session
+                    if (_calcToastState.shown.has(id)) return;      // already showing / shown
+                    _calcToastState.shown.add(id);
+                    showCalcToast(h.calc);
+                });
+            }
+
+            function showCalcToast(calc) {
+                const c = _calcToastContainer();
+                const el = document.createElement('div');
+                el.className = 'pointer-events-auto bg-white dark:bg-[#1a2530] border border-cyan-300 dark:border-cyan-800 rounded-lg shadow-lg overflow-hidden';
+                const body = document.createElement('div');
+                body.className = 'px-3 py-2.5';
+                body.innerHTML = `<div class="flex items-start gap-2">
+                    <span class="text-base leading-none mt-0.5">💡</span>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm text-neutral-800 dark:text-neutral-100"><span class="font-semibold">${calc.naam}</span> <span class="text-neutral-500 dark:text-neutral-400">mogelijk relevant</span></p>
+                    </div>
+                </div>`;
+                const actions = document.createElement('div');
+                actions.className = 'flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-muted border-t border-neutral-200 dark:border-slate-700';
+                const activate = document.createElement('button');
+                activate.type = 'button';
+                activate.className = 'px-2.5 py-1 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors';
+                activate.textContent = 'Activeren';
+                const dismiss = document.createElement('button');
+                dismiss.type = 'button';
+                dismiss.className = 'ml-auto px-2 py-1 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors';
+                dismiss.textContent = 'Negeren';
+                const close = () => { el.remove(); };
+                activate.addEventListener('click', () => {
+                    const cb = Array.from(document.querySelectorAll('.template-checkbox'))
+                        .find(c => c.dataset.mode === 'calculator' && c.dataset.calcId === calc.id);
+                    if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+                    else if (typeof openCalculatorWindow === 'function') openCalculatorWindow(calc.id);
+                    close();
+                });
+                dismiss.addEventListener('click', () => { _calcToastState.dismissed.add(calc.id); close(); });
+                actions.appendChild(activate);
+                actions.appendChild(dismiss);
+                el.appendChild(body);
+                el.appendChild(actions);
+                c.appendChild(el);
+                // auto-dismiss visueel na 14s (telt niet als "negeren", kan opnieuw verschijnen bij nieuwe tekst)
+                setTimeout(() => { if (el.isConnected) { el.remove(); _calcToastState.shown.delete(calc.id); } }, 14000);
+            }
+
+
 
             // ============================================
             // Magic Clipboard Event Listeners
@@ -2599,6 +2972,7 @@
                 if (src && src !== clipboard && "value" in src) {
                     latestDictationText = src.value;
                 }
+                _scheduleCalcScan();
             }, { capture: true });
 
             // Intercept copy from the dictation area: strip HTML markup and normalize
@@ -2632,6 +3006,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 latestDictationText = text.trim();
+                _scheduleCalcScan();
                 pasteTextIndicator.classList.remove("hidden");
                 pasteTextIndicator.classList.add("inline-flex");
                 setTimeout(() => {
@@ -4648,7 +5023,10 @@ negated bevindingen
                     }
                 });
 
-                fontBtns.append(btnPipAI, btnPipVc, btnPipCam, btnFontDown, btnFontUp);
+                const btnPipCalc = mk('button', 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors cursor-pointer', '🧮');
+                btnPipCalc.type = 'button';
+                btnPipCalc.title = 'Calculator';
+                fontBtns.append(btnPipAI, btnPipVc, btnPipCalc, btnPipCam, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -5019,6 +5397,119 @@ negated bevindingen
                 vcActions.append(vcOrigBtn, vcCopyBtn, vcSendBtn, vcCloseBtn);
                 vcPanel.append(vcHead, vcContent, vcActions);
                 wrap.appendChild(vcPanel);
+
+                // ── Calculator paneel (PiP-variant, zelfde functionaliteit als hoofdvenster) ──
+                let _pipCalcKey = null, _pipCalcLastText = '';
+                const calcPanel = mk('div', 'rounded-lg border border-cyan-200 dark:border-cyan-900/40 overflow-hidden');
+                calcPanel.style.display = 'none';
+                const calcHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
+                const calcTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', '🧮 Calculator');
+                const calcHeadClose = mk('button', 'text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base', '×');
+                calcHeadClose.type = 'button'; calcHeadClose.title = 'Sluiten';
+                calcHeadClose.addEventListener('click', () => { calcPanel.style.display = 'none'; });
+                calcHead.append(calcTitle, calcHeadClose);
+                const calcBody = mk('div', 'px-3 py-2 space-y-2');
+                const calcPicker = mk('select', 'w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500');
+                const calcBron = mk('p', 'text-[11px] text-neutral-400 dark:text-neutral-500');
+                const calcInputs = mk('div', 'space-y-2.5');
+                const calcResult = mk('div', 'rounded-md border border-cyan-200 dark:border-cyan-900/40 bg-cyan-50/60 dark:bg-cyan-900/10 px-3 py-2.5 space-y-1.5');
+                calcResult.style.display = 'none';
+                const calcActions = mk('div', 'flex items-center gap-2 flex-wrap');
+                calcActions.style.display = 'none';
+                const calcCopyBtn = mkBtn(SM, 'Kopiëren', () => {
+                    if (!_pipCalcLastText) return;
+                    pipCopy(_pipCalcLastText);
+                    calcPanel.style.display = 'none';                 // kopiëren sluit het venster
+                });
+                const calcSendBtn = mkBtn(SM, '↑ Naar dictaat', () => {
+                    if (!_pipCalcLastText) return;
+                    // Belangrijk: TOEVOEGEN achteraan (niet overschrijven) — anders dan bij verslag check
+                    const cur = ta.value || '';
+                    const merged = cur.trim() ? (cur.replace(/\s+$/, '') + '\n' + _pipCalcLastText) : _pipCalcLastText;
+                    _pipRealtimeLastText = merged.trim();             // onderdruk realtime her-trigger
+                    _pipRealtimeAbort?.abort();
+                    clearTimeout(_pipRealtimeDebounce);
+                    setNativeValue(ta, merged);
+                    _autoGrow();
+                    setDictationText(merged);
+                    calcPanel.style.display = 'none';                 // pijltje sluit het venster
+                });
+                calcActions.append(calcCopyBtn, calcSendBtn);
+                calcBody.append(calcPicker, calcBron, calcInputs, calcResult, calcActions);
+                calcPanel.append(calcHead, calcBody);
+                wrap.appendChild(calcPanel);
+
+                function pipCalcGather(calc) {
+                    const doc = pipWindow.document; const v = {};
+                    (calc.inputs || []).forEach(inp => {
+                        if (inp.type === 'info') return;
+                        if (inp.type === 'checkbox') { const e = doc.getElementById('calc-in-' + inp.id); v[inp.id] = !!(e && e.checked); }
+                        else if (inp.type === 'checkbox-group') { v[inp.id] = Array.from(calcInputs.querySelectorAll(`.calc-input-multi[data-iid="${inp.id}"]:checked`)).map(c => c.dataset.val); }
+                        else { const e = doc.getElementById('calc-in-' + inp.id); v[inp.id] = e ? e.value : ''; }
+                    });
+                    return v;
+                }
+                function pipCalcCompute() {
+                    const info = (window._flowCalculators || {})[_pipCalcKey]; const RC = window.RADCALC;
+                    if (!info || !RC) return; const calc = RC.byId(info.calcId); if (!calc) return;
+                    let r; try { r = calc.compute(pipCalcGather(calc)); } catch (e) { r = { ok: false, fout: 'Berekening mislukt: ' + e.message }; }
+                    if (!r || !r.ok) {
+                        calcResult.style.display = ''; calcResult.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic">${(r && r.fout) || 'Vul de velden in.'}</p>`;
+                        calcActions.style.display = 'none'; _pipCalcLastText = ''; return;
+                    }
+                    _pipCalcLastText = r.tekst || '';
+                    const items = (r.items || []).map(it => `<div class="flex items-baseline justify-between gap-3 text-sm"><span class="text-neutral-500 dark:text-neutral-400">${it.label}</span><span class="font-medium text-neutral-800 dark:text-neutral-100 text-right">${it.waarde}</span></div>`).join('');
+                    calcResult.style.display = '';
+                    calcResult.innerHTML = (r.klasse ? `<div class="text-sm font-semibold text-cyan-700 dark:text-cyan-300">${r.klasse}</div>` : '') + items +
+                        (r.advies ? `<div class="text-xs text-neutral-600 dark:text-neutral-300 pt-1 mt-1 border-t border-cyan-200/50 dark:border-cyan-900/30">${r.advies}</div>` : '') +
+                        `<div class="text-xs text-neutral-500 dark:text-neutral-400 italic pt-1.5 mt-1 border-t border-cyan-200/50 dark:border-cyan-900/30">📝 ${r.tekst}</div>`;
+                    calcActions.style.display = 'flex';
+                }
+                function pipCalcRenderForm() {
+                    const info = (window._flowCalculators || {})[_pipCalcKey]; const RC = window.RADCALC;
+                    if (!info || !RC) { calcInputs.innerHTML = ''; return; }
+                    const calc = RC.byId(info.calcId);
+                    if (!calc) { calcInputs.innerHTML = `<p class="text-xs text-red-500">Calculator niet gevonden.</p>`; return; }
+                    calcBron.textContent = (calc.beschrijving || '') + (calc.bron ? '  ·  ' + calc.bron : '');
+                    calcInputs.innerHTML = (calc.inputs || []).map(_calcInputHtml).join('');
+                    calcResult.style.display = 'none'; calcActions.style.display = 'none';
+                    pipCalcCompute();
+                }
+                function pipCalcRenderPicker() {
+                    const entries = Object.entries(window._flowCalculators || {});
+                    if (!entries.length) {
+                        calcPicker.innerHTML = ''; calcBron.textContent = '';
+                        calcInputs.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 py-2">Geen calculatoren gekoppeld aan dit onderzoekstype.</p>`;
+                        calcResult.style.display = 'none'; calcActions.style.display = 'none'; return;
+                    }
+                    calcPicker.innerHTML = entries.map(([key, info]) => `<option value="${String(key).replace(/"/g,'&quot;')}">${info.naam || info.calcId}</option>`).join('');
+                    if (!entries.some(([k]) => k === _pipCalcKey)) _pipCalcKey = entries[0][0];
+                    calcPicker.value = _pipCalcKey;
+                    pipCalcRenderForm();
+                }
+                calcPicker.addEventListener('change', () => { _pipCalcKey = calcPicker.value; pipCalcRenderForm(); });
+                calcInputs.addEventListener('input', pipCalcCompute);
+                calcInputs.addEventListener('change', pipCalcCompute);
+                calcInputs.addEventListener('click', (e) => {
+                    const card = e.target.closest('.calc-visual-opt'); if (!card) return;
+                    const iid = card.dataset.iid;
+                    calcInputs.querySelectorAll(`.calc-visual-opt[data-iid="${iid}"]`).forEach(c => {
+                        c.classList.remove('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                        c.classList.add('border-neutral-200', 'dark:border-slate-700');
+                    });
+                    card.classList.add('border-cyan-500', 'bg-cyan-50', 'dark:bg-cyan-900/30');
+                    card.classList.remove('border-neutral-200', 'dark:border-slate-700');
+                    const hidden = pipWindow.document.getElementById('calc-in-' + iid);
+                    if (hidden) hidden.value = card.dataset.val;
+                    pipCalcCompute();
+                });
+                btnPipCalc.addEventListener('click', () => {
+                    const open = calcPanel.style.display !== 'none';
+                    if (open) { calcPanel.style.display = 'none'; return; }
+                    calcPanel.style.display = '';
+                    pipCalcRenderPicker();
+                });
+
 
 
                 // ── Textuele back-up resultaat panel ────────────────
@@ -5401,6 +5892,7 @@ negated bevindingen
 
                         // Keep latestDictationText in sync for autofill/translate/verslag check.
                         setDictationText(tekst);
+                        _scheduleCalcScan();
 
                         // Only run realtime check when the toggle is on
                         if (!realtimeEnabled) return;
