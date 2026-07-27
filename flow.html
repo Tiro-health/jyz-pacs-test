@@ -294,10 +294,20 @@
                         </div>
                     </summary>
                     <div class="mt-3 space-y-3">
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Persoonlijke voorkeur — overschrijft de afdeling instelling. Leeg = geen override.</p>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Persoonlijke voorkeur — overschrijft de afdelingsinstelling. Leeg = geen override.</p>
                         <div>
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template override</label>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template standaardverslag</label>
                             <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Textueel standaardverslag</label>
+                            <button id="user-tt-trigger" onclick="openLevelTtEditor('user')"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="user-tt-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <textarea id="edit-user-text-template" class="hidden"></textarea>
                         </div>
                         <div class="flex items-center gap-4 pt-1">
                             <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
@@ -313,48 +323,65 @@
                     </div>
                 </details>
 
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-
-                <!-- AI Rules -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
+                <!-- AI-gebaseerde regels -->
+                <details id="ai-section">
+                    <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
                         <div class="flex items-center gap-2">
                             <span>🤖</span>
-                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</label>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
                         </div>
-                        <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Nieuwe regel</button>
+                        <div class="flex items-center gap-2">
+                            <span id="ai-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
+                            <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </summary>
+                    <div class="mt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                            <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Nieuwe regel</button>
+                        </div>
+                        <div id="ai-rules-list" class="space-y-2.5"></div>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
-                    <div id="ai-rules-list" class="space-y-2.5"></div>
-                </div>
-
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+                </details>
 
                 <!-- Calculatoren -->
-                <div>
-                    <div class="flex items-center justify-between mb-1">
+                <details id="calc-section">
+                    <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
                         <div class="flex items-center gap-2">
                             <span>🧮</span>
-                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Calculatoren</label>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Calculatoren</span>
                         </div>
-                        <button id="add-calculator-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Calculator</button>
+                        <div class="flex items-center gap-2">
+                            <span id="calc-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
+                            <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </summary>
+                    <div class="mt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Verschijnen bij "Actieve template" en worden voorgesteld op basis van de gedicteerde tekst. Optioneel een Tiro-template-URL.</p>
+                            <button id="add-calculator-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Calculator</button>
+                        </div>
+                        <div id="calculators-list" class="space-y-2.5"></div>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Verschijnen bij "Actieve template" en worden voorgesteld op basis van de gedicteerde tekst. Optioneel een Tiro-template-URL.</p>
-                    <div id="calculators-list" class="space-y-2.5"></div>
-                </div>
-
-
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+                </details>
 
                 <!-- Preset verslag -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>📋</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Preset verslag</label>
+                <details id="preset-section">
+                    <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
+                        <div class="flex items-center gap-2">
+                            <span>📋</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Preset verslag</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="preset-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
+                            <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </summary>
+                    <div class="mt-3">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard verslagtekst voor de 📋 Preset knop in het PiP dicteerscherm. Wordt ongewijzigd in het dicteerveld geplakt.</p>
+                        <textarea id="edit-preset-text" rows="4" placeholder="bv. Normale bevindingen. Geen significante pathologie aantoonbaar." class="w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y text-neutral-800 dark:text-neutral-200 placeholder-neutral-400"></textarea>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard verslagtekst voor de 📋 Preset knop in het PiP dicteerscherm. Wordt ongewijzigd in het dicteerveld geplakt.</p>
-                    <textarea id="edit-preset-text" rows="4" placeholder="bv. Normale bevindingen. Geen significante pathologie aantoonbaar." class="w-full text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y text-neutral-800 dark:text-neutral-200 placeholder-neutral-400"></textarea>
-                </div>
+                </details>
 
             </div><!-- /panel-body -->
 
@@ -3964,12 +3991,13 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
             : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
         </button>
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}','user')"
+          class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-shrink-0">
           <span class="text-[9px] uppercase tracking-wide text-neutral-400">👤 Textueel (user)</span>
           ${et.userTextTemplate
-            ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded">Actief</span>`
-            : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">Inactief</span>`}
-        </div>
+            ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
+            : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
+        </button>
         <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen in het resultaatvenster">
           <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible === true ? 'checked' : ''}>
           <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
@@ -4059,18 +4087,11 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 userBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (et.userTemplate ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' : 'text-neutral-400');
             }
             document.getElementById('edit-text-template').value = et.textTemplate || '';
+            document.getElementById('edit-user-text-template').value = et.userTextTemplate || '';
             document.getElementById('edit-preset-text').value = et.presetText || '';
             window._currentEditId = et.id;
-            const ttBadge = document.getElementById('tt-edit-badge');
-            if (ttBadge) {
-                if (et.textTemplate) {
-                    ttBadge.textContent = 'Actief';
-                    ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
-                } else {
-                    ttBadge.textContent = 'Inactief';
-                    ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
-                }
-            }
+            _setBadgeActive('tt-edit-badge', !!et.textTemplate);
+            _setBadgeActive('user-tt-badge', !!et.userTextTemplate);
             document.getElementById('dicom-input').value = '';
             document.getElementById('dicom-suggestions').classList.add('hidden');
 
@@ -4081,6 +4102,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             renderAiRules();
             editCalculators = JSON.parse(JSON.stringify(et.calculators || []));
             renderCalculators();
+            updateSectionStatuses();
 
             document.getElementById('delete-btn').style.visibility = isNew ? 'hidden' : 'visible';
 
@@ -4162,6 +4184,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         ];
 
         function renderAiRules() {
+            updateSectionStatuses();
             const el = document.getElementById('ai-rules-list');
             if (!editAiRules.length) {
                 el.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-1">Geen AI-regels ingesteld.</p>`;
@@ -4341,13 +4364,13 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 deptTemplate:  document.getElementById('edit-dept-template').value.trim(),
                 userTemplate:  document.getElementById('edit-user-template').value.trim(),
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
+                userTextTemplate: document.getElementById('edit-user-text-template').value.trim(),
                 presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
                 calculators:   editCalculators,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
                 deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
                 userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
-                userTextTemplate: _existingForSave?.userTextTemplate || '',
             };
 
             if (currentEditId === '__new__') {
@@ -4429,15 +4452,30 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         }
 
         let _ttEditorExamId = null;
+        let _ttEditorLevel = 'dept'; // 'dept' or 'user'
 
-        window.openTtEditor = function(examId) {
+        function _setBadgeActive(badgeId, active) {
+            const b = document.getElementById(badgeId);
+            if (!b) return;
+            if (active) {
+                b.textContent = 'Actief';
+                b.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
+            } else {
+                b.textContent = 'Inactief';
+                b.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
+            }
+        }
+
+        window.openTtEditor = function(examId, level) {
             _ttEditorExamId = examId;
+            _ttEditorLevel = level || 'dept';
             const et = state.examTypes.find(e => e.id === examId);
             if (!et) return;
             document.getElementById('tt-editor-modal').classList.remove('hidden');
-            document.getElementById('tt-editor-exam-name').textContent = et.name;
+            const levelLabel = _ttEditorLevel === 'user' ? 'Gebruiker — ' : 'Afdeling — ';
+            document.getElementById('tt-editor-exam-name').textContent = levelLabel + et.name;
             const ta = document.getElementById('tt-editor-input');
-            ta.value = et.textTemplate || '';
+            ta.value = _ttEditorLevel === 'user' ? (et.userTextTemplate || '') : (et.textTemplate || '');
             document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
             syncTtHighlight();
             ta.focus();
@@ -4452,31 +4490,30 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             const ta = document.getElementById('tt-editor-input');
             const val = ta.value.trim();
             if (!_ttEditorExamId) return;
-            // 1. Update examTypes in memory
             const et = state.examTypes.find(e => e.id === _ttEditorExamId);
             if (et) {
-                et.textTemplate = val;
-                et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
-            }
-            // 2. Save to localStorage
-            saveData();
-            // 3. If slide-over is currently open for this exam, sync the hidden textarea and badge
-            const hiddenTa = document.getElementById('edit-text-template');
-            if (hiddenTa && document.getElementById('slide-over').classList.contains('open') &&
-                window._currentEditId === _ttEditorExamId) {
-                hiddenTa.value = val;
-                const ttBadge = document.getElementById('tt-edit-badge');
-                if (ttBadge) {
-                    if (val) {
-                        ttBadge.textContent = 'Actief';
-                        ttBadge.className = 'text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded';
-                    } else {
-                        ttBadge.textContent = 'Inactief';
-                        ttBadge.className = 'text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded';
-                    }
+                if (_ttEditorLevel === 'user') {
+                    et.userTextTemplate = val;
+                } else {
+                    et.textTemplate = val;
+                    et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
                 }
             }
-            // 4. Re-render cards
+            saveData();
+            // Sync hidden textarea + badge if slide-over is open for this exam
+            if (document.getElementById('slide-over').classList.contains('open') &&
+                window._currentEditId === _ttEditorExamId) {
+                if (_ttEditorLevel === 'user') {
+                    const hiddenTa = document.getElementById('edit-user-text-template');
+                    if (hiddenTa) hiddenTa.value = val;
+                    _setBadgeActive('user-tt-badge', !!val);
+                } else {
+                    const hiddenTa = document.getElementById('edit-text-template');
+                    if (hiddenTa) hiddenTa.value = val;
+                    _setBadgeActive('tt-edit-badge', !!val);
+                }
+                updateSectionStatuses();
+            }
             renderCards();
             closeTtEditor();
         };
@@ -4488,8 +4525,33 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         }
 
         window.openTtEditorFromSlideOver = function() {
-            if (window._currentEditId) openTtEditor(window._currentEditId);
+            if (window._currentEditId) openTtEditor(window._currentEditId, 'dept');
         };
+
+        window.openLevelTtEditor = function(level) {
+            if (window._currentEditId) openTtEditor(window._currentEditId, level);
+        };
+
+        function updateSectionStatuses() {
+            const aiRules = editAiRules || [];
+            const calcs = editCalculators || [];
+            const preset = (document.getElementById('edit-preset-text')?.value || '').trim();
+            const aiSt = document.getElementById('ai-section-status');
+            if (aiSt) {
+                aiSt.textContent = aiRules.length ? `${aiRules.length} regel${aiRules.length !== 1 ? 's' : ''}` : 'geen';
+                aiSt.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (aiRules.length ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400' : 'text-neutral-400');
+            }
+            const calcSt = document.getElementById('calc-section-status');
+            if (calcSt) {
+                calcSt.textContent = calcs.length ? `${calcs.length} gekoppeld` : 'geen';
+                calcSt.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (calcs.length ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400' : 'text-neutral-400');
+            }
+            const presetSt = document.getElementById('preset-section-status');
+            if (presetSt) {
+                presetSt.textContent = preset ? 'ingesteld' : 'geen';
+                presetSt.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (preset ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-neutral-400');
+            }
+        }
 
         // Wire input/scroll events
         const _ttTa = document.getElementById('tt-editor-input');
@@ -4503,6 +4565,9 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         // ── Init ─────────────────────────────────────────────────────────────────
         renderFilters();
         renderCards();
+
+        // Update preset status badge when textarea changes
+        document.getElementById('edit-preset-text').addEventListener('input', updateSectionStatuses);
 
         // Labels default-visible toggle per exam type (delegated)
         document.getElementById('cards-container').addEventListener('change', e => {
