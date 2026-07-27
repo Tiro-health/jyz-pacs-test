@@ -239,25 +239,79 @@
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
-                <!-- Department template -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>📄</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Department template</label>
+                <!-- Afdeling sectie -->
+                <details id="dept-section" open>
+                    <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
+                        <div class="flex items-center gap-2">
+                            <span>📄</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="dept-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                            <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </summary>
+                    <div class="mt-3 space-y-3">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template standaardverslag</label>
+                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Textueel standaardverslag</label>
+                            <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <textarea id="edit-text-template" class="hidden"></textarea>
+                        </div>
+                        <div class="flex items-center gap-4 pt-1">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="dept-mode" value="template" class="accent-cyan-600" />
+                                Template
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="dept-mode" value="textueel" class="accent-teal-600" />
+                                Textueel
+                            </label>
+                        </div>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Standaard voor de hele afdeling. Geldt voor alle gebruikers tenzij overschreven.</p>
-                    <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-                </div>
+                </details>
 
-                <!-- User template -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>👤</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker template override</label>
+                <!-- Gebruiker override sectie -->
+                <details id="user-section">
+                    <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
+                        <div class="flex items-center gap-2">
+                            <span>👤</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="user-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                            <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </summary>
+                    <div class="mt-3 space-y-3">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Persoonlijke voorkeur — overschrijft de afdeling instelling. Leeg = geen override.</p>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template override</label>
+                            <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <div class="flex items-center gap-4 pt-1">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="user-mode" value="template" class="accent-cyan-600" />
+                                Template
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="user-mode" value="textueel" class="accent-teal-600" />
+                                Textueel
+                            </label>
+                        </div>
                     </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Persoonlijke voorkeur — overschrijft de department template. Leeg = geen override.</p>
-                    <input id="edit-user-template" type="text" placeholder="Leeg = geen override" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-                </div>
+                </details>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
@@ -289,23 +343,6 @@
                     <div id="calculators-list" class="space-y-2.5"></div>
                 </div>
 
-                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
-
-                <!-- Text template backup -->
-                <div>
-                    <div class="flex items-center gap-2 mb-1">
-                        <span>📝</span>
-                        <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Textuele back-up template</label>
-                    </div>
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Wordt gebruikt als back-up wanneer de Tiro-link niet beschikbaar is, en als structuurcontext voor AI-prompts.</p>
-                    <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
-                        class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
-                        <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-                    </button>
-                    <textarea id="edit-text-template" class="hidden"></textarea>
-                </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
@@ -3997,6 +4034,30 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             document.getElementById('edit-modality').value = et.modality || 'RX';
             document.getElementById('edit-dept-template').value = et.deptTemplate || '';
             document.getElementById('edit-user-template').value = et.userTemplate || '';
+
+            // dept-mode radio + badge
+            const deptMode = et.deptMode || 'template';
+            document.querySelectorAll('input[name="dept-mode"]').forEach(r => { r.checked = r.value === deptMode; });
+            const deptBadge = document.getElementById('dept-mode-badge');
+            if (deptMode === 'textueel') {
+                deptBadge.textContent = 'Textueel';
+                deptBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400';
+            } else {
+                deptBadge.textContent = et.deptTemplate ? 'Template' : 'geen override';
+                deptBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (et.deptTemplate ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' : 'text-neutral-400');
+            }
+
+            // user-mode radio + badge
+            const userMode = et.userMode || 'template';
+            document.querySelectorAll('input[name="user-mode"]').forEach(r => { r.checked = r.value === userMode; });
+            const userBadge = document.getElementById('user-mode-badge');
+            if (userMode === 'textueel') {
+                userBadge.textContent = 'Textueel';
+                userBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400';
+            } else {
+                userBadge.textContent = et.userTemplate ? 'override' : 'geen override';
+                userBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (et.userTemplate ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' : 'text-neutral-400');
+            }
             document.getElementById('edit-text-template').value = et.textTemplate || '';
             document.getElementById('edit-preset-text').value = et.presetText || '';
             window._currentEditId = et.id;
@@ -4284,6 +4345,9 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 aiRules:       editAiRules,
                 calculators:   editCalculators,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
+                deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
+                userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
+                userTextTemplate: _existingForSave?.userTextTemplate || '',
             };
 
             if (currentEditId === '__new__') {
