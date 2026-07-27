@@ -1404,6 +1404,22 @@
             // Event delegation — covers both static and dynamically-added checkboxes
             document.getElementById("template-checkboxes").addEventListener("change", (e) => {
                 if (e.target.matches(".template-checkbox")) {
+                    // Textueel checkboxes zijn exclusief t.o.v. elkaar (niet combineerbaar)
+                    if (e.target.dataset.mode === 'textueel' && e.target.checked) {
+                        document.querySelectorAll('.template-checkbox[data-mode="textueel"]').forEach(cb => {
+                            if (cb !== e.target) cb.checked = false;
+                        });
+                    }
+                    // Sync _flowTextTemplate / _flowUserTextTemplate op basis van actieve textueel checkbox
+                    const activeTxt = document.querySelector('.template-checkbox[data-mode="textueel"]:checked');
+                    if (activeTxt) {
+                        const key = activeTxt.value;
+                        if (key.startsWith('flow:dept-txt:')) {
+                            window._flowTextTemplate = window._flowDeptTextTemplateCache || window._flowTextTemplate;
+                        } else if (key.startsWith('flow:user-txt:')) {
+                            window._flowTextTemplate = window._flowUserTextTemplate || '';
+                        }
+                    }
                     createTemplateForms();
                     updateActiveTemplateSuffix();
                     updateSnomedCtBtn();
@@ -1429,8 +1445,8 @@
                 let dataAttr = '';
                 let prefix = '';
                 if (isTextueel) {
-                    textColor = 'text-amber-700 dark:text-amber-400';
-                    checkboxColor = 'accent-amber-500';
+                    textColor = 'text-teal-700 dark:text-teal-400';
+                    checkboxColor = 'accent-teal-600';
                     dataAttr = ' data-mode="textueel"';
                 } else if (isCalc) {
                     textColor = 'text-cyan-700 dark:text-cyan-400';
@@ -1496,10 +1512,20 @@
                     TEMPLATES[key] = match.deptTemplate;
                     items.push({ name: key, label: match.name + " - afdeling", checked: !deptTextActive && !hasUser && !hasReplaceAI });
                 }
+                if (match.textTemplate) {
+                    const key = "flow:dept-txt:" + match.id;
+                    TEMPLATES[key] = '__textueel__';
+                    items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: deptTextActive && !hasUser && !hasReplaceAI, mode: 'textueel' });
+                }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
                     TEMPLATES[key] = match.userTemplate;
                     items.push({ name: key, label: match.name + " - gebruiker", checked: !userTextActive && !hasReplaceAI });
+                }
+                if (match.userTextTemplate) {
+                    const key = "flow:user-txt:" + match.id;
+                    TEMPLATES[key] = '__textueel__';
+                    items.push({ name: key, label: match.name + " - gebruiker (textueel)", checked: userTextActive && !hasReplaceAI, mode: 'textueel' });
                 }
                 let replaceUsed = false;
                 aiRules.forEach((rule, i) => {
@@ -1528,6 +1554,7 @@
                 // Store text template from flow match for use in AI prompts and backup display
                 window._flowTextTemplate = match.textTemplate || '';
                 window._flowUserTextTemplate = match.userTextTemplate || '';
+                window._flowDeptTextTemplateCache = match.textTemplate || '';
                 window._flowPresetText = match.presetText || '';
                 window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
                 window._flowTextTemplateLogic = '';
@@ -2000,7 +2027,7 @@
 
                 selected.forEach((name, index) => {
                     const url = TEMPLATES[name];
-                    if (!url || url === '__calculator__') return; // calculator entries have no Tiro form
+                    if (!url || url === '__calculator__' || url === '__textueel__') return; // these have no Tiro form
 
                     const updatedParamResource = {
                         ...paramResource,
@@ -2092,7 +2119,9 @@
                     .some(cb => {
                         if (cb.value === 'AI resultaten' || cb.value === 'SNOMED CT') return false;
                         if (cb.dataset.mode === 'calculator') return false;
+                        if (cb.dataset.mode === 'textueel') return false;
                         if (TEMPLATES[cb.value] === '__calculator__') return false;
+                        if (TEMPLATES[cb.value] === '__textueel__') return false;
                         return true;
                     });
             }
