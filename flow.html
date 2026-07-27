@@ -155,6 +155,9 @@
                 <button id="dicom-list-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Dicom lijst</button>
                 <button id="logic-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Textueel back-up logica</button>
             </div>
+            <div class="flex justify-end gap-4 px-4 pb-2.5">
+                <button id="calc-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🧮 Calculatoren</button>
+            </div>
 
             <!-- Search + modality tabs -->
             <div class="flex items-center gap-2 px-4 pb-3 flex-wrap">
@@ -269,6 +272,21 @@
                     </div>
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
                     <div id="ai-rules-list" class="space-y-2.5"></div>
+                </div>
+
+                <div class="border-t border-neutral-200 dark:border-slate-700"></div>
+
+                <!-- Calculatoren -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center gap-2">
+                            <span>🧮</span>
+                            <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Calculatoren</label>
+                        </div>
+                        <button id="add-calculator-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline">+ Calculator</button>
+                    </div>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Verschijnen bij "Actieve template" en worden voorgesteld op basis van de gedicteerde tekst. Optioneel een Tiro-template-URL.</p>
+                    <div id="calculators-list" class="space-y-2.5"></div>
                 </div>
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
@@ -449,7 +467,26 @@
             </div>
         </div>
 
+        <!-- ── Calculatoren-overzicht modal ────────────────────────────────────── -->
+        <div id="calc-overview-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🧮 Calculatoren — catalogus</h2>
+                    <button id="calc-overview-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <div class="relative">
+                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                        <input id="calc-catalog-search" type="text" placeholder="Zoek calculator…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    </div>
+                </div>
+                <div id="calc-overview-content" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
+            </div>
+        </div>
+
+
         <!-- ── Script ─────────────────────────────────────────────────────────── -->
+        <script src="calculators.js"></script>
         <script>
         const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
 
@@ -3607,6 +3644,46 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         // ── App state ────────────────────────────────────────────────────────────
         let state = loadData();
 
+        // Auto-koppel logische calculatoren aan een onderzoekstype op basis van naam + modaliteit.
+
+        // Auto-koppel logische calculatoren aan een onderzoekstype op basis van naam + modaliteit.
+        function autoLinkCalculators(et) {
+            const cat = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
+            if (!cat) return [];
+            const n = (et.name || '').toLowerCase() + ' ' + (et.dicom || []).join(' ').toLowerCase();
+            const mod = et.modality;
+            const has = (...kw) => kw.some(k => n.includes(k));
+            const ids = new Set();
+            const add = (...x) => x.forEach(i => { if (cat.byId(i)) ids.add(i); });
+
+            if (has('prostaat', 'prostate')) { if (mod === 'MR') add('pi-rads'); add('prostate-volume-psad'); }
+            if (has('lever', 'liver') && (mod === 'CT' || mod === 'MR')) add('li-rads', 'liver-steatosis');
+            if (has('bijnier', 'adrenal')) { add(mod === 'MR' ? 'adrenal-chemical-shift' : 'adrenal-washout'); }
+            if (has('thorax', 'longen', 'long', 'chest', 'pulmonale') && mod === 'CT') add('fleischner-2017');
+            if (has('longkankerscreening', 'screening long', 'low-dose') && mod === 'CT') add('lung-rads-2022');
+            if (has('longembolie', 'ctpa', 'embolie', 'pulmonale angio')) add('pesi');
+            if (has('nier', 'kidney', 'renaal', 'renal') && (mod === 'CT' || mod === 'MR')) add('bosniak-2019', 'renal-nephrometry');
+            if (has('schildklier', 'thyroid', 'thyreoid') || (has('hals') && mod === 'ECHO')) add('ti-rads', 'thyroid-volume');
+            if (has('hersenen', 'schedel', 'cerebr', 'cva', 'stroke', 'beroerte') && mod === 'CT') add('aspects', 'ich-volume-abc2');
+            if (has('carotis', 'carotid', 'hals') && (mod === 'CT' || mod === 'MR' || mod === 'ECHO')) add('carotid-stenosis');
+            if (has('adnex', 'ovarium', 'gynaeco', 'bekken vrouw') && mod === 'ECHO') add('o-rads-us');
+            if (/\bblaas\b/.test(n) || n.includes('bladder')) add('bladder-volume'); // woordgrens: matcht "blaas" maar niet "galblaas"
+            if (has('scrotum', 'testis', 'testikel')) add('gonadal-volume');
+            if (has('wervel', 'spine', 'lumbaal', 'cervic', 'thoracaal') && (mod === 'CT' || mod === 'MR')) add('ao-spine-tl', 'sins');
+            if (has('milt', 'spleen')) add('spleen-volume-index');
+            if (has('pancreas')) add('pancreatic-collections');
+            if (has('coronair', 'coronar', 'cardiac', 'hart', 'coronary') && mod === 'CT') add('cad-rads-2022');
+            if (has('colon', 'colografie', 'colonography')) add('c-rads');
+            if (has('galblaas', 'cholecyst', 'rechter bovenbuik') && mod === 'ECHO') add('acute-cholecystitis-us');
+            if (has('abdomen', 'buik') && mod === 'ECHO') add('acute-cholecystitis-us', 'spleen-volume-index');
+            if (has('abdomen', 'buik') && (mod === 'CT' || mod === 'MR')) add('li-rads', 'liver-steatosis', 'spleen-volume-index');
+            if (has('trauma', 'polytrauma') && mod === 'CT') add('aast-liver', 'aast-spleen', 'aast-kidney');
+            if (has('hoofd-hals', 'head and neck', 'larynx', 'farynx')) add('ni-rads');
+            if (has('neuroblastoom', 'mibg')) add('mibg-curie');
+            return [...ids];
+        }
+
+
         // Migrate: sync templates from DEFAULT_EXAM_TYPES and add new entries
         (function migrate() {
             let changed = false;
@@ -3678,6 +3755,26 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     changed = true;
                 }
             });
+            // Seed calculator-koppelingen (eenmalig, enkel wanneer nog niet ingesteld)
+            // Eenmalige correctie: verwijder foutieve blaasvolume-koppeling op galblaas-onderzoeken
+            // (oude heuristiek matchte "galblaas" op substring "blaas")
+            if (!localStorage.getItem('calcGalblaasFix_v1')) {
+                state.examTypes.forEach(et => {
+                    const n = ((et.name || '') + ' ' + (et.dicom || []).join(' ')).toLowerCase();
+                    if (/galblaas/.test(n) && !/\bblaas\b/.test(n) && Array.isArray(et.calculators)) {
+                        const before = et.calculators.length;
+                        et.calculators = et.calculators.filter(c => c.calcId !== 'bladder-volume');
+                        if (et.calculators.length !== before) changed = true;
+                    }
+                });
+                localStorage.setItem('calcGalblaasFix_v1', '1');
+            }
+            state.examTypes.forEach(et => {
+                if (et.calculators === undefined) {
+                    et.calculators = autoLinkCalculators(et).map(id => ({ calcId: id, tiroTemplateUrl: '' }));
+                    changed = true;
+                }
+            });
             if (changed) saveData();
             // Update saved textTemplateLogic if it predates [br] support
             const savedLogic = localStorage.getItem('textTemplateLogic');
@@ -3690,6 +3787,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         let searchQuery = '';
         let editDicomList = [];
         let editAiRules = [];
+        let editCalculators = [];
 
         // ── Modality config ──────────────────────────────────────────────────────
         const MODALITIES = ['ALLE','RX','CT','MR','ECHO','MAMMO','OVERIG'];
@@ -3775,6 +3873,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             container.innerHTML = types.map(et => {
                 const isOpen = openIds.has(et.id);
                 const aiCount = (et.aiRules || []).length;
+                const calcCount = (et.calculators || []).length;
+                const calcCat = (window.RADCALC && window.RADCALC.byId) ? window.RADCALC : null;
 
                 return `
 <details class="group rounded-lg border border-neutral-200 dark:border-slate-700 bg-white dark:bg-[#1a2530] overflow-hidden" ${isOpen ? 'open' : ''} data-id="${esc(et.id)}">
@@ -3785,6 +3885,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
     ${et.deptTemplate ? '<span class="hidden md:block text-[10px] font-medium text-cyan-600 dark:text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1.5 py-0.5 rounded mr-1">DEPT</span>' : ''}
     ${(et.textTemplate || et.userTextTemplate) ? `<span class="hidden md:block text-[10px] font-medium text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20 px-1.5 py-0.5 rounded mr-1">TEKST${et.textTemplate && et.userTextTemplate ? ' ×2' : ''}</span>` : ''}
     ${aiCount ? `<span class="hidden md:block text-[10px] font-medium text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-1.5 py-0.5 rounded mr-1">AI ${aiCount}</span>` : ''}
+    ${calcCount ? `<span class="hidden md:block text-[10px] font-medium text-cyan-600 dark:text-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 px-1.5 py-0.5 rounded mr-1">🧮 ${calcCount}</span>` : ''}
     <button class="edit-btn inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium rounded border border-neutral-300 dark:border-slate-600 hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors flex-shrink-0" data-id="${esc(et.id)}">
       <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
       Bewerk
@@ -3854,6 +3955,19 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         </div>
       `).join('')}
     </div>` : ''}
+
+    <!-- Calculatoren preview -->
+    ${calcCount ? `
+    <div>
+      <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">🧮 Calculatoren</p>
+      <div class="flex flex-wrap gap-1">
+        ${et.calculators.map(c => {
+          const def = calcCat ? calcCat.byId(c.calcId) : null;
+          const naam = def ? def.naam : c.calcId;
+          return `<span class="px-2 py-0.5 text-[11px] rounded bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border border-cyan-200/60 dark:border-cyan-800/30">${esc(naam)}${c.tiroTemplateUrl ? ' 🔗' : ''}</span>`;
+        }).join('')}
+      </div>
+    </div>` : ''}
   </div>
 </details>`;
             }).join('');
@@ -3904,6 +4018,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
             editAiRules = JSON.parse(JSON.stringify(et.aiRules || []));
             renderAiRules();
+            editCalculators = JSON.parse(JSON.stringify(et.calculators || []));
+            renderCalculators();
 
             document.getElementById('delete-btn').style.visibility = isNew ? 'hidden' : 'visible';
 
@@ -4063,6 +4179,71 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior:'smooth' }), 60);
         });
 
+        // ── Calculatoren ─────────────────────────────────────────────────────────
+        function calcCatalog() {
+            return (window.RADCALC && window.RADCALC.calculators) ? window.RADCALC.calculators : [];
+        }
+        function calcOptionsHtml(selectedId) {
+            const cats = {};
+            calcCatalog().forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c); });
+            let html = `<option value="">— kies calculator —</option>`;
+            Object.keys(cats).forEach(cat => {
+                html += `<optgroup label="${esc(cat)}">` +
+                    cats[cat].map(c => `<option value="${esc(c.id)}" ${c.id===selectedId?'selected':''}>${esc(c.naam)}</option>`).join('') +
+                    `</optgroup>`;
+            });
+            return html;
+        }
+        function renderCalculators() {
+            if (typeof updateSectionStatuses === 'function') updateSectionStatuses();
+            const el = document.getElementById('calculators-list');
+            if (!calcCatalog().length) {
+                el.innerHTML = `<p class="text-xs text-red-400 italic py-1">Calculator-catalogus (calculators.js) niet geladen.</p>`;
+                return;
+            }
+            if (!editCalculators.length) {
+                el.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-1">Geen calculatoren gekoppeld.</p>`;
+                return;
+            }
+            el.innerHTML = editCalculators.map((c, i) => `
+<div class="calc-row border border-neutral-200 dark:border-slate-700 rounded-lg p-3 space-y-2 bg-neutral-50/60 dark:bg-[#161f27]/50" data-i="${i}">
+  <div class="flex items-center justify-between">
+    <span class="text-[10px] font-bold uppercase tracking-wide text-cyan-600 dark:text-cyan-500">Calculator ${i+1}</span>
+    <button type="button" class="rm-calc text-[11px] text-red-500 hover:text-red-600 hover:underline" data-i="${i}">Verwijder</button>
+  </div>
+  <div>
+    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Calculator</label>
+    <select class="calc-id w-full text-xs rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 bg-white dark:bg-background" data-i="${i}">
+      ${calcOptionsHtml(c.calcId)}
+    </select>
+  </div>
+  <div>
+    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Tiro-template (URL, optioneel)</label>
+    <input type="text" class="calc-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/… (optioneel)" value="${esc(c.tiroTemplateUrl||'')}" data-i="${i}">
+  </div>
+</div>`).join('');
+
+            function syncCalc() {
+                el.querySelectorAll('.calc-row').forEach(row => {
+                    const i = +row.dataset.i;
+                    if (!editCalculators[i]) return;
+                    editCalculators[i].calcId = row.querySelector('.calc-id').value;
+                    editCalculators[i].tiroTemplateUrl = row.querySelector('.calc-tpl').value.trim();
+                });
+            }
+            el.querySelectorAll('.rm-calc').forEach(btn =>
+                btn.addEventListener('click', () => { editCalculators.splice(+btn.dataset.i, 1); renderCalculators(); })
+            );
+            el.querySelectorAll('input, select').forEach(inp => inp.addEventListener('input', syncCalc));
+        }
+        document.getElementById('add-calculator-btn').addEventListener('click', () => {
+            editCalculators.push({ calcId: '', tiroTemplateUrl: '' });
+            renderCalculators();
+            const body = document.getElementById('panel-body');
+            setTimeout(() => body.scrollTo({ top: body.scrollHeight, behavior:'smooth' }), 60);
+        });
+
+
         // ── Save / Delete ────────────────────────────────────────────────────────
         document.getElementById('save-edit-btn').addEventListener('click', () => {
             // Flush any pending AI rule edits
@@ -4074,6 +4255,15 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 editAiRules[i].action    = row.querySelector('.ai-act').value;
                 editAiRules[i].template  = row.querySelector('.ai-tpl').value;
             });
+
+            // Flush any pending calculator edits and drop empty rows
+            document.getElementById('calculators-list').querySelectorAll('.calc-row').forEach(row => {
+                const i = +row.dataset.i;
+                if (!editCalculators[i]) return;
+                editCalculators[i].calcId = row.querySelector('.calc-id').value;
+                editCalculators[i].tiroTemplateUrl = row.querySelector('.calc-tpl').value.trim();
+            });
+            editCalculators = editCalculators.filter(c => c.calcId);
 
             const name = document.getElementById('edit-name').value.trim();
             if (!name) { alert('Naam is verplicht.'); return; }
@@ -4092,6 +4282,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 textTemplate:  document.getElementById('edit-text-template').value.trim(),
                 presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
+                calculators:   editCalculators,
                 labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
             };
 
@@ -4342,6 +4533,58 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         document.getElementById('logic-modal').addEventListener('click', e => {
             if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
         });
+
+        // ── Calculatoren-catalogus modal (bekijken) ──────────────────────────────
+        function _calcInputSummary(inp) {
+            if (inp.type === 'info') return null;
+            const bits = [];
+            const typeLbl = { number: 'getal', select: 'keuze', radio: 'keuze', checkbox: 'aan/uit', 'checkbox-group': 'meerkeuze', 'visual-select': 'keuze (figuur)' }[inp.type] || inp.type;
+            bits.push(typeLbl);
+            if (inp.eenheid) bits.push(inp.eenheid);
+            if ((inp.opties || []).length) bits.push((inp.opties.length) + ' opties');
+            return `<li class="text-[11px] text-neutral-600 dark:text-neutral-300"><span class="font-medium">${esc(inp.label)}</span> <span class="text-neutral-400">(${bits.join(', ')})</span></li>`;
+        }
+        function renderCalcCatalog(filter) {
+            const el = document.getElementById('calc-overview-content');
+            const RC = (window.RADCALC && window.RADCALC.all) ? window.RADCALC : null;
+            if (!RC) { el.innerHTML = `<p class="text-sm text-red-400 py-3">Calculator-catalogus (calculators.js) niet geladen.</p>`; return; }
+            const q = (filter || '').toLowerCase().trim();
+            const all = RC.all().filter(c => !q ||
+                c.naam.toLowerCase().includes(q) || (c.categorie || '').toLowerCase().includes(q) ||
+                (c.bron || '').toLowerCase().includes(q) || (c.triggerKeywords || []).some(k => k.toLowerCase().includes(q)));
+            if (!all.length) { el.innerHTML = `<p class="text-sm text-neutral-400 dark:text-neutral-500 py-4 text-center">Geen calculatoren gevonden</p>`; return; }
+            const cats = {};
+            all.forEach(c => { (cats[c.categorie] = cats[c.categorie] || []).push(c); });
+            el.innerHTML = `<p class="text-[11px] text-neutral-400 dark:text-neutral-500 mb-3">${all.length} calculator${all.length !== 1 ? 'en' : ''} beschikbaar. Klik een calculator open voor de details. Koppelen aan een onderzoekstype doe je in de editor van dat type.</p>` +
+                Object.keys(cats).map(cat => `
+                <div class="mb-3">
+                    <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">${esc(cat)}</p>
+                    ${cats[cat].map(c => {
+                        const inputs = (c.inputs || []).map(_calcInputSummary).filter(Boolean);
+                        return `<details class="border border-neutral-200 dark:border-slate-700 rounded-md mb-1.5 bg-neutral-50/50 dark:bg-[#161f27]/40">
+                            <summary class="flex items-center gap-2 px-3 py-2 cursor-pointer text-sm text-neutral-800 dark:text-neutral-100 select-none">
+                                <span class="font-medium flex-1">${esc(c.naam)}</span>
+                                <span class="text-[10px] text-neutral-400 font-mono">${(c.modaliteit || []).join('/')}</span>
+                            </summary>
+                            <div class="px-3 pb-3 pt-1 space-y-2 border-t border-neutral-200 dark:border-slate-700">
+                                ${c.bron ? `<p class="text-[11px] text-neutral-500 dark:text-neutral-400"><span class="font-semibold">Bron:</span> ${esc(c.bron)}</p>` : ''}
+                                ${c.beschrijving ? `<p class="text-[11px] text-neutral-600 dark:text-neutral-300">${esc(c.beschrijving)}</p>` : ''}
+                                ${inputs.length ? `<div><p class="text-[10px] font-semibold uppercase tracking-wide text-neutral-400 mb-0.5">Invoervelden</p><ul class="list-disc pl-4 space-y-0.5">${inputs.join('')}</ul></div>` : ''}
+                                ${(c.triggerKeywords || []).length ? `<p class="text-[10px] text-neutral-400"><span class="font-semibold">Trefwoorden (tekstscan):</span> ${c.triggerKeywords.map(esc).join(', ')}</p>` : ''}
+                            </div>
+                        </details>`;
+                    }).join('')}
+                </div>`).join('');
+        }
+        document.getElementById('calc-overview-btn').addEventListener('click', () => {
+            document.getElementById('calc-overview-modal').classList.remove('hidden');
+            document.getElementById('calc-catalog-search').value = '';
+            renderCalcCatalog('');
+        });
+        document.getElementById('calc-catalog-search').addEventListener('input', e => renderCalcCatalog(e.target.value));
+        document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
+        document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
         </script>
 
 
