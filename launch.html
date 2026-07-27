@@ -4944,7 +4944,8 @@ negated bevindingen
                 function _applyInlineModeUI() {
                     ta.style.display = '';
                     ce.style.display = 'none';
-                    rtPanel.style.display = realtimeEnabled ? '' : 'none';
+                    // Toon rtPanel alleen als realtime aan staat ÉN er al content is
+                    if (!realtimeEnabled) rtPanel.style.display = 'none';
                 }
 
                 // ── Action buttons ──────────────────────────────────
@@ -5324,7 +5325,7 @@ negated bevindingen
 
                 // ── Real-time verslag check panel ───────────────────
                 const rtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
-                rtPanel.style.display = (realtimeEnabled && !_pipInlineMode) ? '' : 'none';
+                rtPanel.style.display = 'none'; // verborgen tot eerste verslag check resultaat
                 // Keep PiP realtime panel in sync with the main toggle
                 realtimeToggle.addEventListener('click', () => {
                     _applyInlineModeUI();
