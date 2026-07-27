@@ -5934,6 +5934,7 @@ negated bevindingen
                     clearTimeout(_pipRealtimeDebounce);
                     _pipRealtimeLastText = '';
                     // dicteervelden leegmaken (textarea + contenteditable)
+                    ta.value = '';
                     setNativeValue(ta, '');
                     _autoGrow();
                     ce.innerHTML = '';

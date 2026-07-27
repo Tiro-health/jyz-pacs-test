@@ -3909,7 +3909,10 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             });
         }
 
-        function flowPill(url, icon, label) {
+        function flowPill(url, textTpl, mode, icon, label) {
+            if (mode === 'textueel') {
+                return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs font-medium text-teal-600 dark:text-teal-400">📝 Textueel${textTpl ? '' : ' (leeg)'}</span></div>`;
+            }
             if (!url) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
             const name = url.split('/').pop() || url;
             return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(url)}">${esc(name)}</span></div>`;
@@ -3972,9 +3975,9 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
     <div>
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
-        ${flowPill(et.deptTemplate, '📄', 'Afdeling')}
+        ${flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling')}
         ${ARROW}
-        ${flowPill(et.userTemplate, '👤', 'Gebruiker')}
+        ${flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker')}
         ${ARROW}
         <div class="flex flex-col">
           <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
@@ -4225,9 +4228,18 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
       </select>
     </div>
   </div>
-  <div>
-    <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template URL</label>
-    <input type="text" class="ai-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/…" value="${esc(r.template||'')}" data-i="${i}">
+  <div class="grid grid-cols-2 gap-2">
+    <div>
+      <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Template URL</label>
+      <input type="text" class="ai-tpl w-full text-xs font-mono rounded border border-neutral-300 dark:border-slate-700 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500" placeholder="tiro://templates/…" value="${esc(r.template||'')}" data-i="${i}">
+    </div>
+    <div>
+      <label class="block text-[10px] uppercase tracking-wide text-neutral-400 mb-1">Textueel template</label>
+      <button type="button" class="ai-tt-trigger w-full flex items-center gap-1.5 px-2 py-1.5 text-xs rounded border ${r.textTemplate ? 'border-teal-300 dark:border-teal-700 text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/20' : 'border-neutral-300 dark:border-slate-700 text-neutral-500 dark:text-neutral-400'} hover:opacity-80 transition-opacity" data-i="${i}">
+        <span class="ai-tt-indicator">${r.textTemplate ? '📝 Ingesteld ✓' : '📝 Leeg'}</span>
+      </button>
+      <textarea class="ai-tpl-txt hidden" data-i="${i}">${esc(r.textTemplate||'')}</textarea>
+    </div>
   </div>
 </div>`;
             }).join('');
@@ -4239,6 +4251,12 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 })
             );
 
+            el.querySelectorAll('.ai-tt-trigger').forEach(btn =>
+                btn.addEventListener('click', () => {
+                    openTtEditor(window._currentEditId, 'ai-rule-' + btn.dataset.i);
+                })
+            );
+
             function syncAll() {
                 el.querySelectorAll('.ai-rule').forEach(row => {
                     const i = +row.dataset.i;
@@ -4247,6 +4265,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     editAiRules[i].condition  = { operator: row.querySelector('.ai-op').value, value: row.querySelector('.ai-val').value };
                     editAiRules[i].action     = row.querySelector('.ai-act').value;
                     editAiRules[i].template   = row.querySelector('.ai-tpl').value;
+                    editAiRules[i].textTemplate = row.querySelector('.ai-tpl-txt').value;
                 });
             }
 
@@ -4338,6 +4357,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 editAiRules[i].condition = { operator: row.querySelector('.ai-op').value, value: row.querySelector('.ai-val').value };
                 editAiRules[i].action    = row.querySelector('.ai-act').value;
                 editAiRules[i].template  = row.querySelector('.ai-tpl').value;
+                editAiRules[i].textTemplate = row.querySelector('.ai-tpl-txt')?.value || editAiRules[i].textTemplate || '';
             });
 
             // Flush any pending calculator edits and drop empty rows
@@ -4452,7 +4472,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         }
 
         let _ttEditorExamId = null;
-        let _ttEditorLevel = 'dept'; // 'dept' or 'user'
+        let _ttEditorLevel = 'dept'; // 'dept', 'user', or 'ai-rule-N'
 
         function _setBadgeActive(badgeId, active) {
             const b = document.getElementById(badgeId);
@@ -4472,10 +4492,16 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             const et = state.examTypes.find(e => e.id === examId);
             if (!et) return;
             document.getElementById('tt-editor-modal').classList.remove('hidden');
-            const levelLabel = _ttEditorLevel === 'user' ? 'Gebruiker — ' : 'Afdeling — ';
-            document.getElementById('tt-editor-exam-name').textContent = levelLabel + et.name;
             const ta = document.getElementById('tt-editor-input');
-            ta.value = _ttEditorLevel === 'user' ? (et.userTextTemplate || '') : (et.textTemplate || '');
+            if (_ttEditorLevel.startsWith('ai-rule-')) {
+                const rIdx = parseInt(_ttEditorLevel.slice('ai-rule-'.length));
+                document.getElementById('tt-editor-exam-name').textContent = `AI-regel ${rIdx+1} — ${et.name}`;
+                ta.value = editAiRules[rIdx]?.textTemplate || '';
+            } else {
+                const levelLabel = _ttEditorLevel === 'user' ? 'Gebruiker — ' : 'Afdeling — ';
+                document.getElementById('tt-editor-exam-name').textContent = levelLabel + et.name;
+                ta.value = _ttEditorLevel === 'user' ? (et.userTextTemplate || '') : (et.textTemplate || '');
+            }
             document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
             syncTtHighlight();
             ta.focus();
@@ -4490,6 +4516,33 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             const ta = document.getElementById('tt-editor-input');
             const val = ta.value.trim();
             if (!_ttEditorExamId) return;
+
+            // AI-rule textueel template — only updates editAiRules buffer (not saved to state yet)
+            if (_ttEditorLevel.startsWith('ai-rule-')) {
+                const rIdx = parseInt(_ttEditorLevel.slice('ai-rule-'.length));
+                if (editAiRules[rIdx] !== undefined) {
+                    editAiRules[rIdx].textTemplate = val;
+                    const aiRuleRow = document.querySelector(`.ai-rule[data-i="${rIdx}"]`);
+                    if (aiRuleRow) {
+                        const hiddenTa = aiRuleRow.querySelector('.ai-tpl-txt');
+                        if (hiddenTa) hiddenTa.value = val;
+                        const btn = aiRuleRow.querySelector('.ai-tt-trigger');
+                        if (btn) {
+                            const ind = btn.querySelector('.ai-tt-indicator');
+                            if (ind) ind.textContent = val ? '📝 Ingesteld ✓' : '📝 Leeg';
+                            btn.className = btn.className.replace(/border-\S+\s+text-\S+\s+bg-\S+/, '');
+                            if (val) {
+                                btn.classList.add('border-teal-300', 'dark:border-teal-700', 'text-teal-600', 'dark:text-teal-400', 'bg-teal-50', 'dark:bg-teal-900/20');
+                            } else {
+                                btn.classList.add('border-neutral-300', 'dark:border-slate-700', 'text-neutral-500', 'dark:text-neutral-400');
+                            }
+                        }
+                    }
+                }
+                closeTtEditor();
+                return;
+            }
+
             const et = state.examTypes.find(e => e.id === _ttEditorExamId);
             if (et) {
                 if (_ttEditorLevel === 'user') {
@@ -4551,6 +4604,32 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 presetSt.textContent = preset ? 'ingesteld' : 'geen';
                 presetSt.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (preset ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400' : 'text-neutral-400');
             }
+            // Dept mode badge
+            const deptModeVal = document.querySelector('input[name="dept-mode"]:checked')?.value || 'template';
+            const deptTpl = (document.getElementById('edit-dept-template')?.value || '').trim();
+            const deptBadge = document.getElementById('dept-mode-badge');
+            if (deptBadge) {
+                if (deptModeVal === 'textueel') {
+                    deptBadge.textContent = 'Textueel';
+                    deptBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400';
+                } else {
+                    deptBadge.textContent = deptTpl ? 'Template' : '';
+                    deptBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (deptTpl ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' : '');
+                }
+            }
+            // User mode badge
+            const userModeVal = document.querySelector('input[name="user-mode"]:checked')?.value || 'template';
+            const userTpl = (document.getElementById('edit-user-template')?.value || '').trim();
+            const userBadge = document.getElementById('user-mode-badge');
+            if (userBadge) {
+                if (userModeVal === 'textueel') {
+                    userBadge.textContent = 'Textueel';
+                    userBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400';
+                } else {
+                    userBadge.textContent = userTpl ? 'Override' : '';
+                    userBadge.className = 'text-[10px] font-medium px-1.5 py-0.5 rounded ' + (userTpl ? 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400' : '');
+                }
+            }
         }
 
         // Wire input/scroll events
@@ -4568,6 +4647,11 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
         // Update preset status badge when textarea changes
         document.getElementById('edit-preset-text').addEventListener('input', updateSectionStatuses);
+        document.getElementById('edit-dept-template').addEventListener('input', updateSectionStatuses);
+        document.getElementById('edit-user-template').addEventListener('input', updateSectionStatuses);
+        document.querySelectorAll('input[name="dept-mode"], input[name="user-mode"]').forEach(r =>
+            r.addEventListener('change', updateSectionStatuses)
+        );
 
         // Labels default-visible toggle per exam type (delegated)
         document.getElementById('cards-container').addEventListener('change', e => {
