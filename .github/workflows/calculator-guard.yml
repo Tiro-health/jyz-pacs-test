@@ -1,0 +1,65 @@
+# Guard: fail the build if the radiology calculator feature is accidentally
+# removed from launch.html / flow.html (e.g. by a wholesale file overwrite).
+# This has bitten us before: a parallel branch replaced both files with an
+# older version that no longer loaded calculators.js, silently wiping the
+# feature from production (radiology.tiro.health).
+name: Calculator guard
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "launch.html"
+      - "flow.html"
+      - "calculators.js"
+  push:
+    branches: ["main"]
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify calculator integration is present
+        run: |
+          set -e
+          fail=0
+
+          require() {
+            # require <file> <min-count> <label> <pattern>
+            local file="$1" min="$2" label="$3" pattern="$4"
+            local count
+            count=$(grep -c -- "$pattern" "$file" || true)
+            if [ "$count" -lt "$min" ]; then
+              echo "::error file=$file::Calculator guard: expected at least $min occurrence(s) of $label ('$pattern') in $file, found $count. The calculator feature may have been wiped — do NOT overwrite whole files; make targeted edits and keep both sides on merge conflicts."
+              fail=1
+            else
+              echo "OK: $file has $count× $label"
+            fi
+          }
+
+          # calculators.js must exist and define window.RADCALC
+          if [ ! -f calculators.js ]; then
+            echo "::error::calculators.js is missing entirely."
+            fail=1
+          else
+            require calculators.js 1 "window.RADCALC" "window.RADCALC"
+          fi
+
+          # launch.html must load calculators.js and wire up the calc window
+          require launch.html 1 "calculators.js script tag" 'calculators.js'
+          require launch.html 1 "_flowCalculators state" '_flowCalculators'
+          require launch.html 1 "AI en Calculatoren divider" 'AI en Calculatoren'
+
+          # flow.html must keep the auto-link + editor integration
+          require flow.html 1 "autoLinkCalculators" 'autoLinkCalculators'
+
+          if [ "$fail" -ne 0 ]; then
+            echo ""
+            echo "Calculator guard FAILED. See the errors above."
+            exit 1
+          fi
+          echo ""
+          echo "Calculator guard passed — feature intact."
