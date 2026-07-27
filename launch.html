@@ -3568,10 +3568,7 @@ UITVOERFORMAAT — STRIKT:
                 navigator.clipboard.writeText(
                     _realtimeShowingOriginal ? _realtimeOriginalText : getRealtimeText(realtimeContent)
                 ).catch(() => {});
-                const orig = realtimeCopy.textContent;
-                realtimeCopy.textContent = 'Gekopieerd ✓';
-                realtimeCopy.style.color = '#16a34a';
-                setTimeout(() => { realtimeCopy.textContent = orig; realtimeCopy.style.color = ''; }, 2000);
+                realtimePanel.classList.add('hidden');   // kopiëren sluit het realtime verslag check-venster
             });
             document.getElementById('realtime-send-to-dictation').addEventListener('click', () => {
                 const text = _realtimeShowingOriginal ? _realtimeOriginalText : getRealtimeText(realtimeContent);
@@ -4964,12 +4961,8 @@ negated bevindingen
                 rtOrigBtn.style.display = 'none';
 
                 const rtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
-                    const btn = e.currentTarget;
                     pipCopy(_rtShowingOrig ? (_rtOrigText || '') : getRealtimeText(rtContent));
-                    const orig = btn.textContent;
-                    btn.textContent = 'Gekopieerd ✓';
-                    btn.style.color = '#16a34a';
-                    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
+                    rtPanel.style.display = 'none';   // kopiëren sluit het realtime verslag check-venster
                 });
 
                 const rtSendBtn = mkSendBtn(() => _rtShowingOrig ? (_rtOrigText || '') : getRealtimeText(rtContent));
