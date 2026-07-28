@@ -2979,46 +2979,70 @@ BESLUIT:
 XXX` },
             { id:'ech-heu',   name:'ECHO HEUP',                 code:'echeup',   modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ECHO HEUP XXX:
-[- Femurhead positie: ]"Normale centering van de femurhead in het acetabulum." // Centering van de femurhead
-[- Alpha hoek (>60°): ]XXX° // Meting alpha hoek
-[- Beta hoek (<55°): ]XXX° // Meting beta hoek
-[- Acetabulaire dekking: ]XXX% // Percentage acetabulaire dekking
-[- Labrum: ]"Normaal labrum." // Beschrijving van het labrum
-[- Gewrichtseffusie: ]"Geen gewrichtseffusie." // Aanwezigheid van gewrichtseffusie
+ANTERIEUR
+[- Iliopsoas spier en bursa: ]"Normaal voorkomen van de iliopsoas spier en bursa." // Beschrijving iliopsoas spier en bursa
+[- Rectus femoris spierbuik: ]"Normaal voorkomen van de rectus femoris spierbuik." // Beschrijving rectus femoris spierbuik
+[- Iliofemorale ligament: ]"Normaal voorkomen van het iliofemorale ligament." // Beschrijving iliofemorale ligament
+[- Femoroacetabulaire hydrops: ]"Geen femoroacetabulaire hydrops." // Aanwezigheid van hydrops
+[- Insertio rectus femoris / sartorius / TFL: ]"Normale insertio van de rectus femoris op de SIAI en van de sartorius en tensor fascia latae op de SIAS." // Beschrijving inserties op SIAI en SIAS
+LATERAAL
+[- Gluteus minimus en medius insertie: ]"Normale insertie van de gluteus minimus en medius op het anterieure en laterale facet (<4mm)." // Beschrijving gluteus insertie
+[- Subglutale bursa / bursa peritrochanterica: ]"Geen subglutale bursitis of bursa peritrochanterica." // Beschrijving bursae
+MEDIAAL
+[- Adductoren insertio (os pubis): ]"Normale common insertio van de adductoren op het os pubis (<6mm)." // Beschrijving adductoren insertio
+[- Iliopsoas pees insertio (trochanter minor): ]"Normaal voorkomen van de iliopsoas pees op zijn insertio op de trochanter minor." // Beschrijving iliopsoas pees
+POSTERIEUR
+[- Bicepspees / semitendinosus insertio (os ischium): ]"Normale common insertio van de bicepspees en semitendinosus op het os ischium." // Beschrijving hamstrings insertio
+[- Semimembranosus pees (os ischium): ]"Normaal voorkomen van de semimembranosus pees op het os ischium." // Beschrijving semimembranosus
 {[- Andere: ]XXX} // Overige bevindingen
 
 BESLUIT:
 XXX`, userTextTemplate:`ECHO HEUP XXX:
-[- Femurhead positie: ]XXX // Centering van de femurhead in het acetabulum
-[- Alpha hoek (>60°): ]XXX° // Meting alpha hoek
-[- Beta hoek (<55°): ]XXX° // Meting beta hoek
-[- Acetabulaire dekking: ]XXX% // Percentage acetabulaire dekking van de femurhead
-[- Labrum: ]XXX // Beschrijving van het labrum
-[- Gewrichtseffusie: ]XXX // Aanwezigheid van gewrichtseffusie
+ANTERIEUR
+[- Iliopsoas spier en bursa: ]XXX // Beschrijving iliopsoas spier en bursa
+[- Rectus femoris spierbuik: ]XXX // Beschrijving rectus femoris spierbuik
+[- Iliofemorale ligament: ]XXX // Beschrijving iliofemorale ligament
+[- Femoroacetabulaire hydrops: ]XXX // Aanwezigheid van hydrops
+[- Insertio rectus femoris / sartorius / TFL: ]XXX // Beschrijving inserties op SIAI en SIAS
+LATERAAL
+[- Gluteus minimus en medius insertie: ]XXX // Beschrijving gluteus insertie (<4mm)
+[- Subglutale bursa / bursa peritrochanterica: ]XXX // Beschrijving subglutale bursae
+MEDIAAL
+[- Adductoren insertio (os pubis): ]XXX // Beschrijving adductoren insertio (<6mm)
+[- Iliopsoas pees insertio (trochanter minor): ]XXX // Beschrijving iliopsoas pees insertio
+POSTERIEUR
+[- Bicepspees / semitendinosus insertio (os ischium): ]XXX // Beschrijving hamstrings insertio
+[- Semimembranosus pees (os ischium): ]XXX // Beschrijving semimembranosus pees
 {[- Andere: ]XXX} // Overige bevindingen
 
 BESLUIT:
 XXX` },
             { id:'ech-heud',  name:'ECHO HEUP DYSPLASIE KIND',  code:'echeupd',  modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ECHO HEUP DYSPLASIE KIND:
-[- Type Graf: ]XXX // Graf type
-[- Alpha hoek: ]XXX° // Meting alpha hoek
-[- Beta hoek: ]XXX° // Meting beta hoek
-[- Acetabulaire morfologie: ]"Normale acetabulaire morfologie." // Beschrijving acetabulaire morfologie
-[- Femurhead kwaliteit: ]"Normale femurhead echogeniciteit en vorm." // Beschrijving femurhead
+RECHTS
+[- Kraakbenige en beenderige structuren: ]"Normale vorm en reflectiviteit van de kraakbenige en beenderige structuren van de heup." // Beschrijving morfologie rechts
+[- Alpha hoek (beenderig, >60°): ]XXX° // Meting alpha hoek rechts
+[- Beta hoek (kraakbeen, <55°): ]XXX° // Meting beta hoek rechts
+LINKS
+[- Kraakbenige en beenderige structuren: ]"Normale vorm en reflectiviteit van de kraakbenige en beenderige structuren van de heup." // Beschrijving morfologie links
+[- Alpha hoek (beenderig, >60°): ]XXX° // Meting alpha hoek links
+[- Beta hoek (kraakbeen, <55°): ]XXX° // Meting beta hoek links
 {[- Andere: ]XXX} // Overige bevindingen
 
 BESLUIT:
-XXX`, userTextTemplate:`ECHO HEUP DYSPLASIE KIND:
-[- Type Graf: ]XXX // Graf type I, IIa, IIb, IIc, D, III, IV
-[- Alpha hoek: ]XXX° // Meting alpha hoek
-[- Beta hoek: ]XXX° // Meting beta hoek
-[- Acetabulaire morfologie: ]XXX // Beschrijving acetabulaire morfologie
-[- Femurhead kwaliteit: ]XXX // Beschrijving femurhead echogeniciteit en vorm
+Graf type: XXX`, userTextTemplate:`ECHO HEUP DYSPLASIE KIND:
+RECHTS
+[- Kraakbenige en beenderige structuren: ]XXX // Beschrijving morfologie rechts
+[- Alpha hoek (beenderig, >60°): ]XXX° // Meting alpha hoek rechts
+[- Beta hoek (kraakbeen, <55°): ]XXX° // Meting beta hoek rechts
+LINKS
+[- Kraakbenige en beenderige structuren: ]XXX // Beschrijving morfologie links
+[- Alpha hoek (beenderig, >60°): ]XXX° // Meting alpha hoek links
+[- Beta hoek (kraakbeen, <55°): ]XXX° // Meting beta hoek links
 {[- Andere: ]XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
+Graf type: XXX` },
             { id:'ech-kni',   name:'ECHO KNIE',                 code:'echkni',   modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ECHO KNIE XXX:
 ANTERIOR
