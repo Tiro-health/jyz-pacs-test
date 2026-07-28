@@ -788,15 +788,11 @@
                         <pre id="tt-template-preview-code"
                             style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:12px;line-height:1.6;color:#94a3b8;background:#1e293b;white-space:pre-wrap;word-break:break-word;margin:0;padding:0.75rem 1rem;"
                         ></pre>
-                        <div class="flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
-                            <button id="tt-preview-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
-                            <button id="tt-preview-send" type="button" title="Stuur naar dictatie (vervangt tekst)" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
-                        </div>
                     </div>
                     <!-- Result panel (hidden until AI runs) -->
                     <div id="tt-result-panel" class="hidden">
                         <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
-                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Textueel standaardverslag</span>
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Autofill — Textueel standaardverslag</span>
                             <div class="flex items-center gap-2">
                                 <span id="tt-status" class="flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500"></span>
                                 <button id="tt-close" type="button" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer" title="Sluiten">×</button>
@@ -4431,19 +4427,12 @@ negated bevindingen
                 navigator.clipboard.writeText(ttContent.innerText).catch(() => {});
             });
             document.getElementById('tt-send-to-dictation').addEventListener('click', () => {
-                sendToDictationFields(ttContent.innerText);
-            });
-            document.getElementById('tt-preview-copy').addEventListener('click', (e) => {
-                const btn = e.currentTarget;
-                const text = window._flowUserTextTemplate || window._flowTextTemplate || '';
-                navigator.clipboard.writeText(text).catch(() => {});
-                btn.textContent = 'Gekopieerd ✓';
-                btn.style.color = '#16a34a';
-                setTimeout(() => { btn.textContent = 'Kopiëren'; btn.style.color = ''; }, 2000);
-            });
-            document.getElementById('tt-preview-send').addEventListener('click', () => {
-                const text = window._flowUserTextTemplate || window._flowTextTemplate || '';
-                if (text) sendToDictationFields(text);
+                const text = ttContent.innerText;
+                if (text) {
+                    sendToDictationFields(text);
+                    ttResultPanel.classList.add('hidden');
+                    showTemplatePreview();
+                }
             });
             document.getElementById('tt-close').addEventListener('click', () => {
                 _ttAbort?.abort();
@@ -4809,6 +4798,7 @@ negated bevindingen
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
                 dictationPopoutToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${active ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+                localStorage.setItem('pipActive', active ? '1' : '0');
             }
 
             function closeDictationPopout() {
@@ -5581,7 +5571,7 @@ negated bevindingen
                 const pipTtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 pipTtPanel.style.display = 'none';
                 const pipTtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
-                const pipTtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Textueel standaardverslag');
+                const pipTtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Autofill — Textueel standaardverslag');
                 const pipTtStatus = mk('span', 'flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500', '');
                 const pipTtCloseBtn = mk('button', 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer', '×');
                 pipTtCloseBtn.type = 'button';
@@ -5643,7 +5633,7 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                const pipTtSendBtn = mkSendBtn(() => pipTtContent.innerText || '');
+                const pipTtSendBtn = mkSendBtn(() => pipTtContent.innerText || '', pipTtPanel);
                 pipTtActions.append(pipTtToggle, pipTtLabelsBtn, pipTtCopyBtn, pipTtSendBtn);
                 pipTtPanel.append(pipTtHead, pipTtContent, pipTtActions);
                 wrap.appendChild(pipTtPanel);
@@ -6055,6 +6045,10 @@ negated bevindingen
             });
 
             updateDictationPopoutToggle(false);
+            // Auto-heropen PiP als het actief was voor de refresh
+            if (localStorage.getItem('pipActive') === '1') {
+                openDictationPopout().catch(() => {});
+            }
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
