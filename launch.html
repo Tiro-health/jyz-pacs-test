@@ -1324,7 +1324,7 @@
                     <!-- Automatische onderzoek herkenning -->
                     <div class="flex items-center justify-between py-0.5">
                         <label for="auto-study-detect-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
-                            Automatische herkenning van "onderzoekstype:", enkel in klein schrift
+                            Automatische herkenning van onderzoek <span class="font-normal text-neutral-400 dark:text-neutral-500">(via "onderzoekstype:" in klein schrift in DMO)</span>
                         </label>
                         <button
                             id="auto-study-detect-toggle"
@@ -1534,11 +1534,6 @@
                     const key = "flow:dept-txt:" + match.id;
                     TEMPLATES[key] = '__textueel__';
                     items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: deptTextActive && !hasUserAny && !hasReplaceAI, mode: 'textueel' });
-                }
-                if (match.textTemplate) {
-                    const key = "flow:dept-txt:" + match.id;
-                    TEMPLATES[key] = '__textueel__';
-                    items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: deptTextActive && !hasUser && !hasReplaceAI, mode: 'textueel' });
                 }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
@@ -6112,9 +6107,11 @@ negated bevindingen
                 }
             });
 
+            // Lees opgeslagen staat VOOR updateDictationPopoutToggle — die functie overschrijft anders localStorage
+            const _pipWasActive = localStorage.getItem('pipActive') === '1';
             updateDictationPopoutToggle(false);
             // Auto-heropen PiP als het actief was voor de refresh
-            if (localStorage.getItem('pipActive') === '1') {
+            if (_pipWasActive) {
                 openDictationPopout().catch(() => {});
             }
 
