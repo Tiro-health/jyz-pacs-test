@@ -1321,6 +1321,22 @@
                         </button>
                     </div>
 
+                    <!-- Automatische onderzoek herkenning -->
+                    <div class="flex items-center justify-between py-0.5">
+                        <label for="auto-study-detect-toggle" class="text-xs font-medium text-neutral-600 dark:text-neutral-400 cursor-pointer select-none">
+                            Automatische herkenning van "onderzoekstype:", enkel in klein schrift
+                        </label>
+                        <button
+                            id="auto-study-detect-toggle"
+                            type="button"
+                            role="switch"
+                            aria-checked="false"
+                            class="relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full bg-neutral-300 dark:bg-neutral-600 transition-colors focus:outline-none"
+                        >
+                            <span class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform translate-x-[3px]"></span>
+                        </button>
+                    </div>
+
                     <!-- PACS integratie URL -->
                     <div>
                         <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">PACS integratie URL</label>
@@ -1503,14 +1519,21 @@
                 // - additional AI add_template rules are always checked (stack on top)
                 const aiRules = match.aiRules || [];
                 const hasReplaceAI = aiRules.some(r => r.action === 'replace_template' && r.template);
-                const hasUser = !!match.userTemplate;
+                // hasUserAny: true when any user template exists (Tiro URL or textueel) — dept is only
+                // activated when no user template is present (exclusief OF-logica voor textueel modus)
+                const hasUserAny = !!match.userTemplate || !!match.userTextTemplate;
 
                 const deptTextActive = match.deptMode === 'textueel';
                 const userTextActive = match.userMode === 'textueel';
                 if (match.deptTemplate) {
                     const key = "flow:dept:" + match.id;
                     TEMPLATES[key] = match.deptTemplate;
-                    items.push({ name: key, label: match.name + " - afdeling", checked: !deptTextActive && !hasUser && !hasReplaceAI });
+                    items.push({ name: key, label: match.name + " - afdeling", checked: !deptTextActive && !hasUserAny && !hasReplaceAI });
+                }
+                if (match.textTemplate) {
+                    const key = "flow:dept-txt:" + match.id;
+                    TEMPLATES[key] = '__textueel__';
+                    items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: deptTextActive && !hasUserAny && !hasReplaceAI, mode: 'textueel' });
                 }
                 if (match.textTemplate) {
                     const key = "flow:dept-txt:" + match.id;
@@ -4769,6 +4792,51 @@ negated bevindingen
                 updateMedgemmaToggle();
             });
             updateMedgemmaToggle();
+
+            // ── Automatische onderzoek herkenning en selectie ──────────────────
+            const autoStudyDetectToggle = document.getElementById('auto-study-detect-toggle');
+            let autoStudyDetect = localStorage.getItem('autoStudyDetect') === 'true';
+            let _autoStudyDebounce = null;
+            let _autoStudyLastDetected = ''; // voorkom herhaalde triggers voor zelfde onderzoek
+
+            function updateAutoStudyDetectToggle() {
+                autoStudyDetectToggle.setAttribute('aria-checked', String(autoStudyDetect));
+                autoStudyDetectToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${autoStudyDetect ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
+                autoStudyDetectToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${autoStudyDetect ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+            }
+            autoStudyDetectToggle.addEventListener('click', () => {
+                autoStudyDetect = !autoStudyDetect;
+                localStorage.setItem('autoStudyDetect', String(autoStudyDetect));
+                updateAutoStudyDetectToggle();
+            });
+            updateAutoStudyDetectToggle();
+
+            function _tryAutoDetectStudyType(text) {
+                if (!autoStudyDetect) return;
+                for (const line of text.split('\n')) {
+                    const trimmed = line.replace(/\s+$/, '');
+                    // Moet eindigen op : + bekende modaliteit + NIET al in hoofdletters
+                    if (!/:$/.test(trimmed)) continue;
+                    if (!_EXAM_MODALITEIT.test(trimmed)) continue;
+                    if (trimmed === trimmed.toUpperCase()) return; // al herkend, niet opnieuw triggeren
+                    const candidate = trimmed.replace(/:$/, '').trim();
+                    if (candidate === _autoStudyLastDetected) return; // zelfde als vorige keer
+                    _autoStudyLastDetected = candidate;
+                    // Vul "type onderzoek" in en selecteer het bijhorende template
+                    if (contextForm) deepFillByLabel(contextForm, "type onderzoek", candidate);
+                    updateTemplatesFromFlow(candidate);
+                    return;
+                }
+            }
+
+            clipboard.addEventListener('input', () => {
+                if (!autoStudyDetect) return;
+                clearTimeout(_autoStudyDebounce);
+                _autoStudyDebounce = setTimeout(() => {
+                    const tekst = readDictationText().trim();
+                    if (tekst) _tryAutoDetectStudyType(tekst);
+                }, 600);
+            }, true);
 
             // Verslag check na autofill toggle
             const vcAfterAutofillToggle = document.getElementById('vc-after-autofill-toggle');
