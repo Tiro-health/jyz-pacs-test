@@ -6107,9 +6107,11 @@ negated bevindingen
                 }
             });
 
+            // Lees opgeslagen staat VOOR updateDictationPopoutToggle — die functie overschrijft anders localStorage
+            const _pipWasActive = localStorage.getItem('pipActive') === '1';
             updateDictationPopoutToggle(false);
             // Auto-heropen PiP als het actief was voor de refresh
-            if (localStorage.getItem('pipActive') === '1') {
+            if (_pipWasActive) {
                 openDictationPopout().catch(() => {});
             }
 
