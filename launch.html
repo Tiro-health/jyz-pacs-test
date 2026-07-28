@@ -4183,6 +4183,42 @@ negated bevindingen
                 return clickOption(rootEl.shadowRoot || rootEl) || clickOption(document.body);
             }
 
+            // Reset a select/dropdown near a label (native select: index 0; React Select: clear-knop klikken)
+            function deepClearSelectByLabel(rootEl, labelHint) {
+                function search(root) {
+                    if (!root) return false;
+                    for (const el of root.querySelectorAll("*")) {
+                        const leafText = Array.from(el.childNodes)
+                            .filter(n => n.nodeType === Node.TEXT_NODE)
+                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
+                        if (leafText.includes(labelHint.toLowerCase())) {
+                            let container = el;
+                            for (let i = 0; i < 6; i++) {
+                                if (!container) break;
+                                const sel = container.querySelector("select");
+                                if (sel) {
+                                    sel.selectedIndex = 0;
+                                    sel.dispatchEvent(new Event("change", { bubbles: true, composed: true }));
+                                    return true;
+                                }
+                                const clearBtn = container.querySelector(
+                                    '[aria-label="Clear"], [class*="clear-indicator"], [class*="ClearIndicator"]'
+                                );
+                                if (clearBtn) {
+                                    clearBtn.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, composed: true }));
+                                    clearBtn.dispatchEvent(new MouseEvent("click",     { bubbles: true, composed: true }));
+                                    return true;
+                                }
+                                container = container.parentElement;
+                            }
+                        }
+                        if (el.shadowRoot && search(el.shadowRoot)) return true;
+                    }
+                    return false;
+                }
+                return search(rootEl.shadowRoot || rootEl);
+            }
+
             // Find the SNOMED CT tiro-form-filler inside the template forms container
             function findSnomedCtTemplateForm() {
                 const container = document.getElementById("template-forms-container");
@@ -6024,8 +6060,14 @@ negated bevindingen
                     _d.innerHTML = '<br>';
                     ce.appendChild(_d);
                     setDictationText('');
-                    // Reset auto-detectie zodat bij nieuwe patiënt een nieuw onderzoekstype herkend kan worden
-                    if (autoStudyDetect) _autoStudyLastDetected = '';
+                    // Reset auto-detectie + wis form-velden zodat bij nieuwe patiënt een nieuw onderzoekstype herkend kan worden
+                    if (autoStudyDetect) {
+                        _autoStudyLastDetected = '';
+                        if (contextForm) {
+                            deepFillByLabel(contextForm, "type onderzoek", "");
+                            deepClearSelectByLabel(contextForm, "lateralisatie");
+                        }
+                    }
                     // resultaatpanelen verbergen
                     trPanel.style.display = 'none';
                     rtPanel.style.display = 'none';
