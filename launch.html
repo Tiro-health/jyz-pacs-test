@@ -4806,6 +4806,11 @@ negated bevindingen
             });
             updateAutoStudyDetectToggle();
 
+            // Herkent lateraliteitssuffix aan het einde van een onderzoeksnaam
+            // bv. "echo enkel links" → { type: "echo enkel", lat: "Links" }
+            const _LATERALITY_RE = /\s+(links|rechts|bilateraal|beiderzijds)$/i;
+            const _LATERALITY_MAP = { links: 'Links', rechts: 'Rechts', bilateraal: 'Bilateraal', beiderzijds: 'Bilateraal' };
+
             function _tryAutoDetectStudyType(text) {
                 if (!autoStudyDetect) return;
                 for (const line of text.split('\n')) {
@@ -4817,9 +4822,17 @@ negated bevindingen
                     const candidate = trimmed.replace(/:$/, '').trim();
                     if (candidate === _autoStudyLastDetected) return; // zelfde als vorige keer
                     _autoStudyLastDetected = candidate;
-                    // Vul "type onderzoek" in en selecteer het bijhorende template
-                    if (contextForm) deepFillByLabel(contextForm, "type onderzoek", candidate);
-                    updateTemplatesFromFlow(candidate);
+
+                    // Splits lateraliteit van het onderzoekstype
+                    const latMatch = candidate.match(_LATERALITY_RE);
+                    const typeOnderzoek = latMatch ? candidate.slice(0, latMatch.index).trim() : candidate;
+                    const lateraliteit  = latMatch ? _LATERALITY_MAP[latMatch[1].toLowerCase()] : null;
+
+                    if (contextForm) {
+                        deepFillByLabel(contextForm, "type onderzoek", typeOnderzoek);
+                        if (lateraliteit) deepFillDropdownByLabel(contextForm, "lateralisatie", lateraliteit).catch(() => {});
+                    }
+                    updateTemplatesFromFlow(typeOnderzoek);
                     return;
                 }
             }
