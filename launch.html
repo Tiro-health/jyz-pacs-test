@@ -6011,6 +6011,8 @@ negated bevindingen
                     _d.innerHTML = '<br>';
                     ce.appendChild(_d);
                     setDictationText('');
+                    // Reset auto-detectie zodat bij nieuwe patiënt een nieuw onderzoekstype herkend kan worden
+                    if (autoStudyDetect) _autoStudyLastDetected = '';
                     // resultaatpanelen verbergen
                     trPanel.style.display = 'none';
                     rtPanel.style.display = 'none';
