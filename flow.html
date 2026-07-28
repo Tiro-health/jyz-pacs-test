@@ -3223,6 +3223,44 @@ WEGEN
 
 BESLUIT:
 XXX` },
+            { id:'dup-ahal',  name:'ECHO DUPLEX ARTERIEEL HALS', code:'duahal',   modality:'ECHO',
+              dicom:['doppl carotiden + vertebralis'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ECHO DUPLEX ARTERIEEL HALS:
+LINKS
+[- Arteria carotis communis links: ]"Geen atheromatose van de arteria carotis communis." // Atheromatose ACC links
+[- Carotis bifurcatie links: ]"Geen atheromatose van de carotis bifurcatie." // Atheromatose bifurcatie links
+[- Arteria carotis interna links: ]"Geen atheromatose van de arteria carotis interna met normale arteriële flowcurve, geen flowversnellingen." // Atheromatose + flowcurve ACI links
+[- Arteria carotis externa links: ]"Geen atheromatose van de arteria carotis externa met normale flowcurven, geen flowversnellingen." // Atheromatose + flowcurven ACE links
+[- Arteria vertebralis links: ]"Orthograde flow in de arteria vertebralis." // Flowrichting vertebralis links
+[- Intima dikte links (>0.8mm): ]XXX mm; XXX intima hyperplasie // Meting intima dikte links
+RECHTS
+[- Arteria carotis communis rechts: ]"Geen atheromatose van de arteria carotis communis." // Atheromatose ACC rechts
+[- Carotis bifurcatie rechts: ]"Geen atheromatose van de carotis bifurcatie." // Atheromatose bifurcatie rechts
+[- Arteria carotis interna rechts: ]"Geen atheromatose van de arteria carotis interna met normale arteriële flowcurve, geen flowversnellingen." // Atheromatose + flowcurve ACI rechts
+[- Arteria carotis externa rechts: ]"Geen atheromatose van de arteria carotis externa met normale flowcurven, geen flowversnellingen." // Atheromatose + flowcurven ACE rechts
+[- Arteria vertebralis rechts: ]"Orthograde flow in de arteria vertebralis." // Flowrichting vertebralis rechts
+[- Intima dikte rechts (>0.8mm): ]XXX mm; XXX intima hyperplasie // Meting intima dikte rechts
+{[- Andere: ]XXX} // Overige bevindingen
+
+BESLUIT:
+XXX`, userTextTemplate:`ECHO DUPLEX ARTERIEEL HALS:
+LINKS
+[- Arteria carotis communis links: ]XXX // Atheromatose ACC links
+[- Carotis bifurcatie links: ]XXX // Atheromatose bifurcatie links
+[- Arteria carotis interna links: ]XXX // Atheromatose + flowcurve ACI links
+[- Arteria carotis externa links: ]XXX // Atheromatose + flowcurven ACE links
+[- Arteria vertebralis links: ]XXX // Flowrichting vertebralis links
+[- Intima dikte links (>0.8mm): ]XXX // Meting intima dikte links
+RECHTS
+[- Arteria carotis communis rechts: ]XXX // Atheromatose ACC rechts
+[- Carotis bifurcatie rechts: ]XXX // Atheromatose bifurcatie rechts
+[- Arteria carotis interna rechts: ]XXX // Atheromatose + flowcurve ACI rechts
+[- Arteria carotis externa rechts: ]XXX // Atheromatose + flowcurven ACE rechts
+[- Arteria vertebralis rechts: ]XXX // Flowrichting vertebralis rechts
+[- Intima dikte rechts (>0.8mm): ]XXX // Meting intima dikte rechts
+{[- Andere: ]XXX} // Overige bevindingen
+
+BESLUIT:
+XXX` },
             { id:'dup-abeen', name:'ECHO DUPLEX ARTERIEEL BEEN',code:'duabeen',  modality:'ECHO',
               dicom:['doppler beide ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ECHO DUPLEX ARTERIEEL BEEN XXX:
 BEKKEN
