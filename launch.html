@@ -778,7 +778,7 @@
             >
                 <summary class="flex items-center gap-2 px-3 py-2 text-sm font-medium cursor-pointer text-neutral-900 dark:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-accent rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                    Textuele back-up template
+                    Textueel standaardverslag
                     <span id="text-template-suffix" class="ml-1 font-normal text-neutral-400 dark:text-neutral-500 text-xs truncate"></span>
                     <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                 </summary>
@@ -792,7 +792,7 @@
                     <!-- Result panel (hidden until AI runs) -->
                     <div id="tt-result-panel" class="hidden">
                         <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
-                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Autofill — back-up template</span>
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Autofill — Textueel standaardverslag</span>
                             <div class="flex items-center gap-2">
                                 <span id="tt-status" class="flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500"></span>
                                 <button id="tt-close" type="button" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer" title="Sluiten">×</button>
@@ -4427,7 +4427,12 @@ negated bevindingen
                 navigator.clipboard.writeText(ttContent.innerText).catch(() => {});
             });
             document.getElementById('tt-send-to-dictation').addEventListener('click', () => {
-                sendToDictationFields(ttContent.innerText);
+                const text = ttContent.innerText;
+                if (text) {
+                    sendToDictationFields(text);
+                    ttResultPanel.classList.add('hidden');
+                    showTemplatePreview();
+                }
             });
             document.getElementById('tt-close').addEventListener('click', () => {
                 _ttAbort?.abort();
@@ -4793,6 +4798,7 @@ negated bevindingen
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
                 dictationPopoutToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${active ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+                localStorage.setItem('pipActive', active ? '1' : '0');
             }
 
             function closeDictationPopout() {
@@ -5565,7 +5571,7 @@ negated bevindingen
                 const pipTtPanel = mk('div', 'rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden');
                 pipTtPanel.style.display = 'none';
                 const pipTtHead = mk('div', 'flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700');
-                const pipTtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Autofill — back-up template');
+                const pipTtTitle = mk('span', 'text-xs font-medium text-neutral-500 dark:text-neutral-400', 'Autofill — Textueel standaardverslag');
                 const pipTtStatus = mk('span', 'flex items-center gap-1.5 text-xs text-neutral-400 dark:text-neutral-500', '');
                 const pipTtCloseBtn = mk('button', 'text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer', '×');
                 pipTtCloseBtn.type = 'button';
@@ -5627,7 +5633,7 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                const pipTtSendBtn = mkSendBtn(() => pipTtContent.innerText || '');
+                const pipTtSendBtn = mkSendBtn(() => pipTtContent.innerText || '', pipTtPanel);
                 pipTtActions.append(pipTtToggle, pipTtLabelsBtn, pipTtCopyBtn, pipTtSendBtn);
                 pipTtPanel.append(pipTtHead, pipTtContent, pipTtActions);
                 wrap.appendChild(pipTtPanel);
@@ -6039,6 +6045,10 @@ negated bevindingen
             });
 
             updateDictationPopoutToggle(false);
+            // Auto-heropen PiP als het actief was voor de refresh
+            if (localStorage.getItem('pipActive') === '1') {
+                openDictationPopout().catch(() => {});
+            }
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
