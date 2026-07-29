@@ -632,14 +632,22 @@ negated bevindingen
 
             // Preferred models per task in priority order (first available wins)
             const RECOMMENDED_MODELS = {
-                geminiModelTranslate:       ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.0-flash", "gemini-2.0-flash-lite"],
-                geminiModelKidv:            ["gemini-2.5-pro", "gemini-2.5-flash"],
-                geminiModelVerslag:         ["gemini-2.5-flash", "gemini-2.5-flash-8b", "gemini-2.0-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"],
-                geminiModelRealtime:        ["gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.0-flash-lite", "gemini-2.5-flash"],
-                geminiModelAutofillBackup:  ["gemini-2.5-pro", "gemini-2.5-flash"],
-                geminiModelSnomed:          ["gemini-2.5-flash-lite", "gemini-2.5-flash-8b", "gemini-2.5-flash", "gemini-2.0-flash"],
-                geminiModelMedgemma:        ["gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash"],
-                geminiModelAiConsult:       ["gemini-2.5-pro", "gemini-2.5-flash"],
+                // Translate: flash-kwaliteit voldoende voor medische NL→FR vertaling
+                geminiModelTranslate:       ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.0-flash"],
+                // KIDV checklist: complexe evidence-based reasoning → pro
+                geminiModelKidv:            ["gemini-2.5-pro", "gemini-pro-latest", "gemini-3.5-flash", "gemini-flash-latest"],
+                // Verslag check: streaming correctie, flash voldoende
+                geminiModelVerslag:         ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.0-flash"],
+                // Realtime inline: per-zin, laagste latentie → flash-lite
+                geminiModelRealtime:        ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.0-flash-lite"],
+                // Autofill backup: complexe slot-filling met 7 regels → pro
+                geminiModelAutofillBackup:  ["gemini-2.5-pro", "gemini-pro-latest", "gemini-3.5-flash", "gemini-flash-latest"],
+                // SNOMED: gestructureerde extractie, kort output → flash-lite
+                geminiModelSnomed:          ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.0-flash-lite"],
+                // Medgemma: multimodaal beeldanalyse → flash met beeldondersteuning
+                geminiModelMedgemma:        ["gemini-3.5-flash", "gemini-flash-latest", "gemini-2.5-flash", "gemini-3.1-flash-image", "gemini-2.5-flash-image"],
+                // AI Consult: multi-turn expert chat → pro
+                geminiModelAiConsult:       ["gemini-2.5-pro", "gemini-pro-latest", "gemini-3.5-flash", "gemini-flash-latest"],
             };
 
             let _cachedModels = null;
@@ -648,13 +656,19 @@ negated bevindingen
                 const apiKey = localStorage.getItem("geminiApiKey");
                 if (!apiKey) return null;
                 try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=100`);
-                    if (!res.ok) return null;
-                    const data = await res.json();
-                    return (data.models || [])
-                        .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
-                        .map(m => m.name.replace("models/", ""))
-                        .sort((a, b) => b.localeCompare(a));
+                    const all = [];
+                    let pageToken = "";
+                    do {
+                        const url = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}&pageSize=200${pageToken ? "&pageToken=" + pageToken : ""}`;
+                        const res = await fetch(url);
+                        if (!res.ok) return all.length ? all : null;
+                        const data = await res.json();
+                        (data.models || [])
+                            .filter(m => m.supportedGenerationMethods?.includes("generateContent") && m.name.includes("gemini"))
+                            .forEach(m => all.push(m.name.replace("models/", "")));
+                        pageToken = data.nextPageToken || "";
+                    } while (pageToken);
+                    return all.sort((a, b) => b.localeCompare(a));
                 } catch { return null; }
             }
 
@@ -685,22 +699,30 @@ negated bevindingen
                 btn.disabled = true;
                 btn.innerHTML = '<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg> Bezig…';
 
-                const models = await fetchModels() || _cachedModels;
-                _cachedModels = models;
+                const fresh = await fetchModels();
+                if (fresh) _cachedModels = fresh;
+                const models = fresh || _cachedModels;
+
+                if (!models) {
+                    // Geen modellen beschikbaar — niets overschrijven
+                    btn.disabled = false;
+                    btn.innerHTML = '⚠ Kan modellen niet laden';
+                    setTimeout(() => { btn.innerHTML = origHTML; }, 2500);
+                    return;
+                }
 
                 MODEL_CONFIGS.forEach(cfg => {
                     const sel = document.getElementById(cfg.id);
                     const prefs = RECOMMENDED_MODELS[cfg.storageKey] || [];
-                    let chosen = cfg.defaultModel;
-                    if (models) {
-                        for (const pref of prefs) {
-                            if (models.includes(pref)) { chosen = pref; break; }
-                        }
-                        // Rebuild options with fresh list
-                        sel.innerHTML = models.map(id => `<option value="${id}">${id}</option>`).join("");
-                        if (!models.includes(chosen)) {
-                            sel.innerHTML = `<option value="${chosen}">${chosen}</option>` + sel.innerHTML;
-                        }
+                    let chosen = null;
+                    for (const pref of prefs) {
+                        if (models.includes(pref)) { chosen = pref; break; }
+                    }
+                    if (!chosen) chosen = models.includes(cfg.defaultModel) ? cfg.defaultModel : models[0];
+                    // Rebuild options with fresh list
+                    sel.innerHTML = models.map(id => `<option value="${id}">${id}</option>`).join("");
+                    if (!models.includes(chosen)) {
+                        sel.innerHTML = `<option value="${chosen}">${chosen}</option>` + sel.innerHTML;
                     }
                     sel.value = chosen;
                     localStorage.setItem(cfg.storageKey, chosen);
