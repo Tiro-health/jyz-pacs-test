@@ -214,6 +214,31 @@
                 </svg>
                 Save and send
             </button>
+            <button
+                id="export-import-btn"
+                type="button"
+                title="Export / Import configuratie"
+                class="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600 opacity-20 hover:opacity-50 transition-opacity flex-shrink-0 border-0 p-0 cursor-pointer"
+            ></button>
+        </div>
+
+        <!-- Export/Import modal -->
+        <div id="export-import-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/40">
+            <div class="bg-white dark:bg-muted rounded-lg shadow-xl p-5 w-80 flex flex-col gap-4">
+                <h2 class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Export / Import Configuratie</h2>
+                <div class="flex flex-col gap-1.5">
+                    <p class="text-xs text-neutral-500 dark:text-neutral-400">Download de huidige templates en instellingen als JSON-bestand.</p>
+                    <button id="do-export-btn" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer configuratie</button>
+                </div>
+                <div class="border-t border-neutral-200 dark:border-slate-700 pt-3 flex flex-col gap-1.5">
+                    <p class="text-xs text-neutral-500 dark:text-neutral-400">Importeer een eerder geëxporteerd JSON-bestand. <span class="text-amber-600 dark:text-amber-400 font-medium">Huidige configuratie wordt overschreven.</span></p>
+                    <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
+                        ⬆ Importeer configuratie
+                        <input type="file" id="import-file-input" accept=".json" class="hidden">
+                    </label>
+                </div>
+                <button id="close-export-modal-btn" class="self-end px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent">Sluiten</button>
+            </div>
         </div>
 
         <div class="h-full flex flex-col p-4 font-sans">
@@ -435,6 +460,7 @@
                 const pinInput = document.getElementById("pin-input");
                 const pinError = document.getElementById("pin-error");
                 let activeBlob = null;
+                let _exportPinPending = false;
 
                 async function decrypt(blob, pin) {
                     const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
@@ -464,6 +490,18 @@
 
                 async function tryDecrypt() {
                     const pin = pinInput.value;
+                    if (_exportPinPending) {
+                        if (pin === '8800') {
+                            _exportPinPending = false;
+                            closePinModal();
+                            document.getElementById('export-import-modal').classList.remove('hidden');
+                        } else {
+                            pinError.classList.remove('hidden');
+                            pinInput.value = '';
+                            pinInput.focus();
+                        }
+                        return;
+                    }
                     if (!pin || !activeBlob) return;
                     // Start decrypt and clipboard simultaneously to preserve user-gesture context
                     const decryptPromise = decrypt(activeBlob, pin);
@@ -497,6 +535,60 @@
                     if (e.key === "Escape") closePinModal();
                 });
                 pinModal.addEventListener("click", (e) => { if (e.target === pinModal) closePinModal(); });
+
+                // Export / Import button (PIN 8800)
+                document.getElementById('export-import-btn').addEventListener('click', () => {
+                    _exportPinPending = true;
+                    activeBlob = null;
+                    pinInput.value = '';
+                    pinError.classList.add('hidden');
+                    pinModal.classList.remove('hidden');
+                    setTimeout(() => pinInput.focus(), 50);
+                });
+
+                document.getElementById('close-export-modal-btn').addEventListener('click', () => {
+                    document.getElementById('export-import-modal').classList.add('hidden');
+                });
+                document.getElementById('export-import-modal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('export-import-modal'))
+                        document.getElementById('export-import-modal').classList.add('hidden');
+                });
+
+                document.getElementById('do-export-btn').addEventListener('click', () => {
+                    const payload = {
+                        version: '1.0',
+                        timestamp: new Date().toISOString(),
+                        flowConfig_v1: JSON.parse(localStorage.getItem('flowConfig_v1') || 'null'),
+                        textTemplateLogic: localStorage.getItem('textTemplateLogic') || null,
+                    };
+                    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'flow-config-' + new Date().toISOString().slice(0,10) + '.json';
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+
+                document.getElementById('import-file-input').addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    try {
+                        const text = await file.text();
+                        const data = JSON.parse(text);
+                        if (!confirm('Huidige configuratie overschrijven met de geïmporteerde data?')) {
+                            e.target.value = '';
+                            return;
+                        }
+                        if (data.flowConfig_v1) localStorage.setItem('flowConfig_v1', JSON.stringify(data.flowConfig_v1));
+                        if (data.textTemplateLogic) localStorage.setItem('textTemplateLogic', data.textTemplateLogic);
+                        alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
+                        location.reload();
+                    } catch {
+                        alert('Ongeldig bestand. Zorg dat het een geldig JSON-exportbestand is.');
+                        e.target.value = '';
+                    }
+                });
             })();
         </script>
     </body>
