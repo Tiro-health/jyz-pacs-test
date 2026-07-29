@@ -909,30 +909,31 @@
                         id="medgemma-dropzone"
                         class="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 dark:border-slate-600 bg-neutral-50 dark:bg-muted/40 py-6 px-4 cursor-pointer hover:border-cyan-500 dark:hover:border-cyan-500 transition-colors text-center"
                     >
-                        <input type="file" id="medgemma-file-input" accept="image/*" class="hidden" />
+                        <input type="file" id="medgemma-file-input" accept="image/*" multiple class="hidden" />
                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="text-neutral-400 dark:text-neutral-500">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
                         </svg>
                         <p class="text-xs text-neutral-500 dark:text-neutral-400">Sleep een beeld hierheen, <span class="text-cyan-600 dark:text-cyan-400 underline">klik om te uploaden</span>,<br>of plak een printscreen met <kbd class="px-1 py-0.5 rounded bg-neutral-200 dark:bg-slate-700 font-mono text-neutral-600 dark:text-neutral-300">Ctrl+V</kbd></p>
                         <p class="text-xs text-neutral-400 dark:text-neutral-500">JPEG, PNG, WEBP — max 10 MB</p>
                     </div>
-                    <!-- Preview -->
-                    <div id="medgemma-preview" class="hidden relative">
-                        <img id="medgemma-preview-img" src="" alt="Preview" class="w-full max-h-64 object-contain rounded-lg border border-neutral-200 dark:border-slate-700 bg-black" />
-                        <button id="medgemma-clear-btn" type="button" class="absolute top-2 right-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-800/70 text-white hover:bg-neutral-900 text-xs">✕</button>
+                    <!-- Preview (thumbnail grid) -->
+                    <div id="medgemma-preview" class="hidden">
+                        <div id="medgemma-thumbnails" class="flex flex-wrap gap-2"></div>
+                        <button id="medgemma-clear-btn" type="button" class="mt-2 inline-flex items-center gap-1 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            Alles wissen
+                        </button>
                     </div>
                     <!-- Inline result -->
-                    <div id="medgemma-result" class="hidden">
-                        <div id="medgemma-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed overflow-y-auto max-h-72 p-3 rounded-md bg-neutral-50 dark:bg-muted/40 border border-neutral-200 dark:border-slate-700"></div>
-                        <div class="flex gap-2 mt-2">
-                            <button id="medgemma-copy-btn" type="button" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
-                                Kopiëren
-                            </button>
-                            <button id="medgemma-close-btn" type="button" class="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-                                Sluiten
-                            </button>
+                    <div id="medgemma-result" class="hidden rounded-md border border-neutral-200 dark:border-slate-700 overflow-hidden">
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Beeldanalyse</span>
+                            <button id="medgemma-close-btn" type="button" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer text-base" title="Sluiten">×</button>
+                        </div>
+                        <div id="medgemma-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed overflow-y-auto max-h-72 p-3"></div>
+                        <div class="flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                            <button id="medgemma-copy-btn" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                            <button id="medgemma-send-btn" type="button" title="Stuur naar dictatie" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
                         </div>
                     </div>
                 </div>
@@ -5834,90 +5835,121 @@ negated bevindingen
                 pmFileInput.style.display = 'none';
                 pipWindow.document.body.appendChild(pmFileInput);
 
-                const pmPreview = mk('div', 'hidden relative');
-                const pmImg = pipWindow.document.createElement('img');
-                pmImg.className = 'w-full object-contain rounded-lg border border-neutral-200 dark:border-slate-700 bg-black';
-                pmImg.style.maxHeight = '200px';
-                pmImg.alt = 'Preview';
-                const pmClearBtn = mk('button', 'absolute top-1 right-1 inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs', '✕');
+                const pmPreview = mk('div', 'hidden');
+                const pmThumbnails = mk('div', 'flex flex-wrap gap-1.5');
+                const pmClearBtn = mk('button', 'mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 text-xs rounded-md cursor-pointer transition-colors', '✕ Alles wissen');
                 pmClearBtn.type = 'button';
-                pmClearBtn.style.cssText = 'background:rgba(30,30,30,.7)';
-                pmPreview.append(pmImg, pmClearBtn);
+                pmClearBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#6b7280;font-size:10px';
+                pmPreview.append(pmThumbnails, pmClearBtn);
+
+                function _addPipMedgemmaThumbnail(idx) {
+                    const img = medgemmaImages[idx];
+                    const wrap = pipWindow.document.createElement('div');
+                    wrap.style.cssText = 'position:relative;display:inline-block';
+                    wrap.dataset.idx = idx;
+                    const thumb = pipWindow.document.createElement('img');
+                    thumb.src = img.dataUrl;
+                    thumb.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb;background:#000';
+                    const rm = pipWindow.document.createElement('button');
+                    rm.type = 'button';
+                    rm.textContent = '✕';
+                    rm.style.cssText = 'position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:rgba(30,30,30,.75);color:#fff;font-size:9px;display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer;line-height:1;padding:0';
+                    rm.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        medgemmaImages.splice(parseInt(wrap.dataset.idx), 1);
+                        Array.from(pmThumbnails.children).forEach((w, i) => { w.dataset.idx = i; });
+                        wrap.remove();
+                        if (!medgemmaImages.length) {
+                            pmPreview.classList.add('hidden');
+                            pmDropzone.classList.remove('hidden');
+                        }
+                    });
+                    wrap.append(thumb, rm);
+                    pmThumbnails.appendChild(wrap);
+                }
 
                 const pmAnalyseBtn = mk('button', 'w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer', '');
                 pmAnalyseBtn.type = 'button';
                 pmAnalyseBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg> Analyseer';
 
-                const pmResult = mk('div', 'hidden');
-                const pmResultContent = mk('div', 'text-sm leading-relaxed overflow-y-auto p-3 rounded-md border border-neutral-200 dark:border-slate-700');
-                pmResultContent.style.cssText = 'max-height:200px;background:#f9fafb;color:#1f2937;font-size:12px;line-height:1.5';
-                const pmResultActions = mk('div', 'flex gap-2 mt-2');
-                const pmCopyResultBtn = mk('button', 'flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Kopiëren');
-                pmCopyResultBtn.type = 'button';
-                pmCopyResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151';
-                const pmCloseResultBtn = mk('button', 'flex-1 inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Sluiten');
+                const pmResult = mk('div', 'hidden rounded-md border border-neutral-200 dark:border-slate-700 overflow-hidden');
+                const pmResultHead = mk('div', 'flex items-center justify-between px-3 py-1');
+                pmResultHead.style.cssText = 'background:#f9fafb;border-bottom:1px solid #e5e7eb';
+                const pmResultLabel = mk('span', '', 'Beeldanalyse');
+                pmResultLabel.style.cssText = 'font-size:11px;font-weight:500;color:#6b7280';
+                const pmCloseResultBtn = mk('button', '', '×');
                 pmCloseResultBtn.type = 'button';
-                pmCloseResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151';
-                pmResultActions.append(pmCopyResultBtn, pmCloseResultBtn);
-                pmResult.append(pmResultContent, pmResultActions);
+                pmCloseResultBtn.style.cssText = 'font-size:16px;line-height:1;color:#9ca3af;cursor:pointer;background:none;border:none;padding:0';
+                pmResultHead.append(pmResultLabel, pmCloseResultBtn);
+                const pmResultContent = mk('div', 'text-sm leading-relaxed overflow-y-auto p-3');
+                pmResultContent.style.cssText = 'max-height:200px;color:#1f2937;font-size:12px;line-height:1.5';
+                const pmResultActions = mk('div', 'flex items-center gap-2 px-3 py-1.5');
+                pmResultActions.style.cssText = 'background:#f9fafb;border-top:1px solid #e5e7eb';
+                const pmCopyResultBtn = mk('button', 'inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Kopiëren');
+                pmCopyResultBtn.type = 'button';
+                pmCopyResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151;font-size:11px';
+                const pmSendResultBtn = mkSendBtn(() => pmResultContent.innerText || pmResultContent.textContent || '');
+                pmResultActions.append(pmCopyResultBtn, pmSendResultBtn);
+                pmResult.append(pmResultHead, pmResultContent, pmResultActions);
 
                 pmBody.append(pmDropzone, pmPreview, pmAnalyseBtn, pmResult);
                 pipMedgemmaPanel.append(pmHeader, pmBody);
                 wrap.appendChild(pipMedgemmaPanel);
 
-                // File handling for PiP MedGemma panel — updates shared medgemmaImageBase64/Mime
+                // File handling for PiP MedGemma panel — pushes to shared medgemmaImages array
                 function handlePipMedgemmaFile(file) {
                     if (!file || !file.type.startsWith('image/')) return;
                     if (file.size > 10 * 1024 * 1024) { pipWindow.alert('Afbeelding is groter dan 10 MB.'); return; }
                     const reader = new pipWindow.FileReader();
                     reader.onload = (e) => {
                         const dataUrl = e.target.result;
-                        medgemmaImageBase64 = dataUrl.split(',')[1];
-                        medgemmaImageMime   = file.type;
-                        pmImg.src = dataUrl;
+                        const idx = medgemmaImages.length;
+                        medgemmaImages.push({ base64: dataUrl.split(',')[1], mime: file.type, dataUrl });
+                        _addPipMedgemmaThumbnail(idx);
                         pmPreview.classList.remove('hidden');
                         pmDropzone.classList.add('hidden');
                     };
                     reader.readAsDataURL(file);
                 }
 
+                function _resetPipMedgemmaPanel() {
+                    pmResult.classList.add('hidden');
+                    pmResultContent.innerHTML = '';
+                    medgemmaImages = [];
+                    pmThumbnails.innerHTML = '';
+                    pmFileInput.value = '';
+                    pmPreview.classList.add('hidden');
+                    pmDropzone.classList.remove('hidden');
+                    if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+                }
+
                 pmDropzone.addEventListener('click', () => pmFileInput.click());
-                pmFileInput.addEventListener('change', (e) => handlePipMedgemmaFile(e.target.files[0]));
+                pmFileInput.addEventListener('change', (e) => { Array.from(e.target.files).forEach(handlePipMedgemmaFile); pmFileInput.value = ''; });
                 pmDropzone.addEventListener('dragover', (e) => { e.preventDefault(); pmDropzone.style.outline = '2px solid #06b6d4'; });
                 pmDropzone.addEventListener('dragleave', () => { pmDropzone.style.outline = ''; });
-                pmDropzone.addEventListener('drop', (e) => { e.preventDefault(); pmDropzone.style.outline = ''; handlePipMedgemmaFile(e.dataTransfer.files[0]); });
+                pmDropzone.addEventListener('drop', (e) => { e.preventDefault(); pmDropzone.style.outline = ''; Array.from(e.dataTransfer.files).forEach(handlePipMedgemmaFile); });
                 pipWindow.document.addEventListener('paste', (e) => {
                     if (pipMedgemmaPanel.style.display === 'none') return;
-                    const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'));
-                    if (item) { e.preventDefault(); handlePipMedgemmaFile(item.getAsFile()); }
+                    const items = Array.from(e.clipboardData.items).filter(i => i.type.startsWith('image/'));
+                    if (items.length) { e.preventDefault(); items.forEach(i => handlePipMedgemmaFile(i.getAsFile())); }
                 });
                 pmClearBtn.addEventListener('click', () => {
-                    medgemmaImageBase64 = null;
-                    medgemmaImageMime   = null;
-                    pmFileInput.value   = '';
-                    pmImg.src           = '';
+                    medgemmaImages = [];
+                    pmThumbnails.innerHTML = '';
+                    pmFileInput.value = '';
                     pmPreview.classList.add('hidden');
                     pmDropzone.classList.remove('hidden');
                 });
                 pmCopyResultBtn.addEventListener('click', () => {
                     const text = pmResultContent.innerText || pmResultContent.textContent;
-                    navigator.clipboard.writeText(text).catch(() => {});
+                    pipCopy(text);
+                    _resetPipMedgemmaPanel();
                 });
 
-                pmCloseResultBtn.addEventListener('click', () => {
-                    pmResult.classList.add('hidden');
-                    pmResultContent.innerHTML = '';
-                    medgemmaImageBase64 = null;
-                    medgemmaImageMime   = null;
-                    pmFileInput.value   = '';
-                    pmImg.src           = '';
-                    pmPreview.classList.add('hidden');
-                    pmDropzone.classList.remove('hidden');
-                    if (medgemmaAccordionActive) toggleMedgemmaAccordion();
-                });
+                pmCloseResultBtn.addEventListener('click', _resetPipMedgemmaPanel);
 
                 pmAnalyseBtn.addEventListener('click', async () => {
-                    if (!medgemmaImageBase64) { pipWindow.alert('Upload eerst een afbeelding.'); return; }
+                    if (!medgemmaImages.length) { pipWindow.alert('Upload eerst een afbeelding.'); return; }
                     const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
                     const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
@@ -5927,7 +5959,7 @@ negated bevindingen
                     pmAnalyseBtn.disabled = true;
                     pmAnalyseBtn.textContent = 'Analyseren…';
                     try {
-                        const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
+                        const result = await callMedGemma(medgemmaImages, prompt);
                         pmDropzone.classList.add('hidden');
                         pmPreview.classList.add('hidden');
                         pmResultContent.innerHTML = renderMarkdown(result);
@@ -6219,7 +6251,6 @@ negated bevindingen
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
             const medgemmaPreview       = document.getElementById("medgemma-preview");
-            const medgemmaPreviewImg    = document.getElementById("medgemma-preview-img");
             const medgemmaClearBtn      = document.getElementById("medgemma-clear-btn");
             const medgemmaAnalyseBtn    = document.getElementById("medgemma-analyse-btn");
             const medgemmaActionUrlInput = document.getElementById("medgemma-action-url");
@@ -6238,10 +6269,9 @@ negated bevindingen
             function resetMedgemmaPanel() {
                 medgemmaResult.classList.add("hidden");
                 medgemmaResultContent.innerHTML = "";
-                medgemmaImageBase64 = null;
-                medgemmaImageMime   = null;
+                medgemmaImages = [];
+                medgemmaThumbnails.innerHTML = "";
                 medgemmaFileInput.value = "";
-                medgemmaPreviewImg.src  = "";
                 medgemmaPreview.classList.add("hidden");
                 medgemmaDropzone.classList.remove("hidden");
             }
@@ -6249,6 +6279,15 @@ negated bevindingen
             medgemmaCopyBtn.addEventListener("click", () => {
                 const text = medgemmaResultContent.innerText || medgemmaResultContent.textContent;
                 navigator.clipboard.writeText(text).catch(() => {});
+                resetMedgemmaPanel();
+                if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+            });
+
+            document.getElementById("medgemma-send-btn").addEventListener("click", () => {
+                const text = medgemmaResultContent.innerText || medgemmaResultContent.textContent;
+                if (text) sendToDictationFields(text);
+                resetMedgemmaPanel();
+                if (medgemmaAccordionActive) toggleMedgemmaAccordion();
             });
 
             medgemmaCloseBtn.addEventListener("click", () => {
@@ -6289,8 +6328,36 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 localStorage.setItem("medgemmaPromptVersion", MEDGEMMA_PROMPT_VERSION);
             });
 
-            let medgemmaImageBase64 = null;
-            let medgemmaImageMime   = null;
+            let medgemmaImages = []; // [{base64, mime, dataUrl}]
+            const medgemmaThumbnails = document.getElementById("medgemma-thumbnails");
+
+            function _addMedgemmaThumbnail(idx) {
+                const img = medgemmaImages[idx];
+                const wrap = document.createElement("div");
+                wrap.className = "relative inline-block";
+                wrap.dataset.idx = idx;
+                const thumb = document.createElement("img");
+                thumb.src = img.dataUrl;
+                thumb.className = "w-16 h-16 object-cover rounded-md border border-neutral-200 dark:border-slate-700 bg-black";
+                const rm = document.createElement("button");
+                rm.type = "button";
+                rm.className = "absolute -top-1 -right-1 inline-flex items-center justify-center w-4 h-4 rounded-full text-white text-xs";
+                rm.style.cssText = "background:rgba(30,30,30,.75);font-size:10px;line-height:1";
+                rm.textContent = "✕";
+                rm.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    medgemmaImages.splice(parseInt(wrap.dataset.idx), 1);
+                    // Re-index remaining wrappers
+                    Array.from(medgemmaThumbnails.children).forEach((w, i) => { w.dataset.idx = i; });
+                    wrap.remove();
+                    if (!medgemmaImages.length) {
+                        medgemmaPreview.classList.add("hidden");
+                        medgemmaDropzone.classList.remove("hidden");
+                    }
+                });
+                wrap.append(thumb, rm);
+                medgemmaThumbnails.appendChild(wrap);
+            }
 
             function handleMedgemmaFile(file) {
                 if (!file || !file.type.startsWith("image/")) return;
@@ -6298,9 +6365,9 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const dataUrl = e.target.result;
-                    medgemmaImageBase64 = dataUrl.split(",")[1];
-                    medgemmaImageMime   = file.type;
-                    medgemmaPreviewImg.src = dataUrl;
+                    const idx = medgemmaImages.length;
+                    medgemmaImages.push({ base64: dataUrl.split(",")[1], mime: file.type, dataUrl });
+                    _addMedgemmaThumbnail(idx);
                     medgemmaPreview.classList.remove("hidden");
                     medgemmaDropzone.classList.add("hidden");
                 };
@@ -6308,7 +6375,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             }
 
             medgemmaDropzone.addEventListener("click", () => medgemmaFileInput.click());
-            medgemmaFileInput.addEventListener("change", (e) => handleMedgemmaFile(e.target.files[0]));
+            medgemmaFileInput.addEventListener("change", (e) => { Array.from(e.target.files).forEach(handleMedgemmaFile); medgemmaFileInput.value = ""; });
             medgemmaDropzone.addEventListener("dragover", (e) => {
                 e.preventDefault();
                 medgemmaDropzone.classList.add("ring-2", "ring-cyan-500");
@@ -6319,7 +6386,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
             medgemmaDropzone.addEventListener("drop", (e) => {
                 e.preventDefault();
                 medgemmaDropzone.classList.remove("ring-2", "ring-cyan-500");
-                handleMedgemmaFile(e.dataTransfer.files[0]);
+                Array.from(e.dataTransfer.files).forEach(handleMedgemmaFile);
             });
             document.addEventListener("paste", (e) => {
                 if (medgemmaAccordion.classList.contains("hidden")) return;
@@ -6327,13 +6394,12 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 // Don't intercept when a text field or web component (e.g. tiro-form-filler) is active
                 const tag = document.activeElement?.tagName?.toUpperCase() ?? "";
                 if (tag === "INPUT" || tag === "TEXTAREA" || document.activeElement?.isContentEditable || tag.includes("-")) return;
-                const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith("image/"));
-                if (item) { e.preventDefault(); handleMedgemmaFile(item.getAsFile()); }
+                const items = Array.from(e.clipboardData.items).filter(i => i.type.startsWith("image/"));
+                if (items.length) { e.preventDefault(); items.forEach(i => handleMedgemmaFile(i.getAsFile())); }
             });
             medgemmaClearBtn.addEventListener("click", () => {
-                medgemmaImageBase64 = null;
-                medgemmaImageMime   = null;
-                medgemmaFileInput.value = "";
+                medgemmaImages = [];
+                medgemmaThumbnails.innerHTML = "";
                 medgemmaPreview.classList.add("hidden");
                 medgemmaDropzone.classList.remove("hidden");
             });
@@ -6370,15 +6436,13 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 return full;
             }
 
-            async function callMedGemma(imageBase64, mimeType, prompt) {
+            async function callMedGemma(images, prompt) {
                 const model = getModel('geminiModelMedgemma');
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 if (!GEMINI_API_KEY) throw new Error("Geen Gemini API key ingevuld. Vul een sleutel in bij Settings.");
+                const imageParts = images.map(img => ({ inline_data: { mime_type: img.mime, data: img.base64 } }));
                 const body = JSON.stringify({
-                    contents: [{ parts: [
-                        { inline_data: { mime_type: mimeType, data: imageBase64 } },
-                        { text: prompt }
-                    ]}]
+                    contents: [{ parts: [...imageParts, { text: prompt }] }]
                 });
                 const MAX_ATTEMPTS = 3, RETRY_DELAY_MS = 3000;
                 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -6408,7 +6472,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
 
             medgemmaAnalyseBtn.addEventListener("click", async (e) => {
                 e.stopPropagation();
-                if (!medgemmaImageBase64) {
+                if (!medgemmaImages.length) {
                     document.getElementById("medgemma-accordion").open = true;
                     alert("Upload eerst een afbeelding in het Beeldanalyse-paneel.");
                     return;
@@ -6422,7 +6486,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                 medgemmaAnalyseBtn.disabled = true;
                 medgemmaAnalyseBtn.textContent = "Analyseren…";
                 try {
-                    const result = await callMedGemma(medgemmaImageBase64, medgemmaImageMime, prompt);
+                    const result = await callMedGemma(medgemmaImages, prompt);
                     showMedgemmaResult(result);
                 } catch (err) {
                     alert("Beeldanalyse fout: " + err.message);
