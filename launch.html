@@ -4477,17 +4477,34 @@ negated bevindingen
                     applyLabelVisibility();
                 }
             });
-            function _buildTtHeader() {
-                const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
-                // Als auto-detect gerund heeft, vertrouw alleen de herkende lat (null = nooit gerund → fallback naar form)
-                const lat  = _autoDetectedLat !== null
+            function _buildLat() {
+                return _autoDetectedLat !== null
                     ? _autoDetectedLat
                     : (extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '');
+            }
+            function _buildTtHeader() {
+                const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
+                const lat  = _buildLat();
                 const parts = [type, lat].filter(Boolean);
                 return parts.length ? parts.join(' ').toUpperCase() + ':' : '';
             }
             function _prependTtHeader(text) {
                 if (!autoStudyDetect) return text;
+                const firstLine = text.trimStart().split('\n')[0].trim();
+                // Controleer of de template al een onderzoeksnaam-header heeft (hoofdletters + bekende modaliteit)
+                if (/^[A-Z][A-Z0-9\s\-()/]+:$/.test(firstLine) && _EXAM_MODALITEIT.test(firstLine)) {
+                    if (/ XXX:$/.test(firstLine)) {
+                        // Vervang XXX-placeholder door herkende lateralisatie
+                        const lat = _buildLat();
+                        const newFirstLine = lat
+                            ? firstLine.replace(/ XXX:$/, ' ' + lat.toUpperCase() + ':')
+                            : firstLine.replace(/ XXX:$/, ':');
+                        const pos = text.indexOf(firstLine);
+                        return text.slice(0, pos) + newFirstLine + text.slice(pos + firstLine.length);
+                    }
+                    return text; // header aanwezig, geen XXX — ongewijzigd
+                }
+                // Geen header aanwezig — prepend
                 const header = _buildTtHeader();
                 if (!header) return text;
                 if (text.trimStart().startsWith(header)) return text;
