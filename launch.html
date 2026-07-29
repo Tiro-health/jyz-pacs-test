@@ -4488,21 +4488,28 @@ negated bevindingen
                 const parts = [type, lat].filter(Boolean);
                 return parts.length ? parts.join(' ').toUpperCase() + ':' : '';
             }
+            // Zorg altijd voor één lege regel na de (eventueel bewerkte) headerregel
+            function _ensureBlankAfterHeader(pre, header, rest) {
+                // rest begint met '\n' (einde headerregel); normaliseer naar '\n\n'
+                return pre + header + rest.replace(/^\n+/, '\n\n');
+            }
             function _prependTtHeader(text) {
                 if (!autoStudyDetect) return text;
                 const firstLine = text.trimStart().split('\n')[0].trim();
                 // Controleer of de template al een onderzoeksnaam-header heeft (hoofdletters + bekende modaliteit)
                 if (/^[A-Z][A-Z0-9\s\-()/]+:$/.test(firstLine) && _EXAM_MODALITEIT.test(firstLine)) {
+                    const pos = text.indexOf(firstLine);
+                    const pre  = text.slice(0, pos);
+                    const rest = text.slice(pos + firstLine.length);
                     if (/ XXX:$/.test(firstLine)) {
                         // Vervang XXX-placeholder door herkende lateralisatie
                         const lat = _buildLat();
                         const newFirstLine = lat
                             ? firstLine.replace(/ XXX:$/, ' ' + lat.toUpperCase() + ':')
                             : firstLine.replace(/ XXX:$/, ':');
-                        const pos = text.indexOf(firstLine);
-                        return text.slice(0, pos) + newFirstLine + text.slice(pos + firstLine.length);
+                        return _ensureBlankAfterHeader(pre, newFirstLine, rest);
                     }
-                    return text; // header aanwezig, geen XXX — ongewijzigd
+                    return _ensureBlankAfterHeader(pre, firstLine, rest);
                 }
                 // Geen header aanwezig — prepend
                 const header = _buildTtHeader();
