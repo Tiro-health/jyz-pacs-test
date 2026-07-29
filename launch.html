@@ -4477,11 +4477,24 @@ negated bevindingen
                     applyLabelVisibility();
                 }
             });
+            function _buildTtHeader() {
+                const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
+                const lat  = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '';
+                const parts = [type, lat].filter(Boolean);
+                return parts.length ? parts.join(' ').toUpperCase() + ':' : '';
+            }
+            function _prependTtHeader(text) {
+                if (!autoStudyDetect) return text;
+                const header = _buildTtHeader();
+                if (!header) return text;
+                if (text.trimStart().startsWith(header)) return text;
+                return header + '\n\n' + text;
+            }
             ttCopy.addEventListener('click', () => {
-                navigator.clipboard.writeText(ttContent.innerText).catch(() => {});
+                navigator.clipboard.writeText(_prependTtHeader(ttContent.innerText)).catch(() => {});
             });
             document.getElementById('tt-send-to-dictation').addEventListener('click', () => {
-                const text = ttContent.innerText;
+                const text = _prependTtHeader(ttContent.innerText);
                 if (text) {
                     sendToDictationFields(text);
                     ttResultPanel.classList.add('hidden');
