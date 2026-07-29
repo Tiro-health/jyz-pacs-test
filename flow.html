@@ -2334,7 +2334,7 @@ XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
 Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
             { id:'ech-sch', name:'ECHO SCHOUDER',               code:'echsch',   modality:'ECHO',
-              dicom:['echo schouder links','echo schouder rechts','echo schouder','echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', labelsDefaultVisible: true,
+              dicom:['echo schouder links','echo schouder rechts','echo schouder','echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible: true, userLabelsDefaultVisible: true,
               textTemplate:`[ AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
 "- Normaal voorkomen van het AC-gewricht." // Beschrijf hier de bevindingen van het AC gewricht inclusief opzetting van het kapsel, degeneratie van het AC gewricht met subchondrale sclerose en osteofytose vorming en eventuele hydrops of Geyser sign.
 "- Geen argumenten voor subacromiale impingement." // Beschrijf hier de bevindingen met betrekking van subacromiale impingement tijdens dynamisch echografische controle.
@@ -3789,11 +3789,12 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     et.textTemplate = def.textTemplate;
                     changed = true;
                 }
-                // Sync labelsDefaultVisible if the def explicitly sets it true and stored doesn't
-                if (def.labelsDefaultVisible === true && et.labelsDefaultVisible !== true) {
-                    et.labelsDefaultVisible = true;
-                    changed = true;
-                }
+                // Migrate old labelsDefaultVisible and default new split props to true
+                if (et.deptLabelsDefaultVisible === undefined) { et.deptLabelsDefaultVisible = true; changed = true; }
+                if (et.userLabelsDefaultVisible === undefined) { et.userLabelsDefaultVisible = true; changed = true; }
+                // Sync from def if explicitly set
+                if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
+                if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
             });
             // Seed calculator-koppelingen (eenmalig, enkel wanneer nog niet ingesteld)
             // Eenmalige correctie: verwijder foutieve blaasvolume-koppeling op galblaas-onderzoeken
@@ -3970,6 +3971,10 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
             : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
         </button>
+        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen (afdeling)">
+          <input type="checkbox" class="labels-dept-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.deptLabelsDefaultVisible === true ? 'checked' : ''}>
+          <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
+        </label>
         <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}','user')"
           class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-shrink-0">
           <span class="text-[9px] uppercase tracking-wide text-neutral-400">👤 Textueel (user)</span>
@@ -3977,8 +3982,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
             : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
         </button>
-        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen in het resultaatvenster">
-          <input type="checkbox" class="labels-default-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.labelsDefaultVisible === true ? 'checked' : ''}>
+        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen (gebruiker)">
+          <input type="checkbox" class="labels-user-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.userLabelsDefaultVisible === true ? 'checked' : ''}>
           <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
         </label>
 
@@ -4364,7 +4369,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
                 calculators:   editCalculators,
-                labelsDefaultVisible: _existingForSave?.labelsDefaultVisible === true,
+                deptLabelsDefaultVisible: _existingForSave?.deptLabelsDefaultVisible !== false,
+                userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible !== false,
                 deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
                 userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
             };
@@ -4478,7 +4484,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 document.getElementById('tt-editor-exam-name').textContent = levelLabel + et.name;
                 ta.value = _ttEditorLevel === 'user' ? (et.userTextTemplate || '') : (et.textTemplate || '');
             }
-            document.getElementById('tt-editor-labels-toggle').checked = et.labelsDefaultVisible === true;
+            const _labProp = _ttEditorLevel === 'user' ? 'userLabelsDefaultVisible' : 'deptLabelsDefaultVisible';
+            document.getElementById('tt-editor-labels-toggle').checked = et[_labProp] === true;
             syncTtHighlight();
             ta.focus();
         };
@@ -4523,9 +4530,10 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             if (et) {
                 if (_ttEditorLevel === 'user') {
                     et.userTextTemplate = val;
+                    et.userLabelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
                 } else {
                     et.textTemplate = val;
-                    et.labelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
+                    et.deptLabelsDefaultVisible = document.getElementById('tt-editor-labels-toggle').checked;
                 }
             }
             saveData();
@@ -4629,14 +4637,17 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             r.addEventListener('change', updateSectionStatuses)
         );
 
-        // Labels default-visible toggle per exam type (delegated)
+        // Labels default-visible toggles per exam type (delegated, separate for dept and user)
         document.getElementById('cards-container').addEventListener('change', e => {
             e.stopPropagation();
-            const labCb = e.target.closest('.labels-default-toggle');
-            if (!labCb) return;
-            const idx = state.examTypes.findIndex(t => t.id === labCb.dataset.id);
+            const deptCb = e.target.closest('.labels-dept-toggle');
+            const userCb = e.target.closest('.labels-user-toggle');
+            const cb = deptCb || userCb;
+            if (!cb) return;
+            const idx = state.examTypes.findIndex(t => t.id === cb.dataset.id);
             if (idx < 0) return;
-            state.examTypes[idx].labelsDefaultVisible = labCb.checked;
+            if (deptCb) state.examTypes[idx].deptLabelsDefaultVisible = cb.checked;
+            else state.examTypes[idx].userLabelsDefaultVisible = cb.checked;
             saveData();
         });
 
