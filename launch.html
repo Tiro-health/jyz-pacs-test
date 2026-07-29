@@ -1411,6 +1411,7 @@
             window._flowTextTemplateLogic = '';
             window._flowPresetText = '';
             window._flowLabelsDefaultVisible = false;
+            window._flowUserLabelsDefaultVisible = false;
             // Map: checkbox-key → { calcId, tiroTemplateUrl, naam } for active calculator items
             window._flowCalculators = {};
             // Calculator-venster state (declared early — renderCalcPicker runs during init)
@@ -1574,7 +1575,8 @@
                 window._flowUserTextTemplate = match.userTextTemplate || '';
                 window._flowDeptTextTemplateCache = match.textTemplate || '';
                 window._flowPresetText = match.presetText || '';
-                window._flowLabelsDefaultVisible = match.labelsDefaultVisible === true;
+                window._flowLabelsDefaultVisible = match.deptLabelsDefaultVisible === true;
+                window._flowUserLabelsDefaultVisible = match.userLabelsDefaultVisible === true;
                 window._flowTextTemplateLogic = '';
                 try {
                     window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
@@ -4655,14 +4657,14 @@ negated bevindingen
                     // even when the verslag check (phase 2) strips them from the final output.
                     const hasLabels = /\[[^\]]+?:\s*\]/.test(backupPlainText);
                     if (isMain) {
-                        _ttLabelsVisible = window._flowLabelsDefaultVisible !== false;
+                        _ttLabelsVisible = window._flowLabelsDefaultVisible === true;
                         wrapSectionLabels(ttContent);
                         applyCompactBrs(ttContent);
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
                     } else if (pipRefs?.labelsBtn) {
-                        pipRefs.labelsVisible = window._flowLabelsDefaultVisible !== false;
+                        pipRefs.labelsVisible = window._flowUserLabelsDefaultVisible === true;
                         wrapSectionLabels(targetContent);
                         applyCompactBrs(targetContent);
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
