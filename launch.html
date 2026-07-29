@@ -4479,7 +4479,7 @@ negated bevindingen
             });
             function _buildTtHeader() {
                 const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
-                const lat  = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '';
+                const lat  = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || _autoDetectedLat || '';
                 const parts = [type, lat].filter(Boolean);
                 return parts.length ? parts.join(' ').toUpperCase() + ':' : '';
             }
@@ -4842,6 +4842,7 @@ negated bevindingen
             let autoStudyDetect = localStorage.getItem('autoStudyDetect') === 'true';
             let _autoStudyDebounce = null;
             let _autoStudyLastDetected = ''; // voorkom herhaalde triggers voor zelfde onderzoek
+            let _autoDetectedLat = '';       // laatste lateraliteit herkend door auto-detect
 
             function updateAutoStudyDetectToggle() {
                 autoStudyDetectToggle.setAttribute('aria-checked', String(autoStudyDetect));
@@ -4876,6 +4877,7 @@ negated bevindingen
                     const latMatch = candidate.match(_LATERALITY_RE);
                     const typeOnderzoek = latMatch ? candidate.slice(0, latMatch.index).trim() : candidate;
                     const lateraliteit  = latMatch ? _LATERALITY_MAP[latMatch[1].toLowerCase()] : null;
+                    _autoDetectedLat = lateraliteit || '';
 
                     if (contextForm) {
                         deepFillByLabel(contextForm, "type onderzoek", typeOnderzoek);
