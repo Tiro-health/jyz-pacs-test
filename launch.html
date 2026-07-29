@@ -5751,14 +5751,14 @@ negated bevindingen
 
                 const pipTtCopyBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Kopiëren', (e) => {
                     const btn = e.currentTarget;
-                    pipCopy(pipTtContent.innerText || '');
+                    pipCopy(_prependTtHeader(pipTtContent.innerText || ''));
                     const orig = btn.textContent;
                     btn.textContent = 'Gekopieerd ✓';
                     btn.style.color = '#16a34a';
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                const pipTtSendBtn = mkSendBtn(() => pipTtContent.innerText || '', pipTtPanel);
+                const pipTtSendBtn = mkSendBtn(() => _prependTtHeader(pipTtContent.innerText || ''), pipTtPanel);
                 pipTtActions.append(pipTtToggle, pipTtLabelsBtn, pipTtCopyBtn, pipTtSendBtn);
                 pipTtPanel.append(pipTtHead, pipTtContent, pipTtActions);
                 wrap.appendChild(pipTtPanel);
