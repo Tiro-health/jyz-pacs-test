@@ -4479,7 +4479,10 @@ negated bevindingen
             });
             function _buildTtHeader() {
                 const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
-                const lat  = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || _autoDetectedLat || '';
+                // Als auto-detect gerund heeft, vertrouw alleen de herkende lat (null = nooit gerund → fallback naar form)
+                const lat  = _autoDetectedLat !== null
+                    ? _autoDetectedLat
+                    : (extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '');
                 const parts = [type, lat].filter(Boolean);
                 return parts.length ? parts.join(' ').toUpperCase() + ':' : '';
             }
@@ -4842,7 +4845,7 @@ negated bevindingen
             let autoStudyDetect = localStorage.getItem('autoStudyDetect') === 'true';
             let _autoStudyDebounce = null;
             let _autoStudyLastDetected = ''; // voorkom herhaalde triggers voor zelfde onderzoek
-            let _autoDetectedLat = '';       // laatste lateraliteit herkend door auto-detect
+            let _autoDetectedLat = null;     // null = nog niet gerund; '' = geen lat; 'Links'/'Rechts' = lat herkend
 
             function updateAutoStudyDetectToggle() {
                 autoStudyDetectToggle.setAttribute('aria-checked', String(autoStudyDetect));
