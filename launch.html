@@ -4774,7 +4774,7 @@ negated bevindingen
                     }
                 }
                 const autofillWithHeader = autofillResult ? _prependTtHeader(autofillResult) : null;
-                _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false });
+                _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible: window._flowLabelsDefaultVisible !== false });
                 if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
                 if (pipBtn) { pipBtn.disabled = false; pipBtn.style.color = '#16a34a'; setTimeout(() => { pipBtn.style.color = ''; }, 1500); }
                 _updateVoegToeBtns();
@@ -4784,34 +4784,44 @@ negated bevindingen
                 const hasBoth = study.autofillWithHeader && study.autofillWithHeader !== study.originalWithHeader;
                 const isMain  = doc === document;
                 const currentText = () => study.showingOriginal ? study.originalWithHeader : study.autofillWithHeader;
+                const isDark  = document.documentElement.classList.contains('dark');
 
                 const panel = doc.createElement('div');
-                panel.style.cssText = 'border-bottom:1px solid #e5e7eb';
+                panel.style.cssText = `border-bottom:1px solid ${isDark ? '#2d3f4d' : '#e5e7eb'}`;
 
                 const head = doc.createElement('div');
-                head.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#f9fafb';
+                head.style.cssText = `display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:${isDark ? '#3d3d3d' : '#f9fafb'}`;
                 const titleEl = doc.createElement('span');
-                titleEl.style.cssText = 'font-size:11px;font-weight:500;color:#6b7280';
+                titleEl.style.cssText = `font-size:11px;font-weight:500;color:${isDark ? '#94a3b8' : '#6b7280'}`;
                 titleEl.textContent = study.label || ('Onderzoek ' + (idx + 1));
                 head.appendChild(titleEl);
 
                 const content = doc.createElement('div');
                 content.className = 'multi-study-panel-content';
-                content.style.cssText = 'padding:8px 12px;font-size:12px;line-height:1.5;color:#1f2937;min-height:36px';
-                content.innerHTML = renderMarkdown(currentText());
+                content.style.cssText = `padding:8px 12px;font-size:12px;line-height:1.5;color:${isDark ? '#c8d3e0' : '#1f2937'};background:${isDark ? '#1f2c36' : '#ffffff'};min-height:36px`;
+
+                const renderContent = () => {
+                    content.innerHTML = renderMarkdown(currentText());
+                    content.innerHTML = content.innerHTML.replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
+                    if (!study.labelsDefaultVisible) {
+                        content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = 'none'; });
+                    }
+                };
+                renderContent();
 
                 const actions = doc.createElement('div');
-                actions.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 12px;background:#f9fafb;flex-wrap:wrap';
+                actions.style.cssText = `display:flex;align-items:center;gap:8px;padding:6px 12px;background:${isDark ? '#3d3d3d' : '#f9fafb'};flex-wrap:wrap`;
+                const btnBase = `border:1px solid ${isDark ? '#2d3f4d' : '#d1d5db'};background:${isDark ? '#1f2c36' : '#fff'};color:${isDark ? '#c8d3e0' : '#374151'}`;
                 const mkB = (label, handler, extraStyle) => {
                     const b = doc.createElement('button'); b.type = 'button';
-                    b.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151;font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer' + (extraStyle || '');
+                    b.style.cssText = `${btnBase};font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer` + (extraStyle || '');
                     b.textContent = label;
                     b.addEventListener('click', handler);
                     return b;
                 };
                 const mkIconB = (html, title, handler) => {
                     const b = doc.createElement('button'); b.type = 'button'; b.title = title;
-                    b.style.cssText = 'width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;border:1px solid #d1d5db;background:#fff;color:#374151;border-radius:6px;cursor:pointer';
+                    b.style.cssText = `width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;${btnBase};border-radius:6px;cursor:pointer`;
                     b.innerHTML = html; b.addEventListener('click', handler); return b;
                 };
                 const arrowSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
@@ -4819,7 +4829,7 @@ negated bevindingen
                 if (hasBoth) {
                     const tog = mkB('↩ Origineel', () => {
                         study.showingOriginal = !study.showingOriginal;
-                        content.innerHTML = renderMarkdown(currentText());
+                        renderContent();
                         tog.textContent = study.showingOriginal ? '↩ Autofill' : '↩ Origineel';
                     });
                     actions.appendChild(tog);
