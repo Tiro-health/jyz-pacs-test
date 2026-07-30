@@ -4758,6 +4758,8 @@ negated bevindingen
                     textTemplate: window._flowTextTemplate || window._flowUserTextTemplate || '',
                 };
                 const originalWithHeader = _prependTtHeader(tekst);
+                // Clear fields immediately so user can continue with next study
+                _clearStudyFields();
                 const btn    = document.getElementById('voeg-toe-btn');
                 const pipBtn = _pipWindow?.document?.getElementById('pip-voeg-toe-btn');
                 if (btn)    { btn.disabled = true;    btn.textContent = 'Bezig…'; }
@@ -4773,7 +4775,6 @@ negated bevindingen
                 }
                 const autofillWithHeader = autofillResult ? _prependTtHeader(autofillResult) : null;
                 _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false });
-                _clearStudyFields();
                 if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
                 if (pipBtn) { pipBtn.disabled = false; pipBtn.style.color = '#16a34a'; setTimeout(() => { pipBtn.style.color = ''; }, 1500); }
                 _updateVoegToeBtns();
