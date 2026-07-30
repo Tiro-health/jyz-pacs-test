@@ -4686,6 +4686,7 @@ negated bevindingen
             // Multi-studie accumulator
             // ============================================
             let _multiStudies = [];
+            let _autofillQueue = Promise.resolve(); // serial queue — prevents concurrent autofill calls
 
             function _getStudyLabel() {
                 const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || '';
@@ -4694,7 +4695,7 @@ negated bevindingen
             }
 
             async function _runAutofillSilent(tekst, context) {
-                const logic = window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
+                const logic = context.logic || window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
                 const backupTemplate = localStorage.getItem('autofillBackupUrl') || DEFAULT_AUTOFILL_BACKUP_PROMPT;
                 const prompt = fillPrompt(backupTemplate, {
                     tekst,
@@ -4751,33 +4752,39 @@ negated bevindingen
                 const label = _getStudyLabel();
                 const tekst = dictText || readDictationText().trim();
                 if (!tekst) { alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
+                // Capture all context before clearing fields
                 const context = {
                     typeOnderzoek: extractAnyField("type onderzoek", "type of examination", "onderzoek"),
                     ki:  extractAnyField("klinische inlichtingen", "clinical information", "klinisch"),
                     dv:  extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"),
                     textTemplate: window._flowTextTemplate || window._flowUserTextTemplate || '',
+                    logic: window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '',
                 };
                 const originalWithHeader = _prependTtHeader(tekst);
+                const labelsDefaultVisible = window._flowLabelsDefaultVisible !== false;
                 // Clear fields immediately so user can continue with next study
                 _clearStudyFields();
                 const btn    = document.getElementById('voeg-toe-btn');
                 const pipBtn = _pipWindow?.document?.getElementById('pip-voeg-toe-btn');
                 if (btn)    { btn.disabled = true;    btn.textContent = 'Bezig…'; }
                 if (pipBtn) { pipBtn.disabled = true;  pipBtn.textContent = 'Bezig…'; }
-                let autofillResult = null;
-                try {
-                    if (GEMINI_API_KEY) autofillResult = await _runAutofillSilent(tekst, context);
-                } catch (e) {
-                    const retry = confirm('Autofill mislukt: ' + e.message + '\n\nOpnieuw proberen?');
-                    if (retry) {
-                        try { autofillResult = await _runAutofillSilent(tekst, context); } catch (_) {}
+                // Enqueue autofill — runs serially to prevent concurrent Gemini calls mixing results
+                _autofillQueue = _autofillQueue.then(async () => {
+                    let autofillResult = null;
+                    try {
+                        if (GEMINI_API_KEY) autofillResult = await _runAutofillSilent(tekst, context);
+                    } catch (e) {
+                        const retry = confirm('Autofill mislukt: ' + e.message + '\n\nOpnieuw proberen?');
+                        if (retry) {
+                            try { autofillResult = await _runAutofillSilent(tekst, context); } catch (_) {}
+                        }
                     }
-                }
-                const autofillWithHeader = autofillResult ? _prependTtHeader(autofillResult) : null;
-                _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible: window._flowLabelsDefaultVisible !== false });
-                if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
-                if (pipBtn) { pipBtn.disabled = false; pipBtn.style.color = '#16a34a'; setTimeout(() => { pipBtn.style.color = ''; }, 1500); }
-                _updateVoegToeBtns();
+                    const autofillWithHeader = autofillResult ? _prependTtHeader(autofillResult) : null;
+                    _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible });
+                    if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
+                    if (pipBtn) { pipBtn.disabled = false; pipBtn.style.color = '#16a34a'; setTimeout(() => { pipBtn.style.color = ''; }, 1500); }
+                    _updateVoegToeBtns();
+                });
             }
 
             function _buildMsPanel(study, idx, doc) {
@@ -4803,19 +4810,21 @@ negated bevindingen
                 const renderContent = () => {
                     content.innerHTML = renderMarkdown(currentText());
                     content.innerHTML = content.innerHTML.replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
+                    applyCompactBrs(content);
                     if (!study.labelsDefaultVisible) {
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = 'none'; });
                     }
                 };
                 renderContent();
 
+                const hasLabels = /\[[^\]]+?:\s*\]/.test(currentText());
                 const actions = doc.createElement('div');
-                actions.style.cssText = `display:flex;align-items:center;gap:8px;padding:6px 12px;background:${isDark ? '#3d3d3d' : '#f9fafb'};flex-wrap:wrap`;
+                actions.style.cssText = `display:flex;align-items:center;gap:6px;padding:6px 12px;background:${isDark ? '#3d3d3d' : '#f9fafb'};flex-wrap:wrap`;
                 const btnBase = `border:1px solid ${isDark ? '#2d3f4d' : '#d1d5db'};background:${isDark ? '#1f2c36' : '#fff'};color:${isDark ? '#c8d3e0' : '#374151'}`;
-                const mkB = (label, handler, extraStyle) => {
+                const mkB = (lbl, handler, extraStyle) => {
                     const b = doc.createElement('button'); b.type = 'button';
                     b.style.cssText = `${btnBase};font-size:11px;padding:4px 10px;border-radius:6px;cursor:pointer` + (extraStyle || '');
-                    b.textContent = label;
+                    b.textContent = lbl;
                     b.addEventListener('click', handler);
                     return b;
                 };
@@ -4826,13 +4835,15 @@ negated bevindingen
                 };
                 const arrowSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>';
 
-                if (hasBoth) {
-                    const tog = mkB('↩ Origineel', () => {
-                        study.showingOriginal = !study.showingOriginal;
-                        renderContent();
-                        tog.textContent = study.showingOriginal ? '↩ Autofill' : '↩ Origineel';
+                // Left group: labels toggle + kopiëren + pijl omhoog
+                let labelsVisible = study.labelsDefaultVisible;
+                if (hasLabels) {
+                    const lblBtn = mkB(labelsVisible ? 'Labels verbergen' : 'Labels tonen', () => {
+                        labelsVisible = !labelsVisible;
+                        content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
+                        lblBtn.textContent = labelsVisible ? 'Labels verbergen' : 'Labels tonen';
                     });
-                    actions.appendChild(tog);
+                    actions.appendChild(lblBtn);
                 }
                 actions.appendChild(mkB('Kopiëren', () => {
                     navigator.clipboard.writeText(content.innerText || '').catch(() => {});
@@ -4846,6 +4857,21 @@ negated bevindingen
                         setDictationText(txt);
                     }
                 }));
+
+                // Right group: autofill/origineel toggle (aligned right, same style as kopieer-alles)
+                if (hasBoth) {
+                    const spacer = doc.createElement('span');
+                    spacer.style.cssText = 'flex:1';
+                    actions.appendChild(spacer);
+                    const tog = mkB('Origineel', () => {
+                        study.showingOriginal = !study.showingOriginal;
+                        renderContent();
+                        // re-sync labels visibility after re-render
+                        content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
+                        tog.textContent = study.showingOriginal ? 'Autofill' : 'Origineel';
+                    });
+                    actions.appendChild(tog);
+                }
 
                 panel.append(head, content, actions);
                 return panel;
@@ -4890,6 +4916,7 @@ negated bevindingen
 
             function _resetMultiStudies() {
                 _multiStudies = [];
+                _autofillQueue = Promise.resolve();
                 _hideMultiStudyView(true);
                 _hideMultiStudyView(false);
                 _updateVoegToeBtns();
