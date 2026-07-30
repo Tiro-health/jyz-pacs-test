@@ -4844,7 +4844,23 @@ negated bevindingen
                 const prevTexts = Array.from((mspEl || {querySelectorAll: () => []}).querySelectorAll('.multi-study-panel-content'))
                     .map(el => el.innerText || '').filter(Boolean);
                 const lastText = lastResultEl ? (lastResultEl.innerText || lastResultEl.textContent || '') : '';
-                return [...prevTexts, lastText].filter(Boolean).join('\n\n');
+                const allTexts = [...prevTexts, lastText].filter(Boolean);
+
+                // Split each study text into body + conclusion, then group conclusions under one header
+                const BESLUIT_RE = /^(BESLUIT|Besluit|besluit|CONCLUSIE|Conclusie|conclusie)\s*:/m;
+                const bodies = [], conclusions = [];
+                for (const txt of allTexts) {
+                    const m = BESLUIT_RE.exec(txt);
+                    if (m) {
+                        bodies.push(txt.slice(0, m.index).trimEnd());
+                        conclusions.push(txt.slice(m.index + m[0].length).trimStart());
+                    } else {
+                        bodies.push(txt);
+                    }
+                }
+                const parts = bodies.filter(Boolean).join('\n\n');
+                if (!conclusions.length) return parts;
+                return parts + '\n\nBESLUIT:\n' + conclusions.join('\n\n');
             }
 
             function _hideMultiStudyView(isMain) {
