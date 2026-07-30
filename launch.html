@@ -4781,8 +4781,11 @@ negated bevindingen
                         }
                     }
                     // Use captured header to avoid picking up state from a later study
+                    // Dedup: skip prepending header if autofill already starts with it
                     const autofillWithHeader = autofillResult
-                        ? (capturedHeader ? capturedHeader + '\n\n' + autofillResult : autofillResult)
+                        ? (capturedHeader && !autofillResult.trimStart().startsWith(capturedHeader)
+                            ? capturedHeader + '\n\n' + autofillResult
+                            : autofillResult)
                         : null;
                     _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible });
                     if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
@@ -4812,6 +4815,7 @@ negated bevindingen
                 content.style.cssText = `padding:8px 12px;font-size:12px;line-height:1.5;color:${isDark ? '#c8d3e0' : '#1f2937'};background:${isDark ? '#1f2c36' : '#ffffff'};min-height:36px`;
 
                 const renderContent = () => {
+                    content.dataset.raw = currentText();
                     content.innerHTML = renderMarkdown(currentText());
                     content.innerHTML = content.innerHTML.replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
                     applyCompactBrs(content);
@@ -4850,10 +4854,10 @@ negated bevindingen
                     actions.appendChild(lblBtn);
                 }
                 actions.appendChild(mkB('Kopiëren', () => {
-                    navigator.clipboard.writeText(content.innerText || '').catch(() => {});
+                    navigator.clipboard.writeText(content.dataset.raw || content.innerText || '').catch(() => {});
                 }));
                 actions.appendChild(mkIconB(arrowSvg, 'Stuur naar dictatie', () => {
-                    const txt = content.innerText || '';
+                    const txt = content.dataset.raw || content.innerText || '';
                     if (isMain) {
                         sendToDictationFields(txt);
                     } else {
@@ -4883,12 +4887,12 @@ negated bevindingen
 
             function _getAllStudiesText(mspEl, lastResultEl) {
                 const prevTexts = Array.from((mspEl || {querySelectorAll: () => []}).querySelectorAll('.multi-study-panel-content'))
-                    .map(el => el.innerText || '').filter(Boolean);
+                    .map(el => el.dataset.raw || el.innerText || '').filter(Boolean);
                 const lastText = lastResultEl ? (lastResultEl.innerText || lastResultEl.textContent || '') : '';
                 const allTexts = [...prevTexts, lastText].filter(Boolean);
 
                 // Split each study text into body + conclusion, then group conclusions under one header
-                const BESLUIT_RE = /^(BESLUIT|Besluit|besluit|CONCLUSIE|Conclusie|conclusie)\s*:/m;
+                const BESLUIT_RE = /(?:^\[-\s*|^)(BESLUIT|Besluit|besluit|CONCLUSIE|Conclusie|conclusie)\s*:\s*\]?/m;
                 const bodies = [], conclusions = [];
                 for (const txt of allTexts) {
                     const m = BESLUIT_RE.exec(txt);
@@ -5006,10 +5010,11 @@ negated bevindingen
                 copyAllBtn.addEventListener('click', () => {
                     const mspEl = isMain ? document.getElementById('multi-study-result') : (_pipWindow?.document?.getElementById('pip-multi-study-result'));
                     const allTxt = _getAllStudiesText(mspEl, lastResultEl);
-                    navigator.clipboard.writeText(allTxt).catch(() => {});
-                    _resetMultiStudies();
-                    if (isMain) { ttResultPanel.classList.add('hidden'); showTemplatePreview(); }
-                    else if (_pipTtRef?.panel) _pipTtRef.panel.style.display = 'none';
+                    navigator.clipboard.writeText(allTxt).then(() => {
+                        _resetMultiStudies();
+                        if (isMain) { ttResultPanel.classList.add('hidden'); showTemplatePreview(); }
+                        else if (_pipTtRef?.panel) _pipTtRef.panel.style.display = 'none';
+                    }).catch(() => {});
                 });
                 targetActions.appendChild(copyAllBtn);
 
