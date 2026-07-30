@@ -4761,6 +4761,7 @@ negated bevindingen
                     logic: window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '',
                 };
                 const originalWithHeader = _prependTtHeader(tekst);
+                const capturedHeader = _buildTtHeader(); // capture before fields are cleared
                 const labelsDefaultVisible = window._flowLabelsDefaultVisible !== false;
                 // Clear fields immediately so user can continue with next study
                 _clearStudyFields();
@@ -4779,7 +4780,10 @@ negated bevindingen
                             try { autofillResult = await _runAutofillSilent(tekst, context); } catch (_) {}
                         }
                     }
-                    const autofillWithHeader = autofillResult ? _prependTtHeader(autofillResult) : null;
+                    // Use captured header to avoid picking up state from a later study
+                    const autofillWithHeader = autofillResult
+                        ? (capturedHeader ? capturedHeader + '\n\n' + autofillResult : autofillResult)
+                        : null;
                     _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible });
                     if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
                     if (pipBtn) { pipBtn.disabled = false; pipBtn.style.color = '#16a34a'; setTimeout(() => { pipBtn.style.color = ''; }, 1500); }
