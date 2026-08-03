@@ -4824,6 +4824,8 @@ negated bevindingen
                     }
                 };
                 renderContent();
+                // Track labels visibility as a data attribute so _getAllStudiesText can read it
+                content.dataset.labelsVisible = study.labelsDefaultVisible ? '1' : '0';
 
                 const hasLabels = /\[[^\]]+?:\s*\]/.test(currentText());
                 const actions = doc.createElement('div');
@@ -4845,19 +4847,21 @@ negated bevindingen
 
                 // Left group: labels toggle + kopiëren + pijl omhoog
                 let labelsVisible = study.labelsDefaultVisible;
+                const getPanelText = () => labelsVisible ? (content.dataset.raw || content.innerText || '') : (content.innerText || '');
                 if (hasLabels) {
                     const lblBtn = mkB(labelsVisible ? 'Labels verbergen' : 'Labels tonen', () => {
                         labelsVisible = !labelsVisible;
+                        content.dataset.labelsVisible = labelsVisible ? '1' : '0';
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
                         lblBtn.textContent = labelsVisible ? 'Labels verbergen' : 'Labels tonen';
                     });
                     actions.appendChild(lblBtn);
                 }
                 actions.appendChild(mkB('Kopiëren', () => {
-                    navigator.clipboard.writeText(content.dataset.raw || content.innerText || '').catch(() => {});
+                    navigator.clipboard.writeText(getPanelText()).catch(() => {});
                 }));
                 actions.appendChild(mkIconB(arrowSvg, 'Stuur naar dictatie', () => {
-                    const txt = content.dataset.raw || content.innerText || '';
+                    const txt = getPanelText();
                     if (isMain) {
                         sendToDictationFields(txt);
                     } else {
@@ -4874,7 +4878,8 @@ negated bevindingen
                     const tog = mkB('Origineel', () => {
                         study.showingOriginal = !study.showingOriginal;
                         renderContent();
-                        // re-sync labels visibility after re-render
+                        // re-sync labels visibility and dataset after re-render
+                        content.dataset.labelsVisible = labelsVisible ? '1' : '0';
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
                         tog.textContent = study.showingOriginal ? 'Autofill' : 'Origineel';
                     });
@@ -4887,8 +4892,10 @@ negated bevindingen
 
             function _getAllStudiesText(mspEl, lastResultEl) {
                 const prevTexts = Array.from((mspEl || {querySelectorAll: () => []}).querySelectorAll('.multi-study-panel-content'))
-                    .map(el => el.dataset.raw || el.innerText || '').filter(Boolean);
-                const lastText = lastResultEl ? (lastResultEl.innerText || lastResultEl.textContent || '') : '';
+                    .map(el => el.dataset.labelsVisible === '0' ? (el.innerText || '') : (el.dataset.raw || el.innerText || '')).filter(Boolean);
+                // Apply header to last study (same as single-study copy); innerText excludes hidden labels
+                const lastRaw = lastResultEl ? (lastResultEl.innerText || lastResultEl.textContent || '') : '';
+                const lastText = lastRaw ? _prependTtHeader(lastRaw) : '';
                 const allTexts = [...prevTexts, lastText].filter(Boolean);
 
                 // Split each study text into body + conclusion, then group conclusions under one header
