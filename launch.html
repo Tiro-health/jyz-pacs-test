@@ -1521,31 +1521,34 @@
                 // - additional AI add_template rules are always checked (stack on top)
                 const aiRules = match.aiRules || [];
                 const hasReplaceAI = aiRules.some(r => r.action === 'replace_template' && r.template);
-                // hasUserAny: true when any user template exists (Tiro URL or textueel) — dept is only
-                // activated when no user template is present (exclusief OF-logica voor textueel modus)
+                // hasUserAny / hasDeptAny: true when any template exists for that section
                 const hasUserAny = !!match.userTemplate || !!match.userTextTemplate;
+                const hasDeptAny = !!match.deptTemplate || !!match.textTemplate;
+                // preferDept: true when dept comes before user in the configured section order
+                const _so = match.sectionOrder || ['ai', 'user', 'dept'];
+                const preferDept = _so.indexOf('dept') < _so.indexOf('user');
 
                 const deptTextActive = match.deptMode === 'textueel';
                 const userTextActive = match.userMode === 'textueel';
                 if (match.deptTemplate) {
                     const key = "flow:dept:" + match.id;
                     TEMPLATES[key] = match.deptTemplate;
-                    items.push({ name: key, label: match.name + " - afdeling", checked: !deptTextActive && !hasUserAny && !hasReplaceAI });
+                    items.push({ name: key, label: match.name + " - afdeling", checked: !deptTextActive && !hasReplaceAI && (preferDept || !hasUserAny) });
                 }
                 if (match.textTemplate) {
                     const key = "flow:dept-txt:" + match.id;
                     TEMPLATES[key] = '__textueel__';
-                    items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: deptTextActive && !hasUserAny && !hasReplaceAI, mode: 'textueel' });
+                    items.push({ name: key, label: match.name + " - afdeling (textueel)", checked: deptTextActive && !hasReplaceAI && (preferDept || !hasUserAny), mode: 'textueel' });
                 }
                 if (match.userTemplate) {
                     const key = "flow:user:" + match.id;
                     TEMPLATES[key] = match.userTemplate;
-                    items.push({ name: key, label: match.name + " - gebruiker", checked: !userTextActive && !hasReplaceAI });
+                    items.push({ name: key, label: match.name + " - gebruiker", checked: !userTextActive && !hasReplaceAI && (!preferDept || !hasDeptAny) });
                 }
                 if (match.userTextTemplate) {
                     const key = "flow:user-txt:" + match.id;
                     TEMPLATES[key] = '__textueel__';
-                    items.push({ name: key, label: match.name + " - gebruiker (textueel)", checked: userTextActive && !hasReplaceAI, mode: 'textueel' });
+                    items.push({ name: key, label: match.name + " - gebruiker (textueel)", checked: userTextActive && !hasReplaceAI && (!preferDept || !hasDeptAny), mode: 'textueel' });
                 }
                 let replaceUsed = false;
                 aiRules.forEach((rule, i) => {
