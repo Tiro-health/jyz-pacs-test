@@ -1598,6 +1598,18 @@
 
                 setDynamicTemplates(items);
                 createTemplateForms();
+                // Sync _flowTextTemplate to whichever textueel checkbox is actually checked,
+                // same logic as the checkbox change listener — without this the preview shows
+                // the dept template even when the user-txt checkbox is the active one.
+                const activeTxt = document.querySelector('.template-checkbox[data-mode="textueel"]:checked');
+                if (activeTxt) {
+                    const key = activeTxt.value;
+                    if (key.startsWith('flow:dept-txt:')) {
+                        window._flowTextTemplate = window._flowDeptTextTemplateCache || window._flowTextTemplate;
+                    } else if (key.startsWith('flow:user-txt:')) {
+                        window._flowTextTemplate = window._flowUserTextTemplate || '';
+                    }
+                }
                 updateTextTemplateBackup();
             }
 
