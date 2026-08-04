@@ -3962,7 +3962,11 @@ UITVOERFORMAAT — STRIKT:
                 realtimeActions.style.display = 'none';
                 realtimeToggleOrig.style.display = 'none';
                 realtimeToggleOrig.textContent = '↩ Origineel';
-                // Keep previous result visible until first new chunk arrives
+                // Lock current panel height to prevent layout shifts during streaming
+                const _lockedH = realtimeContent.offsetHeight;
+                realtimeContent.style.minHeight = Math.max(60, _lockedH) + 'px';
+                realtimeContent.style.maxHeight = '280px';
+                realtimeContent.style.overflowY = 'auto';
 
                 const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
@@ -3981,6 +3985,7 @@ UITVOERFORMAAT — STRIKT:
                         realtimeStatus.textContent = '';
                     }, _realtimeAbort.signal);
                     _realtimeCorrectedText = extractCleanCorrection(streamedText);
+                    realtimeContent.style.minHeight = '';
                     realtimeContent.innerHTML = computeDiffHTMLStructured(tekst, _realtimeCorrectedText);
                     realtimeActions.style.display = 'flex';
                     realtimeToggleOrig.style.display = _realtimeOriginalText ? 'inline-block' : 'none';
