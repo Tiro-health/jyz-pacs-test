@@ -4457,12 +4457,12 @@ negated bevindingen
                 );
             }
 
-            function applyCompactBrs(el) {
+            function applyCompactBrs(el, templateOverride) {
                 // Read [br]-marked labels from the template definition (not from AI output).
                 // Ensures the label span ends with a <br> so the line break is hidden
                 // together with the label. If the AI put content on the same line
                 // (no BR sibling), we insert one inside the span ourselves.
-                const template = window._flowTextTemplate || window._flowUserTextTemplate || '';
+                const template = templateOverride !== undefined ? templateOverride : (window._flowTextTemplate || window._flowUserTextTemplate || '');
                 const compactLabels = new Set();
                 const re = /\[([^\]]+?:)\s*\]\[br\]/g;
                 let m;
@@ -4791,6 +4791,7 @@ negated bevindingen
                 const originalWithHeader = _prependTtHeader(tekst);
                 const capturedHeader = _buildTtHeader(); // capture before fields are cleared
                 const labelsDefaultVisible = window._flowLabelsDefaultVisible !== false;
+                const capturedTextTemplate = window._flowTextTemplate || window._flowUserTextTemplate || '';
                 // Clear fields immediately so user can continue with next study
                 _clearStudyFields();
                 const btn    = document.getElementById('voeg-toe-btn');
@@ -4815,7 +4816,7 @@ negated bevindingen
                             ? capturedHeader + '\n\n' + autofillResult
                             : autofillResult)
                         : null;
-                    _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible });
+                    _multiStudies.push({ label, originalWithHeader, autofillWithHeader: autofillWithHeader || originalWithHeader, showingOriginal: false, labelsDefaultVisible, textTemplate: capturedTextTemplate });
                     if (btn)    { btn.disabled = false; btn.style.color = '#16a34a'; setTimeout(() => { btn.style.color = ''; }, 1500); }
                     if (pipBtn) { pipBtn.disabled = false; pipBtn.style.color = '#16a34a'; setTimeout(() => { pipBtn.style.color = ''; }, 1500); }
                     _updateVoegToeBtns();
@@ -4846,7 +4847,7 @@ negated bevindingen
                     content.dataset.raw = currentText();
                     content.innerHTML = renderMarkdown(currentText());
                     content.innerHTML = content.innerHTML.replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
-                    applyCompactBrs(content);
+                    applyCompactBrs(content, study.textTemplate);
                     if (!study.labelsDefaultVisible) {
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = 'none'; });
                     }
