@@ -277,52 +277,36 @@
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
-                <!-- Afdeling sectie -->
-                <details id="dept-section" open>
+                <!-- Flow secties (draggable) -->
+                <div id="flow-sections-container" class="space-y-5">
+
+                <!-- AI-gebaseerde regels -->
+                <details id="ai-section" draggable="false">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-2">
-                            <span>📄</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
+                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-2 flex-1">
+                            <span>🤖</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span id="dept-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                            <span id="ai-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
                             <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                     </summary>
-                    <div class="mt-3 space-y-3">
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
-                        <div>
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template standaardverslag</label>
-                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <div class="mt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                            <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Nieuwe regel</button>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Textueel standaardverslag</label>
-                            <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
-                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
-                                <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
-                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-                            </button>
-                            <textarea id="edit-text-template" class="hidden"></textarea>
-                        </div>
-                        <div class="flex items-center gap-4 pt-1">
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
-                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
-                                <input type="radio" name="dept-mode" value="template" class="accent-cyan-600" />
-                                Template
-                            </label>
-                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
-                                <input type="radio" name="dept-mode" value="textueel" class="accent-teal-600" />
-                                Textueel
-                            </label>
-                        </div>
+                        <div id="ai-rules-list" class="space-y-2.5"></div>
                     </div>
                 </details>
 
                 <!-- Gebruiker override sectie -->
-                <details id="user-section">
+                <details id="user-section" draggable="false">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-2">
+                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-2 flex-1">
                             <span>👤</span>
                             <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</span>
                         </div>
@@ -361,26 +345,52 @@
                     </div>
                 </details>
 
-                <!-- AI-gebaseerde regels -->
-                <details id="ai-section">
+                <!-- Afdeling sectie -->
+                <details id="dept-section" draggable="false">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-2">
-                            <span>🤖</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
+                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-2 flex-1">
+                            <span>📄</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span id="ai-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
+                            <span id="dept-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
                             <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                     </summary>
-                    <div class="mt-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
-                            <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Nieuwe regel</button>
+                    <div class="mt-3 space-y-3">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template standaardverslag</label>
+                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
                         </div>
-                        <div id="ai-rules-list" class="space-y-2.5"></div>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Textueel standaardverslag</label>
+                            <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <textarea id="edit-text-template" class="hidden"></textarea>
+                        </div>
+                        <div class="flex items-center gap-4 pt-1">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="dept-mode" value="template" class="accent-cyan-600" />
+                                Template
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="dept-mode" value="textueel" class="accent-teal-600" />
+                                Textueel
+                            </label>
+                        </div>
                     </div>
                 </details>
+
+                </div><!-- /flow-sections-container -->
+
+                <div class="border-t border-dashed border-neutral-200 dark:border-slate-600"></div>
 
                 <!-- Calculatoren -->
                 <details id="calc-section">
@@ -720,7 +730,7 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
         // ── Default exam types (pre-seeded from JYZ + Notion) ───────────────────
         const DEFAULT_EXAM_TYPES = [
             // ── RX ──────────────────────────────────────────────────────────────
-            { id:'rx-cwz',  name:'RX CERVICALE WERVELZUIL',    code:'rxcwz',    modality:'RX',
+            { id:'rx-cwz', name:'RX CERVICALE WERVELZUIL', code:'rxcwz', modality:'RX',
               dicom:['cervicale wervelzuil'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals osteopenie) en eventuele botletsels
 [- Atlantodentale verhoudingen:] "Normale atlantodentale verhoudingen." // Beschrijving van de atlantodentale verhouding en eventuele atrose omvormingen
@@ -747,8 +757,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Fracturen:] XXX // beschrijving van eventuele fracturen of sequelen van fracturen
 [- Andere:] XXX // Beschrijving van overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 BESLUIT:
-XXX` },
-            { id:'rx-dwz',  name:'RX DORSALE WERVELZUIL',      code:'rxdwz',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-dwz', name:'RX DORSALE WERVELZUIL', code:'rxdwz', modality:'RX',
               dicom:['dorsale wervelzuil','dorsolumbale wervelzuil'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals osteopenie) en eventuele botletsels
 [- Tussenwervelruimte:] "Geen discartrose." // beschrijving van de tussenwervelruimte of discartrose gradatie
@@ -775,8 +785,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-lwz',  name:'RX LUMBALE WERVELZUIL',      code:'rxlwz',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-lwz', name:'RX LUMBALE WERVELZUIL', code:'rxlwz', modality:'RX',
               dicom:['lumbale wervelzuil'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals osteopenie) en eventuele botletsels
 [- Tussenwervelruimte:] "Geen discartrose." // beschrijving van de tussenwervelruimte of discartrose gradatie
@@ -803,8 +813,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-sch',  name:'RX SCHEDEL',                 code:'rxsch',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-sch', name:'RX SCHEDEL', code:'rxsch', modality:'RX',
               dicom:['schedel'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals osteopenie) en eventuele botletsels
 [- Weke delen:] "Geen weke delen opzetting." // Beschrijving van weke dele opzetting of letsels in de weke delen
@@ -821,8 +831,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-neus', name:'RX NEUSBEEN',                code:'rxneus',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-neus', name:'RX NEUSBEEN', code:'rxneus', modality:'RX',
               dicom:['neusbeen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals osteopenie) en eventuele botletsels
 [- Weke delen:] "Geen weke delen opzetting aantoonbaar." // Beschrijving van weke dele opzetting of letsels in de weke delen
@@ -837,8 +847,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-thx',  name:'RX THORAX FACE EN PROFIEL',  code:'rxthonl',  modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-thx', name:'RX THORAX FACE EN PROFIEL', code:'rxthonl', modality:'RX',
               dicom:['thorax face/profiel','thorax face','tele'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // beschrijving van eventuele post-operatieve status aan de thorax/longen
 {[- Support materiaal:] XXX} // beschrijving van het support materiaal (ECG, katheter materiaal, temperatuur sonde, drains, ECG, Pacemakers/ICD, ...) inclusief eventuele verkeerde positioneringen of andere complicaties.
 
@@ -865,8 +875,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // beschrijving van ev
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-thxb', name:'RX THORAX AAN BED',          code:'rxthoanl', modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-thxb', name:'RX THORAX AAN BED', code:'rxthoanl', modality:'RX',
               dicom:['thorax face bedfoto'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // beschrijving van eventuele post-operatieve status aan de thorax/longen
 {[- Support materiaal:] XXX} // beschrijving van het support materiaal (ECG, katheter materiaal, temperatuur sonde, drains, ECG, Pacemakers/ICD, ...) inclusief eventuele verkeerde positioneringen of andere complicaties.
 
@@ -893,8 +903,8 @@ XXX`, userTextTemplate:`[- Post-operatieve status:] XXX // beschrijving van even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-abd',  name:'RX ABDOMEN',                 code:'rxabd',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-abd', name:'RX ABDOMEN', code:'rxabd', modality:'RX',
               dicom:['abdomen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Vrije lucht:] "Geen vrije lucht intra-abdominaal aantoonbaar." // Beschrijving van eventuele vrije lucht intra-abdominaal, meestal subdiafragmatisch of tegen de anterieure buikwand.
 {[- (Sub)obstructie:] "Geen gedilateerde darmlissen aantoonbaar.".} // Beschrijving van eventuele gedilateerde darmlissen volgens 3-6-9 mm regel, 3 dunnedarm, 6 dikke darm en 9 rectosigmoid. Ook eventuele luchtvochtniveau beeden hier te beschrijven.
 [- Fecale spreiding:] "Normale fecale spreiding." // Beschrijving van de fecale spreiding en residu's over het colon kader en dunne darmen.
@@ -911,12 +921,12 @@ XXX`, userTextTemplate:`[- Vrije lucht:] XXX // Beschrijving van eventuele vrije
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-sac',  name:'RX SACRUM + COCCYX',         code:'rxsac',    modality:'RX',
-              dicom:['sacrum + coccyx','sacroiliacale gewrichten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'rx-ster', name:'RX STERNUM',                 code:'rxster',   modality:'RX',
-              dicom:['sternum'], deptTemplate:'', userTemplate:'', aiRules:[] },
-            { id:'rx-full', name:'RX FULL SPINE',              code:'rxfull',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-sac', name:'RX SACRUM + COCCYX', code:'rxsac', modality:'RX',
+              dicom:['sacrum + coccyx','sacroiliacale gewrichten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-ster', name:'RX STERNUM', code:'rxster', modality:'RX',
+              dicom:['sternum'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-full', name:'RX FULL SPINE', code:'rxfull', modality:'RX',
               dicom:['full spine'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Thorocale scoliose:] XXX // Beschrijf hier eventuele scoliose op thoracaal (hoog-, mid-, of laag-thoracaal) niveau al dan niet met eventuele Cobb hoek.
 [- Lumbale scoliose:] XXX // Beschrijf hier eventuele scoliose op lumbaal (hoog-, mid-, of laag-lumbaal) niveau al dan niet met eventuele Cobb hoek.
 [- Cervicale lordose lordose (35-45°):] XXX // Beschrijf hier eventuele cervicale lordose.
@@ -959,8 +969,8 @@ XXX`, userTextTemplate:`[- Thorocale scoliose:] XXX // Beschrijf hier eventuele 
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-fulleg', name:'RX FULL LEG',              code:'rxfulleg', modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-fulleg', name:'RX FULL LEG', code:'rxfulleg', modality:'RX',
               dicom:['full leg beide'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[BEKKEN:]
 [- Bekkenscheefstand:] "Geen significante bekkenscheefstand."// Beschrijving van de bekkenscheefstand.
 LINKER BEEN:
@@ -999,8 +1009,8 @@ RECHTER BEEN:
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-scho', name:'RX SCHOUDER',                code:'rxscho',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-scho', name:'RX SCHOUDER', code:'rxscho', modality:'RX',
               dicom:['schouder links','schouder rechts','schouders'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- AC-gewricht:] "Normaal voorkomen van het AC gewricht." // Beschrijving van het AC gewricht, zowel dislocatie als degeneratie of artritis. Ook het Gheyser letsel valt hieronder. Eventuele dislocaties inclusief een posterieure pseudodislocatie.
@@ -1027,8 +1037,8 @@ XXX`, userTextTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-ope
 [- Rotator cuff calcificatie:] XXX // Bechrijving van eventuele verkalkingen aan de rotator cuff pezen insertioneel.
 
 BESLUIT:
-XXX` },
-            { id:'rx-bova', name:'RX BOVENARM',                code:'rxbova',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-bova', name:'RX BOVENARM', code:'rxbova', modality:'RX',
               dicom:['bovenarm links','bovenarm rechts','bovenarmen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Osteo-articulaire verhoudingen:] "Normale osteo-articulaire verhoudingen." // Beschrijving van de gewirchten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties.
@@ -1045,8 +1055,8 @@ XXX`, userTextTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-ope
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-ell',  name:'RX ELLEBOOG',                code:'rxell',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-ell', name:'RX ELLEBOOG', code:'rxell', modality:'RX',
               dicom:['elleboog links','elleboog rechts','ellebogen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Radio-en ulno-humerale verhoudingen:] "Normale osteo-articulaire verhoudingen." // Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties.
@@ -1063,8 +1073,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-ond',  name:'RX ONDERARM',                code:'rxondera', modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-ond', name:'RX ONDERARM', code:'rxondera', modality:'RX',
               dicom:['onderarm links','onderarm rechts','onderarmen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Osteo-articulaire verhoudingen:] "Normale osteo-articulaire verhoudingen." // Beschrijving van de gewirchten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties.
@@ -1081,8 +1091,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-pol',  name:'RX POLS',                    code:'rxpols',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-pol', name:'RX POLS', code:'rxpols', modality:'RX',
               dicom:['pols links','pols rechts','polsen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Radio-carpale verhoudingen (SC- en CL-hoek):]"Normale radiocarpale gewrichtsverhoudingen."// Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties. Beschrijving van de scapholunaire hoek alsook de capitolunaire hoek. Eveneens aanweizge DISI of VISI. Ook blunting van de lunatum fossa of tekenen van SLAC mogen beschreven worden evenals DISI en VISI..
@@ -1103,8 +1113,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-han',  name:'RX HAND',                    code:'rxhand',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-han', name:'RX HAND', code:'rxhand', modality:'RX',
               dicom:['hand links','hand rechts','handen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
 [- Intercarpale gewrichten:] "Normaal voorkomen van de intercarpale gewrichten."// Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties. Inclusief het STT gewricht.
@@ -1125,21 +1135,11 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-vin',  name:'RX VINGER',                  code:'rxving',   modality:'RX',
-              dicom:['vinger links','vinger rechts','vingers'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'rx-bek',  name:'RX BEKKEN EN HEUP',          code:'rxbek',    modality:'RX',
-              dicom:['bekken','heup links','heup rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel',
-              presetText:`- Botpatroon: Normaal botpatroon.
-- Coxo-femorale gewricht: Normaal.
-- Overige gewichten: Normaal
-- Weke delen: Normaal.
-- Fracturen: Geen verplaatste fracturen aantoonbaar.
-- Andere: /
-
-BESLUIT:
-Geen verplaatste fracturen aantoonbaar radiografisch, bij aanhoudende of toenemende klachten CT grafisch te herevalueren.`,
-              textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-vin', name:'RX VINGER', code:'rxving', modality:'RX',
+              dicom:['vinger links','vinger rechts','vingers'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-bek', name:'RX BEKKEN EN HEUP', code:'rxbek', modality:'RX',
+              dicom:['bekken','heup links','heup rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
 [- Coxo-femorale gewricht:] "Normale coxo-femorale gewrichten." // Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties. Ook eventuele Pincer of CAM type FAI mag hier beschreven worden en eveneens eventueel aanwezige heupdysplasie.
 [- Pubisgewricht en SI-gewrichten:] "Normaal voorkomen van het pubisgewricht en de SI gewrichten." // Beschrijf hier het pubisgewricht en eventuele degeneratie of artrose. Eveneens degeneratie van de sacro-iliacale gewrichten valt hier onder of tekenen van spondylartropathie.
@@ -1157,42 +1157,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output. Artrose van de lumbale wervelzuil mag hieronder.
 
 BESLUIT:
-XXX
-				\`\`\`
-			</details>
-			<details>
-			<summary>Post-operatief</summary>
-				\`\`\`javascript
-Post-operatieve status: XXX // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
-[- Osteosynthese materiaal:] XXX // Beschrijving van het osteosyntese materiaal inclusief tekenen van loslating/particle disease/infectie, materaiaalbreuken of eventuele sub/dyslocaties. Ook cement extrusie mag hierbij.
-[- Peri-prothetische fracturen:] XXX // Beschrijven van peri-prothetische fracturen zo aanwezig.
-{[- Positionering:] XXX } // Beschrijf hier de stand van de prothese of eventuele afwijking hiervan. Ook metingen zoals centrum van rotatie, laterale inclinatie en anteversie.post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
-{[- Weke delen:] XXX} // Beschrijf hier de weke delen bevindingen zoals bv. post-operatief subcutaan oedeem of eventueel emfyseem. Beschrijf hier ook de eventuele aanwezigheid van heterotope ossificaties, indien niet vermeld moet hier niets van beschreven worden.
-[- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
-
-BESLUIT:
-XXX
-				\`\`\`
-			</details>
-			<details>
-			<summary>Normaal prefill</summary>
-				\`\`\`javascript
-{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
-[- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
-[- Coxo-femorale gewricht:] "Normale coxo-femorale gewrichten." // Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties. Ook eventuele Pincer of CAM type FAI mag hier beschreven worden en eveneens eventueel aanwezige heupdysplasie.
-[- Pubisgewricht en SI-gewrichten:] "Normaal voorkomen van het pubisgewricht en de SI gewrichten." // Beschrijf hier het pubisgewricht en eventuele degeneratie of artrose. Eveneens degeneratie van de sacro-iliacale gewrichten valt hier onder of tekenen van spondylartropathie.
-[- Weke delen:] "Radiografisch geen weke delen opzetting aantoonbaar." // Beschrijving van weke dele opzetting of letsels in de weke delen inclusief eventuele weke delen verkalkingen of verbening (myossiti ossificans). Ook opzetting van de vetplannen of gewrichtsruimtes hier te beschrijven.
-[- Fracturen:] "Geen verplaatste fracturen aantoonbaar." // beschrijving van eventuele fracturen of sequelen van fracturen. Beschrijving van eventuele onderbreking in aflijning van de cortex. Ook avulsiefractuurtje of fragmentjes.
-[- Andere:] "/" // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output. Artrose van de lumbale wervelzuil mag hieronder.
-
-BESLUIT:
-XXX
-				\`\`\`
-			</details>
-		</details>
-		<details>
-		<summary>Nieuw prefill</summary>` },
-            { id:'rx-bovb', name:'RX BOVENBEEN',               code:'rxbovb',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-bovb', name:'RX BOVENBEEN', code:'rxbovb', modality:'RX',
               dicom:['femur links','femur rechts','bovenbenen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Osteo-articulaire verhoudingen:] "Normale osteo-articulaire verhoudingen." // Beschrijving van de gewirchten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties.
@@ -1209,8 +1175,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-kni',  name:'RX KNIE',                    code:'rxkni',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-kni', name:'RX KNIE', code:'rxkni', modality:'RX',
               dicom:['knie links','knie rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Femor- en patello-tibiale gewricht:] "Normale osteo-articulaire verhoudingen."// Beschrijving van de gewrichten en osteo-articulaire verhoudingen zowel femoro-tibaal als patellofemoraal. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties.
@@ -1246,8 +1212,8 @@ XXX
 			</details>
 		</details>
 		<details>
-		<summary>Nieuw prefill</summary>` },
-            { id:'rx-onb',  name:'RX ONDERBEEN',               code:'rxondb',   modality:'RX',
+		<summary>Nieuw prefill</summary>`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-onb', name:'RX ONDERBEEN', code:'rxondb', modality:'RX',
               dicom:['onderbeen links','onderbeen rechts','onderbenen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Status na] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels of infectieuze botaantastingen
 [- Osteo-articulaire verhoudingen:] "Normale osteo-articulaire verhoudingen." // Beschrijving van de gewirchten en osteo-articulaire verhoudingen.
@@ -1264,8 +1230,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-enk',  name:'RX ENKEL',                   code:'rxenk',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-enk', name:'RX ENKEL', code:'rxenk', modality:'RX',
               dicom:['enkel links','enkel rechts','enkels'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
 [- Talocrurale en subtalaire gewricht gewricht:] "Normale talocrurale en subtalaire gewrichtsverhoudingen." // Beschrijving van de gewrichten en osteo-articulaire verhoudingen van het talocrurale (fibulo-en tibio-talair) en subtalaire gewricht. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook de beschrijving van de laterale en mediale clear space al dan niet met sub- en dislocaties. Talaire dome met eventuele osteochondrale defecten vallen hier ook onder.
@@ -1291,8 +1257,8 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 [- Andere:] XXX // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-vt',   name:'RX VOET',                    code:'rxvt',     modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-vt', name:'RX VOET', code:'rxvt', modality:'RX',
               dicom:['voet links','voet rechts','voeten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
 [- MTP-1-gewricht:] "Normale osteoarticulaire verhoudingen van het MTP-1 gewricht."// Beschrijving vna het MTP 1 gewricht inclusief de metatarsofalangeale hoek en de intermetatarsale hoek. Ook de positie van het sesamoidbeentje ten opzichte van de metatarsale middelijn alsook eventuele bunion al dan niet met weeke dele opzetting rondom de bunion.
@@ -1315,10 +1281,10 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'rx-teen', name:'RX TEEN',                    code:'rxteen',   modality:'RX',
-              dicom:['teen links','teen rechts','tenen'], deptTemplate:'', userTemplate:'', aiRules:[] },
-            { id:'rx-bot',  name:'RX SKELET – NORMAAL',        code:'rxbot',    modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-teen', name:'RX TEEN', code:'rxteen', modality:'RX',
+              dicom:['teen links','teen rechts','tenen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-bot', name:'RX SKELET – NORMAAL', code:'rxbot', modality:'RX',
               dicom:[], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier eventuele post-operatieve status of aanwezigheid van prothese materiaal of andere operatief materiaal zoals plaat en schroef materiaal, indien niet vermeld moet hier niets van beschreven worden.
 [- Botpatroon:] "Normaal botpatroon." // Beschrijving van het botpatroon (zoals normaal, osteoporose, osteopenie) en eventuele andere metabole botaandoening. Ook eventuele benigne en maligne botletsels (enostoma/boteilandje, NOF, osteochondroma, enchondroma,.. dan wel osteosarcoma, metastase, ) of infectieuze botaantastingen
 [- Osteo-articulaire verhoudingen:] "Normale osteo-articulaire verhoudingen." // Beschrijving van de gewrichten en osteo-articulaire verhoudingen. Eventuele hydrops of capsulitis/synovitis van het gewricht. Maar ook degeneratie van het gewricht of type artritis. Ook sub- en dislocaties.
@@ -1335,9 +1301,9 @@ XXX`, userTextTemplate:`{[- Post-operatieve status:] XXX} // Beschrijf hier even
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
             // ── CT ──────────────────────────────────────────────────────────────
-            { id:'ct-thx',  name:'CT THORAX',                  code:'ctthx',    modality:'CT',
+            { id:'ct-thx', name:'CT THORAX', code:'ctthx', modality:'CT',
               dicom:['CT thorax'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Longparenchym:] "Geen relevante longparenchymafwijkingen." // Beschrijving longparenchym
 [- Pleurae:] "Geen pleuravocht of pneumothorax." // Beschrijving pleurae
 [- Mediastinum:] "Normaal mediastinum, geen pathologische lymfeklieren." // Beschrijving mediastinum
@@ -1358,8 +1324,8 @@ XXX`, userTextTemplate:`[- Longparenchym:] XXX // Beschrijving longparenchym: no
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-abd',  name:'CT ABDOMEN',                 code:'ctabd',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'fleischner-2017',tiroTemplateUrl:''}] },
+            { id:'ct-abd', name:'CT ABDOMEN', code:'ctabd', modality:'CT',
               dicom:['CT abdomen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Lever:] "Normaal groot lever, homogeen parenchym, geen focale letsels." // Beschrijving lever
 [- Galblaas en galwegen:] "Normale galblaas, geen galstenen, niet gedilateerde galwegen." // Beschrijving galblaas
 [- Pancreas:] "Normaal groot pancreas, homogeen parenchym." // Beschrijving pancreas
@@ -1390,10 +1356,10 @@ XXX`, userTextTemplate:`[- Lever:] XXX // Beschrijving lever: grootte, parenchym
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-hta',  name:'CT HALS-THORAX-ABDOMEN',     code:'cthta',    modality:'CT',
-              dicom:['CT hals, thorax en abdomen','CT hals en thorax','CT thorax en abdomen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'ct-cwz',  name:'CT CERVICALE WERVELZUIL',    code:'ctcwz',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'li-rads',tiroTemplateUrl:''},{calcId:'liver-steatosis',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'ct-hta', name:'CT HALS-THORAX-ABDOMEN', code:'cthta', modality:'CT',
+              dicom:['CT hals, thorax en abdomen','CT hals en thorax','CT thorax en abdomen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'fleischner-2017',tiroTemplateUrl:''},{calcId:'carotid-stenosis',tiroTemplateUrl:''},{calcId:'li-rads',tiroTemplateUrl:''},{calcId:'liver-steatosis',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'ct-cwz', name:'CT CERVICALE WERVELZUIL', code:'ctcwz', modality:'CT',
               dicom:['CT cervicale wervelzuil'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`Niveau C0-C1: 
 [- Alignatie:] "Normale alignatie."
 [- Atlanto-dentale gewricht:] "Normaal atlanto-dentaal gewricht."
@@ -1505,8 +1471,8 @@ Niveau C7-Th1:
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-dwz',  name:'CT DORSALE WERVELZUIL',      code:'ctdwz',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ao-spine-tl',tiroTemplateUrl:''},{calcId:'sins',tiroTemplateUrl:''}] },
+            { id:'ct-dwz', name:'CT DORSALE WERVELZUIL', code:'ctdwz', modality:'CT',
               dicom:['CT dorsale wervelzuil','CT dorsale wervelzuil 1 niveau'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`Niveau C7-Th1:
 [- Hoogte en alignatie:] "Bewaarde hoogte en alignatie."
 [- Disc- en facetartrose:] "Geen disc- of facetartrose."
@@ -1553,8 +1519,8 @@ Niveau Th2-Th3:
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-lwz',  name:'CT LUMBALE WERVELZUIL',      code:'ctlwz',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ao-spine-tl',tiroTemplateUrl:''},{calcId:'sins',tiroTemplateUrl:''}] },
+            { id:'ct-lwz', name:'CT LUMBALE WERVELZUIL', code:'ctlwz', modality:'CT',
               dicom:['CT lumbale wervelzuil'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`Niveau L1-L2:
 [- Hoogte en alignatie:] "Bewaarde hoogte en alignatie."
 [- Disc- en facetartrose:] "Geen disc- of facetartrose."
@@ -1625,10 +1591,10 @@ Niveau L5-S1:
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-bek',  name:'CT BEKKEN',                  code:'ctbek',    modality:'CT',
-              dicom:['CT bekken'], deptTemplate:'', userTemplate:'', aiRules:[] },
-            { id:'ct-sch',  name:'CT SCHEDEL',                 code:'ctsch',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ao-spine-tl',tiroTemplateUrl:''},{calcId:'sins',tiroTemplateUrl:''}] },
+            { id:'ct-bek', name:'CT BEKKEN', code:'ctbek', modality:'CT',
+              dicom:['CT bekken'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ct-sch', name:'CT SCHEDEL', code:'ctsch', modality:'CT',
               dicom:['CT schedel'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Parenchym:] "Normaal corticaal en subcorticaal parenchym, geen atrofie, geen laesies." // Beschrijving parenchym
 [- Ventrikelsysteem:] "Normaal ventrikelsysteem, geen verwijding." // Beschrijving ventrikels
 [- Extra-axiale ruimten:] "Geen subduraal of epiduraal vochtcollectie." // Beschrijving extra-axiale ruimten
@@ -1651,8 +1617,8 @@ XXX`, userTextTemplate:`[- Parenchym:] XXX // Beschrijving corticale en subcorti
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-hls',  name:'CT HALS',                    code:'cthls',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'aspects',tiroTemplateUrl:''},{calcId:'ich-volume-abc2',tiroTemplateUrl:''}] },
+            { id:'ct-hls', name:'CT HALS', code:'cthls', modality:'CT',
               dicom:['CT hals'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`PHARYNGEALE EN RETROPHARYNGEALE RUIMTE
 [- Naso-, oro- en laryngopharynx en oesophagusregio:] "CT-grafisch normale naso-, oro- en laryngopharynx alsook oesophagusregio." // Beschrijving
 [- Tonsillen:] "Normale tonsillen, geen abces, geen luchtwegcompressie." // Beschrijving tonsillen
@@ -1691,14 +1657,14 @@ SCHILDKLIER
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-kni',  name:'CT KNIE',                    code:'ctkni',    modality:'CT',
-              dicom:['CT knie','CT knie links','CT knie rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'ct-scho', name:'CT SCHOUDER',                code:'ctscho',   modality:'CT',
-              dicom:['CT schouder','CT schouder links','CT schouder rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'ct-heup', name:'CT HEUP',                    code:'ctheup',   modality:'CT',
-              dicom:['CT heup'], deptTemplate:'', userTemplate:'', aiRules:[] },
-            { id:'ct-cor',  name:'CT CORONAROGRAFIE',          code:'ctcor',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'carotid-stenosis',tiroTemplateUrl:''}] },
+            { id:'ct-kni', name:'CT KNIE', code:'ctkni', modality:'CT',
+              dicom:['CT knie','CT knie links','CT knie rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ct-scho', name:'CT SCHOUDER', code:'ctscho', modality:'CT',
+              dicom:['CT schouder','CT schouder links','CT schouder rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ct-heup', name:'CT HEUP', code:'ctheup', modality:'CT',
+              dicom:['CT heup'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ct-cor', name:'CT CORONAROGRAFIE', code:'ctcor', modality:'CT',
               dicom:['CT coronarografie'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Calcium score:] XXX HU // Agatston calcium score
 [- Dominantie:] "Rechter coronaire dominantie." // Rechter of linker coronaire dominantie
 [- RCA:] "Geen significante stenose RCA." // Beschrijving RCA
@@ -1715,8 +1681,8 @@ XXX`, userTextTemplate:`[- Calcium score:] XXX HU // Agatston calcium score
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-sin',  name:'CT SINUSSEN',                code:'ctsin',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'cad-rads-2022',tiroTemplateUrl:''}] },
+            { id:'ct-sin', name:'CT SINUSSEN', code:'ctsin', modality:'CT',
               dicom:['CT sinussen op de CT scan','CT sinussen op conebeam'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Sinus maxillaris rechts:] "Luchtgevulde sinus maxillaris rechts." // Beschrijving sinus maxillaris rechts
 [- Sinus maxillaris links:] "Luchtgevulde sinus maxillaris links." // Beschrijving sinus maxillaris links
 [- Sinus frontalis:] "Luchtgevulde sinus frontalis." // Beschrijving sinus frontalis
@@ -1739,9 +1705,9 @@ XXX`, userTextTemplate:`[- Sinus maxillaris rechts:] XXX // Beschrijving luchtge
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
             // ── MR ──────────────────────────────────────────────────────────────
-            { id:'mr-her',  name:'MR HERSENEN',                code:'mrher',    modality:'MR',
+            { id:'mr-her', name:'MR HERSENEN', code:'mrher', modality:'MR',
               dicom:['MR hersenen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Ventrikelsysteem:] "Normaal aspect van het ventrikelsysteem." // Beschrijf hier de ventrikels
 [- Cortex:] "Normaal aspect van de corticale windingen." // Beschrijf hier de corticale windingen
 [- Hersenparenchym:] "Normale signaalintensiteit en morfologie van het hersenparenchym." // Beschrijf hier het hersenparenchym
@@ -1766,12 +1732,12 @@ XXX`, userTextTemplate:`[- Ventrikelsysteem:] XXX // Beschrijf hier de ventrikel
 {[- Andere:] XXX} // Beschrijf hier alle overige bevindingen die niet in bovenstaande punten passen
 
 BESLUIT:
-XXX` },
-            { id:'mr-cwz',  name:'MR CERVICAAL',               code:'mrcwz',    modality:'MR',
-              dicom:['MR cervicaal'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'mr-dwz',  name:'MR DORSAAL',                 code:'mrdwz',    modality:'MR',
-              dicom:['MR dorsaal'], deptTemplate:'', userTemplate:'', aiRules:[] },
-            { id:'mr-lwz',  name:'MR LUMBAAL',                 code:'mrlwz',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-cwz', name:'MR CERVICAAL', code:'mrcwz', modality:'MR',
+              dicom:['MR cervicaal'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ao-spine-tl',tiroTemplateUrl:''},{calcId:'sins',tiroTemplateUrl:''}] },
+            { id:'mr-dwz', name:'MR DORSAAL', code:'mrdwz', modality:'MR',
+              dicom:['MR dorsaal'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-lwz', name:'MR LUMBAAL', code:'mrlwz', modality:'MR',
               dicom:['MR lumbaal'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`Procedure: Sag. en ax. T2 en sag. T1 en T2 Tir.
 
 [- Wervelhoogten:] "Normale wervelhoogten lumbaal." // Beschrijf hier de wervelhoogten lumbaal
@@ -1800,8 +1766,8 @@ XXX`, userTextTemplate:`Procedure: Sag. en ax. T2 en sag. T1 en T2 Tir.
 {[- Overige bevindingen:] XXX} // Beschrijf hier alle overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'mr-kni',  name:'MR KNIE',                    code:'mrkni',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ao-spine-tl',tiroTemplateUrl:''},{calcId:'sins',tiroTemplateUrl:''}] },
+            { id:'mr-kni', name:'MR KNIE', code:'mrkni', modality:'MR',
               dicom:['MR knie links','MR knie rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`BEENMERG EN GEWRICHT
 [- Botstructuur:] "Normale botstructuur." // Beschrijf hier de botstructuur: fracturen, botcontusie, osteochondrosis dissecans
 [- Beenmergsignaal:] "Normaal beenmergsignaal." // Beschrijf hier het beenmergsignaal: oedeem, infiltratie
@@ -1876,8 +1842,8 @@ POSTERIEURE COMPARTIMENT
 {XXX} // Beschrijf hier alle andere niet beschreven bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'mr-scho', name:'MR SCHOUDER',                code:'mrscho',   modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-scho', name:'MR SCHOUDER', code:'mrscho', modality:'MR',
               dicom:['MR schouder links','MR schouder rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ACROMION EN ACJ
 [- AC gewricht:] "Geen osteofytvorming, subchondrale cysten, botoedeem of intra-articulair vocht, geen kapselverdikking." // Beschrijf het AC gewricht (osteofytvorming, subchondrale cysten, botoedeem, intra-articulair vocht, kapselverdikking >3mm)
 [- Acromion type (Bigliani) en critical shoulder angle (30-35°):] XXX // Beschrijf het acromiontype (Bigliani I/II/III) en de critical shoulder angle
@@ -1928,8 +1894,8 @@ BURSA SUBDELTOIDEA/SUBACROMIALIS
 [ANDERE:]
 {XXX // Beschrijf hier alle andere niet beschreven bevindingen}
 BESLUIT:
-XXX // Beschrijf hier de conclusie betreffende rotator cuff, labrum en overige pathologie` },
-            { id:'mr-heup', name:'MR HEUP',                    code:'mrheup',   modality:'MR',
+XXX // Beschrijf hier de conclusie betreffende rotator cuff, labrum en overige pathologie`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-heup', name:'MR HEUP', code:'mrheup', modality:'MR',
               dicom:['MR heup'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`BOT EN KRAAKBEEN:
 [- Beenmergoedeem:] "Geen beenmergoedeem." // Beschrijf hier het beenmergoedeem in de femurkop of acetabulum
 [- AVN en osteochondrale fracturen:] "Geen argumenten voor AVN noch osteochondrale fracturen." // Beschrijf hier argumenten voor mechanische of systemische avasculaire necrose en osteochondrale fracturen
@@ -2008,8 +1974,8 @@ ANDERE:
 {XXX} // Beschrijf hier alle andere niet beschreven bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'mr-enk',  name:'MR ENKEL',                   code:'mrenk',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-enk', name:'MR ENKEL', code:'mrenk', modality:'MR',
               dicom:['MR enkel links','MR enkel rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`BOT, KRAAKBEEN EN GEWRICHT
 [- Botoedeem:] "Geen botoedeem." // Beschrijf hier de aanwezigheid en locatie van botoedeem
 [- Osteo-articulaire verhoudingen:] "Normale osteo-articulaire verhoudingen tibiotalair, subtalair, calcaneotalair en middenvoet." // Beschrijf hier de osteo-articulaire verhoudingen tibiotalair, subtalair, calcaneotalair en middenvoet
@@ -2100,8 +2066,8 @@ Andere
 {XXX} // Beschrijf hier alle andere niet beschreven bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'mr-pol',  name:'MR POLS',                    code:'mrpols',   modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-pol', name:'MR POLS', code:'mrpols', modality:'MR',
               dicom:['MR pols links','MR pols rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`RADIO-ULNAIR:
 [- Radio-ulnaire verhoudingen en variantie:] "Normale radio-ulnaire verhoudingen. Neutrale ulnaire variantie." // Beschrijf hier de radio-ulnaire verhoudingen en ulnaire variantie
 [- DRU-gewricht effusie:] "Geen effusie in het DRU-gewricht." // Beschrijf hier de hydrops in het distale radio-ulnaire gewricht
@@ -2174,12 +2140,12 @@ ZENUWEN:
 {XXX} // Beschrijf hier alle andere niet beschreven bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'mr-han',  name:'MR HAND',                    code:'mrhand',   modality:'MR',
-              dicom:['MR hand links','MR hand rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'mr-bek',  name:'MR BEKKEN',                  code:'mrbek',    modality:'MR',
-              dicom:['MR bekken'], deptTemplate:'', userTemplate:'', aiRules:[] },
-            { id:'mr-pro',  name:'MR PROSTAAT',                code:'mrpro',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-han', name:'MR HAND', code:'mrhand', modality:'MR',
+              dicom:['MR hand links','MR hand rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-bek', name:'MR BEKKEN', code:'mrbek', modality:'MR',
+              dicom:['MR bekken'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-pro', name:'MR PROSTAAT', code:'mrpro', modality:'MR',
               dicom:['MR prostaat'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ALGEMEEN:
 [- Artefacten:] "Geen relevante artefacten." // Beschrijf hier de aanwezige artefacten
 [- Afmetingen/volume:] XXX // Beschrijf hier de afmetingen van de prostaat en het volume in ml
@@ -2242,10 +2208,26 @@ BOT:
 
 BESLUIT:
 XXX
-[- Resultaat TNM:] XXX // Beschrijf hier het TNM-stadium (bijv. cT2N0M0)` },
+[- Resultaat TNM:] XXX // Beschrijf hier het TNM-stadium (bijv. cT2N0M0)`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'pi-rads',tiroTemplateUrl:''},{calcId:'prostate-volume-psad',tiroTemplateUrl:''}] },
             // ── ECHO ────────────────────────────────────────────────────────────
-            { id:'ech-abd', name:'ECHO ABDOMEN',               code:'echabd',   modality:'ECHO',
-              dicom:['echo abdomen'], deptTemplate:'http://templates.tiro.health/templates/5d64d451149e4507aa7477b06e141bf3|1.0.0', userTemplate:'http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`NIEREN:\n- {RECHTS:} "Normale grootte en reflectiviteit." // Beschrijf hier de bevinding met betrekking tot de rechter nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter. Als rechter en linker nier beiden normaal zijn moet je dit maar één keer bespreken.\n- {LINKS:} "Normale grootte en reflectiviteit." // Beschrijf hier de bevinding met betrekking tot de linker nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter. Als rechter en linker nier beiden normaal zijn moet je dit maar één keer bespreken.\nMILT: "Normale groote en reflectiviteit." // Beschrijf hier de bevindingen met betrekking tot de milt inclusief zijn grootte (ikv splenomegalie) alsook zijn reflectiviteit.\nLEVER: "Normale aflijning en grootte. Normale reflectiviteit. Normale vascularisatie." // Beschrijf hier de bevindingen met betrekking tot de lever inclusief zijn aflijning en grootte (hepatomegalie) alsook zijn vascularisatie. Beschrijf ook eventuele tekenen van cirrose.\nGALWEGEN: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de galwegen zoals choledocholithiasen alsook dilatatie van de ductus hepaticus of ductus choledochus. Ook eventuele stapelingsziektes van de lever.\nGALBLAAS: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de galblaas inclusief cholecystolithiasen, cholecystitis en adenomyosis.\nPANCREAS: "Normaal voorkomen van het gevisualiseerde pancreasparenchym, met reserve voor de pancreasstaart gezien darmgassuperpositie." // Beschrijf hier de bevindingen met betrekking tot de pancreas. Maak steeds reserve voor de beoordeling gezien onvolledige visualisatie van de pancreas via echografie.\nRETROPERITONEUM: "Normale diameter van de aorta abdominalis. Geen adenopathieën. Sequentiele visualisatie door gassuperpositie." // Beschrijf hier de bevindingen met betrekking tot het retroperitoneum zoals eventuele afwijkingen aan de aorta abdominalis of eventuele retroperitoneale vergroting of vergrote lymfeklieren. Maak steeds reserve voor de beoordeling gezien partiële visualisatie van het retroperitoneum via echografie.\nDARMEN: "Normale anterieure darmwanden." // Beschrijf hier de bevindingen met betrekking tot de darmen, dit inclusief eventuele mesenteriële afwijkingen zoals mesenteriële adenitis.\nONDERBUIK:\n- BLAAS: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de blaas alsook de distale ureterolithiasen.\n- UTERUS EN ADNEXEN of PROSTAAT: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de uterus en adnexen bij de vrouw en de prostaat bij de man.\n- VRIJ VOCHT: "Geen pathologisch vrij vocht." // Beschrijf hier de bevindingen met betrekking tot vrij vocht intra-abdominaal meest frequent in de douglas.\n\nBESLUIT:\nXXX`, userTextTemplate:`[NIEREN:] 
+            { id:'ech-abd', name:'ECHO ABDOMEN', code:'echabd', modality:'ECHO',
+              dicom:['echo abdomen'], deptTemplate:'http://templates.tiro.health/templates/5d64d451149e4507aa7477b06e141bf3|1.0.0', userTemplate:'http://templates.tiro.health/templates/e4ec97ba41d747c58170e7d208f1b5ac|2.0.0', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`NIEREN:
+- {RECHTS:} "Normale grootte en reflectiviteit." // Beschrijf hier de bevinding met betrekking tot de rechter nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter. Als rechter en linker nier beiden normaal zijn moet je dit maar één keer bespreken.
+- {LINKS:} "Normale grootte en reflectiviteit." // Beschrijf hier de bevinding met betrekking tot de linker nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter. Als rechter en linker nier beiden normaal zijn moet je dit maar één keer bespreken.
+MILT: "Normale groote en reflectiviteit." // Beschrijf hier de bevindingen met betrekking tot de milt inclusief zijn grootte (ikv splenomegalie) alsook zijn reflectiviteit.
+LEVER: "Normale aflijning en grootte. Normale reflectiviteit. Normale vascularisatie." // Beschrijf hier de bevindingen met betrekking tot de lever inclusief zijn aflijning en grootte (hepatomegalie) alsook zijn vascularisatie. Beschrijf ook eventuele tekenen van cirrose.
+GALWEGEN: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de galwegen zoals choledocholithiasen alsook dilatatie van de ductus hepaticus of ductus choledochus. Ook eventuele stapelingsziektes van de lever.
+GALBLAAS: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de galblaas inclusief cholecystolithiasen, cholecystitis en adenomyosis.
+PANCREAS: "Normaal voorkomen van het gevisualiseerde pancreasparenchym, met reserve voor de pancreasstaart gezien darmgassuperpositie." // Beschrijf hier de bevindingen met betrekking tot de pancreas. Maak steeds reserve voor de beoordeling gezien onvolledige visualisatie van de pancreas via echografie.
+RETROPERITONEUM: "Normale diameter van de aorta abdominalis. Geen adenopathieën. Sequentiele visualisatie door gassuperpositie." // Beschrijf hier de bevindingen met betrekking tot het retroperitoneum zoals eventuele afwijkingen aan de aorta abdominalis of eventuele retroperitoneale vergroting of vergrote lymfeklieren. Maak steeds reserve voor de beoordeling gezien partiële visualisatie van het retroperitoneum via echografie.
+DARMEN: "Normale anterieure darmwanden." // Beschrijf hier de bevindingen met betrekking tot de darmen, dit inclusief eventuele mesenteriële afwijkingen zoals mesenteriële adenitis.
+ONDERBUIK:
+- BLAAS: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de blaas alsook de distale ureterolithiasen.
+- UTERUS EN ADNEXEN of PROSTAAT: "Normaal." // Beschrijf hier de bevindingen met betrekking tot de uterus en adnexen bij de vrouw en de prostaat bij de man.
+- VRIJ VOCHT: "Geen pathologisch vrij vocht." // Beschrijf hier de bevindingen met betrekking tot vrij vocht intra-abdominaal meest frequent in de douglas.
+
+BESLUIT:
+XXX`, userTextTemplate:`[NIEREN:] 
 - {RECHTS: XXX} // Beschrijf hier de bevinding met betrekking tot de rechter nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter.
 - {LINKS: XXX} // Beschrijf hier de bevinding met betrekking tot de linker nier, zowel eventuele parenchymletsels als nefrolithiasen of hydro-ureteronefrose alsook ureterolithiasen of dilatatie van de ureter.
 [MILT:] XXX // Beschrijf hier de bevindingen met betrekking tot de milt inclusief zijn grootte (ikv splenomegalie) alsook zijn reflectiviteit.
@@ -2261,8 +2243,8 @@ XXX
 [- VRIJ VOCHT:] XXX // Beschrijf hier de bevindingen met betrekking tot vrij vocht intra-abdominaal meest frequent in de douglas.
 
 BESLUIT:
-XXX` },
-            { id:'ech-hls', name:'ECHO HALS',                  code:'echhls',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'acute-cholecystitis-us',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'ech-hls', name:'ECHO HALS', code:'echhls', modality:'ECHO',
               dicom:['echo hals'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[SCHILDKLIER:]
 [- GROOTTE:] "Normale volume van de schildklier." // Beschrijf hier de bevinding of omvang of afmetingen van de schildklier met eventuele goiter of volume toename.
 [- ASPECT:] "Normale aspect van de schildklier." // Beschrijf hier he aspect van de schildklier; heterogeen of homogeen met eventuele gradatie.
@@ -2285,8 +2267,8 @@ XXX`, userTextTemplate:`[SCHILDKLIER:]
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
-            { id:'ech-nie', name:'ECHO NIEREN',                code:'echnier',  modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ti-rads',tiroTemplateUrl:''},{calcId:'thyroid-volume',tiroTemplateUrl:''},{calcId:'carotid-stenosis',tiroTemplateUrl:''}] },
+            { id:'ech-nie', name:'ECHO NIEREN', code:'echnier', modality:'ECHO',
               dicom:['echo nieren','echo nieren en blaas','echo nieren + blaas + doppler'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`LINKER NIER:
 [- Interpolaire afstand:] "Normale interpolaire afstand." // Beschrijf hier de interpolaire afstand van de linker nier in mm uitgedrukt, indien input in cm zet deze om naar mm. Indien niet vermeld schrijf "normaal".
 [- Cortex dikte:] "Noramle cortexdikte." // Beschrijf hier de cortex dikte van de linker nier in mm uitgedrukt, indien input in cm zet deze om naar mm. Indien niet vermeld schrijf "normaal".
@@ -2330,16 +2312,15 @@ BLAAS:
 
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes.
 
-BESLUIT:` },
-            { id:'ech-bkv', name:'ECHO KLEIN BEKKEN VROUW',    code:'echbkv',   modality:'ECHO',
-              dicom:['echo klein bekken vrouw'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'ech-bkm', name:'ECHO KLEIN BEKKEN MAN',      code:'echbkm',   modality:'ECHO',
-              dicom:['echo klein bekken man'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'ech-lev', name:'ECHO LEVER EN GALBLAAS',     code:'echlev',   modality:'ECHO',
-              dicom:['echo lever en galblaas'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel' },
-            { id:'ech-bor', name:'ECHO BORSTEN BILATERAAL',    code:'echbor',   modality:'ECHO',
-              dicom:['echo borsten bilateraal','echo mammae bilateraal','echo borsten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel',
-              textTemplate:`[ WEEFSELTYPERING:][br]
+BESLUIT:`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'bladder-volume',tiroTemplateUrl:''}] },
+            { id:'ech-bkv', name:'ECHO KLEIN BEKKEN VROUW', code:'echbkv', modality:'ECHO',
+              dicom:['echo klein bekken vrouw'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'o-rads-us',tiroTemplateUrl:''}] },
+            { id:'ech-bkm', name:'ECHO KLEIN BEKKEN MAN', code:'echbkm', modality:'ECHO',
+              dicom:['echo klein bekken man'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-lev', name:'ECHO LEVER EN GALBLAAS', code:'echlev', modality:'ECHO',
+              dicom:['echo lever en galblaas'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'acute-cholecystitis-us',tiroTemplateUrl:''}] },
+            { id:'ech-bor', name:'ECHO BORSTEN BILATERAAL', code:'echbor', modality:'ECHO',
+              dicom:['echo borsten bilateraal','echo mammae bilateraal','echo borsten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[ WEEFSELTYPERING:][br]
 - Type XXX // voeg hier één van de drie mogelijkheden in 'a: homogeen vet', 'b: homogeen fibroglandulair weefsel' of 'c: heterogeen fibroglandulair weefsel'
 [ VOORGESCHIEDENIS:][br]
 "- Geen relevante voorgeschiedenis." // Beschrijf hier eventuele relevante voorgeschiedenis bestaande uit voornamelijk operatieve voorgeschiedenis zoals brede excisie, tumorectomie, mastectomie, okselevidement of sentinel procedure. Eveneens aanwezig operatief materiaal wordt hier besproken.
@@ -2370,10 +2351,9 @@ BESLUIT:
 Conclusie weefseltypering: XXX. // neem hier de hoogste score van de weefseltypering over D > A.
 XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
-Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
-            { id:'ech-sch', name:'ECHO SCHOUDER',               code:'echsch',   modality:'ECHO',
-              dicom:['echo schouder links','echo schouder rechts','echo schouder','echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', deptLabelsDefaultVisible: true, userLabelsDefaultVisible: true,
-              textTemplate:`[ AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
+Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-sch', name:'ECHO SCHOUDER', code:'echsch', modality:'ECHO',
+              dicom:['echo schouder links','echo schouder rechts','echo schouder','echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[ AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
 "- Normaal voorkomen van het AC-gewricht." // Beschrijf hier de bevindingen van het AC gewricht inclusief opzetting van het kapsel, degeneratie van het AC gewricht met subchondrale sclerose en osteofytose vorming en eventuele hydrops of Geyser sign.
 "- Geen argumenten voor subacromiale impingement." // Beschrijf hier de bevindingen met betrekking van subacromiale impingement tijdens dynamisch echografische controle.
 
@@ -2425,9 +2405,9 @@ XXX`, userTextTemplate:`[AC-GEWRICHT en SUBACROMIALE RUIMTE:][br]
 - "/" // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes zodanig dat zeker alles wat als input wordt gegeven wordt gebruikt in de output.
 
 BESLUIT:
-XXX` },
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
             // ── MAMMO ────────────────────────────────────────────────────────────
-            { id:'mam-scr', name:'SCREENINGSMAMMOGRAFIE',      code:'mamscr',   modality:'MAMMO',
+            { id:'mam-scr', name:'SCREENINGSMAMMOGRAFIE', code:'mamscr', modality:'MAMMO',
               dicom:['screeningsmammografie','mammografie 2 borsten','mammo beide borsten hoog risico','SCREENING KOMEN'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[WEEFSELTYPERING] 
 [- Typering:] XXX // voeg hier één van de vier mogelijkheden in "a: vrijwel volledig opgebouwd uit vet.", "b: verspreid fibroglandulair weefsel.", 'c: heterogeen dens fibroglandulair weefsel." of "d: zeer dens fibroglandulair weefsel."
 
@@ -2466,8 +2446,8 @@ BESLUIT:
 Conclusie weefseltypering: XXX. // neem hier de hoogste score van de weefseltypering over D > A.
 XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
-Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
-            { id:'mam-1b',  name:'MAMMOGRAFIE 1 BORST',        code:'mam1b',    modality:'MAMMO',
+Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mam-1b', name:'MAMMOGRAFIE 1 BORST', code:'mam1b', modality:'MAMMO',
               dicom:['mammografie 1 borst'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[WEEFSELTYPERING] 
 [- Typering:] XXX // voeg hier één van de vier mogelijkheden in "a: vrijwel volledig opgebouwd uit vet.", "b: verspreid fibroglandulair weefsel.", 'c: heterogeen dens fibroglandulair weefsel." of "d: zeer dens fibroglandulair weefsel."
 
@@ -2506,10 +2486,9 @@ BESLUIT:
 Conclusie weefseltypering: XXX. // neem hier de hoogste score van de weefseltypering over D > A.
 XXX // Maak hier een besluit van de bevindingen.
 BIRADS classificatie: XXX. // Beschrijf hier eventuele de BIRADS Classificatie
-Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.` },
-
+Follow-up: XXX // Beschrijf hier de eventuele follow-up onderzoeken of protocollen of eventuele noodzakelijke aanvullende onderzoeken.`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
             // ── MR — gedeelde DICOM-groepen (MRS, MRB, MRONDERB, MRSAC, MRELL) ──
-            { id:'mr-herdem', name:'MRI HERSENEN DEMENTIE',    code:'mrherdem', modality:'MR',
+            { id:'mr-herdem', name:'MRI HERSENEN DEMENTIE', code:'mrherdem', modality:'MR',
               dicom:['MR hersenen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`SOFTWAREMATIGE VOLUMETRIE
 {[- Uitgesproken parenchymverlies:] XXX} // Beschrijf hier het uitgesproken parenchymverlies en de lokalisatie
 {[- Matig parenchymverlies:] XXX} // Beschrijf hier het matig parenchymverlies en de lokalisatie
@@ -2538,8 +2517,8 @@ VISUELE EVALUATIE
 [ANDERE:]
 {XXX // Beschrijf hier alle andere niet beschreven bevindingen}
 BESLUIT:
-XXX` },
-            { id:'mr-end',    name:'MRI ENDOMETRIOSE',          code:'mrend',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-end', name:'MRI ENDOMETRIOSE', code:'mrend', modality:'MR',
               dicom:['MR bekken'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ANTERIEURE COMPARTIMENT
 [- Blaaswand:] "Normale aflijning van de blaaswand." // Beschrijf hier de aflijning van de blaaswand
 [- Vesico-uteriene plooi:] "Vrije vesico-uteriene plooi." // Beschrijf hier de vesico-uteriene plooi
@@ -2600,8 +2579,8 @@ UROGRAFIE
 [ANDERE:]
 {XXX // Beschrijf hier alle andere niet beschreven bevindingen}
 BESLUIT:
-XXX` },
-            { id:'mr-abd',    name:'MRI ABDOMEN',               code:'mrabd',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-abd', name:'MRI ABDOMEN', code:'mrabd', modality:'MR',
               dicom:['MR onderbuik','MR bovenbuik'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Lever:] "Normaal groot lever, homogeen signaal, geen focale letsels." // Beschrijving lever
 [- Galblaas en galwegen:] "Normale galblaas, niet gedilateerde galwegen." // Beschrijving galblaas
 [- Pancreas:] "Normaal groot pancreas, homogeen signaal." // Beschrijving pancreas
@@ -2626,8 +2605,8 @@ XXX`, userTextTemplate:`[- Lever:] XXX // Beschrijving lever: grootte, signaalin
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'mr-rec',    name:'MRI RECTUM',                code:'mrrec',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'li-rads',tiroTemplateUrl:''},{calcId:'liver-steatosis',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'mr-rec', name:'MRI RECTUM', code:'mrrec', modality:'MR',
               dicom:['MR onderbuik'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`MORFOLOGIE:
 [- Morfologie:] XXX // Beschrijf de morfologie van de tumor (poliep / circulair / semicirculair; solied / mucineus / gemengd)
 [- Lengte:] XXX cm // Beschrijf de maximale lengte van de tumor in cm
@@ -2706,8 +2685,8 @@ EMVI EN METASTASEN:
 
 {[- Andere:] XXX} // Overige bevindingen
 BESLUIT:
-Staging: cTxNxMx` },
-            { id:'mr-siac',   name:'MRI SACROILIACALE GEWRICHTEN', code:'mrsiac', modality:'MR',
+Staging: cTxNxMx`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'li-rads',tiroTemplateUrl:''},{calcId:'liver-steatosis',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'mr-siac', name:'MRI SACROILIACALE GEWRICHTEN', code:'mrsiac', modality:'MR',
               dicom:['MR sacrum'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`MEEGESCANDE WERVELZUIL:
 [- Romanus letsels ("shiny corner"):] "Geen Romanus letsels." // Beschrijf hier de Romanus letsels
 [- Anderson letsels (discovertebraal):] "Geen Anderson letsels." // Beschrijf hier de Anderson letsels
@@ -2760,8 +2739,8 @@ SACRO-ILIACAAL:
 {XXX} // Beschrijf hier alle andere niet beschreven bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'mr-ell',    name:'MRI ELLEBOOG',              code:'mrell',    modality:'MR',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'mr-ell', name:'MRI ELLEBOOG', code:'mrell', modality:'MR',
               dicom:['MR elleboog links','MR elleboog rechts'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Gewrichtseffusie en gewrichtsverhouding:] "Geen gewrichtseffusie. Normale gewrichtsverhouding." // Beschrijf hier de hydrops en gewrichtsverhouding
 [- Kraakbeen en beenmerg:] "Normaal kraakbeen. Normaal beenmergsignaal." // Beschrijf hier het kraakbeen en het beenmergsignaal
 [- Distale bicepspees:] "Normale distale bicepspees." // Beschrijf hier de distale bicepspees
@@ -2790,10 +2769,9 @@ XXX`, userTextTemplate:`[- Gewrichtseffusie en gewrichtsverhouding:] XXX // Besc
 {[- Andere:] XXX} // Beschrijf hier alle overige bevindingen die niet in bovenstaande punten passen
 
 BESLUIT:
-XXX` },
-
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
             // ── ECHO — gedeelde DICOM-groepen (USLID, DUABD, DULEDEM, KONTRDULIDV, CARVER) ──
-            { id:'ech-elb',   name:'ECHO ELLEBOOG',             code:'echelb',   modality:'ECHO',
+            { id:'ech-elb', name:'ECHO ELLEBOOG', code:'echelb', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ANTERIEUR COMPARTIMENT:
 [- Radio/ulno-humeraal & hydrops:] "Geen radio/ulnohumerale hydrops." // Bespreek hier de radio-humerale of ulno-humerale verhoudingen inclusief eventuele hydrops.
 [- Gewrichtsmuis:] "Geen intra-articulaire gewrichtsmuis aantoonbaar." // Beschrijf hier de eventuele aanwezigheid van een gewrichtsmuis
@@ -2846,8 +2824,8 @@ LATERALE COMPARTIMENT:
 [- Annulaire ligament:] XXX // bespreek hier het annulaire ligament aan het laterale compartiment met eventuele onderbrekingen of verdikkingen.
 
 BESLUIT:
-XXX` },
-            { id:'ech-uln',   name:'ECHO NERVUS ULNARIS',       code:'eculn',    modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-uln', name:'ECHO NERVUS ULNARIS', code:'eculn', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Nervus ulnaris in de cubitale tunnel (>8mm2):] "Normaal voorkomen van de nervus ulnaris in de cubitale tunnel, geen compressie of vergroting (< 8mm²)."
 [- Dislocatie van de n. ulnaris bij diepe flexie:] "Geen dislocatie van de n. ulnaris bij diepe flexie."
 [- Triceps snapping:] "Geen triceps snapping."
@@ -2865,8 +2843,8 @@ XXX`, userTextTemplate:`[- Nervus ulnaris in de cubitale tunnel (>8mm2):] XXX
 [- Nervus ulnaris in het kanaal van Guyon:] XXX
 {[- Andere:] XXX}
 
-BESLUIT:` },
-            { id:'ech-med',   name:'ECHO NERVUS MEDIANUS',      code:'ecmed',    modality:'ECHO',
+BESLUIT:`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-med', name:'ECHO NERVUS MEDIANUS', code:'ecmed', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- n. medianus aan de elleboog en in de voorarm:] "Geen lokale massa-componenten of dissecties aantoonbaar."
 [- n. medianus over verloop van de pronator teres:] "Normaal voorkomen van de AIN."
 [- Carpale tunnel (> 8 mm2, bowing flexor retinaculum > 2mm):] "Normaal voorkomen van de n. medianus in de carpale tunnel, geen verwijding (< 8 mm²), geen bowing van het flexor retinaculum (< 2mm)."
@@ -2878,8 +2856,8 @@ XXX`, userTextTemplate:`[- n. medianus aan de elleboog en in de voorarm:] "Geen 
 [- Carpale tunnel (> 8 mm2, bowing flexor retinaculum > 2mm):] XXX 
 {[- Andere:] XXX}
 
-BESLUIT:` },
-            { id:'ech-pol',   name:'ECHO POLS',                 code:'echpol',   modality:'ECHO',
+BESLUIT:`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-pol', name:'ECHO POLS', code:'echpol', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`PALMAIR
 Pezen
 [- Palmaris longus:] "Normale palmaris longus pees." // Beschrijving van de palmaris longus pees
@@ -2936,8 +2914,8 @@ Andere dorsaal
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ech-vin',   name:'ECHO VINGER',               code:'echvin',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-vin', name:'ECHO VINGER', code:'echvin', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- MCP gewricht:] "Geen hydrops of artrose MCP gewricht." // Beschrijving MCP gewricht
 [- PIP gewricht:] "Geen hydrops of artrose PIP gewricht." // Beschrijving PIP gewricht
 [- DIP gewricht:] "Geen hydrops of artrose DIP gewricht." // Beschrijving DIP gewricht
@@ -2958,8 +2936,8 @@ XXX`, userTextTemplate:`[- MCP gewricht:] XXX // Beschrijving MCP gewricht
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'ech-heu',   name:'ECHO HEUP',                 code:'echeup',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-heu', name:'ECHO HEUP', code:'echeup', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ANTERIEUR
 [- Iliopsoas spier en bursa:] "Normaal voorkomen van de iliopsoas spier en bursa." // Beschrijving iliopsoas spier en bursa
 [- Rectus femoris spierbuik:] "Normaal voorkomen van de rectus femoris spierbuik." // Beschrijving rectus femoris spierbuik
@@ -2996,8 +2974,8 @@ POSTERIEUR
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'ech-heud',  name:'ECHO HEUP DYSPLASIE KIND',  code:'echeupd',  modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-heud', name:'ECHO HEUP DYSPLASIE KIND', code:'echeupd', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`RECHTS
 [- Kraakbenige en beenderige structuren:] "Normale vorm en reflectiviteit van de kraakbenige en beenderige structuren van de heup." // Beschrijving morfologie rechts
 [- Alpha hoek (beenderig, >60°):] XXX° // Meting alpha hoek rechts
@@ -3020,23 +2998,26 @@ LINKS
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-Graf type: XXX` },
-            { id:'ech-kni',   name:'ECHO KNIE',                 code:'echkni',   modality:'ECHO',
+Graf type: XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-kni', name:'ECHO KNIE', code:'echkni', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ANTERIEUR
 [- Quadricepspees:] "Normale quadricepspees." // Beschrijving quadricepspees: normaal, tendinopathie, scheurtje
 [- Patellapees (> 3,5mm):] "Normale patellapees." // Beschrijving patellapees: dikte, tendinopathie, scheurtje
 [- Intra-articulair vocht:] "Geen intra-articulair vocht." // Hoeveelheid en kwaliteit
 [- Bursa (supra-, pre- en infra-patellair):] "Geen bursitis." // Beschrijving van de bursae
 [- Retinaculum:] "Normaal retinaculum." // Beschrijving retinaculum mediaal en lateraal
+
 MEDIALE COMPARTIMENT
 [- Mediale collaterale ligament:] "Normaal mediaal collateraal ligament." // Beschrijving MCL: dikte, continuïteit
 [- Pes anserinus pees:] "Normale pes anserinus pees." // Beschrijving pes anserinus pees en bursa
 [- Meniscus (opp. scheur, cyste of protrusie):] "Geen oppervlakkige scheur, cyste of protrusie van de mediale meniscus." // Beschrijving mediale meniscus
+
 LATERALE COMPARTIMENT
 [- Laterale collaterale ligament:] "Normaal lateraal collateraal ligament." // Beschrijving LCL: dikte, continuïteit
 [- Biceps femoralis insertio:] "Normale biceps femoralis insertio." // Beschrijving insertio biceps femoralis
 [- Iliotibiale band:] "Normale iliotibiale band." // Beschrijving iliotibiale band
 [- Meniscus (opp. scheur, cyste of protrusie):] "Geen oppervlakkige scheur, cyste of protrusie van de laterale meniscus." // Beschrijving laterale meniscus
+
 POSTERIEUR
 [- Bakercyste:] "Geen Bakercyste." // Aanwezigheid en grootte Bakercyste
 [- A./V. Femorales:] "Normale A./V. Femorales." // Beschrijving arteria en vena femoralis
@@ -3049,23 +3030,26 @@ XXX`, userTextTemplate:`ANTERIEUR
 [- Intra-articulair vocht:] XXX // Hoeveelheid en kwaliteit
 [- Bursa (supra-, pre- en infra-patellair):] XXX // Beschrijving van de bursae
 [- Retinaculum:] XXX // Beschrijving retinaculum mediaal en lateraal
+
 MEDIALE COMPARTIMENT
 [- Mediale collaterale ligament:] XXX // Beschrijving MCL: dikte, continuïteit
 [- Pes anserinus pees:] XXX // Beschrijving pes anserinus pees en bursa
 [- Meniscus (opp. scheur, cyste of protrusie):] XXX // Beschrijving mediale meniscus
+
 LATERALE COMPARTIMENT
 [- Laterale collaterale ligament:] XXX // Beschrijving LCL: dikte, continuïteit
 [- Biceps femoralis insertio:] XXX // Beschrijving insertio biceps femoralis
 [- Iliotibiale band:] XXX // Beschrijving iliotibiale band
 [- Meniscus (opp. scheur, cyste of protrusie):] XXX // Beschrijving laterale meniscus
+
 POSTERIEUR
 [- Bakercyste:] XXX // Aanwezigheid en grootte Bakercyste
 [- A./V. Femorales:] XXX // Beschrijving arteria en vena femoralis
 [- N. Peroneus communis:] XXX // Beschrijving nervus peroneus communis
 
 BESLUIT:
-XXX` },
-            { id:'ech-enk',   name:'ECHO ENKEL',                code:'echenk',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ech-enk', name:'ECHO ENKEL', code:'echenk', modality:'ECHO',
               dicom:['echo ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ANTERIOR
 Pezen
 [- Tibialis anterior (MT1 & CM):] "Normale tibialis anterior pees." // Beschrijving van de tibialis anterior pees
@@ -3148,8 +3132,8 @@ OVERIGE
 [- Chopard (Lig dorsaal talo-naviculair, chopart bifurcal, calcaneo-cuboideal dorsal) en Lisfranc ligamenten:] XXX // Beschrijving van Chopard en Lisfranc ligamenten
 
 BESLUIT:
-XXX` },
-            { id:'dup-anie',  name:'ECHO DUPLEX NIEREN',        code:'duanie',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'dup-anie', name:'ECHO DUPLEX NIEREN', code:'duanie', modality:'ECHO',
               dicom:['doppl abdomen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Linkernier:] bipolaire diameter XXX mm, parenchymdikte XXX mm // Meting linkernier
 [- Rechternier:] bipolaire diameter XXX mm, parenchymdikte XXX mm // Meting rechternier
 [- Corticomedullaire differentiatie:] "Normale corticomedullaire differentiatie bilateraal." // Beschrijving corticomedullaire differentiatie
@@ -3172,8 +3156,8 @@ XXX`, userTextTemplate:`[- Linkernier:] bipolaire diameter XXX mm, parenchymdikt
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'dup-alev',  name:'ECHO DUPLEX LEVER',         code:'dualev',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'acute-cholecystitis-us',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'dup-alev', name:'ECHO DUPLEX LEVER', code:'dualev', modality:'ECHO',
               dicom:['doppl abdomen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`VENA PORTA
 [- Flowrichting:] "Hepatopetale flow." // Hepatopetale of hepatofugale flow
 [- Turbulente flow:] "Geen turbulente flow." // Aanwezigheid van turbulente flow
@@ -3214,8 +3198,8 @@ GALWEGEN
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'dup-abeen', name:'ECHO DUPLEX ARTERIEEL BEEN',code:'duabeen',  modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'acute-cholecystitis-us',tiroTemplateUrl:''},{calcId:'spleen-volume-index',tiroTemplateUrl:''}] },
+            { id:'dup-abeen', name:'ECHO DUPLEX ARTERIEEL BEEN', code:'duabeen', modality:'ECHO',
               dicom:['doppler beide ledematen'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`BEKKEN
 [- Arteria iliaca communis:] "Normaal kaliber en triphasisch signaal arteria iliaca communis." // PSV, stenose
 [- Arteria iliaca externa:] "Normaal kaliber en triphasisch signaal arteria iliaca externa." // PSV, stenose
@@ -3248,8 +3232,8 @@ ONDERBEEN
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'dup-vbeen', name:'ECHO DUPLEX VENEUS BEEN',   code:'duvbeen',  modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'dup-vbeen', name:'ECHO DUPLEX VENEUS BEEN', code:'duvbeen', modality:'ECHO',
               dicom:['doppler beide ledematen','follow up veneuse bloedvaten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`LIES EN DIJ
 [- Vena femoralis communis:] "Normaal kaliber en samendrukbare vena femoralis communis, normale kleurendoppler." // Kaliber, aflijning en samendrukbaarheid
 [- Vena femoralis superficialis:] "Normaal kaliber en samendrukbare vena femoralis superficialis." // Kaliber, aflijning en samendrukbaarheid
@@ -3284,8 +3268,8 @@ OPPERVLAKKIG SYSTEEM
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'dup-varm',  name:'ECHO DUPLEX VENEUS ARM',    code:'duvarm',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'dup-varm', name:'ECHO DUPLEX VENEUS ARM', code:'duvarm', modality:'ECHO',
               dicom:['follow up veneuse bloedvaten'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Vena jugularis interna en externa, vena axillaris en vena brachialis:] "Normaal kaliber en samendrukbare venae, normale kleurendoppler." // Kaliber, aflijning en samendrukbaarheid
 [- Vena basilica:] "Normaal kaliber vena basilica." // Kaliber, aflijning en samendrukbaarheid
 [- Vena cephalica:] "Normaal kaliber vena cephalica." // Kaliber, aflijning en samendrukbaarheid
@@ -3298,8 +3282,8 @@ XXX`, userTextTemplate:`[- Vena jugularis interna en externa, vena axillaris en 
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'dup-ahal',  name:'ECHO DUPLEX ARTERIEEL HALS',code:'duahal',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'dup-ahal', name:'ECHO DUPLEX ARTERIEEL HALS', code:'duahal', modality:'ECHO',
               dicom:['doppl carotiden + vertebralis'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`LINKS
 [- Arteria carotis communis links:] "Geen atheromatose van de arteria carotis communis." // Atheromatose ACC links
 [- Carotis bifurcatie links:] "Geen atheromatose van de carotis bifurcatie." // Atheromatose bifurcatie links
@@ -3334,8 +3318,8 @@ RECHTS
 {[- Andere:] XXX} // Overige bevindingen
 
 BESLUIT:
-XXX` },
-            { id:'ech-scro',  name:'ECHO SCROTUM',              code:'echscro',  modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'ti-rads',tiroTemplateUrl:''},{calcId:'thyroid-volume',tiroTemplateUrl:''},{calcId:'carotid-stenosis',tiroTemplateUrl:''}] },
+            { id:'ech-scro', name:'ECHO SCROTUM', code:'echscro', modality:'ECHO',
               dicom:['echo scrotum'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`LINKS:
 [- Testis:] "Normale morfologie en reflectiviteit van de testis links, geen focale parenchymletsels. Geen argumenten voor torsio of orchitis." // Beschrijf hier de bevindingen van de linker testis, wat betreft morfologie en reflectiviteit van de testis links. Beschrijf eveneens eventuele letsels van benigne of maligne aard in de testis. Eventuele tekenen van hypo- of aplasie alsook aanwezigheid van orchitis of torsio testis hier beschrijven.
 [- Epididymis:] "Normale morfologie en reflectiviteit van de epididymis links. Geen argumenten voor epididymitis." // Beschrijf hier de bevindingen van de linker epididymis, wat betreft de morfologie en reflectiviteit van de epididymis links. Beschrijf hier eveneens eventuele epididymitis alsook de aanwezigheid van eventuele epididymiscysten. Ook benigne of maligne letsels uitgaande van de epididymis vallen hier onder.
@@ -3366,8 +3350,8 @@ RECHTS:
 [- Inguinaal kanaal:] XXX // beschrijf hier de eventuele bevindingen in het inguinale kanaal rechts waaronder hernia inguinalis maar ook onsteking van de funniculus rechts.
 
 BESLUIT:
-XXX` },
-            { id:'ech-pro',   name:'ECHO PROSTAAT',             code:'echpro',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'gonadal-volume',tiroTemplateUrl:''}] },
+            { id:'ech-pro', name:'ECHO PROSTAAT', code:'echpro', modality:'ECHO',
               dicom:['transrectale echografie'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[Volume prostaat:]"Normaal volume van de prostaat". // Bespreek hier het prostaat volume in mm. Ook eventuele benamingen binnen prostaat hypertrofie vallen hier onder.
 [Morfologie prostaat:] "Normale morofologie van de prostaat, geen actieve onstekingen aantoonbaar." // Bespreek hier eventuele wigvormige hyporeflectieve zones in kader van prostatitis sequelen. Bespreke hier ook eventuele actieve onstekingen of abcesomvormingen.
 [Verdachte prostaat letsels:] "Geen verdachte focale letsels in de perifere zone." // Bespreek hier eventuele aanwezigheid of afwezigheid van verdachte letsels voornamelijk op niveau van de perifere zone.
@@ -3382,8 +3366,8 @@ XXX`, userTextTemplate:`[Volume prostaat:] XXX // Bespreek hier het prostaat vol
 {[- Andere:] XXX} // Beschrijving van de overige zaken die niet werden gedekt door de bovenstaande puntjes.
 
 BESLUIT:
-XXX` },
-            { id:'ech-her',   name:'ECHO HERSENEN',             code:'echers',   modality:'ECHO',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'prostate-volume-psad',tiroTemplateUrl:''}] },
+            { id:'ech-her', name:'ECHO HERSENEN', code:'echers', modality:'ECHO',
               dicom:['echo hersenen via fontanel'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[MIDIAANLIJN:] "Normale positie van de mediaanlijn." // Beschrijf hier de eventuele afwijkende mediaallijn al dan niet door een massacomponent
 [CORPUS CALLOSUM:] "Normaal voorkomen en aanwezigheid van het corpus callosum." // Beschrijf hier de bevindingen met tot het corpus callosum alsook eventuele afwezigheid of hypo- /agenesie.
 [VENTRIKEL SYSTEMEN:] "Normaal kaliber van de laterale ventrikels, de derde en vierde ventrikel." // Beschrijf hier de bevindingen met betrekking tot de laterale ventrikels, de derde en vierde ventrikels. Afwijkingen in volumes worden hier ook besproken.
@@ -3404,10 +3388,9 @@ XXX`, userTextTemplate:`[MIDIAANLIJN:] XXX // Beschrijf hier de eventuele afwijk
 [VASCULATUUR:] XXX // Beschrijf hier de bevindingen met betrekking tot de hemodynamische parameters en doorgankelijkheid van de sinussen zoals de sins sagittalis superoir.
 
 BESLUIT:
-XXX` },
-
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
             // ── CT — nieuwe entries ───────────────────────────────────────────────
-            { id:'ct-aorta',  name:'CT AORTABOOG',              code:'ctaorta',  modality:'CT',
+            { id:'ct-aorta', name:'CT AORTABOOG', code:'ctaorta', modality:'CT',
               dicom:['CT aorta'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Aorta ascendens diameter:] XXX mm // Meting aorta ascendens
 [- Aortaboog diameter:] XXX mm // Meting aortaboog
 [- Aorta descendens diameter:] XXX mm // Meting aorta descendens
@@ -3426,8 +3409,8 @@ XXX`, userTextTemplate:`[- Aorta ascendens diameter:] XXX mm // Meting aorta asc
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-tavi',   name:'CT PRE-TAVI',               code:'cttavi',   modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ct-tavi', name:'CT PRE-TAVI', code:'cttavi', modality:'CT',
               dicom:['CT TAVI'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`[- Aortawortel diameter (sinus of Valsalva):] XXX mm // Meting aortawortel
 [- Aortaklep annulus diameter:] XXX mm // Meting annulus
 [- Aortaklep area:] XXX cm² // Berekende aortaklep area
@@ -3450,8 +3433,8 @@ XXX`, userTextTemplate:`[- Aortawortel diameter (sinus of Valsalva):] XXX mm // 
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-            { id:'ct-uro',    name:'CT UROLOGIE',               code:'cturo',    modality:'CT',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'ct-uro', name:'CT UROLOGIE', code:'cturo', modality:'CT',
               dicom:['CT nieren'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`RECHTERNIER
 [- Rechternier:] "Normale bipolaire diameter, geen hydro-ureteronefrose, geen urolithiasis aangetoond."
 LINKERNIER
@@ -3480,10 +3463,9 @@ OVERIGE
 {[- Andere:] XXX}
 
 BESLUIT:
-XXX` },
-
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[{calcId:'bosniak-2019',tiroTemplateUrl:''},{calcId:'renal-nephrometry',tiroTemplateUrl:''}] },
             // ── RX — nieuwe entries ───────────────────────────────────────────────
-            { id:'rx-botden', name:'BOTDENSITOMETRIE DEXA',     code:'rxbotden', modality:'RX',
+            { id:'rx-botden', name:'BOTDENSITOMETRIE DEXA', code:'rxbotden', modality:'RX',
               dicom:['botdensitometrie','botdensitometrie met terugbetaling'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`BOTDENSITOMETRIE:
 
 Onderzoek verricht volgens de DEXA methode op de lumbale zuil (L1 tot L4) en de beide heupen:
@@ -3516,8 +3498,8 @@ BESLUIT:
 Volgens het FRAX-model ([www.shef.ac.uk/frax](http://www.shef.ac.uk/frax)) is het:
 
 [- Risico op majeure osteoporotische fractuur (thv. wervel, heup, schouder, pols) in de volgende 10 jaren:] XXX procent. // Bespreek hier het resultaat betreffende de kans op  majeure osteoporotische fractuur. 
-[- Risico op heupfractuur in de volgende 10 jaren:] XXX procent. // Bespreek hier het resultaat betreffende de kans op heupfractuur binnen de 10 jaar.` },
-            { id:'rx-smd',    name:'RX SLOKDARM-MAAG-DUODENUM', code:'rxsmd',    modality:'RX',
+[- Risico op heupfractuur in de volgende 10 jaren:] XXX procent. // Bespreek hier het resultaat betreffende de kans op heupfractuur binnen de 10 jaar.`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-smd', name:'RX SLOKDARM-MAAG-DUODENUM', code:'rxsmd', modality:'RX',
               dicom:['slokdarm - maag - duodenum','Slokdarm - maag - duodenum - transit','maag - duodenum - transit'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`RX PREPROCEDURAAL:
 - "Geen significante afwijkingen aantoonbaar." // Beschrijf hier eventuele post-operatieve status. Zoals faecale residu's, gedilateerde darmlissen, intra-abdominaal vrij lucht of andere bevindingen die zich kunnen uiten op een RX abdomen.
 
@@ -3564,8 +3546,8 @@ DUODENUM:
 [- Expansie:] "Goede expansie met normaal mucosareliëf." // Beschrijf hier de de expansie van de maag.
 
 BESLUIT:
-XXX` },
-            { id:'rx-slik',   name:'RX SLIKACT',                code:'rxslik',   modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-slik', name:'RX SLIKACT', code:'rxslik', modality:'RX',
               dicom:['slikfunctie'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`ORALE FASE:
 [- Boluscontrole:] "normaal." // Bespreek hier de normale of afwijkende boluscontrole zo beschreven.
 [- Bolustransport naar de oropharynx:] "normaal." // Bespreek hier het normale of abnormale bolustransport van mond naar oropharynx.
@@ -3604,8 +3586,8 @@ OESOPHAGEALE FASE:
 [- Wandaflijning:] "geen divertikels. Geen wandonregelmatigheden van de proximale slokdarmhelft."// Bespreek hier de wandaflijning. Eveneens maligne wandaflijning of aantoonbare defecten of lekkage. Eveneens diverticulaire vormingen mogen hier komen .
 
 BESLUIT:
-"Normale orale, pharyngeale en oesophageale slikfunctie."` },
-            { id:'rx-cysto',  name:'RX CYSTOGRAFIE',            code:'rxcysto',  modality:'RX',
+"Normale orale, pharyngeale en oesophageale slikfunctie."`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-cysto', name:'RX CYSTOGRAFIE', code:'rxcysto', modality:'RX',
               dicom:['cystografie/ucam'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`RX ABDOMEN PREPROCEDURAAL:
 {XXX} // Bespreek hier eventuele bevindingen op de radiografie van het abdomen voorgaande aan het cystografie onderzoek. Dus eventuele tekenen van operatie met operatief materiaal. Ook evenens tekenen van obstructie of vrije lucht intra-abdominaal en eventuele pathologische faecale residu's.
 
@@ -3632,8 +3614,8 @@ Vlotte retrograde vulling van de blaas via de aanwezige blaassonde met jodium ho
 [- Residu's:] "Geen postmictioneel residu." // Bespreek hier het post-mictionele residu.
 
 BESLUIT:
-XXX` },
-            { id:'rx-defaec', name:'RX DEFAECOGRAFIE',          code:'rxdefaec', modality:'RX',
+XXX`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
+            { id:'rx-defaec', name:'RX DEFAECOGRAFIE', code:'rxdefaec', modality:'RX',
               dicom:['defaecografie'], deptTemplate:'', userTemplate:'', aiRules:[], deptMode:'textueel', userMode:'textueel', textTemplate:`RX DEFAECOGRAFIE:
 [- Procedure:] "Vlotte vulling van rectum, dundarm, vagina en blaas met contrast." // Bespreek hier eventuele beschrijvende stappen in het verloop van de procedure zoals het vullen van de compartimenten met contrast en de genomen opnames en technieken.
 
@@ -3676,7 +3658,7 @@ POSTERIEURE COMPARTIMENT:
 [- Rectale descensus (> 25mm, 40-60mm, > 60mm):] "Geen rectale descensus." // Beschrijf hier de rectale descensus van de vaginakoepel volgens de strikte gradering van: graad 1, graad 2 of graad 3 rectale descensus. Geef ook de exacte afmeting in "mm" indien besproken.
 
 BESLUIT:
-XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproken in het anterieure, middenste en posterieure compartiment.` },
+XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproken in het anterieure, middenste en posterieure compartiment.`, deptLabelsDefaultVisible:true, userLabelsDefaultVisible:true, calculators:[] },
         ];
 
         // ── Persistence ──────────────────────────────────────────────────────────
@@ -3808,6 +3790,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 // Migrate old labelsDefaultVisible and default new split props to true
                 if (et.deptLabelsDefaultVisible === undefined) { et.deptLabelsDefaultVisible = true; changed = true; }
                 if (et.userLabelsDefaultVisible === undefined) { et.userLabelsDefaultVisible = true; changed = true; }
+                // Migrate: add default sectionOrder
+                if (et.sectionOrder === undefined) { et.sectionOrder = ['ai','user','dept']; changed = true; }
                 // Sync from def if explicitly set
                 if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
                 if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
@@ -3968,40 +3952,47 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
     <div>
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
-        ${flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling')}
-        ${ARROW}
-        ${flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker')}
-        ${ARROW}
-        <div class="flex flex-col">
-          <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
-          ${aiCount
-            ? `<span class="text-xs font-medium text-amber-600 dark:text-amber-400">${aiCount} regel${aiCount > 1 ? 's' : ''}</span>`
-            : `<span class="text-xs text-neutral-400 italic">—</span>`}
-        </div>
+        ${(et.sectionOrder || ['ai','user','dept']).map((key, i, arr) => {
+          const pill = key === 'dept'
+            ? flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling')
+            : key === 'user'
+            ? flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker')
+            : `<div class="flex flex-col">
+                <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
+                ${aiCount
+                  ? `<span class="text-xs font-medium text-amber-600 dark:text-amber-400">${aiCount} regel${aiCount > 1 ? 's' : ''}</span>`
+                  : `<span class="text-xs text-neutral-400 italic">—</span>`}
+              </div>`;
+          return (i < arr.length - 1) ? pill + ARROW : pill;
+        }).join('')}
       </div>
       <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
-        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
-          class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-1 min-w-0">
-          <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textueel (dept)</span>
-          ${et.textTemplate
-            ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
-            : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
-        </button>
-        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen (afdeling)">
-          <input type="checkbox" class="labels-dept-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.deptLabelsDefaultVisible === true ? 'checked' : ''}>
-          <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
-        </label>
-        <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}','user')"
-          class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm flex-shrink-0">
-          <span class="text-[9px] uppercase tracking-wide text-neutral-400">👤 Textueel (user)</span>
-          ${et.userTextTemplate
-            ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
-            : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
-        </button>
-        <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen (gebruiker)">
-          <input type="checkbox" class="labels-user-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.userLabelsDefaultVisible === true ? 'checked' : ''}>
-          <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
-        </label>
+        <div class="flex items-center gap-1.5 flex-1 min-w-0">
+          <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
+            class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm min-w-0">
+            <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textueel (dept)</span>
+            ${et.textTemplate
+              ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
+              : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
+          </button>
+          <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen (afdeling)">
+            <input type="checkbox" class="labels-dept-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.deptLabelsDefaultVisible === true ? 'checked' : ''}>
+            <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
+          </label>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}','user')"
+            class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm">
+            <span class="text-[9px] uppercase tracking-wide text-neutral-400">👤 Textueel (user)</span>
+            ${et.userTextTemplate
+              ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
+              : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
+          </button>
+          <label class="flex items-center gap-1 flex-shrink-0 cursor-pointer select-none" onclick="event.stopPropagation()" title="Labels standaard tonen (gebruiker)">
+            <input type="checkbox" class="labels-user-toggle w-3 h-3 rounded accent-cyan-600" data-id="${esc(et.id)}" ${et.userLabelsDefaultVisible === true ? 'checked' : ''}>
+            <span class="text-[10px] text-neutral-400 dark:text-neutral-500">Labels</span>
+          </label>
+        </div>
 
       </div>
     </div>
@@ -4051,7 +4042,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             currentEditId = id;
             const isNew = id === '__new__';
             const et = isNew
-                ? { id:'', name:'', code:'', modality:'RX', dicom:[], deptTemplate:'', userTemplate:'', aiRules:[] }
+                ? { id:'', name:'', code:'', modality:'RX', dicom:[], deptTemplate:'', userTemplate:'', aiRules:[], sectionOrder:['ai','user','dept'] }
                 : state.examTypes.find(t => t.id === id);
             if (!et) return;
 
@@ -4106,10 +4097,83 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
             document.getElementById('delete-btn').style.visibility = isNew ? 'hidden' : 'visible';
 
+            // Reorder flow-sections-container children to match sectionOrder
+            applyFlowSectionOrder(et.sectionOrder || ['ai','user','dept']);
+
             document.getElementById('slide-overlay').classList.add('open');
             document.getElementById('slide-over').classList.add('open');
             document.getElementById('panel-body').scrollTop = 0;
         }
+
+        // ── Drag-to-reorder flow sections ────────────────────────────────────────
+        const SECTION_ID_MAP = { ai: 'ai-section', user: 'user-section', dept: 'dept-section' };
+        const SECTION_KEY_MAP = { 'ai-section': 'ai', 'user-section': 'user', 'dept-section': 'dept' };
+
+        function applyFlowSectionOrder(order) {
+            const container = document.getElementById('flow-sections-container');
+            if (!container) return;
+            order.forEach(key => {
+                const el = document.getElementById(SECTION_ID_MAP[key]);
+                if (el) container.appendChild(el);
+            });
+        }
+
+        (function initFlowSectionDrag() {
+            const container = document.getElementById('flow-sections-container');
+            if (!container) return;
+            let draggingEl = null;
+
+            container.addEventListener('dragstart', function(e) {
+                if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
+                draggingEl = e.target.closest('details');
+                if (!draggingEl) return;
+                draggingEl.setAttribute('draggable', 'true');
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => draggingEl && draggingEl.classList.add('opacity-50'), 0);
+            });
+
+            container.addEventListener('dragend', function() {
+                if (draggingEl) {
+                    draggingEl.classList.remove('opacity-50');
+                    draggingEl.setAttribute('draggable', 'false');
+                    draggingEl = null;
+                }
+            });
+
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (!draggingEl) return;
+                const target = e.target.closest('details');
+                if (!target || target === draggingEl) return;
+                const rect = target.getBoundingClientRect();
+                const after = e.clientY > rect.top + rect.height / 2;
+                if (after) {
+                    container.insertBefore(draggingEl, target.nextSibling);
+                } else {
+                    container.insertBefore(draggingEl, target);
+                }
+            });
+
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (!draggingEl) return;
+                // Derive new order from DOM
+                const newOrder = Array.from(container.querySelectorAll(':scope > details'))
+                    .map(el => SECTION_KEY_MAP[el.id])
+                    .filter(Boolean);
+                // Persist to current exam type
+                const etId = window._currentEditId;
+                if (etId) {
+                    const idx = state.examTypes.findIndex(t => t.id === etId);
+                    if (idx !== -1) {
+                        state.examTypes[idx].sectionOrder = newOrder;
+                        saveData();
+                        renderList();
+                    }
+                }
+            });
+        })();
 
         window.closeSlideOver = function () {
             document.getElementById('slide-overlay').classList.remove('open');
