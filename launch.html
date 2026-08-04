@@ -3952,7 +3952,10 @@ UITVOERFORMAAT — STRIKT:
                     _realtimeObserver.disconnect();
                 }
             }
-            clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
+            clipboard.addEventListener('input', () => {
+                if (_realtimePausedByMultiStudy) _realtimeResumePause();
+                if (realtimeEnabled) scheduleRealtimeCheck();
+            }, true);
 
             realtimeToggle.addEventListener('click', () => {
                 realtimeEnabled = !realtimeEnabled;
