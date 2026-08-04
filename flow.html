@@ -86,6 +86,22 @@
                 transition: transform 0.22s cubic-bezier(.4,0,.2,1);
                 transform: translateX(100%);
             }
+            .section-move-up, .section-move-down {
+                font-size: 9px; line-height:1; padding: 2px 3px; border-radius: 3px;
+                color: #6b7280; background: transparent; border: none; cursor: pointer; transition: color 0.15s, background 0.15s;
+            }
+            .section-move-up:not(:disabled):hover, .section-move-down:not(:disabled):hover {
+                color: #374151; background: #f3f4f6;
+            }
+            :root.dark .section-move-up:not(:disabled):hover, :root.dark .section-move-down:not(:disabled):hover {
+                color: #d1d5db; background: #334155;
+            }
+            .section-move-up:disabled, .section-move-down:disabled {
+                color: #d1d5db; cursor: default;
+            }
+            :root.dark .section-move-up:disabled, :root.dark .section-move-down:disabled {
+                color: #475569;
+            }
             #slide-over.open { transform: translateX(0); }
 
             #slide-overlay {
@@ -283,9 +299,9 @@
                 <!-- AI-gebaseerde regels -->
                 <details id="ai-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" onclick="event.stopPropagation()">
-                            <button type="button" class="section-move-up p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="ai-section" title="Naar boven">▲</button>
-                            <button type="button" class="section-move-down p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="ai-section" title="Naar onder">▼</button>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0">
+                            <button type="button" class="section-move-up" onclick="event.stopPropagation();moveFlowSection('ai-section',-1)" title="Naar boven">▲</button>
+                            <button type="button" class="section-move-down" onclick="event.stopPropagation();moveFlowSection('ai-section',1)" title="Naar onder">▼</button>
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>🤖</span>
@@ -308,9 +324,9 @@
                 <!-- Gebruiker override sectie -->
                 <details id="user-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" onclick="event.stopPropagation()">
-                            <button type="button" class="section-move-up p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="user-section" title="Naar boven">▲</button>
-                            <button type="button" class="section-move-down p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="user-section" title="Naar onder">▼</button>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0">
+                            <button type="button" class="section-move-up" onclick="event.stopPropagation();moveFlowSection('user-section',-1)" title="Naar boven">▲</button>
+                            <button type="button" class="section-move-down" onclick="event.stopPropagation();moveFlowSection('user-section',1)" title="Naar onder">▼</button>
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>👤</span>
@@ -354,9 +370,9 @@
                 <!-- Afdeling sectie -->
                 <details id="dept-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" onclick="event.stopPropagation()">
-                            <button type="button" class="section-move-up p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="dept-section" title="Naar boven">▲</button>
-                            <button type="button" class="section-move-down p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="dept-section" title="Naar onder">▼</button>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0">
+                            <button type="button" class="section-move-up" onclick="event.stopPropagation();moveFlowSection('dept-section',-1)" title="Naar boven">▲</button>
+                            <button type="button" class="section-move-down" onclick="event.stopPropagation();moveFlowSection('dept-section',1)" title="Naar onder">▼</button>
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>📄</span>
@@ -4108,6 +4124,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
             // Reorder flow-sections-container children to match sectionOrder
             applyFlowSectionOrder(et.sectionOrder || ['ai','user','dept']);
+            updateSectionMoveButtons();
 
             document.getElementById('slide-overlay').classList.add('open');
             document.getElementById('slide-over').classList.add('open');
@@ -4127,35 +4144,38 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             });
         }
 
-        (function initFlowSectionMove() {
+        function updateSectionMoveButtons() {
             const container = document.getElementById('flow-sections-container');
             if (!container) return;
-
-            function persistOrder() {
-                const newOrder = Array.from(container.querySelectorAll(':scope > details'))
-                    .map(el => SECTION_KEY_MAP[el.id]).filter(Boolean);
-                const etId = window._currentEditId;
-                if (etId) {
-                    const idx = state.examTypes.findIndex(t => t.id === etId);
-                    if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderList(); }
-                }
-            }
-
-            container.addEventListener('click', function(e) {
-                const btn = e.target.closest('.section-move-up, .section-move-down');
-                if (!btn) return;
-                e.stopPropagation();
-                const el = document.getElementById(btn.dataset.section);
-                if (!el) return;
-                if (btn.classList.contains('section-move-up')) {
-                    const prev = el.previousElementSibling;
-                    if (prev && prev.tagName === 'DETAILS') { container.insertBefore(el, prev); persistOrder(); }
-                } else {
-                    const next = el.nextElementSibling;
-                    if (next && next.tagName === 'DETAILS') { container.insertBefore(next, el); persistOrder(); }
-                }
+            const sections = Array.from(container.querySelectorAll(':scope > details'));
+            sections.forEach((el, i) => {
+                const up = el.querySelector('.section-move-up');
+                const dn = el.querySelector('.section-move-down');
+                if (up) up.disabled = (i === 0);
+                if (dn) dn.disabled = (i === sections.length - 1);
             });
-        })();
+        }
+
+        window.moveFlowSection = function(sectionId, dir) {
+            const container = document.getElementById('flow-sections-container');
+            const el = document.getElementById(sectionId);
+            if (!container || !el) return;
+            if (dir < 0) {
+                const prev = el.previousElementSibling;
+                if (prev && prev.tagName === 'DETAILS') container.insertBefore(el, prev);
+            } else {
+                const next = el.nextElementSibling;
+                if (next && next.tagName === 'DETAILS') container.insertBefore(next, el);
+            }
+            updateSectionMoveButtons();
+            const newOrder = Array.from(container.querySelectorAll(':scope > details'))
+                .map(e => SECTION_KEY_MAP[e.id]).filter(Boolean);
+            const etId = window._currentEditId;
+            if (etId) {
+                const idx = state.examTypes.findIndex(t => t.id === etId);
+                if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderList(); }
+            }
+        };
 
         window.closeSlideOver = function () {
             document.getElementById('slide-overlay').classList.remove('open');
