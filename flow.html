@@ -4173,7 +4173,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             const etId = window._currentEditId;
             if (etId) {
                 const idx = state.examTypes.findIndex(t => t.id === etId);
-                if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderList(); }
+                if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderCards(); }
             }
         };
 
@@ -4455,6 +4455,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible !== false,
                 deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
                 userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
+                sectionOrder:  (() => { const c = document.getElementById('flow-sections-container'); return c ? Array.from(c.querySelectorAll(':scope > details')).map(e => SECTION_KEY_MAP[e.id]).filter(Boolean) : (_existingForSave?.sectionOrder || ['ai','user','dept']); })(),
             };
 
             if (currentEditId === '__new__') {
