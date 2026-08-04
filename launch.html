@@ -3948,7 +3948,10 @@ UITVOERFORMAAT — STRIKT:
                     _realtimeObserver.disconnect();
                 }
             }
-            clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
+            clipboard.addEventListener('input', () => {
+                if (_realtimePausedByMultiStudy) _realtimeResumePause();
+                if (realtimeEnabled) scheduleRealtimeCheck();
+            }, true);
 
             realtimeToggle.addEventListener('click', () => {
                 realtimeEnabled = !realtimeEnabled;
@@ -5064,9 +5067,10 @@ negated bevindingen
                     const mspEl = isMain ? document.getElementById('multi-study-result') : (_pipWindow?.document?.getElementById('pip-multi-study-result'));
                     const allTxt = _getAllStudiesText(mspEl, lastResultEl);
                     // Pause real-time verslag check while user edits the combined text
-                    if (isMain && realtimeEnabled) {
+                    if (realtimeEnabled) {
                         _realtimePausedByMultiStudy = true;
                         realtimeEnabled = false;
+                        clearTimeout(_realtimeDebounce);
                         updateRealtimeToggle();
                         _syncRealtimeObserver();
                     }
