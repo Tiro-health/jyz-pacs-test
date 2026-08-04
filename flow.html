@@ -4003,7 +4003,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         <div class="flex items-center gap-1.5 flex-1 min-w-0">
           <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
             class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm min-w-0">
-            <span class="text-[9px] uppercase tracking-wide ${isOutOfPlace('dept', et.sectionOrder) ? 'text-red-500' : 'text-neutral-400'}">📝 Textueel (dept)</span>
+            <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textueel (dept)</span>
             ${et.textTemplate
               ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
               : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
@@ -4016,7 +4016,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         <div class="flex items-center gap-1.5 flex-shrink-0">
           <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}','user')"
             class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm">
-            <span class="text-[9px] uppercase tracking-wide ${isOutOfPlace('user', et.sectionOrder) ? 'text-red-500' : 'text-neutral-400'}">👤 Textueel (user)</span>
+            <span class="text-[9px] uppercase tracking-wide text-neutral-400">👤 Textueel (user)</span>
             ${et.userTextTemplate
               ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
               : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
