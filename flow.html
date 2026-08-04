@@ -281,9 +281,12 @@
                 <div id="flow-sections-container" class="space-y-5">
 
                 <!-- AI-gebaseerde regels -->
-                <details id="ai-section" draggable="false">
+                <details id="ai-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" class="section-move-up p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="ai-section" title="Naar boven">▲</button>
+                            <button type="button" class="section-move-down p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="ai-section" title="Naar onder">▼</button>
+                        </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>🤖</span>
                             <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
@@ -303,9 +306,12 @@
                 </details>
 
                 <!-- Gebruiker override sectie -->
-                <details id="user-section" draggable="false">
+                <details id="user-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" class="section-move-up p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="user-section" title="Naar boven">▲</button>
+                            <button type="button" class="section-move-down p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="user-section" title="Naar onder">▼</button>
+                        </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>👤</span>
                             <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</span>
@@ -346,9 +352,12 @@
                 </details>
 
                 <!-- Afdeling sectie -->
-                <details id="dept-section" draggable="false">
+                <details id="dept-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" onclick="event.stopPropagation()">
+                            <button type="button" class="section-move-up p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="dept-section" title="Naar boven">▲</button>
+                            <button type="button" class="section-move-down p-0.5 rounded text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-slate-700 transition-colors" data-section="dept-section" title="Naar onder">▼</button>
+                        </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>📄</span>
                             <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
@@ -4118,59 +4127,32 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             });
         }
 
-        (function initFlowSectionDrag() {
+        (function initFlowSectionMove() {
             const container = document.getElementById('flow-sections-container');
             if (!container) return;
-            let draggingEl = null;
 
-            container.addEventListener('dragstart', function(e) {
-                if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
-                draggingEl = e.target.closest('details');
-                if (!draggingEl) return;
-                draggingEl.setAttribute('draggable', 'true');
-                e.dataTransfer.effectAllowed = 'move';
-                setTimeout(() => draggingEl && draggingEl.classList.add('opacity-50'), 0);
-            });
-
-            container.addEventListener('dragend', function() {
-                if (draggingEl) {
-                    draggingEl.classList.remove('opacity-50');
-                    draggingEl.setAttribute('draggable', 'false');
-                    draggingEl = null;
-                }
-            });
-
-            container.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                if (!draggingEl) return;
-                const target = e.target.closest('details');
-                if (!target || target === draggingEl) return;
-                const rect = target.getBoundingClientRect();
-                const after = e.clientY > rect.top + rect.height / 2;
-                if (after) {
-                    container.insertBefore(draggingEl, target.nextSibling);
-                } else {
-                    container.insertBefore(draggingEl, target);
-                }
-            });
-
-            container.addEventListener('drop', function(e) {
-                e.preventDefault();
-                if (!draggingEl) return;
-                // Derive new order from DOM
+            function persistOrder() {
                 const newOrder = Array.from(container.querySelectorAll(':scope > details'))
-                    .map(el => SECTION_KEY_MAP[el.id])
-                    .filter(Boolean);
-                // Persist to current exam type
+                    .map(el => SECTION_KEY_MAP[el.id]).filter(Boolean);
                 const etId = window._currentEditId;
                 if (etId) {
                     const idx = state.examTypes.findIndex(t => t.id === etId);
-                    if (idx !== -1) {
-                        state.examTypes[idx].sectionOrder = newOrder;
-                        saveData();
-                        renderList();
-                    }
+                    if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderList(); }
+                }
+            }
+
+            container.addEventListener('click', function(e) {
+                const btn = e.target.closest('.section-move-up, .section-move-down');
+                if (!btn) return;
+                e.stopPropagation();
+                const el = document.getElementById(btn.dataset.section);
+                if (!el) return;
+                if (btn.classList.contains('section-move-up')) {
+                    const prev = el.previousElementSibling;
+                    if (prev && prev.tagName === 'DETAILS') { container.insertBefore(el, prev); persistOrder(); }
+                } else {
+                    const next = el.nextElementSibling;
+                    if (next && next.tagName === 'DETAILS') { container.insertBefore(next, el); persistOrder(); }
                 }
             });
         })();
