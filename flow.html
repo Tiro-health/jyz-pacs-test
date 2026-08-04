@@ -299,9 +299,9 @@
                 <!-- AI-gebaseerde regels -->
                 <details id="ai-section">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0">
-                            <button type="button" class="section-move-up" onclick="event.stopPropagation();moveFlowSection('ai-section',-1)" title="Naar boven">▲</button>
-                            <button type="button" class="section-move-down" onclick="event.stopPropagation();moveFlowSection('ai-section',1)" title="Naar onder">▼</button>
+                        <div class="flex items-center gap-0.5 mr-1 flex-shrink-0" style="visibility:hidden">
+                            <button type="button" class="section-move-up">▲</button>
+                            <button type="button" class="section-move-down">▼</button>
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>🤖</span>
@@ -4162,9 +4162,9 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 const dn = el.querySelector('.section-move-down');
                 if (up) up.disabled = (i === 0);
                 if (dn) dn.disabled = (i === sections.length - 1);
-                // Color title red if out of default position
+                // Color title red if out of default position (AI is never moveable, never out of place)
                 const key = SECTION_KEY_MAP[el.id];
-                const outOfPlace = key && currentOrder.indexOf(key) !== DEFAULT_SECTION_ORDER.indexOf(key);
+                const outOfPlace = key && key !== 'ai' && currentOrder.indexOf(key) !== DEFAULT_SECTION_ORDER.indexOf(key);
                 const titleSpan = el.querySelector('summary .section-title-label');
                 if (titleSpan) {
                     titleSpan.classList.toggle('text-red-500', outOfPlace);
