@@ -3182,6 +3182,7 @@
 
             const dictationCopyBtn = document.getElementById('dictation-copy-btn');
             dictationCopyBtn.addEventListener('click', () => {
+                _realtimeResumePause();
                 const text = readDictationText();
                 if (!text) return;
                 navigator.clipboard.writeText(text).then(() => {
@@ -3948,10 +3949,7 @@ UITVOERFORMAAT — STRIKT:
                     _realtimeObserver.disconnect();
                 }
             }
-            clipboard.addEventListener('input', () => {
-                if (_realtimePausedByMultiStudy) _realtimeResumePause();
-                if (realtimeEnabled) scheduleRealtimeCheck();
-            }, true);
+            clipboard.addEventListener('input', () => { if (realtimeEnabled) scheduleRealtimeCheck(); }, true);
 
             realtimeToggle.addEventListener('click', () => {
                 realtimeEnabled = !realtimeEnabled;
@@ -5824,6 +5822,7 @@ negated bevindingen
                         const btn = e.currentTarget;
                         const textToCopy = _pipInlineMode ? getCeText() : ta.value;
                         if (!textToCopy || !textToCopy.trim()) return;
+                        _realtimeResumePause();
                         pipCopy(textToCopy);
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
