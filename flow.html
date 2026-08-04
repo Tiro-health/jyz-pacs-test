@@ -277,52 +277,36 @@
 
                 <div class="border-t border-neutral-200 dark:border-slate-700"></div>
 
-                <!-- Afdeling sectie -->
-                <details id="dept-section" open>
+                <!-- Flow secties (draggable) -->
+                <div id="flow-sections-container" class="space-y-5">
+
+                <!-- AI-gebaseerde regels -->
+                <details id="ai-section" draggable="false">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-2">
-                            <span>📄</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
+                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-2 flex-1">
+                            <span>🤖</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span id="dept-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
+                            <span id="ai-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
                             <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                     </summary>
-                    <div class="mt-3 space-y-3">
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
-                        <div>
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template standaardverslag</label>
-                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    <div class="mt-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
+                            <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Nieuwe regel</button>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Textueel standaardverslag</label>
-                            <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
-                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
-                                <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
-                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
-                            </button>
-                            <textarea id="edit-text-template" class="hidden"></textarea>
-                        </div>
-                        <div class="flex items-center gap-4 pt-1">
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
-                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
-                                <input type="radio" name="dept-mode" value="template" class="accent-cyan-600" />
-                                Template
-                            </label>
-                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
-                                <input type="radio" name="dept-mode" value="textueel" class="accent-teal-600" />
-                                Textueel
-                            </label>
-                        </div>
+                        <div id="ai-rules-list" class="space-y-2.5"></div>
                     </div>
                 </details>
 
                 <!-- Gebruiker override sectie -->
-                <details id="user-section">
+                <details id="user-section" draggable="false">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-2">
+                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-2 flex-1">
                             <span>👤</span>
                             <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</span>
                         </div>
@@ -361,26 +345,52 @@
                     </div>
                 </details>
 
-                <!-- AI-gebaseerde regels -->
-                <details id="ai-section">
+                <!-- Afdeling sectie -->
+                <details id="dept-section" draggable="false">
                     <summary class="flex items-center justify-between cursor-pointer select-none list-none py-0.5">
-                        <div class="flex items-center gap-2">
-                            <span>🤖</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
+                        <span class="drag-handle cursor-grab active:cursor-grabbing text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 select-none mr-1 flex-shrink-0" title="Versleep om volgorde aan te passen" onclick="event.stopPropagation()">⠿</span>
+                        <div class="flex items-center gap-2 flex-1">
+                            <span>📄</span>
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <span id="ai-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
+                            <span id="dept-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
                             <svg class="chevron w-4 h-4 text-neutral-400 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
                     </summary>
-                    <div class="mt-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <p class="text-xs text-neutral-400 dark:text-neutral-500 flex-1 pr-2">Op basis van AI-resultaten (SR) kan automatisch een andere of extra template worden geladen.</p>
-                            <button id="add-ai-rule-btn" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline flex-shrink-0">+ Nieuwe regel</button>
+                    <div class="mt-3 space-y-3">
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Standaard voor de hele afdeling. Kies of de Tiro-template of het textueel standaardverslag actief is.</p>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Template standaardverslag</label>
+                            <input id="edit-dept-template" type="text" placeholder="tiro://templates/…" class="w-full text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
                         </div>
-                        <div id="ai-rules-list" class="space-y-2.5"></div>
+                        <div>
+                            <label class="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400 mb-1.5">Textueel standaardverslag</label>
+                            <button id="tt-edit-trigger" onclick="openTtEditorFromSlideOver()"
+                                class="flex items-center gap-2 px-3 py-2 rounded-md border border-neutral-200 dark:border-slate-700 hover:border-cyan-400 hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors w-full text-left">
+                                <span id="tt-edit-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded">Inactief</span>
+                                <span class="text-xs text-neutral-400 dark:text-neutral-500 flex-1">Klik om te bewerken in de code-editor</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>
+                            </button>
+                            <textarea id="edit-text-template" class="hidden"></textarea>
+                        </div>
+                        <div class="flex items-center gap-4 pt-1">
+                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Actief:</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="dept-mode" value="template" class="accent-cyan-600" />
+                                Template
+                            </label>
+                            <label class="flex items-center gap-1.5 cursor-pointer text-sm text-neutral-700 dark:text-neutral-300">
+                                <input type="radio" name="dept-mode" value="textueel" class="accent-teal-600" />
+                                Textueel
+                            </label>
+                        </div>
                     </div>
                 </details>
+
+                </div><!-- /flow-sections-container -->
+
+                <div class="border-t border-dashed border-neutral-200 dark:border-slate-600"></div>
 
                 <!-- Calculatoren -->
                 <details id="calc-section">
@@ -3808,6 +3818,8 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 // Migrate old labelsDefaultVisible and default new split props to true
                 if (et.deptLabelsDefaultVisible === undefined) { et.deptLabelsDefaultVisible = true; changed = true; }
                 if (et.userLabelsDefaultVisible === undefined) { et.userLabelsDefaultVisible = true; changed = true; }
+                // Migrate: add default sectionOrder
+                if (et.sectionOrder === undefined) { et.sectionOrder = ['ai','user','dept']; changed = true; }
                 // Sync from def if explicitly set
                 if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
                 if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
@@ -3968,16 +3980,19 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
     <div>
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
-        ${flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling')}
-        ${ARROW}
-        ${flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker')}
-        ${ARROW}
-        <div class="flex flex-col">
-          <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
-          ${aiCount
-            ? `<span class="text-xs font-medium text-amber-600 dark:text-amber-400">${aiCount} regel${aiCount > 1 ? 's' : ''}</span>`
-            : `<span class="text-xs text-neutral-400 italic">—</span>`}
-        </div>
+        ${(et.sectionOrder || ['ai','user','dept']).map((key, i, arr) => {
+          const pill = key === 'dept'
+            ? flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling')
+            : key === 'user'
+            ? flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker')
+            : `<div class="flex flex-col">
+                <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
+                ${aiCount
+                  ? `<span class="text-xs font-medium text-amber-600 dark:text-amber-400">${aiCount} regel${aiCount > 1 ? 's' : ''}</span>`
+                  : `<span class="text-xs text-neutral-400 italic">—</span>`}
+              </div>`;
+          return (i < arr.length - 1) ? pill + ARROW : pill;
+        }).join('')}
       </div>
       <div class="mt-2 pt-2 border-t border-dashed border-neutral-200 dark:border-slate-700 flex items-center gap-2">
         <div class="flex items-center gap-1.5 flex-1 min-w-0">
@@ -4055,7 +4070,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             currentEditId = id;
             const isNew = id === '__new__';
             const et = isNew
-                ? { id:'', name:'', code:'', modality:'RX', dicom:[], deptTemplate:'', userTemplate:'', aiRules:[] }
+                ? { id:'', name:'', code:'', modality:'RX', dicom:[], deptTemplate:'', userTemplate:'', aiRules:[], sectionOrder:['ai','user','dept'] }
                 : state.examTypes.find(t => t.id === id);
             if (!et) return;
 
@@ -4110,10 +4125,83 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
             document.getElementById('delete-btn').style.visibility = isNew ? 'hidden' : 'visible';
 
+            // Reorder flow-sections-container children to match sectionOrder
+            applyFlowSectionOrder(et.sectionOrder || ['ai','user','dept']);
+
             document.getElementById('slide-overlay').classList.add('open');
             document.getElementById('slide-over').classList.add('open');
             document.getElementById('panel-body').scrollTop = 0;
         }
+
+        // ── Drag-to-reorder flow sections ────────────────────────────────────────
+        const SECTION_ID_MAP = { ai: 'ai-section', user: 'user-section', dept: 'dept-section' };
+        const SECTION_KEY_MAP = { 'ai-section': 'ai', 'user-section': 'user', 'dept-section': 'dept' };
+
+        function applyFlowSectionOrder(order) {
+            const container = document.getElementById('flow-sections-container');
+            if (!container) return;
+            order.forEach(key => {
+                const el = document.getElementById(SECTION_ID_MAP[key]);
+                if (el) container.appendChild(el);
+            });
+        }
+
+        (function initFlowSectionDrag() {
+            const container = document.getElementById('flow-sections-container');
+            if (!container) return;
+            let draggingEl = null;
+
+            container.addEventListener('dragstart', function(e) {
+                if (!e.target.closest('.drag-handle')) { e.preventDefault(); return; }
+                draggingEl = e.target.closest('details');
+                if (!draggingEl) return;
+                draggingEl.setAttribute('draggable', 'true');
+                e.dataTransfer.effectAllowed = 'move';
+                setTimeout(() => draggingEl && draggingEl.classList.add('opacity-50'), 0);
+            });
+
+            container.addEventListener('dragend', function() {
+                if (draggingEl) {
+                    draggingEl.classList.remove('opacity-50');
+                    draggingEl.setAttribute('draggable', 'false');
+                    draggingEl = null;
+                }
+            });
+
+            container.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (!draggingEl) return;
+                const target = e.target.closest('details');
+                if (!target || target === draggingEl) return;
+                const rect = target.getBoundingClientRect();
+                const after = e.clientY > rect.top + rect.height / 2;
+                if (after) {
+                    container.insertBefore(draggingEl, target.nextSibling);
+                } else {
+                    container.insertBefore(draggingEl, target);
+                }
+            });
+
+            container.addEventListener('drop', function(e) {
+                e.preventDefault();
+                if (!draggingEl) return;
+                // Derive new order from DOM
+                const newOrder = Array.from(container.querySelectorAll(':scope > details'))
+                    .map(el => SECTION_KEY_MAP[el.id])
+                    .filter(Boolean);
+                // Persist to current exam type
+                const etId = window._currentEditId;
+                if (etId) {
+                    const idx = state.examTypes.findIndex(t => t.id === etId);
+                    if (idx !== -1) {
+                        state.examTypes[idx].sectionOrder = newOrder;
+                        saveData();
+                        renderList();
+                    }
+                }
+            });
+        })();
 
         window.closeSlideOver = function () {
             document.getElementById('slide-overlay').classList.remove('open');
