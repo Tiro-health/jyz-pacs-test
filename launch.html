@@ -3885,6 +3885,7 @@ UITVOERFORMAAT — STRIKT:
             const realtimeCopy = document.getElementById('realtime-copy');
             document.getElementById('realtime-close')?.addEventListener('click', () => realtimePanel.classList.add('hidden'));
             let realtimeEnabled = localStorage.getItem('realtimeEnabled') === 'true';
+            let _realtimePausedByMultiStudy = false; // temporarily disabled after multi-study send
             let _realtimeDebounce = null;
             let _realtimeAbort = null;
             let _realtimeLastText = ''; // only trigger when text actually changes
@@ -4002,15 +4003,25 @@ UITVOERFORMAAT — STRIKT:
                 }
             });
 
+            const _realtimeResumePause = () => {
+                if (_realtimePausedByMultiStudy) {
+                    _realtimePausedByMultiStudy = false;
+                    realtimeEnabled = true;
+                    updateRealtimeToggle();
+                    _syncRealtimeObserver();
+                }
+            };
             realtimeCopy.addEventListener('click', () => {
                 navigator.clipboard.writeText(
                     _realtimeShowingOriginal ? _realtimeOriginalText : getRealtimeText(realtimeContent)
                 ).catch(() => {});
                 realtimePanel.classList.add('hidden');   // kopiëren sluit het realtime verslag check-venster
+                _realtimeResumePause();
             });
             document.getElementById('realtime-send-to-dictation').addEventListener('click', () => {
                 const text = _realtimeShowingOriginal ? _realtimeOriginalText : getRealtimeText(realtimeContent);
                 if (text) sendToDictationFields(text);
+                _realtimeResumePause();
             });
 
             function scheduleRealtimeCheck() {
@@ -5034,6 +5045,13 @@ negated bevindingen
                 sendAllBtn.addEventListener('click', () => {
                     const mspEl = isMain ? document.getElementById('multi-study-result') : (_pipWindow?.document?.getElementById('pip-multi-study-result'));
                     const allTxt = _getAllStudiesText(mspEl, lastResultEl);
+                    // Pause real-time verslag check while user edits the combined text
+                    if (isMain && realtimeEnabled) {
+                        _realtimePausedByMultiStudy = true;
+                        realtimeEnabled = false;
+                        updateRealtimeToggle();
+                        _syncRealtimeObserver();
+                    }
                     if (isMain) {
                         sendToDictationFields(allTxt);
                     } else {
