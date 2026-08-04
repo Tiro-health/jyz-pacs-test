@@ -305,7 +305,7 @@
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>🤖</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
+                            <span class="section-title-label text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">AI-gebaseerde regels</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span id="ai-section-status" class="text-[10px] font-medium px-1.5 py-0.5 rounded text-neutral-400"></span>
@@ -330,7 +330,7 @@
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>👤</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</span>
+                            <span class="section-title-label text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Gebruiker override</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span id="user-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
@@ -376,7 +376,7 @@
                         </div>
                         <div class="flex items-center gap-2 flex-1">
                             <span>📄</span>
-                            <span class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
+                            <span class="section-title-label text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Afdeling</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <span id="dept-mode-badge" class="text-[10px] font-medium px-1.5 py-0.5 rounded"></span>
@@ -3911,13 +3911,19 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             });
         }
 
-        function flowPill(url, textTpl, mode, icon, label) {
+        const DEFAULT_SECTION_ORDER = ['ai','user','dept'];
+        function isOutOfPlace(key, order) {
+            const o = order || DEFAULT_SECTION_ORDER;
+            return o.indexOf(key) !== DEFAULT_SECTION_ORDER.indexOf(key);
+        }
+        function flowPill(url, textTpl, mode, icon, label, outOfPlace) {
+            const lc = outOfPlace ? 'text-red-500' : 'text-neutral-400';
             if (mode === 'textueel') {
-                return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs font-medium text-teal-600 dark:text-teal-400">📝 Textueel${textTpl ? '' : ' (leeg)'}</span></div>`;
+                return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide ${lc} mb-0.5">${icon} ${label}</span><span class="text-xs font-medium text-teal-600 dark:text-teal-400">📝 Textueel${textTpl ? '' : ' (leeg)'}</span></div>`;
             }
-            if (!url) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
+            if (!url) return `<div class="flex flex-col"><span class="text-[9px] uppercase tracking-wide ${lc} mb-0.5">${icon} ${label}</span><span class="text-xs text-neutral-400 italic">—</span></div>`;
             const name = url.split('/').pop() || url;
-            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(url)}">${esc(name)}</span></div>`;
+            return `<div class="flex flex-col min-w-0"><span class="text-[9px] uppercase tracking-wide ${lc} mb-0.5">${icon} ${label}</span><span class="font-mono text-xs text-cyan-700 dark:text-cyan-400 truncate max-w-[130px]" title="${esc(url)}">${esc(name)}</span></div>`;
         }
 
         const ARROW = `<svg class="text-neutral-300 dark:text-neutral-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
@@ -3978,12 +3984,14 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
       <p class="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 mb-2">Template flow</p>
       <div class="flex items-center gap-2 flex-wrap">
         ${(et.sectionOrder || ['ai','user','dept']).map((key, i, arr) => {
+          const oop = isOutOfPlace(key, et.sectionOrder);
+          const lc = oop ? 'text-red-500' : 'text-neutral-400';
           const pill = key === 'dept'
-            ? flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling')
+            ? flowPill(et.deptTemplate, et.textTemplate, et.deptMode, '📄', 'Afdeling', oop)
             : key === 'user'
-            ? flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker')
+            ? flowPill(et.userTemplate, et.userTextTemplate, et.userMode, '👤', 'Gebruiker', oop)
             : `<div class="flex flex-col">
-                <span class="text-[9px] uppercase tracking-wide text-neutral-400 mb-0.5">🤖 AI regels</span>
+                <span class="text-[9px] uppercase tracking-wide ${lc} mb-0.5">🤖 AI regels</span>
                 ${aiCount
                   ? `<span class="text-xs font-medium text-amber-600 dark:text-amber-400">${aiCount} regel${aiCount > 1 ? 's' : ''}</span>`
                   : `<span class="text-xs text-neutral-400 italic">—</span>`}
@@ -3995,7 +4003,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         <div class="flex items-center gap-1.5 flex-1 min-w-0">
           <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}')"
             class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm min-w-0">
-            <span class="text-[9px] uppercase tracking-wide text-neutral-400">📝 Textueel (dept)</span>
+            <span class="text-[9px] uppercase tracking-wide ${isOutOfPlace('dept', et.sectionOrder) ? 'text-red-500' : 'text-neutral-400'}">📝 Textueel (dept)</span>
             ${et.textTemplate
               ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
               : `<span class="text-[10px] font-medium text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
@@ -4008,7 +4016,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         <div class="flex items-center gap-1.5 flex-shrink-0">
           <button onclick="event.stopPropagation();openTtEditor('${esc(et.id)}','user')"
             class="flex items-center gap-2 text-left hover:bg-neutral-50 dark:hover:bg-slate-800/50 transition-colors rounded-sm">
-            <span class="text-[9px] uppercase tracking-wide text-neutral-400">👤 Textueel (user)</span>
+            <span class="text-[9px] uppercase tracking-wide ${isOutOfPlace('user', et.sectionOrder) ? 'text-red-500' : 'text-neutral-400'}">👤 Textueel (user)</span>
             ${et.userTextTemplate
               ? `<span class="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-1.5 py-0.5 rounded cursor-pointer">Actief ✎</span>`
               : `<span class="text-[10px] font-medium text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded cursor-pointer">Inactief ✎</span>`}
@@ -4148,11 +4156,21 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             const container = document.getElementById('flow-sections-container');
             if (!container) return;
             const sections = Array.from(container.querySelectorAll(':scope > details'));
+            const currentOrder = sections.map(el => SECTION_KEY_MAP[el.id]).filter(Boolean);
             sections.forEach((el, i) => {
                 const up = el.querySelector('.section-move-up');
                 const dn = el.querySelector('.section-move-down');
                 if (up) up.disabled = (i === 0);
                 if (dn) dn.disabled = (i === sections.length - 1);
+                // Color title red if out of default position
+                const key = SECTION_KEY_MAP[el.id];
+                const outOfPlace = key && currentOrder.indexOf(key) !== DEFAULT_SECTION_ORDER.indexOf(key);
+                const titleSpan = el.querySelector('summary .section-title-label');
+                if (titleSpan) {
+                    titleSpan.classList.toggle('text-red-500', outOfPlace);
+                    titleSpan.classList.toggle('text-neutral-500', !outOfPlace);
+                    titleSpan.classList.toggle('dark:text-neutral-400', !outOfPlace);
+                }
             });
         }
 
@@ -4173,7 +4191,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             const etId = window._currentEditId;
             if (etId) {
                 const idx = state.examTypes.findIndex(t => t.id === etId);
-                if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderList(); }
+                if (idx !== -1) { state.examTypes[idx].sectionOrder = newOrder; saveData(); renderCards(); }
             }
         };
 
@@ -4455,6 +4473,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible !== false,
                 deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
                 userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
+                sectionOrder:  (() => { const c = document.getElementById('flow-sections-container'); return c ? Array.from(c.querySelectorAll(':scope > details')).map(e => SECTION_KEY_MAP[e.id]).filter(Boolean) : (_existingForSave?.sectionOrder || ['ai','user','dept']); })(),
             };
 
             if (currentEditId === '__new__') {
