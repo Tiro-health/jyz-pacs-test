@@ -3182,6 +3182,7 @@
 
             const dictationCopyBtn = document.getElementById('dictation-copy-btn');
             dictationCopyBtn.addEventListener('click', () => {
+                _realtimeResumePause();
                 const text = readDictationText();
                 if (!text) return;
                 navigator.clipboard.writeText(text).then(() => {
@@ -5064,9 +5065,10 @@ negated bevindingen
                     const mspEl = isMain ? document.getElementById('multi-study-result') : (_pipWindow?.document?.getElementById('pip-multi-study-result'));
                     const allTxt = _getAllStudiesText(mspEl, lastResultEl);
                     // Pause real-time verslag check while user edits the combined text
-                    if (isMain && realtimeEnabled) {
+                    if (realtimeEnabled) {
                         _realtimePausedByMultiStudy = true;
                         realtimeEnabled = false;
+                        clearTimeout(_realtimeDebounce);
                         updateRealtimeToggle();
                         _syncRealtimeObserver();
                     }
@@ -5820,6 +5822,7 @@ negated bevindingen
                         const btn = e.currentTarget;
                         const textToCopy = _pipInlineMode ? getCeText() : ta.value;
                         if (!textToCopy || !textToCopy.trim()) return;
+                        _realtimeResumePause();
                         pipCopy(textToCopy);
                         btn.textContent = 'Gekopieerd ✓';
                         btn.style.color = '#16a34a';
