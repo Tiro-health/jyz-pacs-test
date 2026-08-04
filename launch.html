@@ -4875,7 +4875,7 @@ negated bevindingen
 
                 // Left group: labels toggle + kopiëren + pijl omhoog
                 let labelsVisible = study.labelsDefaultVisible;
-                const getPanelText = () => labelsVisible ? (content.dataset.raw || content.innerText || '') : (content.innerText || '');
+                const getPanelText = () => content.innerText || '';
                 if (hasLabels) {
                     const lblBtn = mkB(labelsVisible ? 'Labels verbergen' : 'Labels tonen', () => {
                         labelsVisible = !labelsVisible;
@@ -4920,7 +4920,7 @@ negated bevindingen
 
             function _getAllStudiesText(mspEl, lastResultEl) {
                 const prevTexts = Array.from((mspEl || {querySelectorAll: () => []}).querySelectorAll('.multi-study-panel-content'))
-                    .map(el => el.dataset.labelsVisible === '0' ? (el.innerText || '') : (el.dataset.raw || el.innerText || '')).filter(Boolean);
+                    .map(el => el.innerText || '').filter(Boolean);
                 // Apply header to last study (same as single-study copy); innerText excludes hidden labels
                 const lastRaw = lastResultEl ? (lastResultEl.innerText || lastResultEl.textContent || '') : '';
                 const lastText = lastRaw ? _prependTtHeader(lastRaw) : '';
