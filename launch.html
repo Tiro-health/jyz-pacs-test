@@ -4457,7 +4457,7 @@ negated bevindingen
             function wrapSectionLabels(el) {
                 el.innerHTML = el.innerHTML
                     .replace(
-                        /\[([^\]]+?:)\s*\]\s*\//g,
+                        /\[([^\]]+?:)\s*\](?:\s*|<br\s*\/?>)\s*\//g,
                         '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>'
                     )
                     .replace(
@@ -4862,7 +4862,7 @@ negated bevindingen
                     content.dataset.raw = currentText();
                     content.innerHTML = renderMarkdown(currentText());
                     content.innerHTML = content.innerHTML
-                        .replace(/\[([^\]]+?:)\s*\]\s*\//g, '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>')
+                        .replace(/\[([^\]]+?:)\s*\](?:\s*|<br\s*\/?>)\s*\//g, '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>')
                         .replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
                     content.querySelectorAll('.tt-empty-field').forEach(span => { const n = span.nextSibling; if (n && n.nodeName === 'BR') span.appendChild(n); });
                     applyCompactBrs(content, study.textTemplate);
