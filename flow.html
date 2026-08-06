@@ -4926,11 +4926,15 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             exportModal.addEventListener('click', e => { if (e.target === exportModal) exportModal.classList.add('hidden'); });
 
             document.getElementById('flow-do-export-btn').addEventListener('click', () => {
+                const geminiModelKeys = ['geminiModelTranslate','geminiModelAiConsult','geminiModelKidv','geminiModelVerslag','geminiModelRealtime','geminiModelSnomed','geminiModelMedgemma','geminiModelAutofillBackup'];
+                const geminiModels = {};
+                geminiModelKeys.forEach(k => { const v = localStorage.getItem(k); if (v) geminiModels[k] = v; });
                 const payload = {
                     version: '1.0',
                     timestamp: new Date().toISOString(),
                     flowConfig_v1: JSON.parse(localStorage.getItem('flowConfig_v1') || 'null'),
                     textTemplateLogic: localStorage.getItem('textTemplateLogic') || null,
+                    geminiModels: Object.keys(geminiModels).length ? geminiModels : null,
                 };
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
@@ -4950,6 +4954,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     if (!confirm('Huidige configuratie overschrijven met de geïmporteerde data?')) { e.target.value = ''; return; }
                     if (data.flowConfig_v1) localStorage.setItem('flowConfig_v1', JSON.stringify(data.flowConfig_v1));
                     if (data.textTemplateLogic) localStorage.setItem('textTemplateLogic', data.textTemplateLogic);
+                    if (data.geminiModels) Object.entries(data.geminiModels).forEach(([k, v]) => localStorage.setItem(k, v));
                     alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
                     location.reload();
                 } catch {
