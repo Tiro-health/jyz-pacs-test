@@ -4455,12 +4455,9 @@ negated bevindingen
             // Wrap [Label:] patterns in the rendered HTML so they can be toggled.
             // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
-                const raw = el.innerHTML;
-                const slashMatches = (raw.match(/\[([^\]]+?:)\s*\]\s*\//g) || []);
-                console.log('[wrapSectionLabels] slash-matches found:', slashMatches.length, slashMatches);
-                el.innerHTML = raw
+                el.innerHTML = el.innerHTML
                     .replace(
-                        /\[([^\]]+?:)\s*\]\s*\//g,
+                        /\[([^\]]+?:)\s*\](?:\s*|<br\s*\/?>)\s*\//g,
                         '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>'
                     )
                     .replace(
@@ -4470,10 +4467,8 @@ negated bevindingen
                 // Move <br> after .tt-empty-field inside the span so the line break hides with it
                 el.querySelectorAll('.tt-empty-field').forEach(span => {
                     const next = span.nextSibling;
-                    console.log('[wrapSectionLabels] empty-field nextSibling:', next?.nodeName, JSON.stringify(next?.textContent));
                     if (next && next.nodeName === 'BR') span.appendChild(next);
                 });
-                console.log('[wrapSectionLabels] total .tt-empty-field spans:', el.querySelectorAll('.tt-empty-field').length);
             }
 
             function applyCompactBrs(el, templateOverride) {
@@ -4867,7 +4862,7 @@ negated bevindingen
                     content.dataset.raw = currentText();
                     content.innerHTML = renderMarkdown(currentText());
                     content.innerHTML = content.innerHTML
-                        .replace(/\[([^\]]+?:)\s*\]\s*\//g, '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>')
+                        .replace(/\[([^\]]+?:)\s*\](?:\s*|<br\s*\/?>)\s*\//g, '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>')
                         .replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
                     content.querySelectorAll('.tt-empty-field').forEach(span => { const n = span.nextSibling; if (n && n.nodeName === 'BR') span.appendChild(n); });
                     applyCompactBrs(content, study.textTemplate);
