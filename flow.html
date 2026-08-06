@@ -132,6 +132,8 @@
                 border-color: #2d3f4d;
                 box-shadow: 0 4px 12px rgba(0,0,0,.35);
             }
+            /* Hide the scrollbar on the syntax-highlight pre (textarea on top is the scroll driver) */
+            #tt-editor-highlight::-webkit-scrollbar { display: none; }
         </style>
     </head>
 
@@ -533,9 +535,9 @@
                 <div class="flex-1 flex flex-col min-w-0 bg-[#0f172a]">
                     <div class="relative flex-1 min-h-0">
                         <pre id="tt-editor-highlight"
-                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;white-space:pre-wrap;word-break:break-all;color:#e2e8f0;margin:0;pointer-events:none;overflow:auto;position:absolute;inset:0;background:transparent;"></pre>
+                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;white-space:pre-wrap;overflow-wrap:break-word;word-break:normal;color:#e2e8f0;margin:0;pointer-events:none;overflow-y:scroll;overflow-x:auto;position:absolute;inset:0;background:transparent;scrollbar-width:none;"></pre>
                         <textarea id="tt-editor-input"
-                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;background:transparent;color:transparent;caret-color:#e2e8f0;resize:none;outline:none;border:none;overflow:auto;position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;"
+                            style="font-family:'Fira Mono','Cascadia Code',monospace;font-size:13px;line-height:1.6;padding:1.25rem;background:transparent;color:transparent;caret-color:#e2e8f0;resize:none;outline:none;border:none;overflow-y:scroll;overflow-x:auto;position:absolute;inset:0;width:100%;height:100%;box-sizing:border-box;"
                             spellcheck="false"
                             autocomplete="off"
                             autocorrect="off"
