@@ -4455,10 +4455,20 @@ negated bevindingen
             // Wrap [Label:] patterns in the rendered HTML so they can be toggled.
             // The outer [ ] brackets are stripped from the visible text; only "Label:" remains.
             function wrapSectionLabels(el) {
-                el.innerHTML = el.innerHTML.replace(
-                    /\[([^\]]+?:)\s*\]/g,
-                    '<span class="tt-section-label">$1</span>'
-                );
+                el.innerHTML = el.innerHTML
+                    .replace(
+                        /\[([^\]]+?:)\s*\]\s*\//g,
+                        '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>'
+                    )
+                    .replace(
+                        /\[([^\]]+?:)\s*\]/g,
+                        '<span class="tt-section-label">$1</span>'
+                    );
+                // Move <br> after .tt-empty-field inside the span so the line break hides with it
+                el.querySelectorAll('.tt-empty-field').forEach(span => {
+                    const next = span.nextSibling;
+                    if (next && next.nodeName === 'BR') span.appendChild(next);
+                });
             }
 
             function applyCompactBrs(el, templateOverride) {
@@ -4487,6 +4497,7 @@ negated bevindingen
             function applyLabelVisibility() {
                 const labels = ttContent.querySelectorAll('.tt-section-label');
                 labels.forEach(s => { s.style.display = _ttLabelsVisible ? '' : 'none'; });
+                ttContent.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = _ttLabelsVisible ? '' : 'none'; });
                 ttToggleLabels.textContent = _ttLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
                 ttToggleLabels.classList.toggle('bg-cyan-50', !_ttLabelsVisible);
                 ttToggleLabels.classList.toggle('dark:bg-cyan-900/30', !_ttLabelsVisible);
@@ -4850,10 +4861,14 @@ negated bevindingen
                 const renderContent = () => {
                     content.dataset.raw = currentText();
                     content.innerHTML = renderMarkdown(currentText());
-                    content.innerHTML = content.innerHTML.replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
+                    content.innerHTML = content.innerHTML
+                        .replace(/\[([^\]]+?:)\s*\]\s*\//g, '<span class="tt-empty-field"><span class="tt-section-label">$1</span> /</span>')
+                        .replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
+                    content.querySelectorAll('.tt-empty-field').forEach(span => { const n = span.nextSibling; if (n && n.nodeName === 'BR') span.appendChild(n); });
                     applyCompactBrs(content, study.textTemplate);
                     if (!study.labelsDefaultVisible) {
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = 'none'; });
+                        content.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = 'none'; });
                     }
                 };
                 renderContent();
@@ -4886,6 +4901,7 @@ negated bevindingen
                         labelsVisible = !labelsVisible;
                         content.dataset.labelsVisible = labelsVisible ? '1' : '0';
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
+                        content.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
                         lblBtn.textContent = labelsVisible ? 'Labels verbergen' : 'Labels tonen';
                     });
                     actions.appendChild(lblBtn);
@@ -4914,6 +4930,7 @@ negated bevindingen
                         // re-sync labels visibility and dataset after re-render
                         content.dataset.labelsVisible = labelsVisible ? '1' : '0';
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
+                        content.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = labelsVisible ? '' : 'none'; });
                         tog.textContent = study.showingOriginal ? 'Autofill' : 'Origineel';
                     });
                     actions.appendChild(tog);
@@ -6180,6 +6197,9 @@ negated bevindingen
 
                 function pipTtApplyLabels() {
                     pipTtContent.querySelectorAll('.tt-section-label').forEach(s => {
+                        s.style.display = _pipTtLabelsVisible ? '' : 'none';
+                    });
+                    pipTtContent.querySelectorAll('.tt-empty-field').forEach(s => {
                         s.style.display = _pipTtLabelsVisible ? '' : 'none';
                     });
                     pipTtLabelsBtn.textContent = _pipTtLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
