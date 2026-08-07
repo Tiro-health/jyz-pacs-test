@@ -930,7 +930,7 @@
                             <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Beeldanalyse</span>
                             <button id="medgemma-close-btn" type="button" class="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 leading-none cursor-pointer text-base" title="Sluiten">×</button>
                         </div>
-                        <div id="medgemma-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed overflow-y-auto max-h-72 p-3"></div>
+                        <div id="medgemma-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed overflow-y-auto max-h-72 p-3 bg-white dark:bg-slate-900"></div>
                         <div class="flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
                             <button id="medgemma-copy-btn" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                             <button id="medgemma-send-btn" type="button" title="Stuur naar dictatie" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
@@ -6332,14 +6332,18 @@ negated bevindingen
                 pmCloseResultBtn.type = 'button';
                 pmCloseResultBtn.style.cssText = 'font-size:16px;line-height:1;color:#9ca3af;cursor:pointer;background:none;border:none;padding:0';
                 pmResultHead.append(pmResultLabel, pmCloseResultBtn);
-                const pmResultContent = mk('div', 'text-sm leading-relaxed overflow-y-auto p-3');
-                pmResultContent.style.cssText = 'max-height:200px;color:#1f2937;font-size:12px;line-height:1.5';
+                const pmResultContent = mk('div', 'text-sm leading-relaxed overflow-y-auto p-3 bg-white dark:bg-slate-900 text-neutral-800 dark:text-neutral-200');
+                pmResultContent.style.cssText = 'max-height:200px;font-size:12px;line-height:1.5';
                 const pmResultActions = mk('div', 'flex items-center gap-2 px-3 py-1.5');
                 pmResultActions.style.cssText = 'background:#f9fafb;border-top:1px solid #e5e7eb';
                 const pmCopyResultBtn = mk('button', 'inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Kopiëren');
                 pmCopyResultBtn.type = 'button';
                 pmCopyResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151;font-size:11px';
-                const pmSendResultBtn = mkSendBtn(() => pmResultContent.innerText || pmResultContent.textContent || '');
+                const pmSendResultBtn = mkSendBtn(() => {
+                    const raw = pmResultContent.innerText || pmResultContent.textContent || '';
+                    const header = _buildTtHeader();
+                    return (header && !raw.trimStart().startsWith(header)) ? header + '\n\n' + raw : raw;
+                });
                 pmResultActions.append(pmCopyResultBtn, pmSendResultBtn);
                 pmResult.append(pmResultHead, pmResultContent, pmResultActions);
 
@@ -6735,8 +6739,12 @@ negated bevindingen
             });
 
             document.getElementById("medgemma-send-btn").addEventListener("click", () => {
-                const text = medgemmaResultContent.innerText || medgemmaResultContent.textContent;
-                if (text) sendToDictationFields(text);
+                let text = medgemmaResultContent.innerText || medgemmaResultContent.textContent;
+                if (text) {
+                    const header = _buildTtHeader();
+                    if (header && !text.trimStart().startsWith(header)) text = header + '\n\n' + text;
+                    sendToDictationFields(text);
+                }
                 resetMedgemmaPanel();
                 if (medgemmaAccordionActive) toggleMedgemmaAccordion();
             });
