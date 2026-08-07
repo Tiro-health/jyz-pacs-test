@@ -932,6 +932,7 @@
                         </div>
                         <div id="medgemma-result-content" class="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed overflow-y-auto max-h-72 p-3 bg-white dark:bg-slate-900"></div>
                         <div class="flex items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                            <button id="medgemma-labels-btn" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Labels verbergen</button>
                             <button id="medgemma-copy-btn" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
                             <button id="medgemma-send-btn" type="button" title="Stuur naar dictatie" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
                         </div>
@@ -6336,6 +6337,17 @@ negated bevindingen
                 pmResultContent.style.cssText = 'max-height:200px;font-size:12px;line-height:1.5';
                 const pmResultActions = mk('div', 'flex items-center gap-2 px-3 py-1.5');
                 pmResultActions.style.cssText = 'background:#f9fafb;border-top:1px solid #e5e7eb';
+                let _pmLabelsVisible = true;
+                const pmLabelsBtn = mk('button', 'inline-flex items-center justify-center px-2 py-1 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Labels verbergen');
+                pmLabelsBtn.type = 'button';
+                pmLabelsBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151;font-size:11px;display:none';
+                function _pmApplyLabels() {
+                    pmResultContent.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = _pmLabelsVisible ? '' : 'none'; });
+                    pmResultContent.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = _pmLabelsVisible ? '' : 'none'; });
+                    pmLabelsBtn.textContent = _pmLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
+                    pmLabelsBtn.style.display = pmResultContent.querySelector('.tt-section-label') ? '' : 'none';
+                }
+                pmLabelsBtn.addEventListener('click', () => { _pmLabelsVisible = !_pmLabelsVisible; _pmApplyLabels(); });
                 const pmCopyResultBtn = mk('button', 'inline-flex items-center justify-center px-3 py-1.5 text-xs font-medium rounded-md cursor-pointer transition-colors', 'Kopiëren');
                 pmCopyResultBtn.type = 'button';
                 pmCopyResultBtn.style.cssText = 'border:1px solid #d1d5db;background:#fff;color:#374151;font-size:11px';
@@ -6344,7 +6356,7 @@ negated bevindingen
                     const header = _buildTtHeader();
                     return (header && !raw.trimStart().startsWith(header)) ? header + '\n\n' + raw : raw;
                 });
-                pmResultActions.append(pmCopyResultBtn, pmSendResultBtn);
+                pmResultActions.append(pmLabelsBtn, pmCopyResultBtn, pmSendResultBtn);
                 pmResult.append(pmResultHead, pmResultContent, pmResultActions);
 
                 pmBody.append(pmDropzone, pmPreview, pmAnalyseBtn, pmResult);
@@ -6375,6 +6387,7 @@ negated bevindingen
                     pmFileInput.value = '';
                     pmPreview.classList.add('hidden');
                     pmDropzone.classList.remove('hidden');
+                    _pmLabelsVisible = true;
                     if (medgemmaAccordionActive) toggleMedgemmaAccordion();
                 }
 
@@ -6418,6 +6431,9 @@ negated bevindingen
                         pmDropzone.classList.add('hidden');
                         pmPreview.classList.add('hidden');
                         pmResultContent.innerHTML = renderMarkdown(result);
+                        wrapSectionLabels(pmResultContent);
+                        _pmLabelsVisible = true;
+                        _pmApplyLabels();
                         pmResult.classList.remove('hidden');
                     } catch (err) {
                         pipWindow.alert('Beeldanalyse fout: ' + err.message);
@@ -6713,11 +6729,28 @@ negated bevindingen
             const medgemmaResultContent = document.getElementById("medgemma-result-content");
             const medgemmaCopyBtn       = document.getElementById("medgemma-copy-btn");
             const medgemmaCloseBtn      = document.getElementById("medgemma-close-btn");
+            const medgemmaLabelsBtn     = document.getElementById("medgemma-labels-btn");
+            let _mgLabelsVisible = true;
+
+            function _mgApplyLabels() {
+                medgemmaResultContent.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = _mgLabelsVisible ? '' : 'none'; });
+                medgemmaResultContent.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = _mgLabelsVisible ? '' : 'none'; });
+                medgemmaLabelsBtn.textContent = _mgLabelsVisible ? 'Labels verbergen' : 'Labels tonen';
+                medgemmaLabelsBtn.style.display = medgemmaResultContent.querySelector('.tt-section-label') ? '' : 'none';
+            }
+
+            medgemmaLabelsBtn.addEventListener('click', () => {
+                _mgLabelsVisible = !_mgLabelsVisible;
+                _mgApplyLabels();
+            });
 
             function showMedgemmaResult(raw) {
                 medgemmaDropzone.classList.add("hidden");
                 medgemmaPreview.classList.add("hidden");
                 medgemmaResultContent.innerHTML = renderMarkdown(raw);
+                wrapSectionLabels(medgemmaResultContent);
+                _mgLabelsVisible = true;
+                _mgApplyLabels();
                 medgemmaResult.classList.remove("hidden");
             }
 
@@ -6729,6 +6762,7 @@ negated bevindingen
                 medgemmaFileInput.value = "";
                 medgemmaPreview.classList.add("hidden");
                 medgemmaDropzone.classList.remove("hidden");
+                _mgLabelsVisible = true;
             }
 
             medgemmaCopyBtn.addEventListener("click", () => {
