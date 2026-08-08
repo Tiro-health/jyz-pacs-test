@@ -168,8 +168,6 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
                     Nieuw type
                 </button>
-                <button id="flow-export-import-btn" type="button" title="Export / Import configuratie"
-                    class="w-2 h-2 rounded-full bg-neutral-400 dark:bg-neutral-600 opacity-20 hover:opacity-50 transition-opacity flex-shrink-0 border-0 p-0 cursor-pointer"></button>
             </div>
             <div class="flex justify-end gap-5 px-4 pb-2.5">
                 <button id="dicom-list-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Dicom lijst</button>
@@ -204,40 +202,8 @@
         </div>
 
         <!-- ── Export/Import PIN modal ───────────────────────────────────────── -->
-        <div id="flow-pin-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
-            <div class="bg-white dark:bg-muted rounded-lg shadow-xl p-5 w-64 flex flex-col gap-3">
-                <label class="text-sm font-medium text-neutral-700 dark:text-neutral-200">Code</label>
-                <input id="flow-pin-input" type="password" inputmode="numeric"
-                    class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    autocomplete="off" />
-                <p id="flow-pin-error" class="hidden text-xs text-red-500">Onjuiste code.</p>
-                <div class="flex gap-2 justify-end">
-                    <button id="flow-pin-cancel" type="button"
-                        class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent">Annuleer</button>
-                    <button id="flow-pin-ok" type="button"
-                        class="px-3 py-1.5 text-xs rounded-md bg-cyan-600 hover:bg-cyan-700 text-white">OK</button>
-                </div>
-            </div>
-        </div>
 
         <!-- ── Export/Import modal ───────────────────────────────────────────── -->
-        <div id="flow-export-import-modal" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-black/40">
-            <div class="bg-white dark:bg-muted rounded-lg shadow-xl p-5 w-80 flex flex-col gap-4">
-                <h2 class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Export / Import Configuratie</h2>
-                <div class="flex flex-col gap-1.5">
-                    <p class="text-xs text-neutral-500 dark:text-neutral-400">Download de huidige templates en instellingen als JSON-bestand.</p>
-                    <button id="flow-do-export-btn" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer configuratie</button>
-                </div>
-                <div class="border-t border-neutral-200 dark:border-slate-700 pt-3 flex flex-col gap-1.5">
-                    <p class="text-xs text-neutral-500 dark:text-neutral-400">Importeer een eerder geëxporteerd JSON-bestand. <span class="text-amber-600 dark:text-amber-400 font-medium">Huidige configuratie wordt overschreven.</span></p>
-                    <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
-                        ⬆ Importeer configuratie
-                        <input type="file" id="flow-import-file-input" accept=".json" class="hidden">
-                    </label>
-                </div>
-                <button id="flow-close-export-modal-btn" class="self-end px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent">Sluiten</button>
-            </div>
-        </div>
 
         <!-- ── Slide-over overlay ─────────────────────────────────────────────── -->
         <div id="slide-overlay" class="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onclick="closeSlideOver()"></div>
@@ -4894,108 +4860,6 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         document.getElementById('calc-catalog-search').addEventListener('input', e => renderCalcCatalog(e.target.value));
         document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
         document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
-
-        // ── Export / Import configuratie (PIN 8800) ──────────────────────────
-        (function() {
-            const pinModal   = document.getElementById('flow-pin-modal');
-            const pinInput   = document.getElementById('flow-pin-input');
-            const pinError   = document.getElementById('flow-pin-error');
-            const exportModal = document.getElementById('flow-export-import-modal');
-
-            function openPin() {
-                pinInput.value = '';
-                pinError.classList.add('hidden');
-                pinModal.classList.remove('hidden');
-                setTimeout(() => pinInput.focus(), 50);
-            }
-            function closePin() {
-                pinModal.classList.add('hidden');
-                pinInput.value = '';
-            }
-            function checkPin() {
-                if (pinInput.value === '8800') {
-                    closePin();
-                    exportModal.classList.remove('hidden');
-                } else {
-                    pinError.classList.remove('hidden');
-                    pinInput.value = '';
-                    pinInput.focus();
-                }
-            }
-
-            document.getElementById('flow-export-import-btn').addEventListener('click', openPin);
-            document.getElementById('flow-pin-ok').addEventListener('click', checkPin);
-            document.getElementById('flow-pin-cancel').addEventListener('click', closePin);
-            pinInput.addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); if (e.key === 'Escape') closePin(); });
-            pinModal.addEventListener('click', e => { if (e.target === pinModal) closePin(); });
-
-            document.getElementById('flow-close-export-modal-btn').addEventListener('click', () => exportModal.classList.add('hidden'));
-            exportModal.addEventListener('click', e => { if (e.target === exportModal) exportModal.classList.add('hidden'); });
-
-            document.getElementById('flow-do-export-btn').addEventListener('click', () => {
-                const geminiModelKeys = ['geminiModelTranslate','geminiModelAiConsult','geminiModelKidv','geminiModelVerslag','geminiModelRealtime','geminiModelSnomed','geminiModelMedgemma','geminiModelAutofillBackup'];
-                const geminiModels = {};
-                geminiModelKeys.forEach(k => { const v = localStorage.getItem(k); if (v) geminiModels[k] = v; });
-                const promptKeys = [
-                    ['dictationActionUrl',  'dictationActionVersion'],
-                    ['kidvActionUrl',        'kidvActionVersion'],
-                    ['aiConsultUrl',         'aiConsultVersion'],
-                    ['verslagCheckUrl',      'verslagCheckVersion'],
-                    ['inlineCheckUrl',       'inlineCheckVersion'],
-                    ['snomedCtActionUrl',    'snomedCtPromptVersion'],
-                    ['autofillBackupUrl',    null],
-                    ['medgemmaActionUrl',    'medgemmaPromptVersion'],
-                ];
-                const prompts = {};
-                promptKeys.forEach(([urlKey, verKey]) => {
-                    const v = localStorage.getItem(urlKey);
-                    if (v) {
-                        prompts[urlKey] = v;
-                        if (verKey) { const ver = localStorage.getItem(verKey); if (ver) prompts[verKey] = ver; }
-                    }
-                });
-                const dicomBase  = JSON.parse(localStorage.getItem('dicomCodesBase')  || 'null');
-                const dicomExtra = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
-                const payload = {
-                    version: '1.0',
-                    timestamp: new Date().toISOString(),
-                    flowConfig_v1: JSON.parse(localStorage.getItem('flowConfig_v1') || 'null'),
-                    textTemplateLogic: localStorage.getItem('textTemplateLogic') || null,
-                    geminiModels: Object.keys(geminiModels).length ? geminiModels : null,
-                    prompts: Object.keys(prompts).length ? prompts : null,
-                    dicomCodesBase: dicomBase,
-                    dicomCodesExtra: dicomExtra.length ? dicomExtra : null,
-                };
-                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'flow-config-' + new Date().toISOString().slice(0, 10) + '.json';
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-
-            document.getElementById('flow-import-file-input').addEventListener('change', async (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                try {
-                    const text = await file.text();
-                    const data = JSON.parse(text);
-                    if (!confirm('Huidige configuratie overschrijven met de geïmporteerde data?')) { e.target.value = ''; return; }
-                    if (data.flowConfig_v1) localStorage.setItem('flowConfig_v1', JSON.stringify(data.flowConfig_v1));
-                    if (data.textTemplateLogic) localStorage.setItem('textTemplateLogic', data.textTemplateLogic);
-                    if (data.geminiModels) Object.entries(data.geminiModels).forEach(([k, v]) => localStorage.setItem(k, v));
-                    if (data.prompts) Object.entries(data.prompts).forEach(([k, v]) => localStorage.setItem(k, v));
-                    if (data.dicomCodesBase)  localStorage.setItem('dicomCodesBase',  JSON.stringify(data.dicomCodesBase));
-                    if (data.dicomCodesExtra) localStorage.setItem('dicomCodesExtra', JSON.stringify(data.dicomCodesExtra));
-                    alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
-                    location.reload();
-                } catch {
-                    alert('Ongeldig bestand. Zorg dat het een geldig JSON-exportbestand is.');
-                    e.target.value = '';
-                }
-            });
-        })();
 
         </script>
 
