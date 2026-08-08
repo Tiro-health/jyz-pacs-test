@@ -4755,6 +4755,13 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         });
 
         // ── Dicom lijst modal ─────────────────────────────────────────────────────
+        const _savedDicomBase = JSON.parse(localStorage.getItem('dicomCodesBase') || 'null');
+        if (_savedDicomBase) {
+            JYZ_DICOM_CODES.length = 0;
+            _savedDicomBase.forEach(c => JYZ_DICOM_CODES.push(c));
+        } else {
+            localStorage.setItem('dicomCodesBase', JSON.stringify([...JYZ_DICOM_CODES]));
+        }
         const _extraDicomOnLoad = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
         _extraDicomOnLoad.forEach(c => { if (!JYZ_DICOM_CODES.includes(c)) JYZ_DICOM_CODES.push(c); });
 
@@ -4947,6 +4954,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                         if (verKey) { const ver = localStorage.getItem(verKey); if (ver) prompts[verKey] = ver; }
                     }
                 });
+                const dicomBase  = JSON.parse(localStorage.getItem('dicomCodesBase')  || 'null');
                 const dicomExtra = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
                 const payload = {
                     version: '1.0',
@@ -4955,6 +4963,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     textTemplateLogic: localStorage.getItem('textTemplateLogic') || null,
                     geminiModels: Object.keys(geminiModels).length ? geminiModels : null,
                     prompts: Object.keys(prompts).length ? prompts : null,
+                    dicomCodesBase: dicomBase,
                     dicomCodesExtra: dicomExtra.length ? dicomExtra : null,
                 };
                 const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -4977,6 +4986,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     if (data.textTemplateLogic) localStorage.setItem('textTemplateLogic', data.textTemplateLogic);
                     if (data.geminiModels) Object.entries(data.geminiModels).forEach(([k, v]) => localStorage.setItem(k, v));
                     if (data.prompts) Object.entries(data.prompts).forEach(([k, v]) => localStorage.setItem(k, v));
+                    if (data.dicomCodesBase)  localStorage.setItem('dicomCodesBase',  JSON.stringify(data.dicomCodesBase));
                     if (data.dicomCodesExtra) localStorage.setItem('dicomCodesExtra', JSON.stringify(data.dicomCodesExtra));
                     alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
                     location.reload();
