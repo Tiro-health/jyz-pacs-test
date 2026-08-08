@@ -589,8 +589,10 @@ negated bevindingen
                     saved = migratePrompt(localStorage.getItem(cfg.storageKey));
                 }
                 textarea.value = saved || cfg.defaultPrompt;
-                localStorage.setItem(cfg.storageKey, textarea.value);
-                if (cfg.versionKey && cfg.version) localStorage.setItem(cfg.versionKey, cfg.version);
+                if (localStorage.getItem(cfg.storageKey) === null) {
+                    localStorage.setItem(cfg.storageKey, textarea.value);
+                    if (cfg.versionKey && cfg.version) localStorage.setItem(cfg.versionKey, cfg.version);
+                }
                 textarea.style.height = "auto";
                 textarea.style.height = textarea.scrollHeight + "px";
 
@@ -739,7 +741,7 @@ negated bevindingen
             MODEL_CONFIGS.forEach(cfg => {
                 const sel = document.getElementById(cfg.id);
                 sel.value = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
-                localStorage.setItem(cfg.storageKey, sel.value);
+                if (localStorage.getItem(cfg.storageKey) === null) localStorage.setItem(cfg.storageKey, sel.value);
                 sel.addEventListener("change", () => localStorage.setItem(cfg.storageKey, sel.value));
             });
 
