@@ -4671,7 +4671,7 @@ negated bevindingen
                     // Phase 1: generate filled backup template
                     await callGeminiStream(getModel('geminiModelAutofillBackup'), backupPrompt, (partial) => {
                         if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
-                        targetContent.innerHTML = renderMarkdown(partial);
+                        targetContent.innerHTML = renderMarkdown(partial.replace(/\[br\]/g, ''));
                     }, _ttAbort.signal);
 
                     // Save the backup result for the toggle (↩ Ingevuld)
@@ -4753,6 +4753,7 @@ negated bevindingen
                 });
                 let result = '';
                 await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => { result = partial; });
+                result = result.replace(/\[br\]/g, '');
                 if (vcAfterAutofillEnabled) {
                     const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                     const vcPrompt = fillPrompt(vcTemplate, {
