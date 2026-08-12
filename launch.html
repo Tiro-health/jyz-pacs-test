@@ -4667,12 +4667,10 @@ negated bevindingen
                 _ttAbort = new AbortController();
 
                 let firstChunk = true;
-                let backupRawText = '';
                 try {
                     // Phase 1: generate filled backup template
                     await callGeminiStream(getModel('geminiModelAutofillBackup'), backupPrompt, (partial) => {
                         if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
-                        backupRawText = partial;
                         targetContent.innerHTML = renderMarkdown(partial.replace(/\[br\]/g, ''));
                     }, _ttAbort.signal);
 
@@ -4686,7 +4684,7 @@ negated bevindingen
                         targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verslag check…';
                         const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                         const vcPrompt = fillPrompt(vcTemplate, {
-                            tekst: backupRawText,
+                            tekst: backupPlainText,
                             type_onderzoek: typeOnderzoek,
                             klinische_inlichtingen: ki,
                             diagnostische_vraagstelling: dv,
