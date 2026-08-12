@@ -4910,8 +4910,18 @@ negated bevindingen
                     });
                     actions.appendChild(lblBtn);
                 }
-                actions.appendChild(mkB('Kopiëren', () => {
-                    navigator.clipboard.writeText(getPanelText()).catch(() => {});
+                actions.appendChild(mkB('Kopiëren', (e) => {
+                    const btn = e.currentTarget;
+                    const txt = getPanelText() || content.dataset.raw || '';
+                    const doFeedback = () => { btn.textContent = 'Gekopieerd ✓'; setTimeout(() => { btn.textContent = 'Kopiëren'; }, 1500); };
+                    const fallback = () => {
+                        const ta = doc.createElement('textarea');
+                        ta.value = txt; ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+                        doc.body.appendChild(ta); ta.focus(); ta.select();
+                        try { doc.execCommand('copy'); doFeedback(); } catch (_) {}
+                        doc.body.removeChild(ta);
+                    };
+                    if (txt) navigator.clipboard?.writeText(txt).then(doFeedback).catch(fallback) ?? fallback();
                 }));
                 actions.appendChild(mkIconB(arrowSvg, 'Stuur naar dictatie', () => {
                     const txt = getPanelText();
@@ -5806,9 +5816,11 @@ negated bevindingen
                         pipWindow.alert('Geen preset verslag ingesteld voor dit onderzoekstype. Stel een preset in via de Flow configuratie pagina.');
                         return;
                     }
-                    setNativeValue(ta, preset);
+                    const existing = ta.value.trim();
+                    const newVal = existing ? existing + '\n\n' + preset : preset;
+                    setNativeValue(ta, newVal);
                     _autoGrow();
-                    setDictationText(preset);
+                    setDictationText(newVal);
                 });
 
                 btnRow.append(
