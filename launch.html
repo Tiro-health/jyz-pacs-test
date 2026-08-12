@@ -3631,14 +3631,14 @@ Controleer actief op de volgende foutcategorieën:
 
 INSTRUCTIES VOOR UITVOER:
 - Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen sectietitels, geen context
-- Behoud [ ]-labels (bv. "[ Botpatroon:]") letterlijk zoals ze in de ingevoerde tekst staan — verwijder ze NIET
+- Behoud [ ]-labels (bv. "[- Botpatroon:]" of "[ Botpatroon:]") letterlijk zoals ze in de ingevoerde tekst staan — verwijder ze NIET en verwijder het streepje (–) binnenin deze labels niet; het streepje maakt deel uit van de labelnotatie, niet van de opmaak
 - Geef de volledige verslagtekst terug, ongewijzigd qua inhoud en opmaak
 - Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats
 - Geef de gecorrigeerde tekst terug zonder enige markering of opmaak
 - Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen
 - Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug`;
 
-            const VERSLAG_CHECK_VERSION = "9";
+            const VERSLAG_CHECK_VERSION = "10";
             const storedVerslagVersion = localStorage.getItem("verslagCheckVersion");
             const savedVerslagCheck = storedVerslagVersion === VERSLAG_CHECK_VERSION
                 ? migratePrompt(localStorage.getItem("verslagCheckUrl"))
