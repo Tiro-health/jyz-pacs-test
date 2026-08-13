@@ -4667,7 +4667,32 @@ negated bevindingen
                 _ttAbort = new AbortController();
 
                 let firstChunk = true;
+                const hasTemplate = !!(window._flowTextTemplate || window._flowUserTextTemplate);
                 try {
+                    if (!hasTemplate) {
+                        // No template available — skip autofill, run verslag check directly on dictation text
+                        targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verslag check…';
+                        const vcTpl = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                        const vcPrm = fillPrompt(vcTpl, {
+                            tekst,
+                            type_onderzoek: typeOnderzoek,
+                            klinische_inlichtingen: ki,
+                            diagnostische_vraagstelling: dv,
+                            patient_info: extractPatientInfo(),
+                            text_template: '',
+                        });
+                        await callGeminiStream(getModel('geminiModelVerslag'), vcPrm, (partial) => {
+                            if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
+                            targetContent.innerHTML = renderMarkdown(partial);
+                        }, _ttAbort.signal);
+                        targetStatus.innerHTML = '';
+                        targetActions.style.display = 'flex';
+                        targetToggle.style.display = 'none';
+                        if (isMain) { wrapSectionLabels(ttContent); ttToggleLabels.style.display = 'none'; }
+                        else if (pipRefs?.labelsBtn) { wrapSectionLabels(targetContent); pipRefs.labelsBtn.style.display = 'none'; }
+                        if (_multiStudies.length > 0) _showMultiStudyResults(isMain);
+                    } else {
+
                     // Phase 1: generate filled backup template
                     await callGeminiStream(getModel('geminiModelAutofillBackup'), backupPrompt, (partial) => {
                         if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
@@ -4722,6 +4747,7 @@ negated bevindingen
                     }
                     // Multi-studie: toon gecombineerde resultaten boven het huidige panel
                     if (_multiStudies.length > 0) _showMultiStudyResults(isMain);
+                    } // end hasTemplate else
                 } catch (e) {
                     targetStatus.innerHTML = '';
                     if (e.name !== 'AbortError') targetContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
@@ -4742,6 +4768,25 @@ negated bevindingen
 
             async function _runAutofillSilent(tekst, context) {
                 const logic = context.logic || window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
+                let result = '';
+                if (!context.textTemplate) {
+                    // No template — run verslag check directly on dictation text
+                    if (vcAfterAutofillEnabled) {
+                        const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
+                        const vcPrompt = fillPrompt(vcTemplate, {
+                            tekst,
+                            type_onderzoek: context.typeOnderzoek,
+                            klinische_inlichtingen: context.ki,
+                            diagnostische_vraagstelling: context.dv,
+                            patient_info: extractPatientInfo(),
+                            text_template: '',
+                        });
+                        await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => { result = partial; });
+                    } else {
+                        result = tekst;
+                    }
+                    return result;
+                }
                 const backupTemplate = localStorage.getItem('autofillBackupUrl') || DEFAULT_AUTOFILL_BACKUP_PROMPT;
                 const prompt = fillPrompt(backupTemplate, {
                     tekst,
@@ -4751,7 +4796,6 @@ negated bevindingen
                     text_template: context.textTemplate,
                     text_template_logic: logic,
                 });
-                let result = '';
                 await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => { result = partial; });
                 if (vcAfterAutofillEnabled) {
                     const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
