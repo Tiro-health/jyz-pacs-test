@@ -192,11 +192,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="study-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="study">
+                        <tiro-form-filler
+                            id="study-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="study" class="hidden"></div>
                 </div>
             </details>
 
@@ -219,11 +222,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="database-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="database">
+                        <tiro-form-filler
+                            id="database-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="database" class="hidden"></div>
                 </div>
             </details>
 
@@ -231,6 +237,10 @@
 
         <!-- Tiro Web SDK -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
+
+        <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
+        <script src="forms-shared.js"></script>
+        <script src="database-schema.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -273,6 +283,29 @@
             document.getElementById("save-btn").addEventListener("click", () => {
                 studyForm.requestSubmit();
                 databaseForm.requestSubmit();
+            });
+
+            // ── Niet-template mode ──────────────────────────────────────────
+            // Hangt bovenop de bestaande pagina en onderschept de save-knop
+            // alleen wanneer de toggle op niet-template staat. Verwijderen: schrap
+            // dit blok, de twee script-tags en de data-nontemplate containers.
+            JyzForms.mountFormsUI({
+                page: "database",
+                primarySchema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                sections: [
+                    {
+                        tiro:   document.querySelector('[data-tiro="study"]'),
+                        native: document.querySelector('[data-nontemplate="study"]'),
+                        schema: DATABASE_SCHEMAS.STUDY_SCHEMA,
+                    },
+                    {
+                        tiro:   document.querySelector('[data-tiro="database"]'),
+                        native: document.querySelector('[data-nontemplate="database"]'),
+                        schema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                    },
+                ],
+                saveBtn: document.getElementById("save-btn"),
+                backBtn: document.getElementById("back-btn"),
             });
         </script>
     </body>
