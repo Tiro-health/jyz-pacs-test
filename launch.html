@@ -5800,7 +5800,7 @@ negated bevindingen
                     setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 2000);
                 });
 
-                const trSendBtn = mkSendBtn(() => _trShowingOrig ? (_trOrigText || '') : (trContent.innerText || ''));
+                const trSendBtn = mkSendBtn(() => _trShowingOrig ? (_trOrigText || '') : (trContent.innerText || ''), trPanel);
 
                 const trCloseBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer ml-auto', 'Sluiten', () => {
                     trPanel.style.display = 'none';
