@@ -298,11 +298,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="study-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="study">
+                        <tiro-form-filler
+                            id="study-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="study" class="hidden"></div>
                 </div>
             </details>
 
@@ -343,11 +346,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="qc-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="qc">
+                        <tiro-form-filler
+                            id="qc-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="qc" class="hidden"></div>
                 </div>
             </details>
 
@@ -355,6 +361,10 @@
 
         <!-- Tiro Web SDK -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
+
+        <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
+        <script src="forms-shared.js"></script>
+        <script src="qc-schema.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -448,6 +458,46 @@
                     saveAndSendBtn.disabled = false;
                     saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
                 }
+            });
+
+            // ── Niet-template mode ──────────────────────────────────────────
+            // Hangt bovenop de bestaande pagina en onderschept de save-knoppen
+            // alleen wanneer de toggle op niet-template staat. Verwijderen: schrap
+            // dit blok, de twee script-tags en de data-nontemplate containers.
+            const qcUi = JyzForms.mountFormsUI({
+                page: "qc",
+                primarySchema: QC_SCHEMAS.QC_SCHEMA,
+                sections: [
+                    {
+                        tiro:   document.querySelector('[data-tiro="study"]'),
+                        native: document.querySelector('[data-nontemplate="study"]'),
+                        schema: QC_SCHEMAS.STUDY_SCHEMA,
+                    },
+                    {
+                        tiro:   document.querySelector('[data-tiro="qc"]'),
+                        native: document.querySelector('[data-nontemplate="qc"]'),
+                        schema: QC_SCHEMAS.QC_SCHEMA,
+                    },
+                ],
+                saveBtn:        document.getElementById("save-btn"),
+                saveAndSendBtn: document.getElementById("save-and-send-btn"),
+                backBtn:        document.getElementById("back-btn"),
+                onSend: async (response) => {
+                    const res = await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/fhir+json" },
+                        body: JSON.stringify({
+                            resourceType: "Parameters",
+                            parameter: [
+                                { name: "response", resource: response },
+                                { name: "from", valueString: MAIL_FROM },
+                                { name: "to", valueString: MAIL_TO },
+                                { name: "subject", valueString: "kwaliteitscontrole" },
+                            ],
+                        }),
+                    });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                },
             });
 
             // Secret copy button: PIN-protected decrypt + copy
@@ -591,7 +641,7 @@
                     }
                 })();
 
-                document.getElementById('do-export-btn').addEventListener('click', () => {
+                document.getElementById('do-export-btn').addEventListener('click', async () => {
                     const geminiModelKeys = ['geminiModelTranslate','geminiModelAiConsult','geminiModelKidv','geminiModelVerslag','geminiModelRealtime','geminiModelSnomed','geminiModelMedgemma','geminiModelAutofillBackup'];
                     const geminiModels = {};
                     geminiModelKeys.forEach(k => { const v = localStorage.getItem(k); if (v) geminiModels[k] = v; });
@@ -624,6 +674,9 @@
                         prompts: Object.keys(prompts).length ? prompts : null,
                         dicomCodesBase: dicomBase && dicomBase.length ? dicomBase : null,
                         dicomCodesExtra: dicomExtra.length ? dicomExtra : null,
+                        // Niet-template mode: ingevulde formulieren en beheerde namenlijsten
+                        formRecords: await JyzForms.RecordStore.exportAll(),
+                        nameLists: JyzForms.NameLists.all(),
                     };
                     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
@@ -650,6 +703,8 @@
                         if (data.prompts) Object.entries(data.prompts).forEach(([k, v]) => localStorage.setItem(k, v));
                         if (data.dicomCodesBase)  localStorage.setItem('dicomCodesBase',  JSON.stringify(data.dicomCodesBase));
                         if (data.dicomCodesExtra) localStorage.setItem('dicomCodesExtra', JSON.stringify(data.dicomCodesExtra));
+                        if (data.nameLists) Object.entries(data.nameLists).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+                        if (data.formRecords) await JyzForms.RecordStore.importAll(data.formRecords);
                         alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
                         location.reload();
                     } catch {

@@ -2023,12 +2023,14 @@
                 document.getElementById("save-progress-btn");
             saveProgressBtn.addEventListener("click", (event) => {
                 event.preventDefault();
+                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
             const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
             validateAndSaveBtn.addEventListener("click", (event) => {
                 event.preventDefault();
+                refreshSnomedFromForm();
                 const dbParams = new URLSearchParams(window.location.search);
                 dbParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
                 window.location.href = `database.html?${dbParams.toString()}`;
@@ -2037,6 +2039,7 @@
             const validateBtn = document.getElementById("validate-btn");
             validateBtn.addEventListener("click", (event) => {
                 event.preventDefault();
+                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
@@ -4290,6 +4293,61 @@ negated bevindingen
                     if (negatedLines.length) deepFillByLabel(snomedForm, "negated",       negatedLines.join("\n"));
                     document.getElementById("template-accordion")?.setAttribute("open", "");
                 }
+
+                // Bewaar de bevindingen zodat qc.html en database.html ze als
+                // pathologie-opties kunnen aanbieden (niet-template mode).
+                storeSnomedForDatabase(hoofdLines, bijLines, negatedLines);
+            }
+
+            // Schrijf het SNOMED-resultaat weg voor de database-formulieren.
+            function storeSnomedForDatabase(hoofd, bij, negated) {
+                try {
+                    localStorage.setItem("snomedLastResult", JSON.stringify({
+                        hoofddiagnose: hoofd || [],
+                        bijdiagnose: bij || [],
+                        negated: negated || [],
+                        ts: new Date().toISOString(),
+                    }));
+                } catch (_) { /* opslag vol — de lijst is een hulpmiddel, geen vereiste */ }
+            }
+
+            // Lees een veld uit een Tiro-formulier op basis van zijn label.
+            function deepReadByLabel(rootEl, labelHint) {
+                function search(root) {
+                    if (!root) return null;
+                    for (const el of root.querySelectorAll("*")) {
+                        const leafText = Array.from(el.childNodes)
+                            .filter(n => n.nodeType === Node.TEXT_NODE)
+                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
+                        if (leafText.includes(labelHint.toLowerCase())) {
+                            let container = el;
+                            for (let i = 0; i < 3 && container; i++) {
+                                const input = container.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea");
+                                if (input) return input.value;
+                                container = container.parentElement;
+                            }
+                        }
+                        if (el.shadowRoot) {
+                            const found = search(el.shadowRoot);
+                            if (found !== null) return found;
+                        }
+                    }
+                    return null;
+                }
+                return search(rootEl.shadowRoot || rootEl);
+            }
+
+            // Bij bewaren: neem eventuele handmatige aanpassingen aan de
+            // SNOMED-velden mee, zodat de database-opties overeenkomen met
+            // wat er effectief in het formulier staat.
+            function refreshSnomedFromForm() {
+                const snomedForm = findSnomedCtTemplateForm();
+                if (!snomedForm) return;
+                const split = (v) => (v || "").split("\n").map(s => s.trim()).filter(Boolean);
+                const hoofd = split(deepReadByLabel(snomedForm, "hoofddiagnose"));
+                const bij   = split(deepReadByLabel(snomedForm, "bijdiagnose"));
+                const neg   = split(deepReadByLabel(snomedForm, "negated"));
+                if (hoofd.length || bij.length || neg.length) storeSnomedForDatabase(hoofd, bij, neg);
             }
 
             // AI resultaten button — synced two-way with Active template checkbox

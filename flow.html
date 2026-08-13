@@ -172,6 +172,7 @@
             <div class="flex justify-end gap-5 px-4 pb-2.5">
                 <button id="dicom-list-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Dicom lijst</button>
                 <button id="logic-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Textueel back-up logica</button>
+                <button id="names-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Namenlijsten</button>
             </div>
             <div class="flex justify-end gap-4 px-4 pb-2.5">
                 <button id="calc-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🧮 Calculatoren</button>
@@ -567,6 +568,36 @@
                     ></textarea>
                     <div class="flex justify-end mt-2">
                         <button id="logic-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Namenlijsten modal ─────────────────────────────────────────────── -->
+        <div id="names-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Namenlijsten</h2>
+                    <button id="names-modal-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 py-4">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Deze namen vullen de keuzelijsten op de kwaliteitscontrole- en databasepagina in de niet-template mode. Eén naam per regel. Wordt meegenomen in de JSON-export.</p>
+                    <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">Radiologen</label>
+                    <textarea
+                        id="names-radiologen"
+                        rows="8"
+                        placeholder="Dr. Voornaam Naam"
+                        class="w-full px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
+                    ></textarea>
+                    <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1 mt-4">Aanvragers</label>
+                    <textarea
+                        id="names-aanvragers"
+                        rows="8"
+                        placeholder="Dr. Voornaam Naam"
+                        class="w-full px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
+                    ></textarea>
+                    <div class="flex justify-end mt-2">
+                        <button id="names-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
                     </div>
                 </div>
             </div>
@@ -4809,6 +4840,45 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         document.getElementById('logic-modal').addEventListener('click', e => {
             if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
         });
+
+        // ── Namenlijsten (radiologen / aanvragers) ───────────────────────────────
+        // Vullen de keuzelijsten op qc.html en database.html in de niet-template mode.
+        (function () {
+            const KEYS = { radiologen: 'qcRadiologenLijst', aanvragers: 'qcAanvragersLijst' };
+            const modal   = document.getElementById('names-modal');
+            const saveBtn = document.getElementById('names-save-btn');
+            const areas   = {
+                radiologen: document.getElementById('names-radiologen'),
+                aanvragers: document.getElementById('names-aanvragers'),
+            };
+            const load = (which) => {
+                try {
+                    const arr = JSON.parse(localStorage.getItem(KEYS[which]) || '[]');
+                    return Array.isArray(arr) ? arr : [];
+                } catch { return []; }
+            };
+            const fill = () => {
+                Object.keys(areas).forEach(w => { areas[w].value = load(w).join('\n'); });
+            };
+            document.getElementById('names-modal-btn').addEventListener('click', () => {
+                fill();
+                modal.classList.remove('hidden');
+            });
+            document.getElementById('names-modal-close').addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            modal.addEventListener('click', e => {
+                if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+            });
+            saveBtn.addEventListener('click', () => {
+                Object.keys(areas).forEach(w => {
+                    const names = areas[w].value.split('\n').map(s => s.trim()).filter(Boolean);
+                    localStorage.setItem(KEYS[w], JSON.stringify(names));
+                });
+                saveBtn.textContent = 'Opgeslagen ✓';
+                setTimeout(() => { saveBtn.textContent = 'Opslaan'; }, 2000);
+            });
+        })();
 
         // ── Calculatoren-catalogus modal (bekijken) ──────────────────────────────
         function _calcInputSummary(inp) {

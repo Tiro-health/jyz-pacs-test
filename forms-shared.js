@@ -115,6 +115,78 @@
     };
 
     // ═══════════════════════════════════════════════════════════════════════
+    // NameLists — beheerbare keuzelijsten (radiologen, aanvragers)
+    // Beheerd op de flow-configuratiepagina, bewaard in localStorage en
+    // meegenomen in de JSON-export.
+    // ═══════════════════════════════════════════════════════════════════════
+    const NameLists = {
+        KEYS: { radiologen: "qcRadiologenLijst", aanvragers: "qcAanvragersLijst" },
+
+        get(which) {
+            try {
+                const raw = localStorage.getItem(this.KEYS[which]);
+                const arr = JSON.parse(raw || "[]");
+                return Array.isArray(arr) ? arr.filter((x) => typeof x === "string" && x.trim()) : [];
+            } catch { return []; }
+        },
+
+        set(which, names) {
+            if (!this.KEYS[which]) return;
+            const clean = (names || []).map((n) => String(n).trim()).filter(Boolean);
+            localStorage.setItem(this.KEYS[which], JSON.stringify(clean));
+        },
+
+        all() {
+            const out = {};
+            Object.keys(this.KEYS).forEach((k) => { out[this.KEYS[k]] = this.get(k); });
+            return out;
+        },
+    };
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // SnomedOptions — dynamische pathologie-opties uit de SNOMED CT analyse
+    // launch.html schrijft het resultaat weg; hier lezen we het uit.
+    // ═══════════════════════════════════════════════════════════════════════
+    const SnomedOptions = {
+        KEY: "snomedLastResult",
+
+        /** Wordt door launch.html aangeroepen. */
+        store(result) {
+            try { localStorage.setItem(this.KEY, JSON.stringify({ ...result, ts: new Date().toISOString() })); }
+            catch { /* opslag vol — stil negeren, de lijst is een hulpmiddel */ }
+        },
+
+        raw() {
+            try { return JSON.parse(localStorage.getItem(this.KEY) || "null"); }
+            catch { return null; }
+        },
+
+        /**
+         * Platte lijst met bevindingen, hoofddiagnose eerst. Negated bevindingen
+         * blijven buiten de lijst: dat zijn juist de afwezige pathologieën.
+         */
+        options() {
+            const r = this.raw();
+            if (!r) return [];
+            const seen = new Set();
+            return [].concat(r.hoofddiagnose || [], r.bijdiagnose || [])
+                .map((s) => String(s).trim())
+                .filter((s) => s && !seen.has(s.toLowerCase()) && seen.add(s.toLowerCase()));
+        },
+    };
+
+    /** Los een optionsFrom-verwijzing op naar een concrete optielijst. */
+    function resolveOptions(field) {
+        if (field.options && field.options.length) return field.options;
+        switch (field.optionsFrom) {
+            case "radiologen": return NameLists.get("radiologen");
+            case "aanvragers": return NameLists.get("aanvragers");
+            case "snomed":     return SnomedOptions.options();
+            default:           return [];
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
     // SchemaForm — declaratieve renderer met conditionele logica
     // ═══════════════════════════════════════════════════════════════════════
     //
@@ -168,7 +240,7 @@
                     input = el("select", INPUT);
                     input.appendChild(el("option", "", f.placeholder || "—"));
                     input.firstChild.value = "";
-                    (f.options || []).forEach((o) => {
+                    resolveOptions(f).forEach((o) => {
                         const opt = el("option", "", typeof o === "string" ? o : o.label);
                         opt.value = typeof o === "string" ? o : o.value;
                         input.appendChild(opt);
@@ -179,7 +251,7 @@
 
                 case "radio":
                 case "boolean": {
-                    const opts = f.type === "boolean" ? (f.options || ["Ja", "Nee"]) : (f.options || []);
+                    const opts = f.type === "boolean" ? (f.options || ["Ja", "Nee"]) : resolveOptions(f);
                     input = el("div", "flex flex-wrap gap-2");
                     opts.forEach((o) => {
                         const v = typeof o === "string" ? o : o.value;
@@ -206,21 +278,81 @@
                     break;
                 }
 
-                case "checkboxes": {
+                case "checkboxes":
+                case "dynamicCheckboxes": {
                     input = el("div", "flex flex-col gap-1.5");
-                    const sel = Array.isArray(value) ? value.map(String) : [];
-                    (f.options || []).forEach((o) => {
-                        const v = typeof o === "string" ? o : o.value;
-                        const text = typeof o === "string" ? o : o.label;
+                    const sel = Array.isArray(value) ? value.map(String) : value != null ? [String(value)] : [];
+                    const addBox = (v, text, checked) => {
                         const line = el("label", "flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer");
                         const cb = el("input");
                         cb.type = "checkbox";
                         cb.value = v;
                         cb.className = "rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500";
-                        if (sel.includes(String(v))) cb.checked = true;
+                        if (checked) cb.checked = true;
                         line.append(cb, el("span", "", text));
                         input.appendChild(line);
+                        return cb;
+                    };
+
+                    const known = resolveOptions(f).map((o) => (typeof o === "string" ? o : o.value));
+                    known.forEach((v) => addBox(v, v, sel.includes(String(v))));
+                    // Reeds bewaarde waarden die niet in de huidige optielijst zitten
+                    // (bv. eerder via "Andere toevoegen" ingevoerd) blijven zichtbaar.
+                    sel.filter((v) => !known.map(String).includes(v)).forEach((v) => addBox(v, v, true));
+
+                    if (f.type === "dynamicCheckboxes") {
+                        if (!known.length && !sel.length) {
+                            input.appendChild(el("p", "text-xs text-neutral-400 dark:text-neutral-500",
+                                "Nog geen SNOMED CT-resultaten. Gebruik “Andere toevoegen”."));
+                        }
+                        const add = el("button", "self-end text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer bg-transparent border-0 p-0", f.addLabel || "Andere toevoegen");
+                        add.type = "button";
+                        add.addEventListener("click", () => {
+                            const wrap = el("div", "flex gap-2 items-center pt-1");
+                            const txt = el("input", INPUT + " !py-1 text-sm");
+                            txt.type = "text";
+                            txt.placeholder = "Pathologie toevoegen…";
+                            const ok = el("button", BTN_SMALL, "Toevoegen");
+                            ok.type = "button";
+                            const commit = () => {
+                                const v = txt.value.trim();
+                                if (!v) return;
+                                addBox(v, v, true).dispatchEvent(new Event("change", { bubbles: true }));
+                                wrap.remove();
+                                input.appendChild(add);
+                            };
+                            ok.addEventListener("click", commit);
+                            txt.addEventListener("keydown", (e) => {
+                                if (e.key === "Enter") { e.preventDefault(); commit(); }
+                                if (e.key === "Escape") { wrap.remove(); input.appendChild(add); }
+                            });
+                            wrap.append(txt, ok);
+                            add.remove();
+                            input.appendChild(wrap);
+                            txt.focus();
+                        });
+                        input.appendChild(add);
+                    }
+                    break;
+                }
+
+                case "printscreen": {
+                    input = el("div", "flex flex-col gap-2 items-start");
+                    const btn = el("button", BTN_SMALL, f.buttonLabel || "Printscreen maken");
+                    btn.type = "button";
+                    btn.dataset.printscreen = f.id;
+                    btn.addEventListener("click", () => {
+                        // Losgekoppeld: de pagina vangt dit op, legt de schermafdruk
+                        // vast en laat de AI daarmee de velden invullen.
+                        row.dispatchEvent(new CustomEvent("printscreen-request", {
+                            bubbles: true,
+                            detail: { fieldId: f.id, button: btn },
+                        }));
                     });
+                    const shots = el("div", "flex gap-2 flex-wrap");
+                    shots.dataset.shots = f.id;
+                    input.append(btn, shots);
+                    (Array.isArray(value) ? value : []).forEach((src) => this._thumb(shots, src));
                     break;
                 }
 
@@ -272,6 +404,35 @@
             });
         },
 
+        /** Voeg een miniatuur toe met een kruisje om te verwijderen. */
+        _thumb(shotsEl, src) {
+            const box = el("span", "relative inline-block");
+            const img = el("img", "h-14 rounded border border-neutral-200 dark:border-slate-700 cursor-pointer");
+            img.src = src;
+            img.dataset.shot = "1";
+            img.addEventListener("click", () => window.open(src, "_blank"));
+            const kill = el("button", "absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-neutral-700 text-white text-[10px] leading-none flex items-center justify-center cursor-pointer border-0", "×");
+            kill.type = "button";
+            kill.title = "Verwijderen";
+            kill.addEventListener("click", (e) => { e.stopPropagation(); box.remove(); });
+            box.append(img, kill);
+            shotsEl.appendChild(box);
+            return box;
+        },
+
+        /** Hang een schermafdruk aan een printscreen-veld. */
+        addScreenshot(container, fieldId, dataUri) {
+            const shots = container.querySelector('[data-shots="' + fieldId + '"]');
+            if (!shots) return false;
+            this._thumb(shots, dataUri);
+            return true;
+        },
+
+        /** Alle schermafdruk-data-URI's van het formulier, over alle velden heen. */
+        allScreenshots(container) {
+            return Array.from(container.querySelectorAll("img[data-shot]")).map((i) => i.src);
+        },
+
         read(container, schema, { includeHidden = false } = {}) {
             const out = {};
             (schema.fields || []).forEach((f) => {
@@ -283,9 +444,12 @@
                 if (f.type === "radio" || f.type === "boolean") {
                     const on = row.querySelector('button[data-selected="1"]');
                     if (on) out[f.id] = on.dataset.value;
-                } else if (f.type === "checkboxes") {
+                } else if (f.type === "checkboxes" || f.type === "dynamicCheckboxes") {
                     const vals = Array.from(row.querySelectorAll("input[type=checkbox]:checked")).map((c) => c.value);
                     if (vals.length) out[f.id] = vals;
+                } else if (f.type === "printscreen") {
+                    const srcs = Array.from(row.querySelectorAll("img[data-shot]")).map((i) => i.src);
+                    if (srcs.length) out[f.id] = srcs;
                 } else {
                     const input = row.querySelector("[data-input]");
                     if (input && input.value !== "") out[f.id] = input.value;
@@ -303,14 +467,38 @@
                 const v = values[f.id];
 
                 if (f.type === "radio" || f.type === "boolean") {
-                    row.querySelectorAll("button").forEach((b) => {
+                    row.querySelectorAll("button[data-value]").forEach((b) => {
                         const want = String(b.dataset.value) === String(v);
                         const isOn = b.dataset.selected === "1";
                         if (want !== isOn) b.click();
                     });
-                } else if (f.type === "checkboxes") {
+                } else if (f.type === "checkboxes" || f.type === "dynamicCheckboxes") {
                     const want = (Array.isArray(v) ? v : [v]).map(String);
-                    row.querySelectorAll("input[type=checkbox]").forEach((c) => { c.checked = want.includes(c.value); });
+                    const boxes = Array.from(row.querySelectorAll("input[type=checkbox]"));
+                    boxes.forEach((c) => { c.checked = want.includes(c.value); });
+                    if (f.type === "dynamicCheckboxes") {
+                        // Waarden die nog geen aanvinkvakje hebben alsnog toevoegen,
+                        // zodat een AI-suggestie of bewaarde waarde niet verdwijnt.
+                        const present = boxes.map((c) => c.value);
+                        const holder = row.querySelector("[data-input]");
+                        want.filter((x) => !present.includes(x)).forEach((x) => {
+                            const line = el("label", "flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer");
+                            const cb = el("input");
+                            cb.type = "checkbox";
+                            cb.value = x;
+                            cb.checked = true;
+                            cb.className = "rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500";
+                            line.append(cb, el("span", "", x));
+                            const addBtn = holder.querySelector("button");
+                            holder.insertBefore(line, addBtn || null);
+                        });
+                    }
+                } else if (f.type === "printscreen") {
+                    const shots = row.querySelector('[data-shots="' + f.id + '"]');
+                    if (shots) {
+                        shots.innerHTML = "";
+                        (Array.isArray(v) ? v : [v]).forEach((src) => this._thumb(shots, src));
+                    }
                 } else {
                     const input = row.querySelector("[data-input]");
                     if (input) input.value = v;
@@ -330,7 +518,9 @@
         toQuestionnaireResponse(schema, values) {
             const items = [];
             (schema.fields || []).forEach((f) => {
-                if (f.type === "section" || !(f.id in values)) return;
+                // Schermafdrukken horen niet in de response: die zitten als
+                // bijlage bij het record, niet als tekstwaarde.
+                if (f.type === "section" || f.type === "printscreen" || !(f.id in values)) return;
                 const v = values[f.id];
                 const answers = (Array.isArray(v) ? v : [v]).map((x) => {
                     if (f.type === "number") return { valueDecimal: Number(x) };
@@ -579,13 +769,12 @@ Voorbeeld van een geldig antwoord:
         /** Beschrijf de velden zodat het model weet welke sleutels en opties toegelaten zijn. */
         describeFields(schema) {
             return (schema.fields || [])
-                .filter((f) => f.type !== "section")
+                .filter((f) => f.type !== "section" && f.type !== "printscreen")
                 .map((f) => {
                     const parts = ["- " + f.id + " (" + f.label + ")", "type: " + f.type];
-                    if (f.options && f.options.length) {
-                        const opts = f.options.map((o) => (typeof o === "string" ? o : o.label));
-                        parts.push("toegestane opties: " + opts.join(" | "));
-                    }
+                    const opts = resolveOptions(f).map((o) => (typeof o === "string" ? o : o.label));
+                    if (opts.length) parts.push("toegestane opties: " + opts.join(" | "));
+                    else if (f.type === "dynamicCheckboxes") parts.push("vrije tekst, meerdere waarden toegestaan");
                     return parts.join(" — ");
                 })
                 .join("\n");
@@ -768,6 +957,327 @@ Voorbeeld van een geldig antwoord:
         },
     };
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // mountFormsUI — plaatst de niet-template laag op een pagina
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // VERWIJDEREN VAN DE NIET-TEMPLATE MODE
+    // Zodra er een echte database gekoppeld is, verdwijnt deze laag met
+    // drie ingrepen per pagina, zonder de rest van de pagina te raken:
+    //   1. de twee <script src="forms-shared.js"> en "<pagina>-schema.js" regels
+    //   2. de JyzForms.mountFormsUI({ ... }) aanroep
+    //   3. de <div data-nontemplate> containers in de twee <details> blokken
+    // Alle overige code op de pagina (Tiro-formulieren, save-knoppen, export)
+    // blijft ongewijzigd werken: deze laag hangt er bovenop en onderschept
+    // alleen zolang de niet-template mode actief is.
+    //
+    const MODE_KEY_PREFIX = "templateMode_";
+
+    function mountFormsUI(config) {
+        const {
+            page,                 // opslagnaam: "qc" of "database"
+            sections = [],        // [{ tiro, native, schema }]
+            primarySchema,        // schema voor records en overzicht
+            saveBtn, saveAndSendBtn, backBtn,
+            onSend,               // async (questionnaireResponse) => void
+        } = config;
+
+        const modeKey = MODE_KEY_PREFIX + page;
+        const isTemplateMode = () => localStorage.getItem(modeKey) !== "off";
+        const params = new URLSearchParams(location.search);
+        let currentRecordId = null;
+
+        // ── Native formulieren opbouwen ─────────────────────────────────
+        function renderNative() {
+            sections.forEach(({ native, schema }) => {
+                if (!native) return;
+                SchemaForm.render(native, schema, prefillFromParams(schema, params));
+            });
+        }
+
+        function prefillFromParams(schema, sp) {
+            const out = {};
+            (schema.fields || []).forEach((f) => {
+                if (!f.fromParam) return;
+                const v = sp.get(f.fromParam);
+                if (v) out[f.id] = v;
+            });
+            return out;
+        }
+
+        function applyMode() {
+            const tpl = isTemplateMode();
+            sections.forEach(({ tiro, native }) => {
+                if (tiro) tiro.classList.toggle("hidden", !tpl);
+                if (native) native.classList.toggle("hidden", tpl);
+            });
+            if (saveAndSendBtn) saveAndSendBtn.classList.remove("hidden");
+            toggleLabel.textContent = tpl ? "Template mode" : "Niet-template mode";
+            knob.style.transform = tpl ? "translateX(0)" : "translateX(14px)";
+            track.className = "relative w-9 h-5 rounded-full transition-colors flex-shrink-0 " +
+                (tpl ? "bg-cyan-600" : "bg-neutral-300 dark:bg-slate-600");
+        }
+
+        // ── Toggle, links onderaan ───────────────────────────────────────
+        const toggleWrap = el("div", "fixed bottom-4 left-4 z-40 flex items-center gap-2 px-3 py-2 rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted shadow-lg cursor-pointer select-none");
+        toggleWrap.dataset.nontemplateUi = "1";
+        toggleWrap.dataset.nontemplateToggle = "1";
+        toggleWrap.title = "Wissel tussen de Tiro-template en het lokale formulier";
+        const track = el("div", "");
+        const knob = el("div", "absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform");
+        track.appendChild(knob);
+        const toggleLabel = el("span", "text-xs font-medium text-neutral-700 dark:text-neutral-200", "Template mode");
+        toggleWrap.append(track, toggleLabel);
+        toggleWrap.addEventListener("click", () => {
+            localStorage.setItem(modeKey, isTemplateMode() ? "off" : "on");
+            applyMode();
+        });
+        document.body.appendChild(toggleWrap);
+
+        // ── Database-knop, naast Back ───────────────────────────────────
+        const dbBtn = el("button", BTN, "");
+        dbBtn.type = "button";
+        dbBtn.dataset.nontemplateUi = "1";
+        dbBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><span>Database</span>';
+        dbBtn.addEventListener("click", () => {
+            Overview.open({
+                store: page,
+                schema: primarySchema,
+                onLoad: (record) => {
+                    if (isTemplateMode()) {
+                        localStorage.setItem(modeKey, "off");
+                        applyMode();
+                    }
+                    currentRecordId = record.id;
+                    sections.forEach(({ native, schema }) => {
+                        if (native) SchemaForm.fill(native, schema, record.values || {});
+                    });
+                },
+            });
+        });
+        if (backBtn && backBtn.parentElement) {
+            backBtn.parentElement.classList.add("flex", "gap-2");
+            backBtn.insertAdjacentElement("afterend", dbBtn);
+        }
+
+        // ── Foto-knop, rechts onderaan ──────────────────────────────────
+        const photoBtn = el("button", "fixed bottom-4 right-4 z-40 inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 shadow-lg cursor-pointer");
+        photoBtn.type = "button";
+        photoBtn.dataset.nontemplateUi = "1";
+        photoBtn.title = "Velden invullen op basis van één of meer beelden";
+        photoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
+        photoBtn.addEventListener("click", () => openImageDialog());
+        document.body.appendChild(photoBtn);
+
+        // ── Beeld-dialoog: uploaden, plakken of scherm vastleggen ───────
+        let dialog = null;
+        function openImageDialog() {
+            if (!dialog) dialog = buildImageDialog();
+            dialog.images.length = 0;
+            dialog.strip.innerHTML = "";
+            dialog.status.textContent = "";
+            dialog.overlay.classList.remove("hidden");
+        }
+
+        function buildImageDialog() {
+            const overlay = el("div", OVERLAY);
+            const panel = el("div", PANEL + " w-full max-w-lg");
+            const head = el("div", "flex items-center px-4 py-3 border-b border-neutral-200 dark:border-slate-700");
+            head.appendChild(el("h2", "text-sm font-semibold text-neutral-800 dark:text-neutral-100", "Velden invullen uit beeld"));
+            const x = el("button", "ml-auto text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg leading-none cursor-pointer", "×");
+            x.type = "button";
+            x.addEventListener("click", () => overlay.classList.add("hidden"));
+            head.appendChild(x);
+
+            const body = el("div", "p-4 flex flex-col gap-3");
+            const drop = el("div", "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-neutral-300 dark:border-slate-600 bg-neutral-50 dark:bg-background py-6 px-4 cursor-pointer text-center");
+            drop.appendChild(el("p", "text-xs text-neutral-500 dark:text-neutral-400", "Klik om te uploaden, sleep beelden hierheen of plak met Ctrl+V"));
+            const fileInput = el("input", "hidden");
+            fileInput.type = "file";
+            fileInput.accept = "image/*";
+            fileInput.multiple = true;
+            drop.appendChild(fileInput);
+            drop.addEventListener("click", () => fileInput.click());
+
+            const strip = el("div", "flex gap-2 flex-wrap");
+            const status = el("span", "text-xs text-neutral-500 dark:text-neutral-400");
+
+            const actions = el("div", "flex gap-2 items-center px-4 py-3 border-t border-neutral-200 dark:border-slate-700");
+            const capture = el("button", BTN_SMALL, "Scherm vastleggen");
+            capture.type = "button";
+            const run = el("button", BTN_PRIMARY, "Velden invullen");
+            run.type = "button";
+            actions.append(capture, status, el("span", "flex-1"), run);
+
+            body.append(drop, strip);
+            panel.append(head, body, actions);
+            overlay.appendChild(panel);
+            overlay.addEventListener("click", (e) => { if (e.target === overlay) overlay.classList.add("hidden"); });
+            document.body.appendChild(overlay);
+
+            const images = [];
+            const addImage = (dataUri) => {
+                images.push(dataUri);
+                SchemaForm._thumb(strip, dataUri);
+                status.textContent = images.length + (images.length === 1 ? " beeld" : " beelden");
+            };
+
+            fileInput.addEventListener("change", async () => {
+                for (const f of fileInput.files) {
+                    const d = await Screenshot.fromFile(f);
+                    if (d) addImage(d);
+                }
+                fileInput.value = "";
+            });
+            drop.addEventListener("dragover", (e) => { e.preventDefault(); });
+            drop.addEventListener("drop", async (e) => {
+                e.preventDefault();
+                for (const f of e.dataTransfer.files) {
+                    const d = await Screenshot.fromFile(f);
+                    if (d) addImage(d);
+                }
+            });
+            document.addEventListener("paste", async (e) => {
+                if (overlay.classList.contains("hidden")) return;
+                for (const d of await Screenshot.fromClipboard(e)) addImage(d);
+            });
+            capture.addEventListener("click", async () => {
+                try { addImage(await Screenshot.captureScreen()); }
+                catch (err) { status.textContent = err.message; }
+            });
+            run.addEventListener("click", async () => {
+                if (!images.length) { status.textContent = "Voeg eerst een beeld toe."; return; }
+                run.disabled = true;
+                const original = run.textContent;
+                run.textContent = "Bezig…";
+                status.textContent = "";
+                try {
+                    const n = await fillFromImages(images);
+                    overlay.classList.add("hidden");
+                    flash(n + (n === 1 ? " veld ingevuld" : " velden ingevuld"));
+                } catch (err) {
+                    status.textContent = err.message;
+                } finally {
+                    run.disabled = false;
+                    run.textContent = original;
+                }
+            });
+
+            return { overlay, strip, status, images };
+        }
+
+        /** Eén AI-aanroep over alle secties samen, daarna invullen in de actieve modus. */
+        async function fillFromImages(images) {
+            const merged = { id: "merged", fields: sections.flatMap((s) => s.schema.fields || []) };
+            const values = await AiImageFill.run(images, merged);
+            let filled = 0;
+            for (const { native, tiro, schema } of sections) {
+                const mine = {};
+                (schema.fields || []).forEach((f) => { if (f.id in values) mine[f.id] = values[f.id]; });
+                if (!Object.keys(mine).length) continue;
+                if (isTemplateMode()) {
+                    const formEl = tiro && tiro.querySelector("tiro-form-filler");
+                    if (formEl) filled += await TiroFill.fillValues(formEl, schema, mine);
+                } else if (native) {
+                    SchemaForm.fill(native, schema, mine);
+                    filled += Object.keys(mine).length;
+                }
+            }
+            return filled;
+        }
+
+        // ── Printscreen in het formulier: vastleggen én velden invullen ──
+        sections.forEach(({ native }) => {
+            if (!native) return;
+            native.addEventListener("printscreen-request", async (e) => {
+                const { fieldId, button } = e.detail;
+                const label = button.textContent;
+                button.disabled = true;
+                button.textContent = "Bezig…";
+                try {
+                    const shot = await Screenshot.captureScreen();
+                    SchemaForm.addScreenshot(native, fieldId, shot);
+                    const n = await fillFromImages([shot]).catch(() => 0);
+                    flash(n ? "Schermafdruk toegevoegd, " + n + " velden ingevuld" : "Schermafdruk toegevoegd");
+                } catch (err) {
+                    flash(err.message, true);
+                } finally {
+                    button.disabled = false;
+                    button.textContent = label;
+                }
+            });
+        });
+
+        // ── Bewaren in niet-template mode ───────────────────────────────
+        function collect() {
+            const values = {};
+            sections.forEach(({ native, schema }) => {
+                if (!native) return;
+                Object.assign(values, SchemaForm.read(native, schema));
+            });
+            const screenshots = sections.flatMap(({ native }) => (native ? SchemaForm.allScreenshots(native) : []));
+            return { values, screenshots };
+        }
+
+        async function saveRecord({ send = false } = {}) {
+            const { values, screenshots } = collect();
+            if (!Object.keys(values).length) { flash("Niets in te vullen gevonden.", true); return; }
+            const record = await RecordStore.save(page, {
+                id: currentRecordId || undefined,
+                form: page,
+                values,
+                screenshots,
+                sent: false,
+            });
+            currentRecordId = record.id;
+            if (!send) { flash("Bewaard in de lokale database"); return; }
+            try {
+                const qr = SchemaForm.toQuestionnaireResponse(primarySchema, values);
+                if (onSend) await onSend(qr);
+                record.sent = true;
+                await RecordStore.save(page, record);
+                flash("Bewaard en verzonden");
+            } catch (err) {
+                flash("Bewaard, maar versturen mislukte: " + err.message, true);
+            }
+        }
+
+        // Onderschep de bestaande knoppen alleen in niet-template mode, in de
+        // capture-fase. De eigen handlers van de pagina blijven zo onaangeroerd.
+        const intercept = (btn, opts) => {
+            if (!btn) return;
+            btn.addEventListener("click", (e) => {
+                if (isTemplateMode()) return;
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                saveRecord(opts);
+            }, true);
+        };
+        intercept(saveBtn, { send: false });
+        intercept(saveAndSendBtn, { send: true });
+
+        // ── Korte statusmelding ─────────────────────────────────────────
+        let flashEl = null;
+        function flash(message, isError) {
+            if (!flashEl) {
+                flashEl = el("div", "fixed bottom-20 right-4 z-50 px-3 py-2 rounded-md text-xs shadow-lg transition-opacity");
+                flashEl.dataset.nontemplateUi = "1";
+                document.body.appendChild(flashEl);
+            }
+            flashEl.className = "fixed bottom-20 right-4 z-50 px-3 py-2 rounded-md text-xs shadow-lg transition-opacity " +
+                (isError ? "bg-red-600 text-white" : "bg-neutral-800 dark:bg-slate-700 text-white");
+            flashEl.textContent = message;
+            flashEl.style.opacity = "1";
+            clearTimeout(flash._t);
+            flash._t = setTimeout(() => { flashEl.style.opacity = "0"; }, 2600);
+        }
+
+        renderNative();
+        applyMode();
+
+        return { applyMode, renderNative, saveRecord, isTemplateMode, fillFromImages, flash };
+    }
+
     global.JyzForms = {
         RecordStore,
         SchemaForm,
@@ -775,6 +1285,10 @@ Voorbeeld van een geldig antwoord:
         Screenshot,
         AiImageFill,
         Overview,
+        NameLists,
+        SnomedOptions,
+        mountFormsUI,
+        resolveOptions,
         DEFAULT_FORM_FILL_PROMPT,
         styles: { BTN, BTN_PRIMARY, BTN_SMALL, INPUT, LABEL, PANEL, OVERLAY },
         el,
