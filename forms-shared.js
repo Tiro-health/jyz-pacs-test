@@ -73,11 +73,17 @@
             return "r" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
         },
 
+        /** Ruwe schrijfactie; laat createdAt en updatedAt ongemoeid. Voor imports. */
+        put(store, record) {
+            return this._tx(store, "readwrite", (os) => os.put(record)).then(() => record);
+        },
+
+        /** Bewaren vanuit het formulier: stempelt updatedAt op nu. */
         save(store, record) {
             if (!record.id) record.id = this.newId();
             if (!record.createdAt) record.createdAt = new Date().toISOString();
             record.updatedAt = new Date().toISOString();
-            return this._tx(store, "readwrite", (os) => os.put(record)).then(() => record);
+            return this.put(store, record);
         },
 
         all(store) {
@@ -99,16 +105,68 @@
             return out;
         },
 
-        /** Records terugzetten uit een geïmporteerd JSON-bestand. */
-        async importAll(data, { replace = false } = {}) {
+        /**
+         * Voeg geïmporteerde records samen met wat er al staat, zonder nieuwer
+         * werk te overschrijven en zonder de originele tijdstempels te wissen.
+         *
+         *   zelfde id, nieuwere versie      → bijwerken
+         *   zelfde id, gelijke versie       → ongewijzigd (zelfde bestand opnieuw)
+         *   zelfde id, oudere versie        → overslaan, het lokale record blijft
+         *   nieuw id, gelijke vingerafdruk  → gemeld als mogelijk dubbel
+         *   nieuw id, onbekend              → toevoegen
+         *
+         * Met dryRun verandert er niets; je krijgt enkel de telling terug, zodat
+         * de gebruiker eerst kan zien wat een import zou doen.
+         */
+        async merge(store, records, { fingerprint = null, includeDuplicates = false, dryRun = false } = {}) {
+            const existing = await this.all(store);
+            const byId = new Map(existing.map((r) => [r.id, r]));
+            const prints = new Map();
+            if (fingerprint) {
+                existing.forEach((r) => { const fp = fingerprint(r); if (fp) prints.set(fp, r); });
+            }
+
+            const added = [], updated = [], older = [], unchanged = [], duplicates = [];
+            for (const rec of records || []) {
+                if (!rec || !rec.id) continue;
+                const mine = byId.get(rec.id);
+                if (mine) {
+                    const theirs = String(rec.updatedAt || rec.createdAt || "");
+                    const ours = String(mine.updatedAt || mine.createdAt || "");
+                    (theirs > ours ? updated : theirs === ours ? unchanged : older).push(rec);
+                    continue;
+                }
+                const fp = fingerprint ? fingerprint(rec) : null;
+                if (fp && prints.has(fp)) { duplicates.push(rec); continue; }
+                added.push(rec);
+                if (fp) prints.set(fp, rec);
+            }
+
+            const summary = {
+                added: added.length,
+                updated: updated.length,
+                older: older.length,
+                unchanged: unchanged.length,
+                duplicates: duplicates.length,
+            };
+            if (dryRun) return summary;
+
+            const write = added.concat(updated, includeDuplicates ? duplicates : []);
+            for (const rec of write) await this.put(store, rec);
+            summary.written = write.length;
+            summary.duplicatesAdded = includeDuplicates ? duplicates.length : 0;
+            return summary;
+        },
+
+        /** Records van meerdere stores terugzetten uit een geïmporteerd bestand. */
+        async importAll(data, { replace = false, ...opts } = {}) {
             if (!data || typeof data !== "object") return 0;
             let n = 0;
             for (const s of this.STORES) {
                 if (!Array.isArray(data[s])) continue;
                 if (replace) await this._tx(s, "readwrite", (os) => os.clear());
-                for (const rec of data[s]) {
-                    if (rec && rec.id) { await this.save(s, rec); n++; }
-                }
+                const r = await this.merge(s, data[s], opts);
+                n += r.written || 0;
             }
             return n;
         },

@@ -753,14 +753,24 @@
 
                 // Records importeren; weigert een bestand van het verkeerde soort,
                 // zodat je geen kwaliteitscontrole-records in de database plakt.
+                // Herkent of twee records over dezelfde casus gaan, ook wanneer ze
+                // op verschillende werkposten bewaard zijn en dus een ander id
+                // kregen. Zonder pacsnummer is er te weinig om op te vergelijken;
+                // dan wordt er niet op dubbels gecontroleerd.
+                const FINGERPRINTS = {
+                    qc:       (r) => (r.values?.pacsnummer || '') && [r.values.pacsnummer, r.values.reden || ''].join('|'),
+                    database: (r) => (r.values?.pacsnummer || '') && [r.values.pacsnummer, r.values.casus_type || ''].join('|'),
+                };
+
                 async function importRecords(input, store, kind, one, many) {
                     const say = (n) => n + ' ' + (n === 1 ? one : many);
                     const data = await readJsonFile(input);
                     if (!data) return;
+                    const done = () => { input.value = ''; };
+
                     if (data.kind && data.kind !== kind) {
                         alert('Dit bestand bevat "' + data.kind + '", niet "' + kind + '". Kies het juiste bestand of gebruik de andere kolom.');
-                        input.value = '';
-                        return;
+                        return done();
                     }
                     // Ook een ouder gecombineerd configuratiebestand blijft bruikbaar.
                     const records = Array.isArray(data.records) ? data.records
@@ -768,16 +778,43 @@
                         : null;
                     if (!records) {
                         alert('Geen ' + many + ' gevonden in dit bestand.');
-                        input.value = '';
-                        return;
+                        return done();
                     }
-                    if (!confirm(say(records.length) + ' toevoegen aan de bestaande?')) {
-                        input.value = '';
-                        return;
+
+                    const store_ = JyzForms.RecordStore;
+                    const fingerprint = FINGERPRINTS[store];
+                    // Eerst kijken wat een import zou doen, zonder iets te wijzigen.
+                    const plan = await store_.merge(store, records, { fingerprint, dryRun: true });
+
+                    const lines = ['Dit bestand bevat ' + say(records.length) + '.', ''];
+                    if (plan.added)      lines.push('• ' + say(plan.added) + ' worden toegevoegd');
+                    if (plan.updated)    lines.push('• ' + say(plan.updated) + ' worden bijgewerkt naar de nieuwere versie uit het bestand');
+                    if (plan.unchanged)  lines.push('• ' + say(plan.unchanged) + ' staan er al identiek in');
+                    if (plan.older)      lines.push('• ' + say(plan.older) + ' worden overgeslagen: jouw versie is nieuwer');
+                    if (plan.duplicates) lines.push('• ' + say(plan.duplicates) + ' lijken al aanwezig onder een ander id (zelfde pacsnummer)');
+                    if (!plan.added && !plan.updated) lines.push('• er valt niets toe te voegen of bij te werken');
+                    lines.push('', 'Doorgaan?');
+                    if (!confirm(lines.join('\n'))) return done();
+
+                    let includeDuplicates = false;
+                    if (plan.duplicates) {
+                        includeDuplicates = confirm(
+                            say(plan.duplicates) + ' lijken dubbels van casussen die je al hebt.\n\n' +
+                            'OK = toch toevoegen als extra records\n' +
+                            'Annuleren = overslaan (aanbevolen)'
+                        );
                     }
-                    const n = await JyzForms.RecordStore.importAll({ [store]: records });
-                    input.value = '';
-                    alert(say(n) + ' geïmporteerd.');
+
+                    const result = await store_.merge(store, records, { fingerprint, includeDuplicates });
+                    done();
+                    const msg = [];
+                    if (result.added)           msg.push(result.added + ' toegevoegd');
+                    if (result.updated)         msg.push(result.updated + ' bijgewerkt');
+                    if (result.unchanged)       msg.push(result.unchanged + ' stonden er al identiek in');
+                    if (result.older)           msg.push(result.older + ' overgeslagen (jouw versie was nieuwer)');
+                    if (result.duplicatesAdded) msg.push(result.duplicatesAdded + ' dubbels toegevoegd');
+                    else if (result.duplicates) msg.push(result.duplicates + ' dubbels overgeslagen');
+                    alert(msg.length ? msg.join(', ') + '.' : 'Er is niets gewijzigd.');
                     await refreshCounts();
                 }
 
