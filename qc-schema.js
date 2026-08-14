@@ -21,14 +21,15 @@
         questionnaire: "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0",
         fields: [
             { id: "dossier", label: "Dossier gegevens", type: "section" },
-            { id: "naam_voornaam",       label: "NAAM VOORNAAM",       type: "text", fromParam: "patientName",      hint: "DICOM 0010,0010" },
             { id: "pacsnummer",          label: "PACSNUMMER",          type: "text", fromParam: "accessionNumber",  hint: "DICOM 0008,0050" },
             { id: "onderzoek_datum",     label: "ONDERZOEK DATUM",     type: "text", fromParam: "studyDate",        hint: "DICOM 0008,0021 – 0008,0030" },
             { id: "aanvrager",           label: "AANVRAGER",           type: "text", fromParam: "referringPhysician", hint: "DICOM 0008,0090" },
             { id: "onderzoek_modaliteit", label: "ONDERZOEK MODALITEIT", type: "text", fromParam: "modality",        hint: "DICOM 0008,0060" },
             { id: "onderzoek_type",      label: "ONDERZOEK TYPE",      type: "text", fromParam: "type_onderzoek",   hint: "DICOM 0008,1030" },
             { id: "snelkoppeling",       label: "Snelkoppeling",       type: "text" },
-            { id: "radioloog_dossier",   label: "Radioloog",           type: "text", fromParam: "radioloog", placeholder: "User" },
+            // Standaard de gebruiker die in Namenlijsten is aangeduid als
+            // "gebruiker van dit profiel"; een radioloog uit de URL gaat voor.
+            { id: "radioloog_dossier",   label: "Radioloog",           type: "text", fromParam: "radioloog", defaultFrom: "currentUser", placeholder: "User" },
         ],
     };
 

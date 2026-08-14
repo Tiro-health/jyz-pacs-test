@@ -180,23 +180,76 @@
     const NameLists = {
         KEYS: { radiologen: "qcRadiologenLijst", aanvragers: "qcAanvragersLijst" },
 
-        get(which) {
+        /**
+         * Lijst van { name, email, isUser }. Oudere lijsten bevatten platte
+         * strings zonder e-mailadres; die blijven leesbaar en krijgen een leeg
+         * adres. isUser duidt aan wie de gebruiker van dit profiel is; dat
+         * wordt later vervangen door de aanmelding.
+         */
+        entries(which) {
             try {
-                const raw = localStorage.getItem(this.KEYS[which]);
-                const arr = JSON.parse(raw || "[]");
-                return Array.isArray(arr) ? arr.filter((x) => typeof x === "string" && x.trim()) : [];
+                const arr = JSON.parse(localStorage.getItem(this.KEYS[which]) || "[]");
+                if (!Array.isArray(arr)) return [];
+                return arr
+                    .map((e) => (typeof e === "string"
+                        ? { name: e.trim(), email: "", isUser: false }
+                        : {
+                            name: String(e?.name || "").trim(),
+                            email: String(e?.email || "").trim(),
+                            isUser: e?.isUser === true,
+                        }))
+                    .filter((e) => e.name);
             } catch { return []; }
         },
 
-        set(which, names) {
+        /** De naam die als gebruiker van dit profiel is aangeduid. */
+        currentUser() {
+            for (const which of Object.keys(this.KEYS)) {
+                const hit = this.entries(which).find((e) => e.isUser);
+                if (hit) return hit.name;
+            }
+            return "";
+        },
+
+        /** Alleen de namen — dat is wat in de keuzelijsten en in de records staat. */
+        get(which) {
+            return this.entries(which).map((e) => e.name);
+        },
+
+        set(which, entries) {
             if (!this.KEYS[which]) return;
-            const clean = (names || []).map((n) => String(n).trim()).filter(Boolean);
+            const clean = (entries || [])
+                .map((e) => (typeof e === "string"
+                    ? { name: e.trim(), email: "", isUser: false }
+                    : {
+                        name: String(e?.name || "").trim(),
+                        email: String(e?.email || "").trim(),
+                        isUser: e?.isUser === true,
+                    }))
+                .filter((e) => e.name);
+            // Hoogstens één gebruiker van dit profiel.
+            let seen = false;
+            clean.forEach((e) => {
+                if (e.isUser && !seen) seen = true;
+                else e.isUser = false;
+            });
             localStorage.setItem(this.KEYS[which], JSON.stringify(clean));
+        },
+
+        /** Zoek het e-mailadres bij een naam, over alle lijsten heen. */
+        emailFor(name) {
+            const target = String(name || "").trim().toLowerCase();
+            if (!target) return "";
+            for (const which of Object.keys(this.KEYS)) {
+                const hit = this.entries(which).find((e) => e.name.toLowerCase() === target);
+                if (hit && hit.email) return hit.email;
+            }
+            return "";
         },
 
         all() {
             const out = {};
-            Object.keys(this.KEYS).forEach((k) => { out[this.KEYS[k]] = this.get(k); });
+            Object.keys(this.KEYS).forEach((k) => { out[this.KEYS[k]] = this.entries(k); });
             return out;
         },
     };
@@ -1037,7 +1090,9 @@ Voorbeeld van een geldig antwoord:
             sections = [],        // [{ tiro, native, schema }]
             primarySchema,        // schema voor records en overzicht
             saveBtn, saveAndSendBtn, backBtn,
-            onSend,               // async (questionnaireResponse) => void
+            onSend,               // async (questionnaireResponse, { recipient, values }) => void
+            sendWhen,             // (values) => boolean — wanneer versturen mag
+            recipientFrom,        // (values) => naam van de ontvanger
         } = config;
 
         const modeKey = MODE_KEY_PREFIX + page;
@@ -1050,17 +1105,43 @@ Voorbeeld van een geldig antwoord:
             sections.forEach(({ native, schema }) => {
                 if (!native) return;
                 SchemaForm.render(native, schema, prefillFromParams(schema, params));
+                if (!native.dataset.sendWatch) {
+                    native.dataset.sendWatch = "1";
+                    native.addEventListener("change", updateSendButton);
+                    native.addEventListener("input", updateSendButton);
+                }
             });
         }
 
         function prefillFromParams(schema, sp) {
             const out = {};
             (schema.fields || []).forEach((f) => {
-                if (!f.fromParam) return;
-                const v = sp.get(f.fromParam);
-                if (v) out[f.id] = v;
+                const fromUrl = f.fromParam ? sp.get(f.fromParam) : null;
+                if (fromUrl) { out[f.id] = fromUrl; return; }
+                // Geen waarde in de URL: val terug op de ingestelde gebruiker.
+                if (f.defaultFrom === "currentUser") {
+                    const user = NameLists.currentUser();
+                    if (user) out[f.id] = user;
+                }
             });
             return out;
+        }
+
+        /**
+         * Versturen is alleen zinvol wanneer er een ontvanger is. Op de
+         * databasepagina betekent dat: Delen / Doorsturen op Ja met een
+         * gekozen radioloog. In template mode kan die voorwaarde niet gelezen
+         * worden, dus blijft de knop daar gewoon beschikbaar.
+         */
+        function updateSendButton() {
+            if (!saveAndSendBtn || !sendWhen) return;
+            const blocked = !isTemplateMode() && !sendWhen(collect().values);
+            saveAndSendBtn.disabled = blocked;
+            saveAndSendBtn.classList.toggle("opacity-40", blocked);
+            saveAndSendBtn.classList.toggle("cursor-not-allowed", blocked);
+            saveAndSendBtn.title = blocked
+                ? "Beschikbaar zodra Delen / Doorsturen op Ja staat en er een radioloog gekozen is"
+                : "";
         }
 
         function applyMode() {
@@ -1069,7 +1150,7 @@ Voorbeeld van een geldig antwoord:
                 if (tiro) tiro.classList.toggle("hidden", !tpl);
                 if (native) native.classList.toggle("hidden", tpl);
             });
-            if (saveAndSendBtn) saveAndSendBtn.classList.remove("hidden");
+            updateSendButton();
             toggleLabel.textContent = tpl ? "Template mode" : "Niet-template mode";
             knob.style.transform = tpl ? "translateX(0)" : "translateX(14px)";
             track.className = "relative w-9 h-5 rounded-full transition-colors flex-shrink-0 " +
@@ -1122,7 +1203,7 @@ Voorbeeld van een geldig antwoord:
         const photoBtn = el("button", "fixed bottom-4 right-4 z-40 inline-flex items-center justify-center w-11 h-11 rounded-full border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 shadow-lg cursor-pointer");
         photoBtn.type = "button";
         photoBtn.dataset.nontemplateUi = "1";
-        photoBtn.title = "Velden invullen op basis van één of meer beelden";
+        photoBtn.title = "Printscreen maken — velden invullen uit één of meer beelden";
         photoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>';
         photoBtn.addEventListener("click", () => openImageDialog());
         document.body.appendChild(photoBtn);
@@ -1244,7 +1325,10 @@ Voorbeeld van een geldig antwoord:
             return filled;
         }
 
-        // ── Printscreen in het formulier: vastleggen én velden invullen ──
+        // ── Printscreen in het formulier ─────────────────────────────────
+        // Puur een illustratieve opname van de pathologie of de fout, die als
+        // bijlage bij de casus hoort. Deze vult géén velden in — dat doet
+        // alleen de knop rechts onderaan.
         sections.forEach(({ native }) => {
             if (!native) return;
             native.addEventListener("printscreen-request", async (e) => {
@@ -1255,8 +1339,7 @@ Voorbeeld van een geldig antwoord:
                 try {
                     const shot = await Screenshot.captureScreen();
                     SchemaForm.addScreenshot(native, fieldId, shot);
-                    const n = await fillFromImages([shot]).catch(() => 0);
-                    flash(n ? "Schermafdruk toegevoegd, " + n + " velden ingevuld" : "Schermafdruk toegevoegd");
+                    flash("Schermafdruk toegevoegd");
                 } catch (err) {
                     flash(err.message, true);
                 } finally {
@@ -1288,13 +1371,18 @@ Voorbeeld van een geldig antwoord:
                 sent: false,
             });
             currentRecordId = record.id;
-            if (!send) { flash("Bewaard in de lokale database"); return; }
+            if (!send) { flash("Bewaard in de lokale database"); updateSendButton(); return; }
             try {
                 const qr = SchemaForm.toQuestionnaireResponse(primarySchema, values);
-                if (onSend) await onSend(qr);
+                const naam = recipientFrom ? recipientFrom(values) : "";
+                const recipient = naam ? NameLists.emailFor(naam) : "";
+                if (naam && !recipient) {
+                    throw new Error("Geen e-mailadres bekend voor " + naam + ". Vul dat in bij Namenlijsten op de flow-pagina.");
+                }
+                if (onSend) await onSend(qr, { recipient, naam, values });
                 record.sent = true;
                 await RecordStore.save(page, record);
-                flash("Bewaard en verzonden");
+                flash(recipient ? "Bewaard en verzonden naar " + naam : "Bewaard en verzonden");
             } catch (err) {
                 flash("Bewaard, maar versturen mislukte: " + err.message, true);
             }

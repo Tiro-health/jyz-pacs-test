@@ -235,7 +235,7 @@
                     <!-- Configuratie -->
                     <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
                         <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Configuratie</h3>
-                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Templates, logica, prompts, modellen, DICOM-codes en namenlijsten. Bevat geen patiëntgegevens.</p>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Templates, logica, prompts, modellen en DICOM-codes. Persoonlijk, en bevat geen patiëntgegevens.</p>
                         <span id="config-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
                         <button id="do-export-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
                         <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
@@ -248,7 +248,7 @@
                     <!-- Quality control -->
                     <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
                         <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Quality control</h3>
-                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Ingevulde kwaliteitscontrole-formulieren met hun schermafdrukken. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat patiëntgegevens.</span></p>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Dienstoverkoepelend: de ingevulde formulieren met hun schermafdrukken, plus de namenlijsten met e-mailadressen. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat patiëntgegevens.</span></p>
                         <span id="qc-records-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
                         <button id="export-qc-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
                         <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
@@ -710,8 +710,6 @@
                         prompts: Object.keys(prompts).length ? prompts : null,
                         dicomCodesBase: dicomBase && dicomBase.length ? dicomBase : null,
                         dicomCodesExtra: dicomExtra.length ? dicomExtra : null,
-                        // Namenlijsten horen bij de configuratie, niet bij de patiëntgegevens
-                        nameLists: JyzForms.NameLists.all(),
                     };
                     downloadJson(payload, 'flow-config');
                 });
@@ -739,16 +737,20 @@
                     }
                 }
 
-                // Records van één store exporteren.
+                // Records van één store exporteren. De namenlijsten reizen mee met
+                // Quality control: die is dienstoverkoepelend, terwijl configuratie
+                // en database per gebruiker zijn.
                 async function exportRecords(store, kind, prefix) {
                     const records = await JyzForms.RecordStore.all(store);
                     if (!records.length && !confirm('Er zijn nog geen bewaarde formulieren. Toch een leeg bestand downloaden?')) return;
-                    downloadJson({
+                    const payload = {
                         kind,
                         version: '1.0',
                         timestamp: new Date().toISOString(),
                         records,
-                    }, prefix);
+                    };
+                    if (store === 'qc') payload.nameLists = JyzForms.NameLists.all();
+                    downloadJson(payload, prefix);
                 }
 
                 // Records importeren; weigert een bestand van het verkeerde soort,
@@ -806,8 +808,13 @@
                     }
 
                     const result = await store_.merge(store, records, { fingerprint, includeDuplicates });
+                    // Namenlijsten uit een Quality control-bestand overnemen.
+                    if (data.nameLists) {
+                        Object.entries(data.nameLists).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+                    }
                     done();
                     const msg = [];
+                    if (data.nameLists) msg.push('namenlijsten bijgewerkt');
                     if (result.added)           msg.push(result.added + ' toegevoegd');
                     if (result.updated)         msg.push(result.updated + ' bijgewerkt');
                     if (result.unchanged)       msg.push(result.unchanged + ' stonden er al identiek in');
@@ -823,11 +830,14 @@
                     const qc = await JyzForms.RecordStore.all('qc');
                     const db = await JyzForms.RecordStore.all('database');
                     const fmt = (n, one, many) => n + ' ' + (n === 1 ? one : many);
-                    document.getElementById('qc-records-count').textContent = fmt(qc.length, 'formulier', 'formulieren');
-                    document.getElementById('db-records-count').textContent = fmt(db.length, 'casus', 'casussen');
                     const names = JyzForms.NameLists;
-                    document.getElementById('config-count').textContent =
-                        fmt(names.get('radiologen').length + names.get('aanvragers').length, 'naam', 'namen');
+                    const nNames = names.get('radiologen').length + names.get('aanvragers').length;
+                    document.getElementById('qc-records-count').textContent =
+                        fmt(qc.length, 'formulier', 'formulieren') + ' · ' + fmt(nNames, 'naam', 'namen');
+                    document.getElementById('db-records-count').textContent = fmt(db.length, 'casus', 'casussen');
+                    let nTpl = 0;
+                    try { nTpl = (JSON.parse(localStorage.getItem('flowConfig_v1') || 'null')?.templates || []).length; } catch {}
+                    document.getElementById('config-count').textContent = fmt(nTpl, 'template', 'templates');
                 }
 
                 document.getElementById('export-qc-btn').addEventListener('click', () =>

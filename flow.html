@@ -581,22 +581,20 @@
                     <button id="names-modal-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
                 </div>
                 <div class="flex-1 overflow-y-auto px-5 py-4">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Deze namen vullen de keuzelijsten op de kwaliteitscontrole- en databasepagina in de niet-template mode. Eén naam per regel. Wordt meegenomen in de JSON-export.</p>
-                    <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1">Radiologen</label>
-                    <textarea
-                        id="names-radiologen"
-                        rows="8"
-                        placeholder="Dr. Voornaam Naam"
-                        class="w-full px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
-                    ></textarea>
-                    <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1 mt-4">Aanvragers</label>
-                    <textarea
-                        id="names-aanvragers"
-                        rows="8"
-                        placeholder="Dr. Voornaam Naam"
-                        class="w-full px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"
-                    ></textarea>
-                    <div class="flex justify-end mt-2">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Deze namen vullen de keuzelijsten op de kwaliteitscontrole- en databasepagina in de niet-template mode. Het e-mailadres wordt gebruikt om een casus door te sturen. Wordt meegenomen in de export van Quality control.</p>
+
+                    <div class="flex items-baseline gap-2 mb-1">
+                        <label class="text-xs font-medium text-neutral-600 dark:text-neutral-300">Radiologen</label>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500">— vink aan wie de gebruiker van dit profiel is</span>
+                    </div>
+                    <div id="names-radiologen" class="flex flex-col gap-1.5"></div>
+                    <button id="names-add-radioloog" type="button" class="mt-1.5 text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">+ Radioloog toevoegen</button>
+
+                    <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1 mt-5">Aanvragers</label>
+                    <div id="names-aanvragers" class="flex flex-col gap-1.5"></div>
+                    <button id="names-add-aanvrager" type="button" class="mt-1.5 text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">+ Aanvrager toevoegen</button>
+
+                    <div class="flex justify-end mt-4">
                         <button id="names-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
                     </div>
                 </div>
@@ -4842,24 +4840,104 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         });
 
         // ── Namenlijsten (radiologen / aanvragers) ───────────────────────────────
-        // Vullen de keuzelijsten op qc.html en database.html in de niet-template mode.
+        // Vullen de keuzelijsten op qc.html en database.html in de niet-template
+        // mode. Het e-mailadres dient om een casus door te sturen; de aanvinkbare
+        // "gebruiker" bepaalt wie standaard in het veld Radioloog komt. Dat laatste
+        // wordt later vervangen door de aanmelding.
         (function () {
             const KEYS = { radiologen: 'qcRadiologenLijst', aanvragers: 'qcAanvragersLijst' };
             const modal   = document.getElementById('names-modal');
             const saveBtn = document.getElementById('names-save-btn');
-            const areas   = {
+            const lists   = {
                 radiologen: document.getElementById('names-radiologen'),
                 aanvragers: document.getElementById('names-aanvragers'),
             };
-            const load = (which) => {
+            const INP = 'px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500';
+
+            function load(which) {
                 try {
                     const arr = JSON.parse(localStorage.getItem(KEYS[which]) || '[]');
-                    return Array.isArray(arr) ? arr : [];
+                    if (!Array.isArray(arr)) return [];
+                    return arr.map(e => typeof e === 'string'
+                        ? { name: e, email: '', isUser: false }
+                        : { name: e?.name || '', email: e?.email || '', isUser: e?.isUser === true })
+                        .filter(e => e.name);
                 } catch { return []; }
-            };
-            const fill = () => {
-                Object.keys(areas).forEach(w => { areas[w].value = load(w).join('\n'); });
-            };
+            }
+
+            function addRow(which, entry) {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2';
+                row.dataset.row = '1';
+
+                const name = document.createElement('input');
+                name.type = 'text';
+                name.placeholder = 'Dr. Voornaam Naam';
+                name.value = entry?.name || '';
+                name.className = INP + ' flex-1 min-w-0';
+                name.dataset.name = '1';
+
+                const email = document.createElement('input');
+                email.type = 'email';
+                email.placeholder = 'naam@ziekenhuis.be';
+                email.value = entry?.email || '';
+                email.className = INP + ' flex-1 min-w-0';
+                email.dataset.email = '1';
+
+                row.append(name, email);
+
+                if (which === 'radiologen') {
+                    const lbl = document.createElement('label');
+                    lbl.className = 'flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap cursor-pointer';
+                    lbl.title = 'Gebruiker van dit profiel — komt standaard in het veld Radioloog';
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.checked = entry?.isUser === true;
+                    cb.dataset.user = '1';
+                    cb.className = 'rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500';
+                    // Hoogstens één gebruiker: aanvinken vinkt de andere uit.
+                    cb.addEventListener('change', () => {
+                        if (!cb.checked) return;
+                        lists.radiologen.querySelectorAll('input[data-user]').forEach(o => {
+                            if (o !== cb) o.checked = false;
+                        });
+                    });
+                    lbl.append(cb, document.createTextNode('gebruiker'));
+                    row.appendChild(lbl);
+                }
+
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.textContent = '✕';
+                del.title = 'Verwijderen';
+                del.className = 'px-1.5 text-neutral-400 hover:text-red-500 cursor-pointer text-xs';
+                del.addEventListener('click', () => row.remove());
+                row.appendChild(del);
+
+                lists[which].appendChild(row);
+                return row;
+            }
+
+            function fill() {
+                Object.keys(lists).forEach(which => {
+                    lists[which].innerHTML = '';
+                    const entries = load(which);
+                    if (!entries.length) addRow(which, null);
+                    else entries.forEach(e => addRow(which, e));
+                });
+            }
+
+            function collect(which) {
+                return Array.from(lists[which].querySelectorAll('[data-row]')).map(row => ({
+                    name:  row.querySelector('[data-name]').value.trim(),
+                    email: row.querySelector('[data-email]').value.trim(),
+                    isUser: row.querySelector('[data-user]')?.checked === true,
+                })).filter(e => e.name);
+            }
+
+            document.getElementById('names-add-radioloog').addEventListener('click', () => addRow('radiologen', null));
+            document.getElementById('names-add-aanvrager').addEventListener('click', () => addRow('aanvragers', null));
+
             document.getElementById('names-modal-btn').addEventListener('click', () => {
                 fill();
                 modal.classList.remove('hidden');
@@ -4871,10 +4949,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
             });
             saveBtn.addEventListener('click', () => {
-                Object.keys(areas).forEach(w => {
-                    const names = areas[w].value.split('\n').map(s => s.trim()).filter(Boolean);
-                    localStorage.setItem(KEYS[w], JSON.stringify(names));
-                });
+                Object.keys(lists).forEach(w => localStorage.setItem(KEYS[w], JSON.stringify(collect(w))));
                 saveBtn.textContent = 'Opgeslagen ✓';
                 setTimeout(() => { saveBtn.textContent = 'Opslaan'; }, 2000);
             });
