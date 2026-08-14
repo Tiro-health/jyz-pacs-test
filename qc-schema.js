@@ -55,7 +55,7 @@
             },
             {
                 id: "aanvraag_naam_aanvrager", label: "naam aanvrager", type: "select",
-                optionsFrom: "aanvragers", placeholder: "Selecteren…",
+                optionsFrom: "aanvragers", placeholder: "Selecteren",
                 showWhen: [{ field: "reden", equals: "Aanvraag" }, { field: "aanvraag_juiste_aanvrager", equals: "nee" }],
             },
             {
@@ -76,7 +76,7 @@
             },
             {
                 id: "medisch_naam_aanvrager", label: "Naam aanvrager", type: "select",
-                optionsFrom: "aanvragers", placeholder: "Selecteren…",
+                optionsFrom: "aanvragers", placeholder: "Selecteren",
                 showWhen: [{ field: "reden", equals: "Medisch - aanvrager" }, { field: "medisch_juiste_aanvrager", equals: "nee" }],
             },
             {
@@ -92,7 +92,7 @@
             { id: "sec_feedback", label: "Feedback Radioloog", type: "section", showWhen: { field: "reden", equals: "Feedback radioloog" } },
             {
                 id: "feedback_radioloog", label: "Radioloog", type: "select",
-                optionsFrom: "radiologen", placeholder: "Selecteren…",
+                optionsFrom: "radiologen", placeholder: "Selecteren",
                 showWhen: { field: "reden", equals: "Feedback radioloog" },
             },
             {
@@ -108,7 +108,7 @@
             { id: "sec_tweede", label: "Tweede lezing Radioloog", type: "section", showWhen: { field: "reden", equals: "Tweede lezing" } },
             {
                 id: "tweede_naam_radioloog", label: "naam radioloog", type: "select",
-                optionsFrom: "radiologen", placeholder: "Selecteren…",
+                optionsFrom: "radiologen", placeholder: "Selecteren",
                 showWhen: { field: "reden", equals: "Tweede lezing" },
             },
             {

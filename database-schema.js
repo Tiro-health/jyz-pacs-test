@@ -65,7 +65,7 @@
             },
             {
                 id: "int_radioloog", label: "Radioloog", type: "select",
-                optionsFrom: "radiologen", placeholder: "Selecteren…",
+                optionsFrom: "radiologen", placeholder: "Selecteren",
                 showWhen: [{ field: "casus_type", equals: "Interessante casus" }, { field: "int_delen", equals: "Ja" }],
             },
 
@@ -102,7 +102,7 @@
             },
             {
                 id: "opv_radioloog", label: "Radioloog", type: "select",
-                optionsFrom: "radiologen", placeholder: "Selecteren…",
+                optionsFrom: "radiologen", placeholder: "Selecteren",
                 showWhen: [{ field: "casus_type", equals: "Op te volgen casus" }, { field: "opv_delen", equals: "Ja" }],
             },
         ],
