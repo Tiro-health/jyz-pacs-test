@@ -165,9 +165,25 @@
                     <button
                         id="save-btn"
                         type="button"
+                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                            <polyline points="17 21 17 13 7 13 7 21"/>
+                            <polyline points="7 3 7 8 15 8"/>
+                        </svg>
+                        Save
+                    </button>
+                    <button
+                        id="save-and-send-btn"
+                        type="button"
                         class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
                     >
-                        Save
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 2 11 13"/>
+                            <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                        </svg>
+                        Save and send
                     </button>
                 </div>
             </div>
@@ -192,11 +208,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="study-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="study">
+                        <tiro-form-filler
+                            id="study-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="study" class="hidden"></div>
                 </div>
             </details>
 
@@ -219,11 +238,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="database-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="database">
+                        <tiro-form-filler
+                            id="database-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="database" class="hidden"></div>
                 </div>
             </details>
 
@@ -231,6 +253,10 @@
 
         <!-- Tiro Web SDK -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
+
+        <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
+        <script src="forms-shared.js"></script>
+        <script src="database-schema.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -273,6 +299,55 @@
             document.getElementById("save-btn").addEventListener("click", () => {
                 studyForm.requestSubmit();
                 databaseForm.requestSubmit();
+            });
+
+            const MAIL_FROM = "xavier.hoste@tiro.health";
+
+            // ── Niet-template mode ──────────────────────────────────────────
+            // Hangt bovenop de bestaande pagina en onderschept de save-knop
+            // alleen wanneer de toggle op niet-template staat. Verwijderen: schrap
+            // dit blok, de twee script-tags en de data-nontemplate containers.
+            JyzForms.mountFormsUI({
+                page: "database",
+                primarySchema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                sections: [
+                    {
+                        tiro:   document.querySelector('[data-tiro="study"]'),
+                        native: document.querySelector('[data-nontemplate="study"]'),
+                        schema: DATABASE_SCHEMAS.STUDY_SCHEMA,
+                    },
+                    {
+                        tiro:   document.querySelector('[data-tiro="database"]'),
+                        native: document.querySelector('[data-nontemplate="database"]'),
+                        schema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                    },
+                ],
+                saveBtn:        document.getElementById("save-btn"),
+                saveAndSendBtn: document.getElementById("save-and-send-btn"),
+                backBtn:        document.getElementById("back-btn"),
+                // Versturen kan pas als de casus effectief gedeeld wordt met een
+                // radioloog; welke tak actief is maakt niet uit.
+                sendWhen: (v) =>
+                    (v.int_delen === "Ja" && !!v.int_radioloog) ||
+                    (v.opv_delen === "Ja" && !!v.opv_radioloog),
+                recipientFrom: (v) => v.int_radioloog || v.opv_radioloog || "",
+                onSend: async (response, { recipient, naam }) => {
+                    if (!recipient) throw new Error("Geen e-mailadres voor " + (naam || "de radioloog") + ".");
+                    const res = await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/fhir+json" },
+                        body: JSON.stringify({
+                            resourceType: "Parameters",
+                            parameter: [
+                                { name: "response", resource: response },
+                                { name: "from", valueString: MAIL_FROM },
+                                { name: "to", valueString: recipient },
+                                { name: "subject", valueString: "Database radiologie — casus" },
+                            ],
+                        }),
+                    });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                },
             });
         </script>
     </body>

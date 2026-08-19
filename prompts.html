@@ -259,6 +259,25 @@
                 </div>
             </div>
 
+            <!-- Formulier invullen uit beeld (kwaliteitscontrole / database) -->
+            <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
+                    <span class="text-sm font-medium">Formulier invullen uit beeld</span>
+                    <button data-reset="form-fill" type="button" class="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors">Reset to default</button>
+                </div>
+                <div class="p-4 flex flex-col gap-2">
+                    <textarea id="form-fill-prompt" rows="4" class="w-full px-2 py-1.5 text-sm font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y"></textarea>
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Gebruikt door het foto-icoon en de Printscreen-knop op de kwaliteitscontrole- en databasepagina. Beschikbare placeholder: <code class="font-mono">{velden}</code> — daar worden de veld-id's, labels en toegestane opties ingevuld.</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
+                        <select id="form-fill-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="gemini-2.5-pro">gemini-2.5-pro</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro · multimodaal beeld</span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Autofill back-up template prompt -->
             <div class="bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg">
                 <div class="flex items-center justify-between px-4 py-3 border-b border-neutral-200 dark:border-slate-700">
@@ -415,6 +434,27 @@ Patiënt: {patient_info}
 - Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.
 - Antwoord in dezelfde taal als de vraag (Nederlands of Engels).`;
 
+            const DEFAULT_FORM_FILL = `Je bent een gespecialiseerde radiologie-assistent. Op de bijgevoegde beelden staat informatie over een radiologisch onderzoek (bijvoorbeeld een schermafdruk van een aanvraag, een verslag, een PACS-venster of een papieren document).
+
+Lees de beelden zorgvuldig en vul daarmee de onderstaande formuliervelden in.
+
+=== FORMULIERVELDEN ===
+{velden}
+=== EINDE FORMULIERVELDEN ===
+
+REGELS:
+- Geef UITSLUITEND een geldig JSON-object terug, zonder codeblok-markering en zonder uitleg
+- Gebruik de veld-id als sleutel, exact zoals hierboven vermeld
+- Vul een veld alleen in als de informatie werkelijk op het beeld staat; verzin NOOIT waarden
+- Laat een veld volledig weg uit de JSON wanneer je de informatie niet terugvindt
+- Bij een keuzeveld mag je uitsluitend één van de opgegeven opties gebruiken, letterlijk overgenomen
+- Bij een meerkeuzeveld geef je een array van opties
+- Datums in het formaat JJJJ-MM-DD
+- Neem tekst letterlijk over uit het beeld; vertaal of herformuleer niet
+
+Voorbeeld van een geldig antwoord:
+{"veld_id_1": "waarde", "veld_id_2": ["optie a", "optie b"]}`;
+
             const DEFAULT_MEDGEMMA = `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.
 
 === CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===
@@ -558,6 +598,14 @@ negated bevindingen
                     defaultPrompt: DEFAULT_MEDGEMMA,
                 },
                 {
+                    id: "form-fill-prompt",
+                    resetKey: "form-fill",
+                    storageKey: "formFillActionUrl",
+                    versionKey: "formFillPromptVersion",
+                    version: "1",
+                    defaultPrompt: DEFAULT_FORM_FILL,
+                },
+                {
                     id: "inline-check-prompt",
                     resetKey: "inline-check",
                     storageKey: "inlineCheckUrl",
@@ -631,6 +679,7 @@ negated bevindingen
                 { id: "autofill-backup-model", storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-2.5-pro"    },
                 { id: "snomed-model",          storageKey: "geminiModelSnomed",          defaultModel: "gemini-2.5-flash"  },
                 { id: "medgemma-model",        storageKey: "geminiModelMedgemma",        defaultModel: "gemini-2.5-flash"  },
+                { id: "form-fill-model",       storageKey: "geminiModelFormFill",        defaultModel: "gemini-2.5-pro"    },
                 { id: "ai-consult-model",      storageKey: "geminiModelAiConsult",       defaultModel: "gemini-2.5-pro"    },
             ];
 

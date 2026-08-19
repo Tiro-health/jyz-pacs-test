@@ -203,6 +203,19 @@
                 </svg>
                 Save
             </button>
+            <label
+                id="mail-toggle-wrap"
+                title="Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres"
+                class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-600 dark:text-neutral-300 shadow-lg cursor-pointer select-none"
+            >
+                <input
+                    id="mail-send-cb"
+                    type="checkbox"
+                    checked
+                    class="rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
+                />
+                <span class="text-xs">mail versturen</span>
+            </label>
             <button
                 id="save-and-send-btn"
                 type="button"
@@ -222,22 +235,56 @@
             ></button>
         </div>
 
-        <!-- Export/Import modal -->
-        <div id="export-import-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/40">
-            <div class="bg-white dark:bg-muted rounded-lg shadow-xl p-5 w-80 flex flex-col gap-4">
-                <h2 class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Export / Import Configuratie</h2>
-                <div class="flex flex-col gap-1.5">
-                    <p class="text-xs text-neutral-500 dark:text-neutral-400">Download de huidige templates en instellingen als JSON-bestand.</p>
-                    <button id="do-export-btn" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer configuratie</button>
+        <!-- Export/Import modal — drie aparte bestanden -->
+        <div id="export-import-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4">
+            <div class="bg-white dark:bg-muted rounded-lg shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh]">
+                <div class="flex items-center px-5 py-3 border-b border-neutral-200 dark:border-slate-700">
+                    <h2 class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Export / Import</h2>
+                    <button id="close-export-modal-btn" type="button" class="ml-auto text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg leading-none cursor-pointer">×</button>
                 </div>
-                <div class="border-t border-neutral-200 dark:border-slate-700 pt-3 flex flex-col gap-1.5">
-                    <p class="text-xs text-neutral-500 dark:text-neutral-400">Importeer een eerder geëxporteerd JSON-bestand. <span class="text-amber-600 dark:text-amber-400 font-medium">Huidige configuratie wordt overschreven.</span></p>
-                    <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
-                        ⬆ Importeer configuratie
-                        <input type="file" id="import-file-input" accept=".json" class="hidden">
-                    </label>
+
+                <div class="overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+
+                    <!-- Configuratie -->
+                    <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
+                        <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Configuratie</h3>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Templates, logica, prompts, modellen en DICOM-codes. Persoonlijk, en bevat geen patiëntgegevens.</p>
+                        <span id="config-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                        <button id="do-export-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
+                        <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
+                            ⬆ Importeer
+                            <input type="file" id="import-file-input" accept=".json" class="hidden">
+                        </label>
+                        <p class="text-xs text-amber-600 dark:text-amber-400">Overschrijft de huidige configuratie.</p>
+                    </div>
+
+                    <!-- Quality control -->
+                    <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
+                        <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Quality control</h3>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Dienstoverkoepelend: de ingevulde formulieren met hun schermafdrukken, plus de namenlijsten met e-mailadressen. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat patiëntgegevens.</span></p>
+                        <span id="qc-records-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                        <button id="export-qc-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
+                        <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
+                            ⬆ Importeer
+                            <input type="file" id="import-qc-input" accept=".json" class="hidden">
+                        </label>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Voegt toe aan de bestaande records.</p>
+                    </div>
+
+                    <!-- Database -->
+                    <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
+                        <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Database</h3>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Bewaarde casussen uit Database Radiologie met hun schermafdrukken. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat patiëntgegevens.</span></p>
+                        <span id="db-records-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                        <button id="export-db-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
+                        <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
+                            ⬆ Importeer
+                            <input type="file" id="import-db-input" accept=".json" class="hidden">
+                        </label>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Voegt toe aan de bestaande casussen.</p>
+                    </div>
+
                 </div>
-                <button id="close-export-modal-btn" class="self-end px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent">Sluiten</button>
             </div>
         </div>
 
@@ -298,11 +345,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="study-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="study">
+                        <tiro-form-filler
+                            id="study-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="study" class="hidden"></div>
                 </div>
             </details>
 
@@ -343,11 +393,14 @@
                     </svg>
                 </summary>
                 <div class="overflow-auto border-t border-neutral-200 dark:border-neutral-800">
-                    <tiro-form-filler
-                        id="qc-form"
-                        sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
-                        compact-grouping
-                    />
+                    <div data-tiro="qc">
+                        <tiro-form-filler
+                            id="qc-form"
+                            sdc-endpoint-address="https://sdc.tiro.health/fhir/r5"
+                            compact-grouping
+                        />
+                    </div>
+                    <div data-nontemplate="qc" class="hidden"></div>
                 </div>
             </details>
 
@@ -355,6 +408,10 @@
 
         <!-- Tiro Web SDK -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
+
+        <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
+        <script src="forms-shared.js"></script>
+        <script src="qc-schema.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -402,9 +459,12 @@
             });
 
             // Save and send: submit QC form, then send email via Tiro mail
+            const mailSendCb = document.getElementById("mail-send-cb");
+
             let sendAfterSubmit = false;
             document.getElementById("save-and-send-btn").addEventListener("click", () => {
-                sendAfterSubmit = true;
+                // Staat "mail versturen" uit, dan enkel bewaren.
+                sendAfterSubmit = mailSendCb.checked;
                 studyForm.requestSubmit();
                 qcForm.requestSubmit();
             });
@@ -448,6 +508,53 @@
                     saveAndSendBtn.disabled = false;
                     saveAndSendBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9l20-7z"/></svg> Save and send`;
                 }
+            });
+
+            // ── Niet-template mode ──────────────────────────────────────────
+            // Hangt bovenop de bestaande pagina en onderschept de save-knoppen
+            // alleen wanneer de toggle op niet-template staat. Verwijderen: schrap
+            // dit blok, de twee script-tags en de data-nontemplate containers.
+            const qcUi = JyzForms.mountFormsUI({
+                page: "qc",
+                primarySchema: QC_SCHEMAS.QC_SCHEMA,
+                sections: [
+                    {
+                        tiro:   document.querySelector('[data-tiro="study"]'),
+                        native: document.querySelector('[data-nontemplate="study"]'),
+                        schema: QC_SCHEMAS.STUDY_SCHEMA,
+                    },
+                    {
+                        tiro:   document.querySelector('[data-tiro="qc"]'),
+                        native: document.querySelector('[data-nontemplate="qc"]'),
+                        schema: QC_SCHEMAS.QC_SCHEMA,
+                    },
+                ],
+                saveBtn:        document.getElementById("save-btn"),
+                saveAndSendBtn: document.getElementById("save-and-send-btn"),
+                backBtn:        document.getElementById("back-btn"),
+                // "mail versturen" uit betekent enkel bewaren.
+                shouldSend: () => mailSendCb.checked,
+                // De mail gaat naar wie in deze reden is aangeduid; is er niemand
+                // aangeduid, dan naar het vaste adres van de dienst.
+                recipientFrom: (v) =>
+                    v.feedback_radioloog || v.tweede_naam_radioloog ||
+                    v.medisch_naam_aanvrager || v.aanvraag_naam_aanvrager || "",
+                onSend: async (response, { recipient, naam }) => {
+                    const res = await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/fhir+json" },
+                        body: JSON.stringify({
+                            resourceType: "Parameters",
+                            parameter: [
+                                { name: "response", resource: response },
+                                { name: "from", valueString: MAIL_FROM },
+                                { name: "to", valueString: recipient || MAIL_TO },
+                                { name: "subject", valueString: "kwaliteitscontrole" + (naam ? " — " + naam : "") },
+                            ],
+                        }),
+                    });
+                    if (!res.ok) throw new Error("HTTP " + res.status);
+                },
             });
 
             // Secret copy button: PIN-protected decrypt + copy
@@ -495,6 +602,7 @@
                             _exportPinPending = false;
                             closePinModal();
                             document.getElementById('export-import-modal').classList.remove('hidden');
+                            refreshCounts();
                         } else {
                             pinError.classList.remove('hidden');
                             pinInput.value = '';
@@ -591,7 +699,7 @@
                     }
                 })();
 
-                document.getElementById('do-export-btn').addEventListener('click', () => {
+                document.getElementById('do-export-btn').addEventListener('click', async () => {
                     const geminiModelKeys = ['geminiModelTranslate','geminiModelAiConsult','geminiModelKidv','geminiModelVerslag','geminiModelRealtime','geminiModelSnomed','geminiModelMedgemma','geminiModelAutofillBackup'];
                     const geminiModels = {};
                     geminiModelKeys.forEach(k => { const v = localStorage.getItem(k); if (v) geminiModels[k] = v; });
@@ -616,6 +724,7 @@
                     const dicomBase  = JSON.parse(localStorage.getItem('dicomCodesBase')  || 'null');
                     const dicomExtra = JSON.parse(localStorage.getItem('dicomCodesExtra') || '[]');
                     const payload = {
+                        kind: 'configuratie',
                         version: '1.0',
                         timestamp: new Date().toISOString(),
                         flowConfig_v1: JSON.parse(localStorage.getItem('flowConfig_v1') || 'null'),
@@ -625,21 +734,153 @@
                         dicomCodesBase: dicomBase && dicomBase.length ? dicomBase : null,
                         dicomCodesExtra: dicomExtra.length ? dicomExtra : null,
                     };
+                    downloadJson(payload, 'flow-config');
+                });
+
+                // ── Gedeelde hulpjes voor de drie kolommen ──────────────────
+                function downloadJson(payload, prefix) {
                     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = 'flow-config-' + new Date().toISOString().slice(0,10) + '.json';
+                    a.download = prefix + '-' + new Date().toISOString().slice(0, 10) + '.json';
                     a.click();
                     URL.revokeObjectURL(url);
-                });
+                }
+
+                async function readJsonFile(input) {
+                    const file = input.files[0];
+                    if (!file) return null;
+                    try {
+                        return JSON.parse(await file.text());
+                    } catch {
+                        alert('Ongeldig bestand. Zorg dat het een geldig JSON-exportbestand is.');
+                        input.value = '';
+                        return null;
+                    }
+                }
+
+                // Records van één store exporteren. De namenlijsten reizen mee met
+                // Quality control: die is dienstoverkoepelend, terwijl configuratie
+                // en database per gebruiker zijn.
+                async function exportRecords(store, kind, prefix) {
+                    const records = await JyzForms.RecordStore.all(store);
+                    if (!records.length && !confirm('Er zijn nog geen bewaarde formulieren. Toch een leeg bestand downloaden?')) return;
+                    const payload = {
+                        kind,
+                        version: '1.0',
+                        timestamp: new Date().toISOString(),
+                        records,
+                    };
+                    if (store === 'qc') payload.nameLists = JyzForms.NameLists.all();
+                    downloadJson(payload, prefix);
+                }
+
+                // Records importeren; weigert een bestand van het verkeerde soort,
+                // zodat je geen kwaliteitscontrole-records in de database plakt.
+                // Herkent of twee records over dezelfde casus gaan, ook wanneer ze
+                // op verschillende werkposten bewaard zijn en dus een ander id
+                // kregen. Zonder pacsnummer is er te weinig om op te vergelijken;
+                // dan wordt er niet op dubbels gecontroleerd.
+                const FINGERPRINTS = {
+                    qc:       (r) => (r.values?.pacsnummer || '') && [r.values.pacsnummer, r.values.reden || ''].join('|'),
+                    database: (r) => (r.values?.pacsnummer || '') && [r.values.pacsnummer, r.values.casus_type || ''].join('|'),
+                };
+
+                async function importRecords(input, store, kind, one, many) {
+                    const say = (n) => n + ' ' + (n === 1 ? one : many);
+                    const data = await readJsonFile(input);
+                    if (!data) return;
+                    const done = () => { input.value = ''; };
+
+                    if (data.kind && data.kind !== kind) {
+                        alert('Dit bestand bevat "' + data.kind + '", niet "' + kind + '". Kies het juiste bestand of gebruik de andere kolom.');
+                        return done();
+                    }
+                    // Ook een ouder gecombineerd configuratiebestand blijft bruikbaar.
+                    const records = Array.isArray(data.records) ? data.records
+                        : (data.formRecords && Array.isArray(data.formRecords[store])) ? data.formRecords[store]
+                        : null;
+                    if (!records) {
+                        alert('Geen ' + many + ' gevonden in dit bestand.');
+                        return done();
+                    }
+
+                    const store_ = JyzForms.RecordStore;
+                    const fingerprint = FINGERPRINTS[store];
+                    // Eerst kijken wat een import zou doen, zonder iets te wijzigen.
+                    const plan = await store_.merge(store, records, { fingerprint, dryRun: true });
+
+                    const lines = ['Dit bestand bevat ' + say(records.length) + '.', ''];
+                    if (plan.added)      lines.push('• ' + say(plan.added) + ' worden toegevoegd');
+                    if (plan.updated)    lines.push('• ' + say(plan.updated) + ' worden bijgewerkt naar de nieuwere versie uit het bestand');
+                    if (plan.unchanged)  lines.push('• ' + say(plan.unchanged) + ' staan er al identiek in');
+                    if (plan.older)      lines.push('• ' + say(plan.older) + ' worden overgeslagen: jouw versie is nieuwer');
+                    if (plan.duplicates) lines.push('• ' + say(plan.duplicates) + ' lijken al aanwezig onder een ander id (zelfde pacsnummer)');
+                    if (!plan.added && !plan.updated) lines.push('• er valt niets toe te voegen of bij te werken');
+                    lines.push('', 'Doorgaan?');
+                    if (!confirm(lines.join('\n'))) return done();
+
+                    let includeDuplicates = false;
+                    if (plan.duplicates) {
+                        includeDuplicates = confirm(
+                            say(plan.duplicates) + ' lijken dubbels van casussen die je al hebt.\n\n' +
+                            'OK = toch toevoegen als extra records\n' +
+                            'Annuleren = overslaan (aanbevolen)'
+                        );
+                    }
+
+                    const result = await store_.merge(store, records, { fingerprint, includeDuplicates });
+                    // Namenlijsten uit een Quality control-bestand overnemen.
+                    if (data.nameLists) {
+                        Object.entries(data.nameLists).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+                    }
+                    done();
+                    const msg = [];
+                    if (data.nameLists) msg.push('namenlijsten bijgewerkt');
+                    if (result.added)           msg.push(result.added + ' toegevoegd');
+                    if (result.updated)         msg.push(result.updated + ' bijgewerkt');
+                    if (result.unchanged)       msg.push(result.unchanged + ' stonden er al identiek in');
+                    if (result.older)           msg.push(result.older + ' overgeslagen (jouw versie was nieuwer)');
+                    if (result.duplicatesAdded) msg.push(result.duplicatesAdded + ' dubbels toegevoegd');
+                    else if (result.duplicates) msg.push(result.duplicates + ' dubbels overgeslagen');
+                    alert(msg.length ? msg.join(', ') + '.' : 'Er is niets gewijzigd.');
+                    await refreshCounts();
+                }
+
+                // Aantallen tonen zodra het venster opengaat.
+                async function refreshCounts() {
+                    const qc = await JyzForms.RecordStore.all('qc');
+                    const db = await JyzForms.RecordStore.all('database');
+                    const fmt = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+                    const names = JyzForms.NameLists;
+                    const nNames = names.get('radiologen').length + names.get('aanvragers').length;
+                    document.getElementById('qc-records-count').textContent =
+                        fmt(qc.length, 'formulier', 'formulieren') + ' · ' + fmt(nNames, 'naam', 'namen');
+                    document.getElementById('db-records-count').textContent = fmt(db.length, 'casus', 'casussen');
+                    let nTpl = 0;
+                    try { nTpl = (JSON.parse(localStorage.getItem('flowConfig_v1') || 'null')?.templates || []).length; } catch {}
+                    document.getElementById('config-count').textContent = fmt(nTpl, 'template', 'templates');
+                }
+
+                document.getElementById('export-qc-btn').addEventListener('click', () =>
+                    exportRecords('qc', 'quality-control', 'qc-records'));
+                document.getElementById('export-db-btn').addEventListener('click', () =>
+                    exportRecords('database', 'database', 'database-records'));
+                document.getElementById('import-qc-input').addEventListener('change', (e) =>
+                    importRecords(e.target, 'qc', 'quality-control', 'formulier', 'formulieren'));
+                document.getElementById('import-db-input').addEventListener('change', (e) =>
+                    importRecords(e.target, 'database', 'database', 'casus', 'casussen'));
 
                 document.getElementById('import-file-input').addEventListener('change', async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
+                    const data = await readJsonFile(e.target);
+                    if (!data) return;
                     try {
-                        const text = await file.text();
-                        const data = JSON.parse(text);
+                        if (data.kind && data.kind !== 'configuratie') {
+                            alert('Dit bestand bevat "' + data.kind + '", geen configuratie. Gebruik de juiste kolom.');
+                            e.target.value = '';
+                            return;
+                        }
                         if (!confirm('Huidige configuratie overschrijven met de geïmporteerde data?')) {
                             e.target.value = '';
                             return;
@@ -650,6 +891,9 @@
                         if (data.prompts) Object.entries(data.prompts).forEach(([k, v]) => localStorage.setItem(k, v));
                         if (data.dicomCodesBase)  localStorage.setItem('dicomCodesBase',  JSON.stringify(data.dicomCodesBase));
                         if (data.dicomCodesExtra) localStorage.setItem('dicomCodesExtra', JSON.stringify(data.dicomCodesExtra));
+                        if (data.nameLists) Object.entries(data.nameLists).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+                        // Ouder gecombineerd bestand: neem de records alsnog mee.
+                        if (data.formRecords) await JyzForms.RecordStore.importAll(data.formRecords);
                         alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
                         location.reload();
                     } catch {
