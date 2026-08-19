@@ -4457,8 +4457,10 @@ negated bevindingen
                 return { resolvedText: outLines.join('\n'), notFound };
             }
 
-            async function runSnomedCtGeneration() {
-                const tekst = readDictationText();
+            // providedText: geef de dictatietekst mee wanneer die net gezet is en
+            // readDictationText() hem mogelijk nog niet ziet (PiP-venster).
+            async function runSnomedCtGeneration(providedText) {
+                const tekst = providedText || readDictationText();
                 if (!tekst.trim()) return;
                 const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
@@ -5936,7 +5938,10 @@ negated bevindingen
                         }
                         setDictationText(text);
                         if (!_hasRealTiroTemplate() && (window._flowTextTemplate || window._flowUserTextTemplate)) {
-                            // Back-up mode: pass text directly so readDictationText() timing is irrelevant
+                            // Back-up mode: pass text directly so readDictationText() timing is irrelevant.
+                            // SNOMED CT is een apart traject dat hier mee moet lopen wanneer het
+                            // aanstaat; de delegatie naar de hoofdknop hieronder doet dat al.
+                            if (snomedCtActive) runSnomedCtGeneration(text);
                             runAutofillBackup(_pipTtRef, text);
                         } else {
                             // Tiro SDK mode: delegate to main autofill button
