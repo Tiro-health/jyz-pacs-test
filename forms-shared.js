@@ -1091,7 +1091,8 @@ Voorbeeld van een geldig antwoord:
             primarySchema,        // schema voor records en overzicht
             saveBtn, saveAndSendBtn, backBtn,
             onSend,               // async (questionnaireResponse, { recipient, values }) => void
-            sendWhen,             // (values) => boolean — wanneer versturen mag
+            sendWhen,             // (values) => boolean — wanneer de verstuurknop bruikbaar is
+            shouldSend,           // () => boolean — false betekent bewaren zonder mail
             recipientFrom,        // (values) => naam van de ontvanger
         } = config;
 
@@ -1372,6 +1373,11 @@ Voorbeeld van een geldig antwoord:
             });
             currentRecordId = record.id;
             if (!send) { flash("Bewaard in de lokale database"); updateSendButton(); return; }
+            if (shouldSend && !shouldSend()) {
+                flash("Bewaard, geen mail verstuurd");
+                updateSendButton();
+                return;
+            }
             try {
                 const qr = SchemaForm.toQuestionnaireResponse(primarySchema, values);
                 const naam = recipientFrom ? recipientFrom(values) : "";

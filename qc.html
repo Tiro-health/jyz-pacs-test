@@ -203,6 +203,19 @@
                 </svg>
                 Save
             </button>
+            <label
+                id="mail-toggle-wrap"
+                title="Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres"
+                class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-600 dark:text-neutral-300 shadow-lg cursor-pointer select-none"
+            >
+                <input
+                    id="mail-send-cb"
+                    type="checkbox"
+                    checked
+                    class="rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
+                />
+                <span class="text-xs">mail versturen</span>
+            </label>
             <button
                 id="save-and-send-btn"
                 type="button"
@@ -446,9 +459,12 @@
             });
 
             // Save and send: submit QC form, then send email via Tiro mail
+            const mailSendCb = document.getElementById("mail-send-cb");
+
             let sendAfterSubmit = false;
             document.getElementById("save-and-send-btn").addEventListener("click", () => {
-                sendAfterSubmit = true;
+                // Staat "mail versturen" uit, dan enkel bewaren.
+                sendAfterSubmit = mailSendCb.checked;
                 studyForm.requestSubmit();
                 qcForm.requestSubmit();
             });
@@ -516,7 +532,14 @@
                 saveBtn:        document.getElementById("save-btn"),
                 saveAndSendBtn: document.getElementById("save-and-send-btn"),
                 backBtn:        document.getElementById("back-btn"),
-                onSend: async (response) => {
+                // "mail versturen" uit betekent enkel bewaren.
+                shouldSend: () => mailSendCb.checked,
+                // De mail gaat naar wie in deze reden is aangeduid; is er niemand
+                // aangeduid, dan naar het vaste adres van de dienst.
+                recipientFrom: (v) =>
+                    v.feedback_radioloog || v.tweede_naam_radioloog ||
+                    v.medisch_naam_aanvrager || v.aanvraag_naam_aanvrager || "",
+                onSend: async (response, { recipient, naam }) => {
                     const res = await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
                         method: "POST",
                         headers: { "Content-Type": "application/fhir+json" },
@@ -525,8 +548,8 @@
                             parameter: [
                                 { name: "response", resource: response },
                                 { name: "from", valueString: MAIL_FROM },
-                                { name: "to", valueString: MAIL_TO },
-                                { name: "subject", valueString: "kwaliteitscontrole" },
+                                { name: "to", valueString: recipient || MAIL_TO },
+                                { name: "subject", valueString: "kwaliteitscontrole" + (naam ? " — " + naam : "") },
                             ],
                         }),
                     });
