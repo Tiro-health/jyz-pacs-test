@@ -57,7 +57,7 @@
                 showWhen: { field: "casus_type", equals: "Interessante casus" },
             },
             {
-                id: "int_printscreen", label: "Printscreen", type: "printscreen", buttonLabel: "Printscreen maken",
+                id: "int_printscreen", label: "Printscreen", type: "printscreen",
                 showWhen: { field: "casus_type", equals: "Interessante casus" },
             },
             {
@@ -82,7 +82,7 @@
                 showWhen: { field: "casus_type", equals: "Op te volgen casus" },
             },
             {
-                id: "opv_printscreen", label: "Printscreen", type: "printscreen", buttonLabel: "Printscreen maken",
+                id: "opv_printscreen", label: "Printscreen", type: "printscreen",
                 showWhen: { field: "casus_type", equals: "Op te volgen casus" },
             },
             {
