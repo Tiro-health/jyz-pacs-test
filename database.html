@@ -202,8 +202,8 @@
                         <line x1="16" y1="17" x2="8" y2="17" />
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
-                    Study and patient information
-                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    Study and patient information<span id="study-title-suffix" class="font-normal text-neutral-400 dark:text-neutral-500 truncate ml-1"></span>
+                    <svg class="chevron ml-auto w-4 h-4 transition-transform duration-200 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="m6 9 6 6 6-6" />
                     </svg>
                 </summary>
@@ -290,6 +290,57 @@
             databaseForm.setAttribute("launch-context", JSON.stringify(launchContext));
             databaseForm.setAttribute("questionnaire", DATABASE_QUESTIONNAIRE);
 
+            // ── Samenvatting naast de titel ─────────────────────────────────
+            // Toont pacsnummer - dag - onderzoek - aanvrager in het grijs, zoals
+            // "Study and patient information" op launch.html. Werkt in beide modi
+            // en blijft werken als de niet-template laag verwijderd wordt.
+            const studyTitleSuffix = document.getElementById("study-title-suffix");
+
+            function setStudySuffix(pacs, datum, onderzoek, aanvrager) {
+                const parts = [pacs, datum, onderzoek, aanvrager].filter(Boolean);
+                studyTitleSuffix.textContent = parts.length ? " " + parts.join(" - ") : "";
+            }
+
+            // Zoek een antwoord in een QuestionnaireResponse op basis van het label.
+            function answerByLabel(response, ...searchTerms) {
+                function walk(items) {
+                    for (const item of items || []) {
+                        const text = (item.text || "").toLowerCase();
+                        if (searchTerms.some(t => text.includes(t.toLowerCase())) && item.answer?.length) {
+                            const a = item.answer[0];
+                            return a.valueString || a.valueCoding?.display || a.valueDate
+                                || (a.valueBoolean !== undefined ? String(a.valueBoolean) : "") || "";
+                        }
+                        const nested = walk(item.item);
+                        if (nested) return nested;
+                    }
+                    return "";
+                }
+                return walk(response?.item) || "";
+            }
+
+            // Template mode: uit het Tiro-formulier.
+            studyForm.addEventListener("tiro-update", (event) => {
+                const r = event.detail?.response;
+                setStudySuffix(
+                    answerByLabel(r, "pacsnummer", "pacs"),
+                    answerByLabel(r, "onderzoek datum", "datum"),
+                    answerByLabel(r, "onderzoek type", "type onderzoek", "type of examination"),
+                    answerByLabel(r, "aanvrager", "referring"),
+                );
+            });
+
+            // Niet-template mode: uit de eigen velden. Guard zodat het wegvallen
+            // van forms-shared.js hier niets breekt.
+            function refreshStudySuffixFromNative() {
+                const native = document.querySelector('[data-nontemplate="study"]');
+                if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
+                const v = JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.STUDY_SCHEMA);
+                setStudySuffix(v.pacsnummer, v.onderzoek_datum, v.onderzoek_type, v.aanvrager);
+            }
+            document.addEventListener("input", refreshStudySuffixFromNative);
+            document.addEventListener("change", refreshStudySuffixFromNative);
+
             // Back button: return to launch.html preserving all URL params
             document.getElementById("back-btn").addEventListener("click", () => {
                 window.location.href = `launch.html?${params.toString()}`;
@@ -348,6 +399,18 @@
                     });
                     if (!res.ok) throw new Error("HTTP " + res.status);
                 },
+            });
+
+            // Samenvatting bijwerken na het opbouwen en bij het wisselen van modus.
+            // Gaat de pagina naar template mode, dan wissen we ze en vult het
+            // Tiro-formulier ze opnieuw via tiro-update.
+            refreshStudySuffixFromNative();
+            document.querySelector('[data-nontemplate-toggle]')?.addEventListener('click', () => {
+                setTimeout(() => {
+                    const native = document.querySelector('[data-nontemplate="study"]');
+                    if (native && native.classList.contains('hidden')) setStudySuffix();
+                    else refreshStudySuffixFromNative();
+                }, 0);
             });
         </script>
     </body>
