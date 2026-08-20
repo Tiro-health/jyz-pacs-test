@@ -64,7 +64,7 @@
                 showWhen: { field: "reden", equals: "Aanvraag" },
             },
             {
-                id: "aanvraag_document", label: "Document", type: "printscreen", buttonLabel: "Printscreen nemen",
+                id: "aanvraag_document", label: "Document", type: "printscreen",
                 showWhen: { field: "reden", equals: "Aanvraag" },
             },
 
@@ -85,7 +85,7 @@
                 showWhen: { field: "reden", equals: "Medisch - aanvrager" },
             },
             {
-                id: "medisch_document", label: "Document", type: "printscreen", buttonLabel: "Printscreen nemen",
+                id: "medisch_document", label: "Document", type: "printscreen",
                 showWhen: { field: "reden", equals: "Medisch - aanvrager" },
             },
 
@@ -101,7 +101,7 @@
                 showWhen: { field: "reden", equals: "Feedback radioloog" },
             },
             {
-                id: "feedback_document", label: "Document", type: "printscreen", buttonLabel: "Printscreen nemen",
+                id: "feedback_document", label: "Document", type: "printscreen",
                 showWhen: { field: "reden", equals: "Feedback radioloog" },
             },
 
@@ -117,7 +117,7 @@
                 showWhen: { field: "reden", equals: "Tweede lezing" },
             },
             {
-                id: "tweede_document", label: "Document", type: "printscreen", buttonLabel: "Printscreen nemen",
+                id: "tweede_document", label: "Document", type: "printscreen",
                 showWhen: { field: "reden", equals: "Tweede lezing" },
             },
         ],

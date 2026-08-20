@@ -448,22 +448,64 @@
                 }
 
                 case "printscreen": {
-                    input = el("div", "flex flex-col gap-2 items-start");
-                    const btn = el("button", BTN_SMALL, f.buttonLabel || "Printscreen maken");
-                    btn.type = "button";
-                    btn.dataset.printscreen = f.id;
-                    btn.addEventListener("click", () => {
-                        // Losgekoppeld: de pagina vangt dit op, legt de schermafdruk
-                        // vast en laat de AI daarmee de velden invullen.
-                        row.dispatchEvent(new CustomEvent("printscreen-request", {
-                            bubbles: true,
-                            detail: { fieldId: f.id, button: btn },
-                        }));
-                    });
+                    // Illustratieve opname van de pathologie of de fout: uploaden,
+                    // slepen, plakken of het scherm vastleggen. Vult geen velden in.
+                    input = el("div", "flex flex-col gap-2");
                     const shots = el("div", "flex gap-2 flex-wrap");
                     shots.dataset.shots = f.id;
-                    input.append(btn, shots);
+
+                    const zone = el("div", "flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-neutral-300 dark:border-slate-600 bg-neutral-50 dark:bg-background py-4 px-3 text-center cursor-pointer transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500");
+                    zone.tabIndex = 0;
+                    zone.dataset.dropzone = f.id;
+                    zone.appendChild(el("p", "text-xs text-neutral-500 dark:text-neutral-400",
+                        "Klik om te uploaden, sleep beelden hierheen of plak met Ctrl+V"));
+                    zone.appendChild(el("p", "text-xs text-neutral-400 dark:text-neutral-500",
+                        "JPEG, PNG of WEBP"));
+
+                    const fileInput = el("input", "hidden");
+                    fileInput.type = "file";
+                    fileInput.accept = "image/*";
+                    fileInput.multiple = true;
+                    zone.appendChild(fileInput);
+
+                    const addFiles = async (files) => {
+                        for (const file of files || []) {
+                            const d = await Screenshot.fromFile(file);
+                            if (d) SchemaForm._thumb(shots, d);
+                        }
+                    };
+                    zone.addEventListener("click", (e) => { if (e.target !== fileInput) fileInput.click(); });
+                    zone.addEventListener("keydown", (e) => {
+                        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
+                    });
+                    fileInput.addEventListener("change", async () => {
+                        await addFiles(fileInput.files);
+                        fileInput.value = "";
+                    });
+                    const hi = () => zone.classList.add("border-cyan-500");
+                    const lo = () => zone.classList.remove("border-cyan-500");
+                    zone.addEventListener("dragover", (e) => { e.preventDefault(); hi(); });
+                    zone.addEventListener("dragleave", lo);
+                    zone.addEventListener("drop", async (e) => {
+                        e.preventDefault(); lo();
+                        await addFiles(e.dataTransfer.files);
+                    });
+
+                    const capture = el("button", BTN_SMALL + " self-start", f.buttonLabel || "Scherm vastleggen");
+                    capture.type = "button";
+                    capture.dataset.printscreen = f.id;
+                    capture.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        // De pagina vangt dit op en legt de schermafdruk vast.
+                        row.dispatchEvent(new CustomEvent("printscreen-request", {
+                            bubbles: true,
+                            detail: { fieldId: f.id, button: capture },
+                        }));
+                    });
+
+                    input.append(zone, capture, shots);
                     (Array.isArray(value) ? value : []).forEach((src) => this._thumb(shots, src));
+                    this._bindPasteOnce();
                     break;
                 }
 
@@ -512,6 +554,27 @@
                 if (c.in) return c.in.some((x) => (Array.isArray(v) ? v.includes(x) : String(v) === String(x)));
                 if ("equals" in c) return Array.isArray(v) ? v.includes(c.equals) : String(v) === String(c.equals);
                 return true;
+            });
+        },
+
+        /**
+         * Eén plak-luisteraar voor alle neerzetvlakken samen. Reageert enkel
+         * wanneer de gebruiker effectief in zo'n vlak staat, zodat plakken in
+         * een tekstvak niet onderschept wordt.
+         */
+        _bindPasteOnce() {
+            if (this._pasteBound) return;
+            this._pasteBound = true;
+            document.addEventListener("paste", async (e) => {
+                const zone = document.activeElement?.closest?.("[data-dropzone]");
+                if (!zone) return;
+                const row = zone.closest("[data-field-id]");
+                const shots = row && row.querySelector('[data-shots="' + zone.dataset.dropzone + '"]');
+                if (!shots) return;
+                const images = await Screenshot.fromClipboard(e);
+                if (!images.length) return;
+                e.preventDefault();
+                images.forEach((src) => this._thumb(shots, src));
             });
         },
 
