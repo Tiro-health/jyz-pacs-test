@@ -1,16 +1,15 @@
 /*
- * forms-shared.js — gedeelde laag voor qc.html en database.html
+ * forms-shared.js — gedeelde laag voor qc.html en cases.html
  *
  * Bevat alles wat niet afhangt van de concrete veldenlijst:
  *   RecordStore   — IndexedDB opslag van ingevulde formulieren + schermafdrukken
  *   SchemaForm    — declaratieve renderer (velden + conditionele logica)
  *   TiroFill      — schrijven in de shadow DOM van tiro-form-filler (zelfde techniek als SNOMED CT in launch.html)
  *   Screenshot    — schermafdruk vastleggen (getDisplayMedia, plakken of uploaden)
- *   Overview      — doorzoekbaar overzicht van opgeslagen records
  *   AiImageFill   — velden invullen op basis van geuploade beelden via Gemini
  *   mountFormsUI  — plaatst toggle, foto-knop, database-knop en koppelt save-acties
  *
- * De concrete velden staan in qc-schema.js en database-schema.js.
+ * De concrete velden staan in qc-schema.js en cases-schema.js.
  */
 (function (global) {
     "use strict";
@@ -463,7 +462,7 @@
                     zone.tabIndex = 0;
                     zone.dataset.dropzone = f.id;
                     zone.appendChild(el("p", "text-xs text-neutral-500 dark:text-neutral-400",
-                        "Klik om te uploaden, sleep beelden hierheen of plak met Ctrl+V"));
+                        "Dubbelklik om te uploaden, sleep beelden hierheen of plak met Ctrl+V"));
                     zone.appendChild(el("p", "text-xs text-neutral-400 dark:text-neutral-500",
                         "JPEG, PNG of WEBP"));
 
@@ -479,7 +478,11 @@
                             if (d) SchemaForm._thumb(shots, d);
                         }
                     };
-                    zone.addEventListener("click", (e) => { if (e.target !== fileInput) fileInput.click(); });
+                    // Enkelklik zet enkel de aandacht op het vlak, zodat Ctrl+V hier
+                    // aankomt. Dubbelklik opent de bestandskiezer. Anders sprong die
+                    // kiezer open telkens je het vlak aanklikte om te plakken.
+                    zone.addEventListener("click", () => zone.focus());
+                    zone.addEventListener("dblclick", (e) => { e.preventDefault(); fileInput.click(); });
                     zone.addEventListener("keydown", (e) => {
                         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInput.click(); }
                     });
@@ -1001,140 +1004,6 @@ Voorbeeld van een geldig antwoord:
         },
     };
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // Overview — doorzoekbaar overzicht van opgeslagen records
-    // ═══════════════════════════════════════════════════════════════════════
-    const Overview = {
-        _modal: null,
-
-        _build() {
-            if (this._modal) return this._modal;
-            const overlay = el("div", OVERLAY);
-            overlay.id = "records-overview-modal";
-
-            const panel = el("div", PANEL + " w-full max-w-3xl max-h-[85vh]");
-            const head = el("div", "flex items-center gap-3 px-4 py-3 border-b border-neutral-200 dark:border-slate-700");
-            head.appendChild(el("h2", "text-sm font-semibold text-neutral-800 dark:text-neutral-100", "Database"));
-            const count = el("span", "text-xs text-neutral-400 dark:text-neutral-500");
-            count.id = "records-count";
-            head.appendChild(count);
-            const close = el("button", "ml-auto text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg leading-none cursor-pointer", "×");
-            close.type = "button";
-            close.addEventListener("click", () => this.close());
-            head.appendChild(close);
-
-            const searchWrap = el("div", "px-4 py-2 border-b border-neutral-200 dark:border-slate-700");
-            const search = el("input", INPUT);
-            search.type = "search";
-            search.placeholder = "Zoek in alle velden…";
-            search.id = "records-search";
-            searchWrap.appendChild(search);
-
-            const list = el("div", "overflow-y-auto p-3 flex flex-col gap-2");
-            list.id = "records-list";
-
-            panel.append(head, searchWrap, list);
-            overlay.appendChild(panel);
-            overlay.addEventListener("click", (e) => { if (e.target === overlay) this.close(); });
-            document.body.appendChild(overlay);
-            this._modal = overlay;
-            return overlay;
-        },
-
-        close() {
-            if (this._modal) this._modal.classList.add("hidden");
-        },
-
-        async open(ctx) {
-            const overlay = this._build();
-            overlay.classList.remove("hidden");
-            const list = overlay.querySelector("#records-list");
-            const search = overlay.querySelector("#records-search");
-            const count = overlay.querySelector("#records-count");
-
-            const records = (await RecordStore.all(ctx.store)).sort(
-                (a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""))
-            );
-            count.textContent = records.length + (records.length === 1 ? " record" : " records");
-
-            const draw = (query) => {
-                const q = (query || "").trim().toLowerCase();
-                list.innerHTML = "";
-                const shown = records.filter((r) => !q || JSON.stringify(r.values || {}).toLowerCase().includes(q));
-                if (!shown.length) {
-                    list.appendChild(el("p", "text-sm text-neutral-400 dark:text-neutral-500 py-6 text-center",
-                        records.length ? "Geen records gevonden voor deze zoekterm." : "Nog geen opgeslagen formulieren."));
-                    return;
-                }
-                shown.forEach((r) => list.appendChild(this._card(r, ctx)));
-            };
-
-            search.value = "";
-            search.oninput = () => draw(search.value);
-            draw("");
-            setTimeout(() => search.focus(), 50);
-        },
-
-        _card(record, ctx) {
-            const card = el("div", "border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden");
-            const head = el("div", "flex items-center gap-2 px-3 py-2 bg-neutral-50 dark:bg-background");
-
-            const when = new Date(record.updatedAt || record.createdAt || Date.now());
-            const title = (ctx.schema.fields || [])
-                .filter((f) => f.type !== "section" && record.values && record.values[f.id])
-                .slice(0, 2)
-                .map((f) => String(record.values[f.id]).slice(0, 40))
-                .join(" · ") || "(leeg formulier)";
-
-            head.appendChild(el("span", "text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate", title));
-            head.appendChild(el("span", "text-xs text-neutral-400 dark:text-neutral-500 ml-auto whitespace-nowrap",
-                when.toLocaleString("nl-BE", { dateStyle: "short", timeStyle: "short" })));
-            if (record.sent) {
-                head.appendChild(el("span", "text-xs px-1.5 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400", "verzonden"));
-            }
-
-            const body = el("div", "px-3 py-2 text-xs text-neutral-600 dark:text-neutral-300 flex flex-col gap-1");
-            (ctx.schema.fields || []).forEach((f) => {
-                if (f.type === "section") return;
-                const v = record.values && record.values[f.id];
-                if (v == null || v === "" || (Array.isArray(v) && !v.length)) return;
-                const line = el("div", "flex gap-2");
-                line.appendChild(el("span", "text-neutral-400 dark:text-neutral-500 flex-shrink-0", f.label + ":"));
-                line.appendChild(el("span", "", Array.isArray(v) ? v.join(", ") : String(v)));
-                body.appendChild(line);
-            });
-
-            if (record.screenshots && record.screenshots.length) {
-                const shots = el("div", "flex gap-2 flex-wrap pt-1");
-                record.screenshots.forEach((src) => {
-                    const img = el("img", "h-16 rounded border border-neutral-200 dark:border-slate-700 cursor-pointer");
-                    img.src = src;
-                    img.addEventListener("click", () => window.open(src, "_blank"));
-                    shots.appendChild(img);
-                });
-                body.appendChild(shots);
-            }
-
-            const actions = el("div", "flex gap-2 px-3 py-2 bg-neutral-50 dark:bg-background border-t border-neutral-200 dark:border-slate-700");
-            const load = el("button", BTN_SMALL, "Openen");
-            load.type = "button";
-            load.addEventListener("click", () => {
-                ctx.onLoad(record);
-                Overview.close();
-            });
-            const del = el("button", BTN_SMALL + " !text-red-600 dark:!text-red-400", "Verwijderen");
-            del.type = "button";
-            del.addEventListener("click", async () => {
-                if (!confirm("Dit record definitief verwijderen?")) return;
-                await RecordStore.remove(ctx.store, record.id);
-                card.remove();
-            });
-            actions.append(load, del);
-
-            card.append(head, body, actions);
-            return card;
-        },
-    };
 
     // ═══════════════════════════════════════════════════════════════════════
     // mountFormsUI — plaatst de niet-template laag op een pagina
@@ -1168,6 +1037,7 @@ Voorbeeld van een geldig antwoord:
         const isTemplateMode = () => localStorage.getItem(modeKey) !== "off";
         const params = new URLSearchParams(location.search);
         let currentRecordId = null;
+        let _dirty = false;   // niet-bewaarde wijzigingen in het formulier
 
         // ── Native formulieren opbouwen ─────────────────────────────────
         function renderNative() {
@@ -1176,8 +1046,9 @@ Voorbeeld van een geldig antwoord:
                 SchemaForm.render(native, schema, prefillFromParams(schema, params));
                 if (!native.dataset.sendWatch) {
                     native.dataset.sendWatch = "1";
-                    native.addEventListener("change", updateSendButton);
-                    native.addEventListener("input", updateSendButton);
+                    const touched = () => { _dirty = true; updateSendButton(); };
+                    native.addEventListener("change", touched);
+                    native.addEventListener("input", touched);
                 }
             });
         }
@@ -1243,25 +1114,17 @@ Voorbeeld van een geldig antwoord:
         document.body.appendChild(toggleWrap);
 
         // ── Database-knop, naast Back ───────────────────────────────────
+        // Gaat naar db.html, het overzicht van alle bewaarde records. Staat er
+        // niet-bewaard werk in het formulier, dan eerst bevestigen.
         const dbBtn = el("button", BTN, "");
         dbBtn.type = "button";
         dbBtn.dataset.nontemplateUi = "1";
         dbBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg><span>Database</span>';
         dbBtn.addEventListener("click", () => {
-            Overview.open({
-                store: page,
-                schema: primarySchema,
-                onLoad: (record) => {
-                    if (isTemplateMode()) {
-                        localStorage.setItem(modeKey, "off");
-                        applyMode();
-                    }
-                    currentRecordId = record.id;
-                    sections.forEach(({ native, schema }) => {
-                        if (native) SchemaForm.fill(native, schema, record.values || {});
-                    });
-                },
-            });
+            if (_dirty && !confirm("Er staat niet-bewaard werk in het formulier. Toch naar het database-overzicht gaan?")) return;
+            const sp = new URLSearchParams(location.search);
+            sp.set("from", page);
+            location.href = "db.html?" + sp.toString();
         });
         if (backBtn && backBtn.parentElement) {
             backBtn.parentElement.classList.add("flex", "gap-2");
@@ -1440,6 +1303,7 @@ Voorbeeld van een geldig antwoord:
                 sent: false,
             });
             currentRecordId = record.id;
+            _dirty = false;
             if (!send) { flash("Bewaard in de lokale database"); updateSendButton(); return; }
             if (shouldSend && !shouldSend()) {
                 flash("Bewaard, geen mail verstuurd");
@@ -1496,10 +1360,37 @@ Voorbeeld van een geldig antwoord:
             flash._t = setTimeout(() => { flashEl.style.opacity = "0"; }, 2600);
         }
 
+        /**
+         * Komt de gebruiker van db.html met "Wijzigen", dan staat het record-id
+         * in de URL. Dat record inladen, naar niet-template mode gaan en het id
+         * uit de adresbalk halen zodat vernieuwen geen tweede keer inlaadt.
+         */
+        async function loadRecordFromUrl() {
+            const id = params.get("recordId");
+            if (!id) return;
+            const record = await RecordStore.get(page, id).catch(() => null);
+            const sp = new URLSearchParams(location.search);
+            sp.delete("recordId");
+            history.replaceState(null, "", location.pathname + (sp.toString() ? "?" + sp : ""));
+            if (!record) { flash("Dat record is niet gevonden.", true); return; }
+            if (isTemplateMode()) {
+                localStorage.setItem(modeKey, "off");
+                applyMode();
+            }
+            currentRecordId = record.id;
+            sections.forEach(({ native, schema }) => {
+                if (native) SchemaForm.fill(native, schema, record.values || {});
+            });
+            _dirty = false;
+            updateSendButton();
+            flash("Record ingeladen");
+        }
+
         renderNative();
         applyMode();
+        loadRecordFromUrl();
 
-        return { applyMode, renderNative, saveRecord, isTemplateMode, fillFromImages, flash };
+        return { applyMode, renderNative, saveRecord, isTemplateMode, fillFromImages, flash, loadRecordFromUrl };
     }
 
     global.JyzForms = {
@@ -1508,7 +1399,6 @@ Voorbeeld van een geldig antwoord:
         TiroFill,
         Screenshot,
         AiImageFill,
-        Overview,
         NameLists,
         SnomedOptions,
         mountFormsUI,

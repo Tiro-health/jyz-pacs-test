@@ -66,9 +66,17 @@
                 height: 100%;
             }
 
-            details summary::-webkit-details-marker { display: none; }
-            details summary { list-style: none; }
-            details[open] .chevron { transform: rotate(180deg); }
+            details summary::-webkit-details-marker {
+                display: none;
+            }
+
+            details summary {
+                list-style: none;
+            }
+
+            details[open] .chevron {
+                transform: rotate(180deg);
+            }
 
             :root {
                 --background: 0 0% 100%;
@@ -145,6 +153,50 @@
     </head>
     <body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200">
 
+        <!-- Floating action buttons (top-right), zoals op qc.html -->
+        <!-- items-start: de stapel met "mail versturen" is hoger, zo blijven de
+             bovenranden van alle knoppen op één lijn -->
+        <div class="fixed top-4 right-4 z-50 flex gap-2 items-start">
+            <button
+                id="save-btn"
+                type="button"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-lg"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save
+            </button>
+            <div class="flex flex-col gap-1">
+                <button
+                    id="save-and-send-btn"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors shadow-lg"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2 11 13"/>
+                        <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                    </svg>
+                    Save and send
+                </button>
+                <!-- Standaard uit: pas wanneer er via Delen / Doorsturen een
+                     naam gekozen is, vinkt dit zichzelf aan -->
+                <label
+                    id="mail-toggle-wrap"
+                    class="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 shadow-lg cursor-pointer select-none transition-colors"
+                >
+                    <input
+                        id="mail-send-cb"
+                        type="checkbox"
+                        class="w-3 h-3 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
+                    />
+                    <span class="text-[11px] leading-none">mail versturen</span>
+                </label>
+            </div>
+        </div>
+
         <div class="h-full flex flex-col p-4 font-sans">
 
             <!-- Toolbar -->
@@ -160,48 +212,6 @@
                         </svg>
                         Back
                     </button>
-                </div>
-                <!-- items-start: de stapel met "mail versturen" is hoger, zo blijven
-                     de bovenranden van beide knoppen op één lijn -->
-                <div class="flex gap-2 items-start pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
-                    <button
-                        id="save-btn"
-                        type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                            <polyline points="17 21 17 13 7 13 7 21"/>
-                            <polyline points="7 3 7 8 15 8"/>
-                        </svg>
-                        Save
-                    </button>
-                    <div class="flex flex-col gap-1">
-                        <button
-                            id="save-and-send-btn"
-                            type="button"
-                            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M22 2 11 13"/>
-                                <path d="M22 2 15 22 11 13 2 9l20-7z"/>
-                            </svg>
-                            Save and send
-                        </button>
-                        <!-- Standaard uit: pas wanneer er via Delen / Doorsturen een
-                             naam gekozen is, vinkt dit zichzelf aan -->
-                        <label
-                            id="mail-toggle-wrap"
-                            class="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 cursor-pointer select-none transition-colors"
-                        >
-                            <input
-                                id="mail-send-cb"
-                                type="checkbox"
-                                class="w-3 h-3 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
-                            />
-                            <span class="text-[11px] leading-none">mail versturen</span>
-                        </label>
-                    </div>
                 </div>
             </div>
 
@@ -273,7 +283,7 @@
 
         <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
         <script src="forms-shared.js"></script>
-        <script src="database-schema.js"></script>
+        <script src="cases-schema.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -352,7 +362,7 @@
             function refreshStudySuffixFromNative() {
                 const native = document.querySelector('[data-nontemplate="study"]');
                 if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
-                const v = JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.STUDY_SCHEMA);
+                const v = JyzForms.SchemaForm.read(native, CASES_SCHEMAS.STUDY_SCHEMA);
                 setStudySuffix(v.pacsnummer, v.onderzoek_datum, v.onderzoek_type, v.aanvrager);
             }
 
@@ -400,7 +410,7 @@
             function refreshMailLabelFromNative() {
                 const native = document.querySelector('[data-nontemplate="database"]');
                 if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
-                setMailLabel(dbRecipient(JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.DATABASE_SCHEMA)));
+                setMailLabel(dbRecipient(JyzForms.SchemaForm.read(native, CASES_SCHEMAS.CASES_SCHEMA)));
             }
 
             // Template mode: uit het databaseformulier.
@@ -433,18 +443,20 @@
             // alleen wanneer de toggle op niet-template staat. Verwijderen: schrap
             // dit blok, de twee script-tags en de data-nontemplate containers.
             JyzForms.mountFormsUI({
+                // page blijft "database": dat is de naam van de IndexedDB-tabel
+                // en van de modus-sleutel, niet van de pagina.
                 page: "database",
-                primarySchema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                primarySchema: CASES_SCHEMAS.CASES_SCHEMA,
                 sections: [
                     {
                         tiro:   document.querySelector('[data-tiro="study"]'),
                         native: document.querySelector('[data-nontemplate="study"]'),
-                        schema: DATABASE_SCHEMAS.STUDY_SCHEMA,
+                        schema: CASES_SCHEMAS.STUDY_SCHEMA,
                     },
                     {
                         tiro:   document.querySelector('[data-tiro="database"]'),
                         native: document.querySelector('[data-nontemplate="database"]'),
-                        schema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                        schema: CASES_SCHEMAS.CASES_SCHEMA,
                     },
                 ],
                 saveBtn:        document.getElementById("save-btn"),

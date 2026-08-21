@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="nl">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Database</title>
+
+        <!-- Tailwind CSS CDN -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script>
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        fontFamily: {
+                            sans: ["Inter", "system-ui", "-apple-system", "sans-serif"],
+                        },
+                        colors: {
+                            background: "hsl(var(--background))",
+                            muted: {
+                                DEFAULT: "hsl(var(--muted))",
+                                foreground: "hsl(var(--muted-foreground))",
+                            },
+                            accent: "hsl(var(--accent))",
+                        },
+                    },
+                },
+            };
+        </script>
+
+        <!-- Theme detection script (runs before render to prevent flash) -->
+        <script>
+            (function () {
+                const params = new URLSearchParams(window.location.search);
+                const themeParam = params.get("theme");
+                let isDark;
+                if (themeParam === "dark") {
+                    isDark = true;
+                } else if (themeParam === "light") {
+                    isDark = false;
+                } else if (localStorage.getItem("darkMode") !== null) {
+                    isDark = localStorage.getItem("darkMode") === "true";
+                } else {
+                    isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+                }
+                if (isDark) document.documentElement.classList.add("dark");
+            })();
+        </script>
+
+        <!-- Google Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lexend:wght@100..900&family=Fira+Mono:wght@400;500;700&display=swap"
+            rel="stylesheet"
+        />
+
+        <style>
+            :root {
+                --background: 0 0% 100%;
+                --muted: 210 40% 96.1%;
+                --muted-foreground: 215.4 16.3% 46.9%;
+                --accent: 210 40% 90%;
+            }
+            :root.dark {
+                --background: 206 27% 17%;
+                --muted: 0 0% 24%;
+                --muted-foreground: 215 15% 55%;
+                --accent: 210 30% 20%;
+            }
+            :root.dark body { background-color: #161f27 !important; }
+            :root.dark input:not([type="checkbox"]):not([type="radio"]),
+            :root.dark select {
+                background-color: #1f2c36 !important;
+                border-color: #2d3f4d !important;
+            }
+            :root.dark .bg-cyan-600 { background-color: #105750 !important; }
+            :root.dark .hover\:bg-cyan-700:hover { background-color: #0b3e39 !important; }
+            :root.dark .border-slate-700 { border-color: #2d3f4d !important; }
+
+            /* Uitklapbare detailrij in de tabel */
+            .detail-row > td { padding: 0; }
+        </style>
+    </head>
+    <body class="bg-neutral-50 text-neutral-800 dark:bg-[#161f27] dark:text-neutral-200">
+
+        <div class="max-w-7xl mx-auto p-4 font-sans flex flex-col gap-3">
+
+            <!-- Toolbar -->
+            <div class="flex items-center gap-2 flex-wrap">
+                <button
+                    id="back-btn"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors shadow-sm"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                    Back
+                </button>
+                <h1 class="text-base font-semibold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"/>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+                        <path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/>
+                    </svg>
+                    Database
+                </h1>
+                <span id="total-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+
+                <!-- Weergaveschakelaar -->
+                <div class="ml-auto inline-flex rounded-md border border-neutral-300 dark:border-slate-700 overflow-hidden shadow-sm">
+                    <button id="view-table" type="button" class="px-3 py-1.5 text-xs font-medium transition-colors" title="Tabelweergave">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block align-[-2px] mr-1">
+                            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                        </svg>
+                        Tabel
+                    </button>
+                    <button id="view-cards" type="button" class="px-3 py-1.5 text-xs font-medium border-l border-neutral-300 dark:border-slate-700 transition-colors" title="Kaartweergave">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block align-[-2px] mr-1">
+                            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                            <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+                        </svg>
+                        Kaarten
+                    </button>
+                </div>
+            </div>
+
+            <!-- Niveau 1: Quality control tegenover Casuïstiek -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button id="tab-all" type="button" data-tab="all"
+                    class="tab-btn flex items-center justify-between gap-2 px-4 py-3 rounded-lg border text-left transition-colors">
+                    <span class="text-sm font-medium">Alles</span>
+                    <span class="tab-count text-xs px-2 py-0.5 rounded-full"></span>
+                </button>
+                <button id="tab-qc" type="button" data-tab="qc"
+                    class="tab-btn flex items-center justify-between gap-2 px-4 py-3 rounded-lg border text-left transition-colors">
+                    <span class="text-sm font-medium">Quality control</span>
+                    <span class="tab-count text-xs px-2 py-0.5 rounded-full"></span>
+                </button>
+                <button id="tab-cases" type="button" data-tab="database"
+                    class="tab-btn flex items-center justify-between gap-2 px-4 py-3 rounded-lg border text-left transition-colors">
+                    <span class="text-sm font-medium">Casuïstiek</span>
+                    <span class="tab-count text-xs px-2 py-0.5 rounded-full"></span>
+                </button>
+            </div>
+
+            <!-- Zoeken + niveau 2 -->
+            <div class="flex flex-col gap-2 bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg p-3">
+                <div class="flex gap-2 flex-wrap items-center">
+                    <div class="relative flex-1 min-w-[200px]">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                        <input id="search" type="search" placeholder="Zoek in alle velden, namen, pathologie…"
+                            class="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                    </div>
+                    <select id="sort" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                        <option value="updatedAt-desc">Nieuwste eerst</option>
+                        <option value="updatedAt-asc">Oudste eerst</option>
+                        <option value="pacsnummer-asc">Pacsnummer A→Z</option>
+                        <option value="categorie-asc">Categorie A→Z</option>
+                    </select>
+                    <button id="clear-filters" type="button"
+                        class="px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">
+                        Filters wissen
+                    </button>
+                </div>
+                <div id="category-chips" class="flex gap-1.5 flex-wrap"></div>
+            </div>
+
+            <!-- Resultaten -->
+            <div id="result-area"></div>
+            <p id="empty-state" class="hidden text-sm text-neutral-400 dark:text-neutral-500 text-center py-12"></p>
+        </div>
+
+        <!-- Gedeelde laag: enkel RecordStore en de schema's, voor de labels -->
+        <script src="forms-shared.js"></script>
+        <script src="qc-schema.js"></script>
+        <script src="cases-schema.js"></script>
+
+        <script>
+            const { RecordStore } = JyzForms;
+            const params = new URLSearchParams(location.search);
+
+            // ── Wat hoort bij welke tabel ───────────────────────────────────
+            // De IndexedDB-tabellen heten "qc" en "database"; de laatste bevat
+            // de casuïstiek van cases.html.
+            const SOURCES = {
+                qc: {
+                    label: "Quality control",
+                    page: "qc.html",
+                    schemas: () => [QC_SCHEMAS.STUDY_SCHEMA, QC_SCHEMAS.QC_SCHEMA],
+                    // Niveau 2 komt uit het veld Reden
+                    categoryField: "reden",
+                    categories: ["Aanvraag", "Medisch - aanvrager", "Feedback radioloog", "Tweede lezing"],
+                    accent: "cyan",
+                    betrokkene: (v) => [
+                        v.feedback_radioloog, v.tweede_naam_radioloog,
+                        v.medisch_naam_aanvrager, v.aanvraag_naam_aanvrager,
+                    ].filter(Boolean),
+                },
+                database: {
+                    label: "Casuïstiek",
+                    page: "cases.html",
+                    schemas: () => [CASES_SCHEMAS.STUDY_SCHEMA, CASES_SCHEMAS.CASES_SCHEMA],
+                    // Niveau 2 komt uit het veld Casus type
+                    categoryField: "casus_type",
+                    categories: ["Interessante casus", "Op te volgen casus"],
+                    accent: "violet",
+                    betrokkene: (v) => [].concat(v.int_radioloog || [], v.opv_radioloog || []).filter(Boolean),
+                },
+            };
+
+            const ACCENTS = {
+                cyan:   "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-900",
+                violet: "bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-900",
+            };
+
+            // ── Toestand ────────────────────────────────────────────────────
+            let ALL = [];                                       // alle records, verrijkt
+            let tab = params.get("from") || "all";              // all | qc | database
+            let categories = new Set();                          // actieve niveau-2 filters
+            let view = localStorage.getItem("dbView") || "table"; // table | cards
+            let sortBy = "updatedAt-desc";
+
+            // ── Hulpjes ─────────────────────────────────────────────────────
+            const el = (tag, cls, text) => {
+                const n = document.createElement(tag);
+                if (cls) n.className = cls;
+                if (text != null) n.textContent = text;
+                return n;
+            };
+
+            const fmtDate = (iso) => {
+                if (!iso) return "";
+                const d = new Date(iso);
+                return isNaN(d) ? "" : d.toLocaleString("nl-BE", { dateStyle: "short", timeStyle: "short" });
+            };
+
+            /** Alle velden van een record in schemavolgorde, met hun label. */
+            function fieldsOf(rec) {
+                const out = [];
+                SOURCES[rec.store].schemas().forEach((schema) => {
+                    (schema.fields || []).forEach((f) => {
+                        if (f.type === "section") return;
+                        const v = rec.values?.[f.id];
+                        if (v == null || v === "" || (Array.isArray(v) && !v.length)) return;
+                        out.push({ field: f, value: v });
+                    });
+                });
+                return out;
+            }
+
+            function screenshotsOf(rec) {
+                const shots = [];
+                SOURCES[rec.store].schemas().forEach((schema) => {
+                    (schema.fields || []).forEach((f) => {
+                        if (f.type !== "printscreen") return;
+                        [].concat(rec.values?.[f.id] || []).forEach((s) => shots.push(s));
+                    });
+                });
+                return shots.concat(rec.screenshots || []).filter((s, i, a) => a.indexOf(s) === i);
+            }
+
+            async function loadAll() {
+                ALL = [];
+                for (const store of Object.keys(SOURCES)) {
+                    const src = SOURCES[store];
+                    for (const rec of await RecordStore.all(store)) {
+                        const v = rec.values || {};
+                        ALL.push({
+                            ...rec,
+                            store,
+                            bron: src.label,
+                            categorie: v[src.categoryField] || "(geen categorie)",
+                            pacsnummer: v.pacsnummer || "",
+                            datum: v.onderzoek_datum || "",
+                            onderzoek: v.onderzoek_type || "",
+                            betrokkenen: src.betrokkene(v),
+                            zoektekst: JSON.stringify(v).toLowerCase(),
+                        });
+                    }
+                }
+            }
+
+            // ── Filteren en sorteren ────────────────────────────────────────
+            function visible() {
+                const q = document.getElementById("search").value.trim().toLowerCase();
+                let rows = ALL.filter((r) => {
+                    if (tab !== "all" && r.store !== tab) return false;
+                    if (categories.size && !categories.has(r.categorie)) return false;
+                    if (q && !r.zoektekst.includes(q) && !r.categorie.toLowerCase().includes(q)) return false;
+                    return true;
+                });
+                const [key, dir] = sortBy.split("-");
+                rows.sort((a, b) => {
+                    const av = String(a[key] ?? ""), bv = String(b[key] ?? "");
+                    return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+                });
+                return rows;
+            }
+
+            // ── Niveau 1 ────────────────────────────────────────────────────
+            function drawTabs() {
+                const counts = {
+                    all: ALL.length,
+                    qc: ALL.filter((r) => r.store === "qc").length,
+                    database: ALL.filter((r) => r.store === "database").length,
+                };
+                document.querySelectorAll(".tab-btn").forEach((btn) => {
+                    const key = btn.dataset.tab;
+                    const on = tab === key;
+                    btn.className = "tab-btn flex items-center justify-between gap-2 px-4 py-3 rounded-lg border text-left transition-colors " +
+                        (on
+                            ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-200 shadow-sm"
+                            : "border-neutral-200 dark:border-slate-700 bg-white dark:bg-background hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200");
+                    const badge = btn.querySelector(".tab-count");
+                    badge.textContent = counts[key];
+                    badge.className = "tab-count text-xs px-2 py-0.5 rounded-full " +
+                        (on ? "bg-cyan-600 text-white" : "bg-neutral-100 dark:bg-muted text-neutral-500 dark:text-neutral-400");
+                });
+                document.getElementById("total-count").textContent =
+                    ALL.length + (ALL.length === 1 ? " record" : " records");
+            }
+
+            // ── Niveau 2 ────────────────────────────────────────────────────
+            function drawChips() {
+                const wrap = document.getElementById("category-chips");
+                wrap.innerHTML = "";
+                const stores = tab === "all" ? Object.keys(SOURCES) : [tab];
+                let any = false;
+                stores.forEach((store) => {
+                    const src = SOURCES[store];
+                    const present = src.categories.filter((c) =>
+                        ALL.some((r) => r.store === store && r.categorie === c));
+                    if (!present.length) return;
+                    any = true;
+                    if (tab === "all") {
+                        wrap.appendChild(el("span", "text-xs text-neutral-400 dark:text-neutral-500 self-center mr-0.5", src.label + ":"));
+                    }
+                    present.forEach((c) => {
+                        const n = ALL.filter((r) => r.store === store && r.categorie === c).length;
+                        const on = categories.has(c);
+                        const chip = el("button", "", c + " (" + n + ")");
+                        chip.type = "button";
+                        chip.className = "px-2.5 py-1 text-xs rounded-full border transition-colors " +
+                            (on
+                                ? "border-transparent " + ACCENTS[src.accent].replace(/border-\S+/g, "") + " ring-1 ring-current font-medium"
+                                : "border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent");
+                        chip.addEventListener("click", () => {
+                            if (categories.has(c)) categories.delete(c); else categories.add(c);
+                            draw();
+                        });
+                        wrap.appendChild(chip);
+                    });
+                });
+                if (!any) wrap.appendChild(el("span", "text-xs text-neutral-400 dark:text-neutral-500", "Geen categorieën om op te filteren."));
+            }
+
+            // ── Detailweergave, gedeeld door tabel en kaarten ───────────────
+            function buildDetail(rec) {
+                const box = el("div", "px-4 py-3 bg-neutral-50 dark:bg-background border-t border-neutral-200 dark:border-slate-700 flex flex-col gap-3");
+
+                const grid = el("div", "grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5");
+                fieldsOf(rec).forEach(({ field, value }) => {
+                    if (field.type === "printscreen") return;
+                    const row = el("div", "flex gap-2 text-xs");
+                    row.appendChild(el("span", "text-neutral-400 dark:text-neutral-500 shrink-0 min-w-[9rem]", field.label));
+                    row.appendChild(el("span", "text-neutral-700 dark:text-neutral-200 break-words",
+                        Array.isArray(value) ? value.join(", ") : String(value)));
+                    grid.appendChild(row);
+                });
+                box.appendChild(grid);
+
+                const shots = screenshotsOf(rec);
+                if (shots.length) {
+                    const gal = el("div", "flex gap-2 flex-wrap pt-1");
+                    shots.forEach((src) => {
+                        const img = el("img", "h-24 rounded border border-neutral-200 dark:border-slate-700 cursor-zoom-in hover:opacity-80 transition-opacity");
+                        img.src = src;
+                        img.loading = "lazy";
+                        img.addEventListener("click", () => openLightbox(src));
+                        gal.appendChild(img);
+                    });
+                    box.appendChild(gal);
+                }
+
+                const actions = el("div", "flex gap-2 items-center pt-1");
+                actions.appendChild(el("span", "text-xs text-neutral-400 dark:text-neutral-500",
+                    "Bewaard " + fmtDate(rec.updatedAt || rec.createdAt)));
+                const spacer = el("span", "flex-1");
+                const edit = el("button", "px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors", "Wijzigen");
+                edit.type = "button";
+                edit.addEventListener("click", () => {
+                    const sp = new URLSearchParams(location.search);
+                    sp.delete("from");
+                    sp.set("recordId", rec.id);
+                    location.href = SOURCES[rec.store].page + "?" + sp.toString();
+                });
+                const del = el("button", "px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors", "Verwijderen");
+                del.type = "button";
+                del.addEventListener("click", async () => {
+                    if (!confirm("Dit record definitief verwijderen?")) return;
+                    await RecordStore.remove(rec.store, rec.id);
+                    await loadAll();
+                    draw();
+                });
+                actions.append(spacer, edit, del);
+                box.appendChild(actions);
+                return box;
+            }
+
+            function badge(rec) {
+                const src = SOURCES[rec.store];
+                const b = el("span", "text-xs px-2 py-0.5 rounded-full border whitespace-nowrap " + ACCENTS[src.accent], rec.categorie);
+                return b;
+            }
+
+            // ── Tabelweergave ───────────────────────────────────────────────
+            const COLS = [
+                { key: "pacsnummer", label: "Pacsnummer" },
+                { key: "datum",      label: "Datum" },
+                { key: "onderzoek",  label: "Onderzoek" },
+                { key: "bron",       label: "Soort" },
+                { key: "categorie",  label: "Categorie" },
+                { key: "betrokken",  label: "Betrokkene" },
+                { key: "updatedAt",  label: "Bewaard" },
+            ];
+
+            function drawTable(rows) {
+                const wrap = el("div", "bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden");
+                const scroll = el("div", "overflow-x-auto");
+                const table = el("table", "w-full text-sm");
+
+                const thead = el("thead", "bg-neutral-50 dark:bg-muted");
+                const htr = el("tr");
+                htr.appendChild(el("th", "w-8"));
+                COLS.forEach((c) => {
+                    htr.appendChild(el("th", "text-left px-3 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap", c.label));
+                });
+                thead.appendChild(htr);
+                table.appendChild(thead);
+
+                const tbody = el("tbody");
+                rows.forEach((rec) => {
+                    const tr = el("tr", "border-t border-neutral-200 dark:border-slate-700 hover:bg-neutral-50 dark:hover:bg-accent cursor-pointer transition-colors");
+                    const chev = el("td", "px-2 text-neutral-400");
+                    chev.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform"><path d="m9 18 6-6-6-6"/></svg>';
+                    tr.appendChild(chev);
+
+                    tr.appendChild(el("td", "px-3 py-2 font-mono text-xs whitespace-nowrap", rec.pacsnummer || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.datum || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.onderzoek || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.bron));
+                    const tdCat = el("td", "px-3 py-2");
+                    tdCat.appendChild(badge(rec));
+                    tr.appendChild(tdCat);
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.betrokkenen.length
+                        ? (rec.betrokkenen.length === 1 ? rec.betrokkenen[0] : rec.betrokkenen[0] + " …(" + rec.betrokkenen.length + ")")
+                        : "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs text-neutral-400 dark:text-neutral-500 whitespace-nowrap", fmtDate(rec.updatedAt || rec.createdAt)));
+
+                    const detailTr = el("tr", "detail-row hidden");
+                    const td = el("td", "");
+                    td.colSpan = COLS.length + 1;
+                    detailTr.appendChild(td);
+
+                    tr.addEventListener("click", () => {
+                        const open = !detailTr.classList.contains("hidden");
+                        if (open) {
+                            detailTr.classList.add("hidden");
+                            td.innerHTML = "";
+                            chev.querySelector("svg").style.transform = "";
+                        } else {
+                            td.appendChild(buildDetail(rec));
+                            detailTr.classList.remove("hidden");
+                            chev.querySelector("svg").style.transform = "rotate(90deg)";
+                        }
+                    });
+
+                    tbody.append(tr, detailTr);
+                });
+                table.appendChild(tbody);
+                scroll.appendChild(table);
+                wrap.appendChild(scroll);
+                return wrap;
+            }
+
+            // ── Kaartweergave ───────────────────────────────────────────────
+            function drawCards(rows) {
+                const grid = el("div", "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3");
+                rows.forEach((rec) => {
+                    const card = el("div", "bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden flex flex-col hover:shadow-md transition-shadow");
+
+                    const head = el("div", "flex items-start gap-2 px-3 py-2 border-b border-neutral-200 dark:border-slate-700");
+                    const titel = el("div", "flex flex-col min-w-0 flex-1");
+                    titel.appendChild(el("span", "text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate",
+                        rec.pacsnummer || "(geen pacsnummer)"));
+                    titel.appendChild(el("span", "text-xs text-neutral-400 dark:text-neutral-500 truncate",
+                        [rec.datum, rec.onderzoek].filter(Boolean).join(" · ") || "—"));
+                    head.append(titel, badge(rec));
+                    card.appendChild(head);
+
+                    const shots = screenshotsOf(rec);
+                    if (shots.length) {
+                        const strip = el("div", "flex gap-1 px-3 pt-2 overflow-x-auto");
+                        shots.slice(0, 4).forEach((src) => {
+                            const img = el("img", "h-16 rounded border border-neutral-200 dark:border-slate-700 cursor-zoom-in shrink-0");
+                            img.src = src;
+                            img.loading = "lazy";
+                            img.addEventListener("click", (e) => { e.stopPropagation(); openLightbox(src); });
+                            strip.appendChild(img);
+                        });
+                        if (shots.length > 4) {
+                            strip.appendChild(el("span", "self-center text-xs text-neutral-400 dark:text-neutral-500 px-1", "+" + (shots.length - 4)));
+                        }
+                        card.appendChild(strip);
+                    }
+
+                    const body = el("div", "px-3 py-2 flex flex-col gap-1 flex-1");
+                    fieldsOf(rec)
+                        .filter(({ field }) => field.type !== "printscreen" && !["pacsnummer", "onderzoek_datum", "onderzoek_type"].includes(field.id))
+                        .slice(0, 4)
+                        .forEach(({ field, value }) => {
+                            const row = el("div", "flex gap-2 text-xs");
+                            row.appendChild(el("span", "text-neutral-400 dark:text-neutral-500 shrink-0", field.label + ":"));
+                            const val = Array.isArray(value) ? value.join(", ") : String(value);
+                            row.appendChild(el("span", "text-neutral-700 dark:text-neutral-200 truncate",
+                                val.length > 60 ? val.slice(0, 59) + "…" : val));
+                            body.appendChild(row);
+                        });
+                    card.appendChild(body);
+
+                    const foot = el("div", "px-3 py-2 border-t border-neutral-200 dark:border-slate-700 flex items-center gap-2");
+                    foot.appendChild(el("span", "text-xs text-neutral-400 dark:text-neutral-500", fmtDate(rec.updatedAt || rec.createdAt)));
+                    const more = el("button", "ml-auto text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer bg-transparent border-0 p-0", "Details");
+                    more.type = "button";
+                    const detailHolder = el("div", "hidden");
+                    more.addEventListener("click", () => {
+                        const open = !detailHolder.classList.contains("hidden");
+                        if (open) { detailHolder.classList.add("hidden"); detailHolder.innerHTML = ""; more.textContent = "Details"; }
+                        else { detailHolder.appendChild(buildDetail(rec)); detailHolder.classList.remove("hidden"); more.textContent = "Minder"; }
+                    });
+                    foot.appendChild(more);
+                    card.append(foot, detailHolder);
+
+                    grid.appendChild(card);
+                });
+                return grid;
+            }
+
+            // ── Lightbox voor schermafdrukken ───────────────────────────────
+            let lightbox = null;
+            function openLightbox(src) {
+                if (!lightbox) {
+                    lightbox = el("div", "hidden fixed inset-0 z-[200] bg-black/80 flex items-center justify-center p-6 cursor-zoom-out");
+                    const img = el("img", "max-w-full max-h-full rounded shadow-2xl");
+                    img.id = "lightbox-img";
+                    lightbox.appendChild(img);
+                    lightbox.addEventListener("click", () => lightbox.classList.add("hidden"));
+                    document.addEventListener("keydown", (e) => {
+                        if (e.key === "Escape") lightbox.classList.add("hidden");
+                    });
+                    document.body.appendChild(lightbox);
+                }
+                lightbox.querySelector("#lightbox-img").src = src;
+                lightbox.classList.remove("hidden");
+            }
+
+            // ── Tekenen ─────────────────────────────────────────────────────
+            function drawViewButtons() {
+                const on = "px-3 py-1.5 text-xs font-medium transition-colors bg-cyan-600 text-white";
+                const off = "px-3 py-1.5 text-xs font-medium transition-colors bg-white dark:bg-muted text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent";
+                document.getElementById("view-table").className = view === "table" ? on : off;
+                document.getElementById("view-cards").className = (view === "cards" ? on : off) + " border-l border-neutral-300 dark:border-slate-700";
+            }
+
+            function draw() {
+                drawTabs();
+                drawChips();
+                drawViewButtons();
+                const rows = visible();
+                const area = document.getElementById("result-area");
+                const empty = document.getElementById("empty-state");
+                area.innerHTML = "";
+                if (!rows.length) {
+                    empty.classList.remove("hidden");
+                    empty.textContent = ALL.length
+                        ? "Geen records die aan deze filters voldoen."
+                        : "Er zijn nog geen bewaarde formulieren. Vul er een in op de kwaliteitscontrole- of casuïstiekpagina.";
+                    return;
+                }
+                empty.classList.add("hidden");
+                area.appendChild(view === "table" ? drawTable(rows) : drawCards(rows));
+            }
+
+            // ── Koppelen ────────────────────────────────────────────────────
+            document.querySelectorAll(".tab-btn").forEach((btn) => {
+                btn.addEventListener("click", () => {
+                    tab = btn.dataset.tab;
+                    categories.clear();       // niveau 2 hoort bij niveau 1
+                    draw();
+                });
+            });
+            document.getElementById("search").addEventListener("input", draw);
+            document.getElementById("sort").addEventListener("change", (e) => { sortBy = e.target.value; draw(); });
+            document.getElementById("clear-filters").addEventListener("click", () => {
+                document.getElementById("search").value = "";
+                categories.clear();
+                tab = "all";
+                draw();
+            });
+            document.getElementById("view-table").addEventListener("click", () => {
+                view = "table"; localStorage.setItem("dbView", view); draw();
+            });
+            document.getElementById("view-cards").addEventListener("click", () => {
+                view = "cards"; localStorage.setItem("dbView", view); draw();
+            });
+
+            // Terug naar de pagina waar je vandaan kwam, anders naar launch.
+            document.getElementById("back-btn").addEventListener("click", () => {
+                const sp = new URLSearchParams(location.search);
+                const from = sp.get("from");
+                sp.delete("from");
+                const target = from && SOURCES[from] ? SOURCES[from].page : "launch.html";
+                location.href = target + (sp.toString() ? "?" + sp : "");
+            });
+
+            (async function init() {
+                await loadAll();
+                // "from" duidt aan waar je vandaan komt; als beginselectie is
+                // "Alles" duidelijker, dus enkel de terugknop gebruikt het.
+                tab = "all";
+                draw();
+            })();
+        </script>
+    </body>
+</html>

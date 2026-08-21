@@ -2033,7 +2033,7 @@
                 refreshSnomedFromForm();
                 const dbParams = new URLSearchParams(window.location.search);
                 dbParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
-                window.location.href = `database.html?${dbParams.toString()}`;
+                window.location.href = `cases.html?${dbParams.toString()}`;
             });
 
             const validateBtn = document.getElementById("validate-btn");
@@ -4294,7 +4294,7 @@ negated bevindingen
                     document.getElementById("template-accordion")?.setAttribute("open", "");
                 }
 
-                // Bewaar de bevindingen zodat qc.html en database.html ze als
+                // Bewaar de bevindingen zodat qc.html en cases.html ze als
                 // pathologie-opties kunnen aanbieden (niet-template mode).
                 storeSnomedForDatabase(hoofdLines, bijLines, negatedLines);
             }

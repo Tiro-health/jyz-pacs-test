@@ -1,5 +1,5 @@
 /*
- * database-schema.js — velddefinities voor de niet-template mode van database.html
+ * cases-schema.js — velddefinities voor de niet-template mode van cases.html
  *
  * Overgenomen uit de Tiro-templates "Study and patient information" en
  * "Database Radiologie". Labels, optieteksten en volgorde staan hier exact
@@ -37,7 +37,9 @@
         ],
     };
 
-    const DATABASE_SCHEMA = {
+    // id en store blijven "database": dat zijn de opslagsleutels van de
+    // IndexedDB-tabel. Ze omdopen zou bestaande casussen onbereikbaar maken.
+    const CASES_SCHEMA = {
         id: "database",
         title: "Database Radiologie",
         store: "database",
@@ -111,5 +113,5 @@
         ],
     };
 
-    global.DATABASE_SCHEMAS = { STUDY_SCHEMA, DATABASE_SCHEMA };
+    global.CASES_SCHEMAS = { STUDY_SCHEMA, CASES_SCHEMA };
 })(window);
