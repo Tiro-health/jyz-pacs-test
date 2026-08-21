@@ -180,7 +180,9 @@
         </div>
 
         <!-- Floating action buttons (top-right) -->
-        <div class="fixed top-4 right-4 z-50 flex gap-2 items-center">
+        <!-- items-start: de stapel met "mail versturen" is hoger, zo blijven de
+             bovenranden van alle knoppen op één lijn -->
+        <div class="fixed top-4 right-4 z-50 flex gap-2 items-start">
             <button
                 id="secret-copy-btn-2"
                 type="button"
@@ -203,30 +205,32 @@
                 </svg>
                 Save
             </button>
-            <label
-                id="mail-toggle-wrap"
-                title="Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres"
-                class="inline-flex items-center gap-1.5 px-2 py-1.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-600 dark:text-neutral-300 shadow-lg cursor-pointer select-none"
-            >
-                <input
-                    id="mail-send-cb"
-                    type="checkbox"
-                    checked
-                    class="rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
-                />
-                <span class="text-xs">mail versturen</span>
-            </label>
-            <button
-                id="save-and-send-btn"
-                type="button"
-                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors shadow-lg"
-            >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M22 2 11 13"/>
-                    <path d="M22 2 15 22 11 13 2 9l20-7z"/>
-                </svg>
-                Save and send
-            </button>
+            <div class="flex flex-col gap-1">
+                <button
+                    id="save-and-send-btn"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors shadow-lg"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 2 11 13"/>
+                        <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                    </svg>
+                    Save and send
+                </button>
+                <label
+                    id="mail-toggle-wrap"
+                    title="Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres"
+                    class="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 shadow-lg cursor-pointer select-none transition-colors"
+                >
+                    <input
+                        id="mail-send-cb"
+                        type="checkbox"
+                        checked
+                        class="w-3 h-3 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
+                    />
+                    <span class="text-[11px] leading-none">mail versturen</span>
+                </label>
+            </div>
             <button
                 id="export-import-btn"
                 type="button"
@@ -495,8 +499,43 @@
                 const v = JyzForms.SchemaForm.read(native, QC_SCHEMAS.STUDY_SCHEMA);
                 setStudySuffix(v.pacsnummer, v.onderzoek_datum, v.onderzoek_type, v.aanvrager);
             }
-            document.addEventListener("input", refreshStudySuffixFromNative);
-            document.addEventListener("change", refreshStudySuffixFromNative);
+
+            // ── Label van het aanvinkvakje ──────────────────────────────────
+            // Staat de ontvanger vast, dan komt diens naam in de plaats van
+            // "mail versturen". Eén definitie, ook gebruikt door recipientFrom.
+            const qcRecipient = (v) =>
+                v.feedback_radioloog || v.tweede_naam_radioloog ||
+                v.medisch_naam_aanvrager || v.aanvraag_naam_aanvrager || "";
+
+            const mailToggleWrap = document.getElementById("mail-toggle-wrap");
+            const mailLabelSpan  = mailToggleWrap.querySelector("span");
+
+            function setMailLabel(naam) {
+                mailLabelSpan.textContent = naam || "mail versturen";
+                mailToggleWrap.title = naam
+                    ? "Mail versturen naar " + naam
+                    : "Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres";
+            }
+
+            function refreshMailLabelFromNative() {
+                const native = document.querySelector('[data-nontemplate="qc"]');
+                if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
+                setMailLabel(qcRecipient(JyzForms.SchemaForm.read(native, QC_SCHEMAS.QC_SCHEMA)));
+            }
+
+            // Template mode: uit het kwaliteitscontroleformulier. "naam aanvrager"
+            // en niet "aanvrager", anders matcht "Juiste aanvrager?" met ja of nee.
+            qcForm.addEventListener("tiro-update", (event) => {
+                const r = event.detail?.response;
+                setMailLabel(answerByLabel(r, "radioloog") || answerByLabel(r, "naam aanvrager"));
+            });
+
+            function refreshDerivedFromNative() {
+                refreshStudySuffixFromNative();
+                refreshMailLabelFromNative();
+            }
+            document.addEventListener("input", refreshDerivedFromNative);
+            document.addEventListener("change", refreshDerivedFromNative);
 
             // Back button: return to launch.html preserving all URL params
             document.getElementById("back-btn").addEventListener("click", () => {
@@ -587,9 +626,7 @@
                 shouldSend: () => mailSendCb.checked,
                 // De mail gaat naar wie in deze reden is aangeduid; is er niemand
                 // aangeduid, dan naar het vaste adres van de dienst.
-                recipientFrom: (v) =>
-                    v.feedback_radioloog || v.tweede_naam_radioloog ||
-                    v.medisch_naam_aanvrager || v.aanvraag_naam_aanvrager || "",
+                recipientFrom: qcRecipient,
                 onSend: async (response, { recipient, naam }) => {
                     const res = await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
                         method: "POST",
@@ -611,12 +648,12 @@
             // Samenvatting bijwerken na het opbouwen en bij het wisselen van modus.
             // Gaat de pagina naar template mode, dan wissen we ze en vult het
             // Tiro-formulier ze opnieuw via tiro-update.
-            refreshStudySuffixFromNative();
+            refreshDerivedFromNative();
             document.querySelector('[data-nontemplate-toggle]')?.addEventListener('click', () => {
                 setTimeout(() => {
                     const native = document.querySelector('[data-nontemplate="study"]');
-                    if (native && native.classList.contains('hidden')) setStudySuffix();
-                    else refreshStudySuffixFromNative();
+                    if (native && native.classList.contains('hidden')) { setStudySuffix(); setMailLabel(''); }
+                    else refreshDerivedFromNative();
                 }, 0);
             });
 
