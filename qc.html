@@ -503,18 +503,34 @@
             // ── Label van het aanvinkvakje ──────────────────────────────────
             // Staat de ontvanger vast, dan komt diens naam in de plaats van
             // "mail versturen". Eén definitie, ook gebruikt door recipientFrom.
-            const qcRecipient = (v) =>
-                v.feedback_radioloog || v.tweede_naam_radioloog ||
-                v.medisch_naam_aanvrager || v.aanvraag_naam_aanvrager || "";
+            const qcRecipient = (v) => [
+                v.feedback_radioloog, v.tweede_naam_radioloog,
+                v.medisch_naam_aanvrager, v.aanvraag_naam_aanvrager,
+            ].filter(Boolean);
 
             const mailToggleWrap = document.getElementById("mail-toggle-wrap");
             const mailLabelSpan  = mailToggleWrap.querySelector("span");
+            const MAIL_DEFAULT_TITLE = "Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres";
 
-            function setMailLabel(naam) {
-                mailLabelSpan.textContent = naam || "mail versturen";
-                mailToggleWrap.title = naam
-                    ? "Mail versturen naar " + naam
-                    : "Mail versturen naar de geselecteerde radioloog of aanvrager; staat die er niet, dan naar het vaste adres";
+            /**
+             * Eén naam voluit; meerdere namen als de eerste plus het aantal, met
+             * alle namen in de tooltip. Zo blijft de knop smal.
+             */
+            function formatRecipients(namen) {
+                const list = [].concat(namen || []).filter(Boolean);
+                if (!list.length) return { text: "mail versturen", title: MAIL_DEFAULT_TITLE };
+                if (list.length === 1) return { text: list[0], title: "Mail versturen naar " + list[0] };
+                const eerste = list[0].length > 14 ? list[0].slice(0, 13) + "…" : list[0];
+                return {
+                    text: eerste + " …(" + list.length + ")",
+                    title: "Mail versturen naar:\n" + list.join("\n"),
+                };
+            }
+
+            function setMailLabel(namen) {
+                const { text, title } = formatRecipients(namen);
+                mailLabelSpan.textContent = text;
+                mailToggleWrap.title = title;
             }
 
             function refreshMailLabelFromNative() {
@@ -527,7 +543,7 @@
             // en niet "aanvrager", anders matcht "Juiste aanvrager?" met ja of nee.
             qcForm.addEventListener("tiro-update", (event) => {
                 const r = event.detail?.response;
-                setMailLabel(answerByLabel(r, "radioloog") || answerByLabel(r, "naam aanvrager"));
+                setMailLabel([answerByLabel(r, "radioloog") || answerByLabel(r, "naam aanvrager")]);
             });
 
             function refreshDerivedFromNative() {
@@ -652,7 +668,7 @@
             document.querySelector('[data-nontemplate-toggle]')?.addEventListener('click', () => {
                 setTimeout(() => {
                     const native = document.querySelector('[data-nontemplate="study"]');
-                    if (native && native.classList.contains('hidden')) { setStudySuffix(); setMailLabel(''); }
+                    if (native && native.classList.contains('hidden')) { setStudySuffix(); setMailLabel([]); }
                     else refreshDerivedFromNative();
                 }, 0);
             });

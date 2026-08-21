@@ -1443,12 +1443,16 @@ Voorbeeld van een geldig antwoord:
             }
             try {
                 const qr = SchemaForm.toQuestionnaireResponse(primarySchema, values);
-                const naam = recipientFrom ? recipientFrom(values) : "";
-                const recipient = naam ? NameLists.emailFor(naam) : "";
-                if (naam && !recipient) {
-                    throw new Error("Geen e-mailadres bekend voor " + naam + ". Vul dat in bij Namenlijsten op de flow-pagina.");
+                // recipientFrom mag één naam of een lijst teruggeven.
+                const namen = [].concat(recipientFrom ? recipientFrom(values) || [] : []).filter(Boolean);
+                const zonderAdres = namen.filter((n) => !NameLists.emailFor(n));
+                if (zonderAdres.length) {
+                    throw new Error("Geen e-mailadres bekend voor " + zonderAdres.join(", ") +
+                        ". Vul dat in bij Namenlijsten op de flow-pagina.");
                 }
-                if (onSend) await onSend(qr, { recipient, naam, values });
+                const recipient = namen.map((n) => NameLists.emailFor(n)).join(", ");
+                const naam = namen.join(", ");
+                if (onSend) await onSend(qr, { recipient, naam, namen, values });
                 record.sent = true;
                 await RecordStore.save(page, record);
                 flash(recipient ? "Bewaard en verzonden naar " + naam : "Bewaard en verzonden");
