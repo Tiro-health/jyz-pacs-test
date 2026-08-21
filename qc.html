@@ -778,6 +778,27 @@
                         document.getElementById('export-import-modal').classList.add('hidden');
                 });
 
+                // ── Sleutels van de configuratie, op één plaats ─────────────
+                // Zowel de defaults-init, de export als de telling gebruiken deze
+                // lijsten, zodat een nieuwe prompt niet op drie plaatsen vergeten
+                // kan worden.
+                const PROMPT_KEYS = [
+                    ['dictationActionUrl','dictationActionVersion'],
+                    ['kidvActionUrl', null],
+                    ['aiConsultUrl','aiConsultPromptVersion'],
+                    ['verslagCheckUrl','verslagCheckVersion'],
+                    ['inlineCheckUrl','inlineCheckVersion'],
+                    ['snomedCtActionUrl','snomedCtPromptVersion'],
+                    ['autofillBackupUrl','autofillBackupVersion'],
+                    ['medgemmaActionUrl','medgemmaPromptVersion'],
+                    ['formFillActionUrl','formFillPromptVersion'],
+                ];
+                const MODEL_KEYS = [
+                    'geminiModelTranslate','geminiModelAiConsult','geminiModelKidv',
+                    'geminiModelVerslag','geminiModelRealtime','geminiModelSnomed',
+                    'geminiModelMedgemma','geminiModelAutofillBackup','geminiModelFormFill',
+                ];
+
                 // ── Prompt + model defaults init (zodat export altijd volledig is) ──
                 (function() {
                     const _PD = [
@@ -790,7 +811,15 @@
                         { key: 'medgemmaActionUrl',    vk: 'medgemmaPromptVersion', ver: '5', val: `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.\n\n=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nVerslag protocol: {Procedure template}\n=== EINDE CONTEXT ===\n\nVERSLAGREGELS:\n- Schrijf uitsluitend een VERSLAG en een BESLUIT\n- Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief\n\nUITVOERFORMAAT:\n<b>Verslag</b>\n[bevindingen]\n<b>Besluit</b>\n[besluit]` },
                         { key: 'snomedCtActionUrl',    vk: 'snomedCtPromptVersion', ver: '1', val: `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en identificeer de te coderen bevindingen.\n\n=== CONTEXT ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n=== EINDE CONTEXT ===\n\n=== TE CODEREN VERSLAG ===\n{tekst}\n=== EINDE VERSLAG ===\n\nUITVOERFORMAAT:\nhoofddiagnose\n[SNOMED CT-conceptnaam]\nbijdiagnose\n[SNOMED CT-conceptnaam]\nnegated bevindingen\n[SNOMED CT-conceptnaam]` },
                     ];
+                    // De standaardtekst komt uit forms-shared.js, zodat er één bron is.
+                    // Ontbreekt die laag, dan slaan we deze prompt over in plaats van
+                    // de hele export/import-koppeling te laten sneuvelen.
+                    if (window.JyzForms?.DEFAULT_FORM_FILL_PROMPT) {
+                        _PD.push({ key: 'formFillActionUrl', vk: 'formFillPromptVersion', ver: '1',
+                                   val: JyzForms.DEFAULT_FORM_FILL_PROMPT });
+                    }
                     const _MD = [
+                        { key: 'geminiModelFormFill',       val: 'gemini-2.5-pro' },
                         { key: 'geminiModelTranslate',      val: 'gemini-2.5-flash' },
                         { key: 'geminiModelKidv',           val: 'gemini-2.5-pro' },
                         { key: 'geminiModelVerslag',        val: 'gemini-2.5-flash' },
@@ -816,21 +845,10 @@
                 })();
 
                 document.getElementById('do-export-btn').addEventListener('click', async () => {
-                    const geminiModelKeys = ['geminiModelTranslate','geminiModelAiConsult','geminiModelKidv','geminiModelVerslag','geminiModelRealtime','geminiModelSnomed','geminiModelMedgemma','geminiModelAutofillBackup'];
                     const geminiModels = {};
-                    geminiModelKeys.forEach(k => { const v = localStorage.getItem(k); if (v) geminiModels[k] = v; });
-                    const promptKeys = [
-                        ['dictationActionUrl','dictationActionVersion'],
-                        ['kidvActionUrl', null],
-                        ['aiConsultUrl','aiConsultPromptVersion'],
-                        ['verslagCheckUrl','verslagCheckVersion'],
-                        ['inlineCheckUrl','inlineCheckVersion'],
-                        ['snomedCtActionUrl','snomedCtPromptVersion'],
-                        ['autofillBackupUrl','autofillBackupVersion'],
-                        ['medgemmaActionUrl','medgemmaPromptVersion'],
-                    ];
+                    MODEL_KEYS.forEach(k => { const v = localStorage.getItem(k); if (v) geminiModels[k] = v; });
                     const prompts = {};
-                    promptKeys.forEach(([urlKey, verKey]) => {
+                    PROMPT_KEYS.forEach(([urlKey, verKey]) => {
                         const v = localStorage.getItem(urlKey);
                         if (v) {
                             prompts[urlKey] = v;
@@ -974,9 +992,13 @@
                     document.getElementById('qc-records-count').textContent =
                         fmt(qc.length, 'formulier', 'formulieren') + ' · ' + fmt(nNames, 'naam', 'namen');
                     document.getElementById('db-records-count').textContent = fmt(db.length, 'casus', 'casussen');
-                    let nTpl = 0;
-                    try { nTpl = (JSON.parse(localStorage.getItem('flowConfig_v1') || 'null')?.templates || []).length; } catch {}
-                    document.getElementById('config-count').textContent = fmt(nTpl, 'template', 'templates');
+                    // flowConfig_v1 bewaart de onderzoekstypes onder examTypes
+                    let cfg = null;
+                    try { cfg = JSON.parse(localStorage.getItem('flowConfig_v1') || 'null'); } catch {}
+                    const nTypes = Array.isArray(cfg?.examTypes) ? cfg.examTypes.length : 0;
+                    const nPrompts = PROMPT_KEYS.filter(([k]) => localStorage.getItem(k)).length;
+                    document.getElementById('config-count').textContent =
+                        fmt(nTypes, 'onderzoekstype', 'onderzoekstypes') + ' · ' + fmt(nPrompts, 'prompt', 'prompts');
                 }
 
                 document.getElementById('export-qc-btn').addEventListener('click', () =>
