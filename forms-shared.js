@@ -391,7 +391,12 @@
 
                 case "checkboxes":
                 case "dynamicCheckboxes": {
-                    input = el("div", "flex flex-col gap-1.5");
+                    // Lange lijsten krijgen een eigen schuifvlak zodat het
+                    // formulier niet uit elkaar loopt.
+                    const many = resolveOptions(f).length > 7;
+                    input = el("div", "flex flex-col gap-1.5" + (many
+                        ? " max-h-44 overflow-y-auto rounded-md border border-neutral-200 dark:border-slate-700 p-2"
+                        : ""));
                     const sel = Array.isArray(value) ? value.map(String) : value != null ? [String(value)] : [];
                     const addBox = (v, text, checked) => {
                         const line = el("label", "flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer");

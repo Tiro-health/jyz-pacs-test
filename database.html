@@ -358,7 +358,8 @@
 
             // ── Label van het aanvinkvakje ──────────────────────────────────
             // Eén definitie van de ontvangers, ook gebruikt door recipientFrom.
-            const dbRecipient = (v) => [v.int_radioloog, v.opv_radioloog].filter(Boolean);
+            // Radioloog is meerkeuze, dus platmaken tot één lijst namen.
+            const dbRecipient = (v) => [].concat(v.int_radioloog || [], v.opv_radioloog || []).filter(Boolean);
 
             const mailToggleWrap = document.getElementById("mail-toggle-wrap");
             const mailLabelSpan  = mailToggleWrap.querySelector("span");
