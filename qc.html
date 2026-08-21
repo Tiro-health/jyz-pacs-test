@@ -811,9 +811,13 @@
                         { key: 'medgemmaActionUrl',    vk: 'medgemmaPromptVersion', ver: '5', val: `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.\n\n=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nVerslag protocol: {Procedure template}\n=== EINDE CONTEXT ===\n\nVERSLAGREGELS:\n- Schrijf uitsluitend een VERSLAG en een BESLUIT\n- Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief\n\nUITVOERFORMAAT:\n<b>Verslag</b>\n[bevindingen]\n<b>Besluit</b>\n[besluit]` },
                         { key: 'snomedCtActionUrl',    vk: 'snomedCtPromptVersion', ver: '1', val: `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en identificeer de te coderen bevindingen.\n\n=== CONTEXT ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n=== EINDE CONTEXT ===\n\n=== TE CODEREN VERSLAG ===\n{tekst}\n=== EINDE VERSLAG ===\n\nUITVOERFORMAAT:\nhoofddiagnose\n[SNOMED CT-conceptnaam]\nbijdiagnose\n[SNOMED CT-conceptnaam]\nnegated bevindingen\n[SNOMED CT-conceptnaam]` },
                     ];
-                    // De standaardtekst komt uit forms-shared.js, zodat er één bron is
-                    _PD.push({ key: 'formFillActionUrl', vk: 'formFillPromptVersion', ver: '1',
-                               val: JyzForms.DEFAULT_FORM_FILL_PROMPT });
+                    // De standaardtekst komt uit forms-shared.js, zodat er één bron is.
+                    // Ontbreekt die laag, dan slaan we deze prompt over in plaats van
+                    // de hele export/import-koppeling te laten sneuvelen.
+                    if (window.JyzForms?.DEFAULT_FORM_FILL_PROMPT) {
+                        _PD.push({ key: 'formFillActionUrl', vk: 'formFillPromptVersion', ver: '1',
+                                   val: JyzForms.DEFAULT_FORM_FILL_PROMPT });
+                    }
                     const _MD = [
                         { key: 'geminiModelFormFill',       val: 'gemini-2.5-pro' },
                         { key: 'geminiModelTranslate',      val: 'gemini-2.5-flash' },
