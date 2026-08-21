@@ -459,13 +459,42 @@
 
                 case "checkboxes":
                 case "dynamicCheckboxes": {
+                    input = el("div", "flex flex-col gap-1.5");
+                    const sel = Array.isArray(value) ? value.map(String) : value != null ? [String(value)] : [];
+                    const known = resolveOptions(f).map((o) => (typeof o === "string" ? o : o.value));
+
+                    // "alle" staat buiten het schuifvlak, zodat het altijd
+                    // zichtbaar blijft bij een lange lijst.
+                    let alleCb = null;
+                    if (f.selectAll && known.length) {
+                        const alleLbl = el("label", "flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-200 cursor-pointer");
+                        alleLbl.title = "Allen selecteren of de selectie wissen";
+                        alleCb = el("input");
+                        alleCb.type = "checkbox";
+                        alleCb.dataset.selectAll = "1";   // niet meerekenen bij het uitlezen
+                        alleCb.className = "rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500";
+                        alleLbl.append(alleCb, el("span", "", f.selectAllLabel || "alle"));
+                        input.appendChild(alleLbl);
+                    }
+
                     // Lange lijsten krijgen een eigen schuifvlak zodat het
                     // formulier niet uit elkaar loopt.
-                    const many = resolveOptions(f).length > 7;
-                    input = el("div", "flex flex-col gap-1.5" + (many
+                    const many = known.length > 7;
+                    const boxes = el("div", "flex flex-col gap-1.5" + (many
                         ? " max-h-44 overflow-y-auto rounded-md border border-neutral-200 dark:border-slate-700 p-2"
                         : ""));
-                    const sel = Array.isArray(value) ? value.map(String) : value != null ? [String(value)] : [];
+                    boxes.dataset.boxes = "1";
+                    input.appendChild(boxes);
+
+                    /** Houd "alle" in lijn met de afzonderlijke vakjes. */
+                    const syncAlle = () => {
+                        if (!alleCb) return;
+                        const all = Array.from(boxes.querySelectorAll("input[type=checkbox]"));
+                        const aan = all.filter((c) => c.checked).length;
+                        alleCb.checked = all.length > 0 && aan === all.length;
+                        alleCb.indeterminate = aan > 0 && aan < all.length;
+                    };
+
                     const addBox = (v, text, checked) => {
                         const line = el("label", "flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer");
                         const cb = el("input");
@@ -473,16 +502,26 @@
                         cb.value = v;
                         cb.className = "rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500";
                         if (checked) cb.checked = true;
+                        cb.addEventListener("change", syncAlle);
                         line.append(cb, el("span", "", text));
-                        input.appendChild(line);
+                        boxes.appendChild(line);
                         return cb;
                     };
 
-                    const known = resolveOptions(f).map((o) => (typeof o === "string" ? o : o.value));
                     known.forEach((v) => addBox(v, v, sel.includes(String(v))));
                     // Reeds bewaarde waarden die niet in de huidige optielijst zitten
                     // (bv. eerder via "Andere toevoegen" ingevoerd) blijven zichtbaar.
                     sel.filter((v) => !known.map(String).includes(v)).forEach((v) => addBox(v, v, true));
+
+                    if (alleCb) {
+                        alleCb.addEventListener("change", () => {
+                            const aan = alleCb.checked;
+                            boxes.querySelectorAll("input[type=checkbox]").forEach((c) => { c.checked = aan; });
+                            alleCb.indeterminate = false;
+                            input.dispatchEvent(new Event("change", { bubbles: true }));
+                        });
+                        syncAlle();
+                    }
 
                     if (f.type === "dynamicCheckboxes") {
                         if (!known.length && !sel.length) {
@@ -696,7 +735,8 @@
                     const on = row.querySelector('button[data-selected="1"]');
                     if (on) out[f.id] = on.dataset.value;
                 } else if (f.type === "checkboxes" || f.type === "dynamicCheckboxes") {
-                    const vals = Array.from(row.querySelectorAll("input[type=checkbox]:checked")).map((c) => c.value);
+                    // Het "alle"-vakje is een bedieningselement, geen waarde.
+                    const vals = Array.from(row.querySelectorAll("input[type=checkbox]:checked:not([data-select-all])")).map((c) => c.value);
                     if (vals.length) out[f.id] = vals;
                 } else if (f.type === "printscreen") {
                     const srcs = Array.from(row.querySelectorAll("img[data-shot]")).map((i) => i.src);
@@ -725,13 +765,14 @@
                     });
                 } else if (f.type === "checkboxes" || f.type === "dynamicCheckboxes") {
                     const want = (Array.isArray(v) ? v : [v]).map(String);
-                    const boxes = Array.from(row.querySelectorAll("input[type=checkbox]"));
+                    const holder = row.querySelector("[data-input]");
+                    const container = row.querySelector("[data-boxes]") || holder;
+                    const boxes = Array.from(container.querySelectorAll("input[type=checkbox]:not([data-select-all])"));
                     boxes.forEach((c) => { c.checked = want.includes(c.value); });
                     if (f.type === "dynamicCheckboxes") {
                         // Waarden die nog geen aanvinkvakje hebben alsnog toevoegen,
                         // zodat een AI-suggestie of bewaarde waarde niet verdwijnt.
                         const present = boxes.map((c) => c.value);
-                        const holder = row.querySelector("[data-input]");
                         want.filter((x) => !present.includes(x)).forEach((x) => {
                             const line = el("label", "flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-200 cursor-pointer");
                             const cb = el("input");
@@ -740,9 +781,16 @@
                             cb.checked = true;
                             cb.className = "rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500";
                             line.append(cb, el("span", "", x));
-                            const addBtn = holder.querySelector("button");
-                            holder.insertBefore(line, addBtn || null);
+                            container.appendChild(line);
                         });
+                    }
+                    // "alle" weer in lijn brengen met wat er nu aangevinkt staat.
+                    const alle = holder.querySelector("input[data-select-all]");
+                    if (alle) {
+                        const alles = Array.from(container.querySelectorAll("input[type=checkbox]:not([data-select-all])"));
+                        const aan = alles.filter((c) => c.checked).length;
+                        alle.checked = alles.length > 0 && aan === alles.length;
+                        alle.indeterminate = aan > 0 && aan < alles.length;
                     }
                 } else if (f.type === "printscreen") {
                     const shots = row.querySelector('[data-shots="' + f.id + '"]');

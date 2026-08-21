@@ -69,7 +69,7 @@
             {
                 // Meerkeuze: een casus kan in één keer naar verschillende collega's.
                 id: "int_radioloog", label: "Radioloog", type: "checkboxes",
-                optionsFrom: "radiologen", hint: "Eén of meerdere",
+                optionsFrom: "radiologen", selectAll: true, hint: "Eén of meerdere",
                 showWhen: [{ field: "casus_type", equals: "Interessante casus" }, { field: "int_delen", equals: "Ja" }],
             },
 
@@ -107,7 +107,7 @@
             {
                 // Meerkeuze: een casus kan in één keer naar verschillende collega's.
                 id: "opv_radioloog", label: "Radioloog", type: "checkboxes",
-                optionsFrom: "radiologen", hint: "Eén of meerdere",
+                optionsFrom: "radiologen", selectAll: true, hint: "Eén of meerdere",
                 showWhen: [{ field: "casus_type", equals: "Op te volgen casus" }, { field: "opv_delen", equals: "Ja" }],
             },
         ],
