@@ -172,84 +172,153 @@
     };
 
     // ═══════════════════════════════════════════════════════════════════════
-    // NameLists — beheerbare keuzelijsten (radiologen, aanvragers)
-    // Beheerd op de flow-configuratiepagina, bewaard in localStorage en
-    // meegenomen in de JSON-export.
+    // NameLists — de personendatabank
+    // Eén lijst met personen; welke rollen iemand heeft bepaalt in welke
+    // keuzelijst hij verschijnt. Beheerd op de flow-configuratiepagina,
+    // bewaard in localStorage en meegenomen in de JSON-export.
+    //
+    // Persoon: { name, email, phone, artsType, discipline, roles[], isUser }
+    //   artsType   "Specialist" of "Specialist in opleiding"
+    //   discipline vrije tekst, bv. "oftalmologie"
+    //   roles      "radioloog" en/of "aanvrager"; iemand mag beide zijn
+    //   isUser     de gebruiker van dit profiel; hoogstens één persoon
     // ═══════════════════════════════════════════════════════════════════════
     const NameLists = {
-        KEYS: { radiologen: "qcRadiologenLijst", aanvragers: "qcAanvragersLijst" },
+        KEY: "qcPersonen",
+        // De twee oude lijsten. Ze worden nog gelezen zodat bestaande
+        // installaties en oudere exportbestanden blijven werken.
+        LEGACY: { radioloog: "qcRadiologenLijst", aanvrager: "qcAanvragersLijst" },
+        ROLES: ["radioloog", "aanvrager"],
+        ARTS_TYPES: ["Specialist", "Specialist in opleiding"],
 
-        /**
-         * Lijst van { name, email, isUser }. Oudere lijsten bevatten platte
-         * strings zonder e-mailadres; die blijven leesbaar en krijgen een leeg
-         * adres. isUser duidt aan wie de gebruiker van dit profiel is; dat
-         * wordt later vervangen door de aanmelding.
-         */
-        entries(which) {
-            try {
-                const arr = JSON.parse(localStorage.getItem(this.KEYS[which]) || "[]");
-                if (!Array.isArray(arr)) return [];
-                return arr
-                    .map((e) => (typeof e === "string"
-                        ? { name: e.trim(), email: "", isUser: false }
-                        : {
-                            name: String(e?.name || "").trim(),
-                            email: String(e?.email || "").trim(),
-                            isUser: e?.isUser === true,
-                        }))
-                    .filter((e) => e.name);
-            } catch { return []; }
+        /** Breng elke bekende schrijfwijze terug tot één vorm. */
+        _normalise(entry, fallbackRole) {
+            const e = typeof entry === "string" ? { name: entry } : (entry || {});
+            const roles = Array.isArray(e.roles) && e.roles.length
+                ? e.roles.filter((r) => this.ROLES.includes(r))
+                : (fallbackRole ? [fallbackRole] : []);
+            return {
+                name: String(e.name || "").trim(),
+                email: String(e.email || "").trim(),
+                phone: String(e.phone || "").trim(),
+                artsType: this.ARTS_TYPES.includes(e.artsType) ? e.artsType : "",
+                discipline: String(e.discipline || "").trim(),
+                roles: [...new Set(roles)],
+                isUser: e.isUser === true,
+            };
         },
 
-        /** De naam die als gebruiker van dit profiel is aangeduid. */
-        currentUser() {
-            for (const which of Object.keys(this.KEYS)) {
-                const hit = this.entries(which).find((e) => e.isUser);
-                if (hit) return hit.name;
-            }
-            return "";
+        /** Voeg personen met dezelfde naam samen; rollen en velden worden aangevuld. */
+        _merge(list) {
+            const byName = new Map();
+            list.filter((p) => p.name).forEach((p) => {
+                const key = p.name.toLowerCase();
+                const bestaand = byName.get(key);
+                if (!bestaand) { byName.set(key, p); return; }
+                bestaand.roles = [...new Set(bestaand.roles.concat(p.roles))];
+                ["email", "phone", "artsType", "discipline"].forEach((f) => {
+                    if (!bestaand[f] && p[f]) bestaand[f] = p[f];
+                });
+                bestaand.isUser = bestaand.isUser || p.isUser;
+            });
+            // Hoogstens één gebruiker van dit profiel.
+            let seen = false;
+            const out = [...byName.values()];
+            out.forEach((p) => {
+                if (p.isUser && !seen) seen = true;
+                else p.isUser = false;
+            });
+            return out;
+        },
+
+        /** Alle personen. Zet oudere, gesplitste lijsten eenmalig om. */
+        persons() {
+            try {
+                const raw = localStorage.getItem(this.KEY);
+                if (raw) {
+                    const arr = JSON.parse(raw);
+                    return Array.isArray(arr) ? this._merge(arr.map((e) => this._normalise(e))) : [];
+                }
+            } catch { /* valt terug op de oude lijsten */ }
+
+            // Nog geen personendatabank: opbouwen uit de twee oude lijsten.
+            const uit = [];
+            Object.entries(this.LEGACY).forEach(([rol, key]) => {
+                try {
+                    const arr = JSON.parse(localStorage.getItem(key) || "[]");
+                    if (Array.isArray(arr)) arr.forEach((e) => uit.push(this._normalise(e, rol)));
+                } catch { /* lijst overslaan */ }
+            });
+            const samen = this._merge(uit);
+            if (samen.length) this.setPersons(samen);
+            return samen;
+        },
+
+        setPersons(list) {
+            localStorage.setItem(this.KEY, JSON.stringify(
+                this._merge((list || []).map((e) => this._normalise(e)))
+            ));
+        },
+
+        /** Personen met een bepaalde rol. */
+        entries(role) {
+            return this.persons().filter((p) => p.roles.includes(this._roleOf(role)));
+        },
+
+        /** "radiologen" en "aanvragers" uit de schema's naar de enkelvoudige rol. */
+        _roleOf(which) {
+            if (which === "radiologen" || which === "radioloog") return "radioloog";
+            if (which === "aanvragers" || which === "aanvrager") return "aanvrager";
+            return which;
         },
 
         /** Alleen de namen — dat is wat in de keuzelijsten en in de records staat. */
         get(which) {
-            return this.entries(which).map((e) => e.name);
+            return this.entries(which).map((p) => p.name);
         },
 
-        set(which, entries) {
-            if (!this.KEYS[which]) return;
-            const clean = (entries || [])
-                .map((e) => (typeof e === "string"
-                    ? { name: e.trim(), email: "", isUser: false }
-                    : {
-                        name: String(e?.name || "").trim(),
-                        email: String(e?.email || "").trim(),
-                        isUser: e?.isUser === true,
-                    }))
-                .filter((e) => e.name);
-            // Hoogstens één gebruiker van dit profiel.
-            let seen = false;
-            clean.forEach((e) => {
-                if (e.isUser && !seen) seen = true;
-                else e.isUser = false;
-            });
-            localStorage.setItem(this.KEYS[which], JSON.stringify(clean));
+        /** De naam die als gebruiker van dit profiel is aangeduid. */
+        currentUser() {
+            return this.persons().find((p) => p.isUser)?.name || "";
         },
 
-        /** Zoek het e-mailadres bij een naam, over alle lijsten heen. */
+        /** Zoek het e-mailadres bij een naam. */
         emailFor(name) {
             const target = String(name || "").trim().toLowerCase();
             if (!target) return "";
-            for (const which of Object.keys(this.KEYS)) {
-                const hit = this.entries(which).find((e) => e.name.toLowerCase() === target);
-                if (hit && hit.email) return hit.email;
-            }
-            return "";
+            return this.persons().find((p) => p.name.toLowerCase() === target)?.email || "";
         },
 
+        /** De volledige persoon bij een naam. */
+        personFor(name) {
+            const target = String(name || "").trim().toLowerCase();
+            if (!target) return null;
+            return this.persons().find((p) => p.name.toLowerCase() === target) || null;
+        },
+
+        /** Vorm voor de JSON-export. */
         all() {
-            const out = {};
-            Object.keys(this.KEYS).forEach((k) => { out[this.KEYS[k]] = this.entries(k); });
-            return out;
+            return { [this.KEY]: this.persons() };
+        },
+
+        /**
+         * Overnemen uit een geïmporteerd bestand. Neemt zowel de nieuwe
+         * personendatabank aan als de twee oude, gesplitste lijsten.
+         */
+        importFrom(nameLists) {
+            if (!nameLists || typeof nameLists !== "object") return 0;
+            const uit = [];
+            if (Array.isArray(nameLists[this.KEY])) {
+                nameLists[this.KEY].forEach((e) => uit.push(this._normalise(e)));
+            }
+            Object.entries(this.LEGACY).forEach(([rol, key]) => {
+                if (Array.isArray(nameLists[key])) {
+                    nameLists[key].forEach((e) => uit.push(this._normalise(e, rol)));
+                }
+            });
+            if (!uit.length) return 0;
+            this.setPersons(uit);
+            return this.persons().length;
         },
     };
 

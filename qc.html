@@ -265,7 +265,7 @@
                     <!-- Quality control -->
                     <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
                         <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">Quality control</h3>
-                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Dienstoverkoepelend: de ingevulde formulieren met hun schermafdrukken, plus de namenlijsten met e-mailadressen. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat patiëntgegevens.</span></p>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Dienstoverkoepelend: de ingevulde formulieren met hun schermafdrukken, plus de personendatabank met e-mailadressen. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat patiëntgegevens.</span></p>
                         <span id="qc-records-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
                         <button id="export-qc-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
                         <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
@@ -936,6 +936,15 @@
                         : (data.formRecords && Array.isArray(data.formRecords[store])) ? data.formRecords[store]
                         : null;
                     if (!records) {
+                        // Een bestand met enkel een personendatabank is geldig:
+                        // dan zetten we alleen die over.
+                        if (data.nameLists) {
+                            const n = JyzForms.NameLists.importFrom(data.nameLists);
+                            done();
+                            alert(n + (n === 1 ? ' persoon' : ' personen') + ' geïmporteerd.');
+                            await refreshCounts();
+                            return;
+                        }
                         alert('Geen ' + many + ' gevonden in dit bestand.');
                         return done();
                     }
@@ -966,9 +975,7 @@
 
                     const result = await store_.merge(store, records, { fingerprint, includeDuplicates });
                     // Namenlijsten uit een Quality control-bestand overnemen.
-                    if (data.nameLists) {
-                        Object.entries(data.nameLists).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
-                    }
+                    if (data.nameLists) JyzForms.NameLists.importFrom(data.nameLists);
                     done();
                     const msg = [];
                     if (data.nameLists) msg.push('namenlijsten bijgewerkt');
@@ -987,10 +994,9 @@
                     const qc = await JyzForms.RecordStore.all('qc');
                     const db = await JyzForms.RecordStore.all('database');
                     const fmt = (n, one, many) => n + ' ' + (n === 1 ? one : many);
-                    const names = JyzForms.NameLists;
-                    const nNames = names.get('radiologen').length + names.get('aanvragers').length;
+                    const nPersonen = JyzForms.NameLists.persons().length;
                     document.getElementById('qc-records-count').textContent =
-                        fmt(qc.length, 'formulier', 'formulieren') + ' · ' + fmt(nNames, 'naam', 'namen');
+                        fmt(qc.length, 'formulier', 'formulieren') + ' · ' + fmt(nPersonen, 'persoon', 'personen');
                     document.getElementById('db-records-count').textContent = fmt(db.length, 'casus', 'casussen');
                     // flowConfig_v1 bewaart de onderzoekstypes onder examTypes
                     let cfg = null;
@@ -1029,7 +1035,7 @@
                         if (data.prompts) Object.entries(data.prompts).forEach(([k, v]) => localStorage.setItem(k, v));
                         if (data.dicomCodesBase)  localStorage.setItem('dicomCodesBase',  JSON.stringify(data.dicomCodesBase));
                         if (data.dicomCodesExtra) localStorage.setItem('dicomCodesExtra', JSON.stringify(data.dicomCodesExtra));
-                        if (data.nameLists) Object.entries(data.nameLists).forEach(([k, v]) => localStorage.setItem(k, JSON.stringify(v)));
+                        if (data.nameLists) JyzForms.NameLists.importFrom(data.nameLists);
                         // Ouder gecombineerd bestand: neem de records alsnog mee.
                         if (data.formRecords) await JyzForms.RecordStore.importAll(data.formRecords);
                         alert('Configuratie succesvol geïmporteerd. De pagina wordt herladen.');
