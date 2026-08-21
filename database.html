@@ -161,7 +161,9 @@
                         Back
                     </button>
                 </div>
-                <div class="flex gap-2 pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
+                <!-- items-start: de stapel met "mail versturen" is hoger, zo blijven
+                     de bovenranden van beide knoppen op één lijn -->
+                <div class="flex gap-2 items-start pointer-events-auto bg-white dark:bg-muted border border-neutral-200 dark:border-slate-700 rounded-lg px-2 py-1 shadow-sm">
                     <button
                         id="save-btn"
                         type="button"
@@ -174,17 +176,32 @@
                         </svg>
                         Save
                     </button>
-                    <button
-                        id="save-and-send-btn"
-                        type="button"
-                        class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 2 11 13"/>
-                            <path d="M22 2 15 22 11 13 2 9l20-7z"/>
-                        </svg>
-                        Save and send
-                    </button>
+                    <div class="flex flex-col gap-1">
+                        <button
+                            id="save-and-send-btn"
+                            type="button"
+                            class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 2 11 13"/>
+                                <path d="M22 2 15 22 11 13 2 9l20-7z"/>
+                            </svg>
+                            Save and send
+                        </button>
+                        <!-- Standaard uit: pas wanneer er via Delen / Doorsturen een
+                             naam gekozen is, vinkt dit zichzelf aan -->
+                        <label
+                            id="mail-toggle-wrap"
+                            class="inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 cursor-pointer select-none transition-colors"
+                        >
+                            <input
+                                id="mail-send-cb"
+                                type="checkbox"
+                                class="w-3 h-3 rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500"
+                            />
+                            <span class="text-[11px] leading-none">mail versturen</span>
+                        </label>
+                    </div>
                 </div>
             </div>
 
@@ -338,8 +355,64 @@
                 const v = JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.STUDY_SCHEMA);
                 setStudySuffix(v.pacsnummer, v.onderzoek_datum, v.onderzoek_type, v.aanvrager);
             }
-            document.addEventListener("input", refreshStudySuffixFromNative);
-            document.addEventListener("change", refreshStudySuffixFromNative);
+
+            // ── Label van het aanvinkvakje ──────────────────────────────────
+            // Eén definitie van de ontvangers, ook gebruikt door recipientFrom.
+            const dbRecipient = (v) => [v.int_radioloog, v.opv_radioloog].filter(Boolean);
+
+            const mailToggleWrap = document.getElementById("mail-toggle-wrap");
+            const mailLabelSpan  = mailToggleWrap.querySelector("span");
+            const mailSendCb     = document.getElementById("mail-send-cb");
+            const MAIL_DEFAULT_TITLE = "Zet Delen / Doorsturen op Ja en kies een radioloog om te kunnen versturen";
+
+            /**
+             * Eén naam voluit; meerdere namen als de eerste plus het aantal, met
+             * alle namen in de tooltip. Zo blijft de knop smal.
+             */
+            function formatRecipients(namen) {
+                const list = [].concat(namen || []).filter(Boolean);
+                if (!list.length) return { text: "mail versturen", title: MAIL_DEFAULT_TITLE };
+                if (list.length === 1) return { text: list[0], title: "Mail versturen naar " + list[0] };
+                const eerste = list[0].length > 14 ? list[0].slice(0, 13) + "…" : list[0];
+                return {
+                    text: eerste + " …(" + list.length + ")",
+                    title: "Mail versturen naar:\n" + list.join("\n"),
+                };
+            }
+
+            // Het vakje staat standaard uit en vinkt zichzelf aan zodra er een
+            // naam bijkomt; verdwijnt de naam, dan gaat het weer uit. Wat je
+            // daartussen zelf aanpast blijft staan.
+            let _hadRecipient = false;
+            function setMailLabel(namen) {
+                const list = [].concat(namen || []).filter(Boolean);
+                const { text, title } = formatRecipients(list);
+                mailLabelSpan.textContent = text;
+                mailToggleWrap.title = title;
+                const heeft = list.length > 0;
+                if (heeft !== _hadRecipient) {
+                    mailSendCb.checked = heeft;
+                    _hadRecipient = heeft;
+                }
+            }
+
+            function refreshMailLabelFromNative() {
+                const native = document.querySelector('[data-nontemplate="database"]');
+                if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
+                setMailLabel(dbRecipient(JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.DATABASE_SCHEMA)));
+            }
+
+            // Template mode: uit het databaseformulier.
+            databaseForm.addEventListener("tiro-update", (event) => {
+                setMailLabel([answerByLabel(event.detail?.response, "radioloog")]);
+            });
+
+            function refreshDerivedFromNative() {
+                refreshStudySuffixFromNative();
+                refreshMailLabelFromNative();
+            }
+            document.addEventListener("input", refreshDerivedFromNative);
+            document.addEventListener("change", refreshDerivedFromNative);
 
             // Back button: return to launch.html preserving all URL params
             document.getElementById("back-btn").addEventListener("click", () => {
@@ -381,7 +454,9 @@
                 sendWhen: (v) =>
                     (v.int_delen === "Ja" && !!v.int_radioloog) ||
                     (v.opv_delen === "Ja" && !!v.opv_radioloog),
-                recipientFrom: (v) => v.int_radioloog || v.opv_radioloog || "",
+                recipientFrom: dbRecipient,
+                // "mail versturen" uit betekent enkel bewaren.
+                shouldSend: () => mailSendCb.checked,
                 onSend: async (response, { recipient, naam }) => {
                     if (!recipient) throw new Error("Geen e-mailadres voor " + (naam || "de radioloog") + ".");
                     const res = await fetch("https://sdc.tiro.health/fhir/r5/QuestionnaireResponse/$send-notification", {
@@ -404,12 +479,12 @@
             // Samenvatting bijwerken na het opbouwen en bij het wisselen van modus.
             // Gaat de pagina naar template mode, dan wissen we ze en vult het
             // Tiro-formulier ze opnieuw via tiro-update.
-            refreshStudySuffixFromNative();
+            refreshDerivedFromNative();
             document.querySelector('[data-nontemplate-toggle]')?.addEventListener('click', () => {
                 setTimeout(() => {
                     const native = document.querySelector('[data-nontemplate="study"]');
-                    if (native && native.classList.contains('hidden')) setStudySuffix();
-                    else refreshStudySuffixFromNative();
+                    if (native && native.classList.contains('hidden')) { setStudySuffix(); setMailLabel([]); }
+                    else refreshDerivedFromNative();
                 }, 0);
             });
         </script>
