@@ -273,7 +273,7 @@
 
         <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
         <script src="forms-shared.js"></script>
-        <script src="database-schema.js"></script>
+        <script src="cases-schema.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -352,7 +352,7 @@
             function refreshStudySuffixFromNative() {
                 const native = document.querySelector('[data-nontemplate="study"]');
                 if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
-                const v = JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.STUDY_SCHEMA);
+                const v = JyzForms.SchemaForm.read(native, CASES_SCHEMAS.STUDY_SCHEMA);
                 setStudySuffix(v.pacsnummer, v.onderzoek_datum, v.onderzoek_type, v.aanvrager);
             }
 
@@ -400,7 +400,7 @@
             function refreshMailLabelFromNative() {
                 const native = document.querySelector('[data-nontemplate="database"]');
                 if (!native || native.classList.contains("hidden") || !window.JyzForms) return;
-                setMailLabel(dbRecipient(JyzForms.SchemaForm.read(native, DATABASE_SCHEMAS.DATABASE_SCHEMA)));
+                setMailLabel(dbRecipient(JyzForms.SchemaForm.read(native, CASES_SCHEMAS.CASES_SCHEMA)));
             }
 
             // Template mode: uit het databaseformulier.
@@ -433,18 +433,20 @@
             // alleen wanneer de toggle op niet-template staat. Verwijderen: schrap
             // dit blok, de twee script-tags en de data-nontemplate containers.
             JyzForms.mountFormsUI({
+                // page blijft "database": dat is de naam van de IndexedDB-tabel
+                // en van de modus-sleutel, niet van de pagina.
                 page: "database",
-                primarySchema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                primarySchema: CASES_SCHEMAS.CASES_SCHEMA,
                 sections: [
                     {
                         tiro:   document.querySelector('[data-tiro="study"]'),
                         native: document.querySelector('[data-nontemplate="study"]'),
-                        schema: DATABASE_SCHEMAS.STUDY_SCHEMA,
+                        schema: CASES_SCHEMAS.STUDY_SCHEMA,
                     },
                     {
                         tiro:   document.querySelector('[data-tiro="database"]'),
                         native: document.querySelector('[data-nontemplate="database"]'),
-                        schema: DATABASE_SCHEMAS.DATABASE_SCHEMA,
+                        schema: CASES_SCHEMAS.CASES_SCHEMA,
                     },
                 ],
                 saveBtn:        document.getElementById("save-btn"),
