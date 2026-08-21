@@ -575,28 +575,41 @@
 
         <!-- ── Namenlijsten modal ─────────────────────────────────────────────── -->
         <div id="names-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-5xl flex flex-col" style="max-height:88vh">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
-                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Namenlijsten</h2>
+                    <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">Personendatabank <span id="names-count" class="font-normal text-neutral-400 dark:text-neutral-500"></span></h2>
                     <button id="names-modal-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none">✕</button>
                 </div>
-                <div class="flex-1 overflow-y-auto px-5 py-4">
-                    <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-3">Deze namen vullen de keuzelijsten op de kwaliteitscontrole- en databasepagina in de niet-template mode. Het e-mailadres wordt gebruikt om een casus door te sturen. Wordt meegenomen in de export van Quality control.</p>
-
-                    <div class="flex items-baseline gap-2 mb-1">
-                        <label class="text-xs font-medium text-neutral-600 dark:text-neutral-300">Radiologen</label>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500">— vink aan wie de gebruiker van dit profiel is</span>
+                <div class="px-5 pt-3 pb-2 border-b border-neutral-200 dark:border-slate-700 flex flex-col gap-2">
+                    <p class="text-xs text-neutral-400 dark:text-neutral-500">Deze personen vullen de keuzelijsten op de kwaliteitscontrole- en casu&iuml;stiekpagina. Het e-mailadres dient om een casus door te sturen. Wordt meegenomen in de export van Quality control.</p>
+                    <div class="flex gap-2 items-center flex-wrap">
+                        <input id="names-search" type="search" placeholder="Zoek op naam, discipline of e-mail&hellip;"
+                            class="flex-1 min-w-[200px] px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500" />
+                        <select id="names-filter-role" class="px-2 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200">
+                            <option value="">Alle rollen</option>
+                            <option value="radioloog">Radiologen</option>
+                            <option value="aanvrager">Aanvragers</option>
+                        </select>
+                        <button id="names-add" type="button" class="px-3 py-1.5 text-xs rounded-md border border-cyan-300 dark:border-cyan-700 text-cyan-700 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 transition-colors">+ Persoon toevoegen</button>
                     </div>
-                    <div id="names-radiologen" class="flex flex-col gap-1.5"></div>
-                    <button id="names-add-radioloog" type="button" class="mt-1.5 text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">+ Radioloog toevoegen</button>
-
-                    <label class="block text-xs font-medium text-neutral-600 dark:text-neutral-300 mb-1 mt-5">Aanvragers</label>
-                    <div id="names-aanvragers" class="flex flex-col gap-1.5"></div>
-                    <button id="names-add-aanvrager" type="button" class="mt-1.5 text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">+ Aanvrager toevoegen</button>
-
-                    <div class="flex justify-end mt-4">
-                        <button id="names-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                    <div class="hidden md:flex gap-2 text-[11px] font-medium text-neutral-400 dark:text-neutral-500 px-1">
+                        <span class="flex-1 min-w-0">Naam</span>
+                        <span class="flex-1 min-w-0">E-mail</span>
+                        <span class="w-28 shrink-0">Telefoon</span>
+                        <span class="w-32 shrink-0">Type arts</span>
+                        <span class="w-32 shrink-0">Discipline</span>
+                        <span class="w-40 shrink-0">Rollen</span>
+                        <span class="w-6 shrink-0"></span>
                     </div>
+                </div>
+                <div class="flex-1 overflow-y-auto px-5 py-3">
+                    <div id="names-list" class="flex flex-col gap-1.5"></div>
+                    <p id="names-empty" class="hidden text-xs text-neutral-400 dark:text-neutral-500 py-6 text-center"></p>
+                </div>
+                <div class="px-5 py-3 border-t border-neutral-200 dark:border-slate-700 flex items-center gap-2">
+                    <span class="text-xs text-neutral-400 dark:text-neutral-500">Vink bij &eacute;&eacute;n radioloog &quot;ik&quot; aan; die naam komt standaard in het veld Radioloog.</span>
+                    <button id="names-save-btn" class="ml-auto px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                </div>
                 </div>
             </div>
         </div>
@@ -4839,107 +4852,179 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
         });
 
-        // ── Namenlijsten (radiologen / aanvragers) ───────────────────────────────
-        // Vullen de keuzelijsten op qc.html en cases.html in de niet-template
-        // mode. Het e-mailadres dient om een casus door te sturen; de aanvinkbare
-        // "gebruiker" bepaalt wie standaard in het veld Radioloog komt. Dat laatste
-        // wordt later vervangen door de aanmelding.
+        // ── Personendatabank ────────────────────────────────────────────────────
+        // Eén lijst met personen; hun rollen bepalen in welke keuzelijst ze
+        // verschijnen op qc.html en cases.html. De aanduiding "ik" bepaalt wie
+        // standaard in het veld Radioloog komt; dat wordt later de aanmelding.
         (function () {
-            const KEYS = { radiologen: 'qcRadiologenLijst', aanvragers: 'qcAanvragersLijst' };
+            const KEY = 'qcPersonen';
+            const LEGACY = { radioloog: 'qcRadiologenLijst', aanvrager: 'qcAanvragersLijst' };
+            const ARTS_TYPES = ['Specialist', 'Specialist in opleiding'];
             const modal   = document.getElementById('names-modal');
+            const listEl  = document.getElementById('names-list');
+            const emptyEl = document.getElementById('names-empty');
+            const searchEl = document.getElementById('names-search');
+            const roleEl  = document.getElementById('names-filter-role');
+            const countEl = document.getElementById('names-count');
             const saveBtn = document.getElementById('names-save-btn');
-            const lists   = {
-                radiologen: document.getElementById('names-radiologen'),
-                aanvragers: document.getElementById('names-aanvragers'),
-            };
             const INP = 'px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500';
 
-            function load(which) {
-                try {
-                    const arr = JSON.parse(localStorage.getItem(KEYS[which]) || '[]');
-                    if (!Array.isArray(arr)) return [];
-                    return arr.map(e => typeof e === 'string'
-                        ? { name: e, email: '', isUser: false }
-                        : { name: e?.name || '', email: e?.email || '', isUser: e?.isUser === true })
-                        .filter(e => e.name);
-                } catch { return []; }
+            let personen = [];   // werkkopie; pas bij Opslaan weggeschreven
+
+            function normaliseer(e, rol) {
+                if (typeof e === 'string') e = { name: e };
+                e = e || {};
+                const roles = Array.isArray(e.roles) && e.roles.length
+                    ? e.roles.filter(r => r === 'radioloog' || r === 'aanvrager')
+                    : (rol ? [rol] : []);
+                return {
+                    name: String(e.name || '').trim(),
+                    email: String(e.email || '').trim(),
+                    phone: String(e.phone || '').trim(),
+                    artsType: ARTS_TYPES.includes(e.artsType) ? e.artsType : '',
+                    discipline: String(e.discipline || '').trim(),
+                    roles: [...new Set(roles)],
+                    isUser: e.isUser === true,
+                };
             }
 
-            function addRow(which, entry) {
+            function laad() {
+                try {
+                    const raw = localStorage.getItem(KEY);
+                    if (raw) {
+                        const arr = JSON.parse(raw);
+                        if (Array.isArray(arr)) return arr.map(e => normaliseer(e)).filter(p => p.name);
+                    }
+                } catch (_) {}
+                // Nog geen personendatabank: opbouwen uit de twee oude lijsten.
+                const uit = [];
+                Object.entries(LEGACY).forEach(([rol, key]) => {
+                    try {
+                        const arr = JSON.parse(localStorage.getItem(key) || '[]');
+                        if (Array.isArray(arr)) arr.forEach(e => uit.push(normaliseer(e, rol)));
+                    } catch (_) {}
+                });
+                return uit.filter(p => p.name);
+            }
+
+            function rij(p, index) {
                 const row = document.createElement('div');
-                row.className = 'flex items-center gap-2';
-                row.dataset.row = '1';
+                row.className = 'flex flex-col md:flex-row gap-1.5 md:gap-2 md:items-center py-1 border-b border-neutral-100 dark:border-slate-800';
 
-                const name = document.createElement('input');
-                name.type = 'text';
-                name.placeholder = 'Dr. Voornaam Naam';
-                name.value = entry?.name || '';
-                name.className = INP + ' flex-1 min-w-0';
-                name.dataset.name = '1';
+                const mk = (waarde, plaats, cls, veld, type) => {
+                    const i = document.createElement('input');
+                    i.type = type || 'text';
+                    i.value = waarde || '';
+                    i.placeholder = plaats;
+                    i.className = INP + ' ' + cls;
+                    i.addEventListener('input', () => { p[veld] = i.value; });
+                    return i;
+                };
+                row.appendChild(mk(p.name, 'Voornaam Naam', 'flex-1 min-w-0', 'name'));
+                row.appendChild(mk(p.email, 'naam@yperman.net', 'flex-1 min-w-0', 'email', 'email'));
+                row.appendChild(mk(p.phone, '+32 57 35 0000', 'w-full md:w-28 shrink-0', 'phone', 'tel'));
 
-                const email = document.createElement('input');
-                email.type = 'email';
-                email.placeholder = 'naam@ziekenhuis.be';
-                email.value = entry?.email || '';
-                email.className = INP + ' flex-1 min-w-0';
-                email.dataset.email = '1';
+                const sel = document.createElement('select');
+                sel.className = INP + ' w-full md:w-32 shrink-0';
+                [['', '—']].concat(ARTS_TYPES.map(t => [t, t === 'Specialist' ? 'Specialist' : 'In opleiding']))
+                    .forEach(([v, label]) => {
+                        const o = document.createElement('option');
+                        o.value = v; o.textContent = label;
+                        if (p.artsType === v) o.selected = true;
+                        sel.appendChild(o);
+                    });
+                sel.title = 'Type arts';
+                sel.addEventListener('change', () => { p.artsType = sel.value; });
+                row.appendChild(sel);
 
-                row.append(name, email);
+                row.appendChild(mk(p.discipline, 'bv. oftalmologie', 'w-full md:w-32 shrink-0', 'discipline'));
 
-                if (which === 'radiologen') {
+                // Rollen en de aanduiding "ik"
+                const rollen = document.createElement('div');
+                rollen.className = 'flex items-center gap-2 w-full md:w-40 shrink-0';
+                [['radioloog', 'rad'], ['aanvrager', 'aanvr']].forEach(([rol, kort]) => {
                     const lbl = document.createElement('label');
-                    lbl.className = 'flex items-center gap-1 text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap cursor-pointer';
-                    lbl.title = 'Gebruiker van dit profiel — komt standaard in het veld Radioloog';
+                    lbl.className = 'flex items-center gap-1 text-[11px] text-neutral-500 dark:text-neutral-400 cursor-pointer';
+                    lbl.title = rol;
                     const cb = document.createElement('input');
                     cb.type = 'checkbox';
-                    cb.checked = entry?.isUser === true;
-                    cb.dataset.user = '1';
+                    cb.checked = p.roles.includes(rol);
                     cb.className = 'rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500';
-                    // Hoogstens één gebruiker: aanvinken vinkt de andere uit.
                     cb.addEventListener('change', () => {
-                        if (!cb.checked) return;
-                        lists.radiologen.querySelectorAll('input[data-user]').forEach(o => {
-                            if (o !== cb) o.checked = false;
-                        });
+                        p.roles = cb.checked
+                            ? [...new Set(p.roles.concat(rol))]
+                            : p.roles.filter(r => r !== rol);
                     });
-                    lbl.append(cb, document.createTextNode('gebruiker'));
-                    row.appendChild(lbl);
-                }
+                    lbl.append(cb, document.createTextNode(kort));
+                    rollen.appendChild(lbl);
+                });
+                const ikLbl = document.createElement('label');
+                ikLbl.className = 'flex items-center gap-1 text-[11px] text-cyan-600 dark:text-cyan-400 cursor-pointer';
+                ikLbl.title = 'Gebruiker van dit profiel — komt standaard in het veld Radioloog';
+                const ik = document.createElement('input');
+                ik.type = 'checkbox';
+                ik.checked = p.isUser;
+                ik.className = 'rounded border-neutral-300 dark:border-slate-700 text-cyan-600 focus:ring-cyan-500';
+                ik.addEventListener('change', () => {
+                    // Hoogstens één gebruiker.
+                    if (ik.checked) personen.forEach(q => { q.isUser = (q === p); });
+                    else p.isUser = false;
+                    teken();
+                });
+                ikLbl.append(ik, document.createTextNode('ik'));
+                rollen.appendChild(ikLbl);
+                row.appendChild(rollen);
 
                 const del = document.createElement('button');
                 del.type = 'button';
                 del.textContent = '✕';
                 del.title = 'Verwijderen';
-                del.className = 'px-1.5 text-neutral-400 hover:text-red-500 cursor-pointer text-xs';
-                del.addEventListener('click', () => row.remove());
+                del.className = 'w-6 shrink-0 text-neutral-400 hover:text-red-500 cursor-pointer text-xs';
+                del.addEventListener('click', () => {
+                    personen.splice(personen.indexOf(p), 1);
+                    teken();
+                });
                 row.appendChild(del);
-
-                lists[which].appendChild(row);
                 return row;
             }
 
-            function fill() {
-                Object.keys(lists).forEach(which => {
-                    lists[which].innerHTML = '';
-                    const entries = load(which);
-                    if (!entries.length) addRow(which, null);
-                    else entries.forEach(e => addRow(which, e));
+            function zichtbaar() {
+                const q = searchEl.value.trim().toLowerCase();
+                const rol = roleEl.value;
+                return personen.filter(p => {
+                    if (rol && !p.roles.includes(rol)) return false;
+                    if (!q) return true;
+                    return (p.name + ' ' + p.email + ' ' + p.discipline).toLowerCase().includes(q);
                 });
             }
 
-            function collect(which) {
-                return Array.from(lists[which].querySelectorAll('[data-row]')).map(row => ({
-                    name:  row.querySelector('[data-name]').value.trim(),
-                    email: row.querySelector('[data-email]').value.trim(),
-                    isUser: row.querySelector('[data-user]')?.checked === true,
-                })).filter(e => e.name);
+            function teken() {
+                const rows = zichtbaar();
+                listEl.innerHTML = '';
+                rows.forEach((p, i) => listEl.appendChild(rij(p, i)));
+                emptyEl.classList.toggle('hidden', rows.length > 0);
+                emptyEl.textContent = personen.length
+                    ? 'Geen personen die aan de filter voldoen.'
+                    : 'Nog geen personen. Voeg er een toe of importeer een bestand via de QC-pagina.';
+                const nRad = personen.filter(p => p.roles.includes('radioloog')).length;
+                const nAan = personen.filter(p => p.roles.includes('aanvrager')).length;
+                countEl.textContent = '— ' + personen.length + ' personen · ' + nRad + ' radiologen · ' + nAan + ' aanvragers'
+                    + (rows.length !== personen.length ? ' (' + rows.length + ' getoond)' : '');
             }
 
-            document.getElementById('names-add-radioloog').addEventListener('click', () => addRow('radiologen', null));
-            document.getElementById('names-add-aanvrager').addEventListener('click', () => addRow('aanvragers', null));
+            document.getElementById('names-add').addEventListener('click', () => {
+                personen.unshift(normaliseer({ roles: ['aanvrager'] }));
+                searchEl.value = ''; roleEl.value = '';
+                teken();
+                listEl.querySelector('input')?.focus();
+            });
+            searchEl.addEventListener('input', teken);
+            roleEl.addEventListener('change', teken);
 
             document.getElementById('names-modal-btn').addEventListener('click', () => {
-                fill();
+                personen = laad();
+                searchEl.value = ''; roleEl.value = '';
+                teken();
                 modal.classList.remove('hidden');
             });
             document.getElementById('names-modal-close').addEventListener('click', () => {
@@ -4949,7 +5034,16 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
             });
             saveBtn.addEventListener('click', () => {
-                Object.keys(lists).forEach(w => localStorage.setItem(KEYS[w], JSON.stringify(collect(w))));
+                const schoon = personen.map(p => normaliseer(p)).filter(p => p.name);
+                let gezien = false;
+                schoon.forEach(p => {
+                    if (p.isUser && !gezien) gezien = true; else p.isUser = false;
+                });
+                localStorage.setItem(KEY, JSON.stringify(schoon));
+                // De oude lijsten opruimen zodat er één bron overblijft.
+                Object.values(LEGACY).forEach(k => localStorage.removeItem(k));
+                personen = schoon;
+                teken();
                 saveBtn.textContent = 'Opgeslagen ✓';
                 setTimeout(() => { saveBtn.textContent = 'Opslaan'; }, 2000);
             });
