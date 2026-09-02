@@ -6605,26 +6605,63 @@ negated bevindingen
                 // multi-study, tooltip, MedGemma) staan ná de knoppenbalk en mogen
                 // buiten het beeld vallen — je scrollt daar in het PiP-venster naar
                 // beneden. Ze mogen het DMO-venster dus NOOIT verkleinen.
+                //
+                // Van het eerste zichtbare resultaatvenster laten we wél de grijze
+                // kopbalk plus de eerste regels meekijken: de kopbalk is het
+                // aanknopingspunt om erop te klikken, en de eerste regels laten zien
+                // dát er een resultaat is en waarover het gaat (bv. een real time
+                // verslag check die zichzelf opende). Het regelaantal wordt uit de
+                // echte line-height van het venster gerekend.
+                //
+                // De peek is geplafond op een derde van de ruimte die na de chrome
+                // overblijft — niet op een deel van het viewport. Dat verschil is
+                // wezenlijk: bij een klein PiP-venster zou een vaste peek van ~160px
+                // het DMO-venster tot ongeveer dezelfde hoogte terugbrengen als het
+                // resultaatvenster. Met een plafond op de resterende ruimte houdt het
+                // DMO-venster altijd tweederde, hoe klein het PiP-venster ook is.
                 let _recalcDebounce = null;
+                const HEAD_PEEK_FALLBACK = 30;      // px, als de kopbalk niet te meten valt
+                const PEEK_LINES = 5;               // regels inhoud die onder de kopbalk meekijken
+                const PEEK_MAX_OF_ROOM = 1 / 3;     // nooit meer dan dit deel van de resterende ruimte
                 const recalcTaHeight = () => {
                     clearTimeout(_recalcDebounce);
                     _recalcDebounce = pipWindow.setTimeout(() => {
                         const viewH = pipWindow.document.documentElement.clientHeight;
                         let usedH = 0;
                         let visCount = 0;
+                        let pastBtnRow = false;
+                        let peek = 0;
                         for (const child of wrap.children) {
+                            const visible = pipWindow.getComputedStyle(child).display !== 'none';
+                            if (pastBtnRow) {
+                                // Resultaatvenster: van het eerste zichtbare venster de
+                                // kopbalk plus PEEK_LINES regels reserveren, dan stoppen.
+                                if (!visible) continue;
+                                const head = child.firstElementChild;
+                                const headH = head ? head.offsetHeight : 0;
+                                const body = head ? head.nextElementSibling : null;
+                                let bodyPeek = 0;
+                                if (body) {
+                                    const cs = pipWindow.getComputedStyle(body);
+                                    const lineH = parseFloat(cs.lineHeight) || 22;
+                                    bodyPeek = (parseFloat(cs.paddingTop) || 0) + PEEK_LINES * lineH;
+                                }
+                                peek = 12 + (headH || Math.min(child.offsetHeight, HEAD_PEEK_FALLBACK)) + bodyPeek;
+                                break;
+                            }
                             const isChrome = child !== ta && child !== ce;
-                            if (isChrome && pipWindow.getComputedStyle(child).display !== 'none') {
+                            if (isChrome && visible) {
                                 usedH += child.offsetHeight;
                                 visCount++;
                             }
-                            // Alles ná de knoppenbalk is een resultaatvenster: niet meerekenen.
-                            if (child === btnRow) break;
+                            if (child === btnRow) pastBtnRow = true;
                         }
                         const gapTotal = visCount * 12; // gap-3 = 12px per gap tussen ta en elke zichtbare chrome-sibling
                         const wrapPad = 16; // 8px boven + 8px onder
-                        const available = viewH - usedH - gapTotal - wrapPad;
-                        ta.style.height = Math.max(130, Math.floor(available)) + 'px';
+                        // De ruimte die DMO-venster en peek samen delen.
+                        const room = viewH - usedH - gapTotal - wrapPad;
+                        peek = Math.min(peek, Math.floor(room * PEEK_MAX_OF_ROOM));
+                        ta.style.height = Math.max(130, Math.floor(room - peek)) + 'px';
                     }, 30);
                 };
                 pipWindow.addEventListener('resize', recalcTaHeight);
