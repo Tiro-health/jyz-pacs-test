@@ -5796,10 +5796,10 @@ negated bevindingen
                 ta.style.minHeight = '130px';
                 ta.style.overflowY = 'auto';
                 ta.style.height = '130px'; // initial; recalcTaHeight() will override
-                // Het DMO-venster volgt de tekst, dus na elke wijziging opnieuw meten.
-                // recalcTaHeight is verderop gedefinieerd maar bestaat ruimschoots
-                // voordat er getypt kan worden; de eigen debounce vangt het typen op.
-                const _autoGrow = () => recalcTaHeight();
+                // _autoGrow is een no-op: het DMO-venster heeft een vaste hoogte die
+                // recalcTaHeight bepaalt uit de vensterhoogte, niet uit de tekst. Bij
+                // een lang verslag scrollt het veld intern.
+                const _autoGrow = () => {};
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
 
@@ -6802,75 +6802,30 @@ negated bevindingen
                 pipWindow.document.body.appendChild(wrap);
 
                 // ── Hoogte van het DMO-venster ───────────────────────
-                // Het DMO-venster volgt de TEKST, niet het viewport. Dat is de kern:
-                // omdat de hoogte niet meer afhangt van de inhoud van een
-                // resultaatvenster, verschuift de layout niet langer bij elke
-                // verversing — en juist dat verschuiven klemde de leespositie weg van
-                // wie een resultaat aan het lezen was.
+                // Het DMO-venster vult de volle hoogte van het eerste PiP-schermbeeld
+                // en scrollt intern bij een lang verslag. Staat er een resultaatvenster
+                // open, dan gaat er één vaste reserve af: de kopbalk plus de eerste
+                // RESERVE_LINES regels, zodat je ziet dát er een resultaat staat en
+                // waarover het gaat. De rest van het resultaat bereik je door in het
+                // PiP-venster naar beneden te scrollen.
                 //
-                // Drie gevallen:
+                // De kern van de eerdere scrollsprongen zat niet in de volle hoogte
+                // maar in de afhankelijkheid: de hoogte werd berekend uit de INHOUD van
+                // het resultaatvenster, dus elke verversing verschoof de layout en gaf
+                // de browser reden een leespositie weg te klemmen. Die afhankelijkheid
+                // is hier weg. De reserve komt uit de kopbalkhoogte en de regelhoogte —
+                // beide vaste opmaakmaten, onafhankelijk van hoe lang het resultaat is.
+                // Daarom staat de DMO-hoogte stil zodra een venster openstaat, en
+                // verschuift een verversing niets meer.
                 //
-                //   1. Geen resultaatvenster open — het DMO-venster groeit mee met de
-                //      tekst tot het PiP-venster vol is. Daarna krijgt het zijn eigen
-                //      scrollbalk. Nooit ingeklapt.
-                //   2. Resultaatvenster dat er nog volledig naast past — dan blijft het
-                //      DMO-venster op zijn tekstmaat en staat het resultaat er in zijn
-                //      geheel onder, zonder dat je hoeft te scrollen.
-                //   3. Resultaatvenster dat er niet meer bij past, omdat het verslag
-                //      lang is — dan reserveren we een vaste, beperkte plek: de
-                //      kopbalk plus de eerste RESERVE_LINES regels. Je ziet dus dát er
-                //      een resultaat staat en waarover het gaat. Het DMO-venster krijgt
-                //      hierdoor zijn interne scrollbalk; de rest van het resultaat
-                //      bereik je door in het PiP-venster naar beneden te scrollen.
-                //
-                // De overige resultaatvensters staan daaronder. Het beeld opent altijd
-                // met het DMO-venster bovenaan: een automatische verversing verplaatst
-                // het beeld nooit. Alleen een venster dat je zelf met een knop opent
-                // scrollt in beeld (zie pipRevealPanel), want anders lijkt die knop
-                // niets te doen.
+                // Het beeld opent altijd met het DMO-venster bovenaan: een automatische
+                // verversing verplaatst het beeld nooit. Alleen een venster dat je zelf
+                // met een knop opent scrollt in beeld (zie pipRevealPanel), want anders
+                // lijkt die knop niets te doen.
                 let _recalcDebounce = null;
                 const MIN_TA = 130;            // px, ondergrens van het DMO-venster
                 const HEAD_FALLBACK = 30;      // px, als de kopbalk niet te meten valt
                 const RESERVE_LINES = 4;       // regels van het resultaat die meekijken
-
-                // Meet de hoogte die de gedicteerde tekst nodig heeft in een onzichtbare
-                // kopie. De textarea zelf even platdrukken zou werken, maar raakt de
-                // levende layout; scrollHeight van het origineel is bovendien nooit
-                // kleiner dan zijn huidige hoogte en zou de vorige uitkomst
-                // terugrapporteren.
-                let _taMirror = null;
-                const measureTextNeed = () => {
-                    if (!_taMirror) {
-                        _taMirror = pipWindow.document.createElement('textarea');
-                        _taMirror.setAttribute('aria-hidden', 'true');
-                        _taMirror.tabIndex = -1;
-                        _taMirror.className = ta.className;
-                        pipWindow.document.body.appendChild(_taMirror);
-                    }
-                    const cs = pipWindow.getComputedStyle(ta);
-                    _taMirror.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;'
-                        + 'height:0;min-height:0;max-height:none;overflow:hidden;box-sizing:border-box;'
-                        + 'width:' + ta.clientWidth + 'px;'
-                        + 'padding:' + cs.padding + ';border-width:' + cs.borderWidth + ';'
-                        + 'font:' + cs.font + ';line-height:' + cs.lineHeight + ';'
-                        + 'letter-spacing:' + cs.letterSpacing;
-                    // Geen eigen white-space of word-break opdringen: een textarea
-                    // breekt regels al zoals een textarea, en een afwijkende
-                    // afbreekregel geeft een andere regelval en dus een verkeerde maat.
-                    _taMirror.wrap = ta.wrap || 'soft';
-                    _taMirror.value = ta.value;
-                    // scrollHeight bevat de inhoud plus de padding, maar niet de rand.
-                    // Wat style.height moet worden hangt af van het box-model: bij
-                    // border-box (wat Tailwind overal zet) hoort de rand erbij, bij
-                    // content-box moet de padding er juist af. Zonder deze correctie
-                    // komt het veld enkele pixels tekort en krijgt een tekst die
-                    // precies past alsnog een interne scrollbalk.
-                    const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
-                    const border = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
-                    return cs.boxSizing === 'border-box'
-                        ? _taMirror.scrollHeight + border
-                        : _taMirror.scrollHeight - pad;
-                };
 
                 const recalcTaHeight = () => {
                     clearTimeout(_recalcDebounce);
@@ -6879,12 +6834,14 @@ negated bevindingen
                         let usedH = 0;
                         let visCount = 0;
                         let pastBtnRow = false;
-                        let fullPanel = 0;   // hele resultaatvenster, inclusief gap
                         let reserve = 0;     // kopbalk + RESERVE_LINES regels, inclusief gap
                         for (const child of wrap.children) {
                             const visible = pipWindow.getComputedStyle(child).display !== 'none';
                             if (pastBtnRow) {
-                                // Eerste zichtbare resultaatvenster bepaalt de maten.
+                                // Eerste zichtbare resultaatvenster bepaalt de reserve.
+                                // Alleen opmaakmaten, nooit de lengte van het resultaat:
+                                // anders zou de DMO-hoogte weer meebewegen met elke
+                                // verversing, en dat was precies de oorzaak.
                                 if (!visible) continue;
                                 const head = child.firstElementChild;
                                 const headH = head ? head.offsetHeight : 0;
@@ -6895,10 +6852,7 @@ negated bevindingen
                                     const lineH = parseFloat(bcs.lineHeight) || 22;
                                     lines = (parseFloat(bcs.paddingTop) || 0) + RESERVE_LINES * lineH;
                                 }
-                                fullPanel = 12 + child.offsetHeight;
-                                reserve = 12 + (headH || Math.min(child.offsetHeight, HEAD_FALLBACK)) + lines;
-                                // Nooit meer reserveren dan het venster zelf hoog is.
-                                reserve = Math.min(reserve, fullPanel);
+                                reserve = 12 + (headH || HEAD_FALLBACK) + lines;
                                 break;
                             }
                             const isChrome = child !== ta && child !== ce;
@@ -6911,17 +6865,7 @@ negated bevindingen
                         const gapTotal = visCount * 12; // gap-3 = 12px per gap tussen ta en elke zichtbare chrome-sibling
                         const wrapPad = 16;             // 8px boven + 8px onder
                         const room = viewH - usedH - gapTotal - wrapPad;
-                        const textNeed = measureTextNeed();
-
-                        let taH;
-                        if (!fullPanel) {
-                            taH = Math.min(textNeed, room);          // 1. groeit met de tekst
-                        } else if (textNeed + fullPanel <= room) {
-                            taH = textNeed;                          // 2. resultaat past er volledig bij
-                        } else {
-                            taH = room - reserve;                    // 3. vaste, beperkte plek
-                        }
-                        ta.style.height = Math.max(MIN_TA, Math.floor(taH)) + 'px';
+                        ta.style.height = Math.max(MIN_TA, Math.floor(room - reserve)) + 'px';
                     }, 30);
                 };
                 pipWindow.addEventListener('resize', recalcTaHeight);
@@ -7084,9 +7028,6 @@ negated bevindingen
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
                 //   - only run realtime verslag check when realtimeEnabled
-                // Het DMO-venster groeit met de tekst mee, ook los van de real time
-                // check: dit staat vóór de vroege return zodat het altijd gebeurt.
-                ta.addEventListener('input', () => recalcTaHeight());
                 ta.addEventListener('input', () => {
                     if (_pipInlineMode) return;
                     clearTimeout(_pipRealtimeDebounce);
