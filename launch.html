@@ -5630,6 +5630,31 @@ negated bevindingen
             // knop niets te doen. Het real time verslag check-venster opent zichzelf
             // tijdens het dicteren en gebruikt dit NIET: dat mag het DMO-venster
             // nooit uit beeld duwen.
+            // ── Scrollpositie bewaren tijdens een verversing ─────────────────────
+            // De real time verslag check maakt zijn resultaatvenster bij elke ronde
+            // eerst leeg en zet een spinner. Dat venster staat onder het DMO-venster,
+            // dus wie ernaartoe gescrold is om te lezen, ziet het document ineens
+            // krimpen: de browser klemt de scrollpositie vast op wat er nog past —
+            // bij een lange dictatie is dat de bovenkant — en die positie komt niet
+            // terug als de nieuwe tekst binnenstroomt. Vandaar: hoogte vasthouden
+            // zolang de verversing loopt, en pas lossen als de nieuwe tekst er staat.
+            function holdPanelHeight(el) {
+                if (!el) return;
+                const h = el.offsetHeight;
+                if (h > 0) el.style.minHeight = h + 'px';
+            }
+
+            function releasePanelHeight(el) {
+                if (!el || !el.style.minHeight) return;
+                const win = el.ownerDocument?.defaultView;
+                const se = win?.document?.scrollingElement || win?.document?.documentElement;
+                const keep = se ? se.scrollTop : 0;
+                el.style.minHeight = '';
+                // Is de nieuwe tekst korter, dan krimpt het document alsnog; houd de
+                // leespositie dan zo goed als mogelijk vast.
+                if (se && se.scrollTop !== keep) se.scrollTop = Math.min(keep, se.scrollHeight - se.clientHeight);
+            }
+
             function pipRevealPanel(panel) {
                 if (!panel || panel.style.display === 'none') return;
                 const win = panel.ownerDocument?.defaultView;
@@ -6988,6 +7013,10 @@ negated bevindingen
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
                         rtPanel.style.display = '';
+                        // Houd de hoogte vast voordat het venster wordt leeggemaakt,
+                        // zodat de leespositie van wie naar beneden gescrold is blijft
+                        // staan tijdens deze ronde.
+                        holdPanelHeight(rtContent);
                         rtStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                         rtActions.style.display = 'none';
                         rtOrigBtn.style.display = 'none';
@@ -7020,6 +7049,8 @@ negated bevindingen
                             rtOrigBtn.style.display = _rtOrigText ? '' : 'none';
                         } catch (e) {
                             if (e.name !== 'AbortError') rtStatus.textContent = 'Fout: ' + e.message;
+                        } finally {
+                            releasePanelHeight(rtContent);
                         }
                     }, 2000);
                 });
