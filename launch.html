@@ -4672,6 +4672,7 @@ negated bevindingen
                 if (!GEMINI_API_KEY) {
                     if (pipRefs) {
                         pipRefs.panel.style.display = '';
+                        pipRevealPanel(pipRefs.panel);
                         pipRefs.status.innerHTML = '';
                         pipRefs.content.innerHTML = noApiKeyHtml(backupPrompt);
                         pipRefs.actions.style.display = 'none';
@@ -4712,6 +4713,7 @@ negated bevindingen
                     _ttResultHTML = null;
                 } else {
                     pipRefs.panel.style.display = '';
+                    pipRevealPanel(pipRefs.panel);
                     pipRefs.origText = null;
                     pipRefs.showingOrig = false;
                     pipRefs.resultHTML = null;
@@ -5145,6 +5147,7 @@ negated bevindingen
                     if (!pipMsp) return;
                     pipMsp.innerHTML = '';
                     pipMsp.style.display = '';
+                    pipRevealPanel(pipMsp);
                     // Header
                     const mspHead = _pipWindow.document.createElement('div');
                     mspHead.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#ecfdf5;border-bottom:1px solid #a7f3d0';
@@ -5492,6 +5495,22 @@ negated bevindingen
             // Dictation popout (Document PiP — textarea + realtime check)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
+
+            // Het DMO-venster vult altijd het eerste PiP-schermbeeld (zie
+            // recalcTaHeight), dus resultaatvensters staan onder de fold. Bij een
+            // expliciete knopdruk scrollen we het venster in beeld — anders lijkt de
+            // knop niets te doen. Het real time verslag check-venster opent zichzelf
+            // tijdens het dicteren en gebruikt dit NIET: dat mag het DMO-venster
+            // nooit uit beeld duwen.
+            function pipRevealPanel(panel) {
+                if (!panel || panel.style.display === 'none') return;
+                const win = panel.ownerDocument?.defaultView;
+                if (!win) return;
+                win.setTimeout(() => {
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 60); // ná de 30ms debounce van recalcTaHeight
+            }
+
             let _pipRealtimeAbort = null;
             let _pipRealtimeDebounce = null;
             let _pipRealtimeLastText = '';
@@ -5560,6 +5579,14 @@ negated bevindingen
 
                 const wrap = mk('div', 'flex flex-col gap-3');
                 wrap.style.cssText = 'padding:8px;box-sizing:border-box;';
+
+                // Het DMO-venster vult altijd het eerste PiP-schermbeeld (zie
+                // recalcTaHeight), dus resultaatvensters staan onder de fold. Bij een
+                // expliciete knopdruk scrollen we het venster in beeld — anders lijkt
+                // de knop niets te doen. Het real time verslag check-venster opent
+                // zichzelf tijdens het dicteren en gebruikt dit NIET: dat mag het
+                // DMO-venster nooit uit beeld duwen.
+                const pipReveal = (panel) => pipRevealPanel(panel);
 
                 // ── Study info header (type onderzoek + lateralisatie) ──────────
                 const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
@@ -5737,6 +5764,7 @@ negated bevindingen
                     _vcAbort = new AbortController();
                     btnPipVc.className = VC_BTN_ON; // groen tijdens uitvoering
                     vcPanel.style.display = '';
+                    pipReveal(vcPanel);
                     vcContent.innerHTML = '';
                     vcStatus.textContent = 'Verwerken…';
                     vcActions.style.display = 'none';
@@ -5787,6 +5815,7 @@ negated bevindingen
                     const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
                     const prompt = fillPrompt(template, { text });
                     trPanel.style.display = '';
+                    pipReveal(trPanel);
                     trContent.innerHTML = '';
                     trStatus.textContent = 'Bezig…';
                     trActions.style.display = 'none';
@@ -6074,7 +6103,7 @@ negated bevindingen
                 btnPipAI.addEventListener('click', () => {
                     const open = pipAiPanel.style.display !== 'none';
                     pipAiPanel.style.display = open ? 'none' : '';
-                    if (!open) pipAiInput.focus();
+                    if (!open) { pipReveal(pipAiPanel); pipAiInput.focus(); }
                 });
                 pipAiSendBtn.addEventListener('click', _pipAiSend);
                 pipAiInput.addEventListener('keydown', (e) => {
@@ -6285,6 +6314,7 @@ negated bevindingen
                     const open = calcPanel.style.display !== 'none';
                     if (open) { calcPanel.style.display = 'none'; return; }
                     calcPanel.style.display = '';
+                    pipReveal(calcPanel);
                     pipCalcRenderPicker();
                 });
 
@@ -6568,8 +6598,13 @@ negated bevindingen
                 pipWindow.document.body.appendChild(wrap);
 
                 // ── Dynamic textarea height ──────────────────────────
-                // Fills available viewport height; never smaller than min-height.
-                // Recalculates when panels show/hide or the window is resized.
+                // Het DMO-venster krijgt altijd de volle resterende hoogte van het
+                // eerste PiP-schermbeeld. Alleen de "chrome" telt mee: de studie-header
+                // boven de textarea en de knoppenbalk eronder. De resultaatvensters
+                // (vertaling, AI, real time verslag check, verslag check, calculator,
+                // multi-study, tooltip, MedGemma) staan ná de knoppenbalk en mogen
+                // buiten het beeld vallen — je scrollt daar in het PiP-venster naar
+                // beneden. Ze mogen het DMO-venster dus NOOIT verkleinen.
                 let _recalcDebounce = null;
                 const recalcTaHeight = () => {
                     clearTimeout(_recalcDebounce);
@@ -6578,13 +6613,16 @@ negated bevindingen
                         let usedH = 0;
                         let visCount = 0;
                         for (const child of wrap.children) {
-                            if (child === ta || child === ce) continue;
-                            if (pipWindow.getComputedStyle(child).display === 'none') continue;
-                            usedH += child.offsetHeight;
-                            visCount++;
+                            const isChrome = child !== ta && child !== ce;
+                            if (isChrome && pipWindow.getComputedStyle(child).display !== 'none') {
+                                usedH += child.offsetHeight;
+                                visCount++;
+                            }
+                            // Alles ná de knoppenbalk is een resultaatvenster: niet meerekenen.
+                            if (child === btnRow) break;
                         }
-                        const gapTotal = visCount * 12; // gap-3 = 12px per gap between ta and each visible sibling
-                        const wrapPad = 16; // 8px top + 8px bottom
+                        const gapTotal = visCount * 12; // gap-3 = 12px per gap tussen ta en elke zichtbare chrome-sibling
+                        const wrapPad = 16; // 8px boven + 8px onder
                         const available = viewH - usedH - gapTotal - wrapPad;
                         ta.style.height = Math.max(130, Math.floor(available)) + 'px';
                     }, 30);
