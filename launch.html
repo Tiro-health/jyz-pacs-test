@@ -4799,6 +4799,9 @@ negated bevindingen
                 const targetStatus  = isMain ? ttStatus  : pipRefs.status;
                 const targetActions = isMain ? ttActions : pipRefs.actions;
                 const targetToggle  = isMain ? ttToggleOrig : pipRefs.toggle;
+                // Het hele paneel, niet alleen de inhoud: ook de statusregel en de
+                // actiebalk veranderen van hoogte tijdens een ronde.
+                const targetPanel   = isMain ? ttResultPanel : pipRefs.panel;
 
                 // Close realtime panel
                 if (isMain) {
@@ -4832,6 +4835,10 @@ negated bevindingen
                 targetToggle.style.display = 'none';
                 targetToggle.textContent = 'Toon origineel';
                 targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verwerken…';
+                // Bij een tweede autofill staat er al een resultaat: hoogte
+                // vasthouden tot het nieuwe er staat, zodat de leespositie van wie
+                // naar het venster gescrold is niet wegklemt.
+                holdPanelHeight(targetPanel);
                 targetContent.innerHTML = '';
 
                 _ttAbort?.abort();
@@ -4934,6 +4941,8 @@ negated bevindingen
                 } catch (e) {
                     targetStatus.innerHTML = '';
                     if (e.name !== 'AbortError') targetContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
+                } finally {
+                    releasePanelHeight(targetPanel);
                 }
             }
 
@@ -5655,6 +5664,28 @@ negated bevindingen
                 if (se && se.scrollTop !== keep) se.scrollTop = Math.min(keep, se.scrollHeight - se.clientHeight);
             }
 
+            /**
+             * Voert een reeks DOM-wijzigingen uit zonder de leespositie te verliezen.
+             * Voor wijzigingen die in één keer gebeuren: krimpt het document tijdens
+             * de reeks (een venster dat leegloopt, een dropzone die verdwijnt), dan
+             * klemt de browser de scrollpositie vast; achteraf zetten we die terug.
+             * Voor wijzigingen met een wachttijd ertussen — een stream die eerst het
+             * venster leegmaakt en pas later vult — werkt dit niet en gebruik je
+             * holdPanelHeight/releasePanelHeight.
+             */
+            function withStableScroll(el, fn) {
+                const doc = el?.ownerDocument;
+                const se = doc?.scrollingElement || doc?.documentElement;
+                const keep = se ? se.scrollTop : 0;
+                try {
+                    return fn();
+                } finally {
+                    if (se && se.scrollTop !== keep) {
+                        se.scrollTop = Math.min(keep, se.scrollHeight - se.clientHeight);
+                    }
+                }
+            }
+
             function pipRevealPanel(panel) {
                 if (!panel || panel.style.display === 'none') return;
                 const win = panel.ownerDocument?.defaultView;
@@ -5918,6 +5949,9 @@ negated bevindingen
                     btnPipVc.className = VC_BTN_ON; // groen tijdens uitvoering
                     vcPanel.style.display = '';
                     pipReveal(vcPanel);
+                    // Bij een tweede ronde staat er al een resultaat: hoogte
+                    // vasthouden zodat de leespositie niet wegklemt.
+                    holdPanelHeight(vcPanel);
                     vcContent.innerHTML = '';
                     vcStatus.textContent = 'Verwerken…';
                     vcActions.style.display = 'none';
@@ -5950,6 +5984,7 @@ negated bevindingen
                     } catch (e) {
                         if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
                     } finally {
+                        releasePanelHeight(vcPanel);
                         // Restore: groen als realtime aan, grijs als uit
                         btnPipVc.className = realtimeEnabled ? VC_BTN_ON : VC_BTN_OFF;
                     }
@@ -5969,6 +6004,9 @@ negated bevindingen
                     const prompt = fillPrompt(template, { text });
                     trPanel.style.display = '';
                     pipReveal(trPanel);
+                    // Bij een tweede vertaling staat er al een resultaat: hoogte
+                    // vasthouden zodat de leespositie niet wegklemt.
+                    holdPanelHeight(trPanel);
                     trContent.innerHTML = '';
                     trStatus.textContent = 'Bezig…';
                     trActions.style.display = 'none';
@@ -5984,12 +6022,15 @@ negated bevindingen
                                 trStatus.textContent = '';
                                 trActions.style.display = 'flex';
                                 trOrigBtn.style.display = _trOrigText ? '' : 'none';
-                            }).catch(e => { if (e.name !== 'AbortError') trStatus.textContent = 'Fout: ' + e.message; });
+                            })
+                            .catch(e => { if (e.name !== 'AbortError') trStatus.textContent = 'Fout: ' + e.message; })
+                            .finally(() => releasePanelHeight(trPanel));
                     } else {
                         trStatus.textContent = '';
                         trContent.innerHTML = noApiKeyHtml(prompt);
                         trActions.style.display = 'flex';
                         trOrigBtn.style.display = 'none';
+                        releasePanelHeight(trPanel);
                     }
                 });
                 fontBtns.append(btnPipAI, btnPipVc, btnPipCalc, btnPipCam, btnPipTranslate, btnFontDown, btnFontUp);
@@ -6686,15 +6727,17 @@ negated bevindingen
                 }
 
                 function _resetPipMedgemmaPanel() {
-                    pmResult.classList.add('hidden');
-                    pmResultContent.innerHTML = '';
-                    medgemmaImages = [];
-                    pmThumbnails.innerHTML = '';
-                    pmFileInput.value = '';
-                    pmPreview.classList.add('hidden');
-                    pmDropzone.classList.remove('hidden');
-                    _pmLabelsVisible = true;
-                    if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+                    withStableScroll(pmResultContent, () => {
+                        pmResult.classList.add('hidden');
+                        pmResultContent.innerHTML = '';
+                        medgemmaImages = [];
+                        pmThumbnails.innerHTML = '';
+                        pmFileInput.value = '';
+                        pmPreview.classList.add('hidden');
+                        pmDropzone.classList.remove('hidden');
+                        _pmLabelsVisible = true;
+                        if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+                    });
                 }
 
                 pmDropzone.addEventListener('click', () => pmFileInput.click());
@@ -6734,13 +6777,18 @@ negated bevindingen
                     pmAnalyseBtn.textContent = 'Analyseren…';
                     try {
                         const result = await callMedGemma(medgemmaImages, prompt);
-                        pmDropzone.classList.add('hidden');
-                        pmPreview.classList.add('hidden');
-                        pmResultContent.innerHTML = renderMarkdown(result);
-                        wrapSectionLabels(pmResultContent);
-                        _pmLabelsVisible = true;
-                        _pmApplyLabels();
-                        pmResult.classList.remove('hidden');
+                        // Dropzone en miniaturen verdwijnen hier, waardoor het paneel
+                        // eerst krimpt voordat het resultaat het weer vult. Wie naar
+                        // het paneel gescrold is, zou daardoor naar boven springen.
+                        withStableScroll(pmResultContent, () => {
+                            pmDropzone.classList.add('hidden');
+                            pmPreview.classList.add('hidden');
+                            pmResultContent.innerHTML = renderMarkdown(result);
+                            wrapSectionLabels(pmResultContent);
+                            _pmLabelsVisible = true;
+                            _pmApplyLabels();
+                            pmResult.classList.remove('hidden');
+                        });
                     } catch (err) {
                         pipWindow.alert('Beeldanalyse fout: ' + err.message);
                     } finally {
@@ -6829,7 +6877,19 @@ negated bevindingen
                             peek = Math.min(fullPeek, Math.floor(room * PEEK_MAX_OF_ROOM));
                             peek = Math.max(peek, Math.min(fullPeek, headPeek)); // 3. kopbalk blijft
                         }
+                        // Deze functie loopt in haar eigen taak (30ms debounce), dus de
+                        // browser heeft tussen de aanleiding en dit moment kunnen
+                        // herschikken. Wordt het DMO-venster hier kleiner, dan krimpt
+                        // het document en klemt een scrollpositie eronder weg — wie het
+                        // resultaat aan het lezen was, springt dan naar boven. Vandaar
+                        // de leespositie rond de hoogtewijziging vasthouden. Dit dekt
+                        // elk resultaatvenster, ongeacht wat de herberekening opriep.
+                        const se = pipWindow.document.scrollingElement || pipWindow.document.documentElement;
+                        const keepTop = se ? se.scrollTop : 0;
                         ta.style.height = Math.max(130, Math.floor(room - peek)) + 'px';
+                        if (se && se.scrollTop !== keepTop) {
+                            se.scrollTop = Math.min(keepTop, se.scrollHeight - se.clientHeight);
+                        }
                     }, 30);
                 };
                 pipWindow.addEventListener('resize', recalcTaHeight);
@@ -7016,7 +7076,7 @@ negated bevindingen
                         // Houd de hoogte vast voordat het venster wordt leeggemaakt,
                         // zodat de leespositie van wie naar beneden gescrold is blijft
                         // staan tijdens deze ronde.
-                        holdPanelHeight(rtContent);
+                        holdPanelHeight(rtPanel);
                         rtStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                         rtActions.style.display = 'none';
                         rtOrigBtn.style.display = 'none';
@@ -7050,7 +7110,7 @@ negated bevindingen
                         } catch (e) {
                             if (e.name !== 'AbortError') rtStatus.textContent = 'Fout: ' + e.message;
                         } finally {
-                            releasePanelHeight(rtContent);
+                            releasePanelHeight(rtPanel);
                         }
                     }, 2000);
                 });
@@ -7116,24 +7176,31 @@ negated bevindingen
             });
 
             function showMedgemmaResult(raw) {
-                medgemmaDropzone.classList.add("hidden");
-                medgemmaPreview.classList.add("hidden");
-                medgemmaResultContent.innerHTML = renderMarkdown(raw);
-                wrapSectionLabels(medgemmaResultContent);
-                _mgLabelsVisible = true;
-                _mgApplyLabels();
-                medgemmaResult.classList.remove("hidden");
+                // Dropzone en miniaturen verdwijnen hier: het paneel krimpt eerst en
+                // wordt daarna door het resultaat gevuld. Zonder bescherming klemt de
+                // browser de leespositie weg van wie naar het paneel gescrold is.
+                withStableScroll(medgemmaResultContent, () => {
+                    medgemmaDropzone.classList.add("hidden");
+                    medgemmaPreview.classList.add("hidden");
+                    medgemmaResultContent.innerHTML = renderMarkdown(raw);
+                    wrapSectionLabels(medgemmaResultContent);
+                    _mgLabelsVisible = true;
+                    _mgApplyLabels();
+                    medgemmaResult.classList.remove("hidden");
+                });
             }
 
             function resetMedgemmaPanel() {
-                medgemmaResult.classList.add("hidden");
-                medgemmaResultContent.innerHTML = "";
-                medgemmaImages = [];
-                medgemmaThumbnails.innerHTML = "";
-                medgemmaFileInput.value = "";
-                medgemmaPreview.classList.add("hidden");
-                medgemmaDropzone.classList.remove("hidden");
-                _mgLabelsVisible = true;
+                withStableScroll(medgemmaResultContent, () => {
+                    medgemmaResult.classList.add("hidden");
+                    medgemmaResultContent.innerHTML = "";
+                    medgemmaImages = [];
+                    medgemmaThumbnails.innerHTML = "";
+                    medgemmaFileInput.value = "";
+                    medgemmaPreview.classList.add("hidden");
+                    medgemmaDropzone.classList.remove("hidden");
+                    _mgLabelsVisible = true;
+                });
             }
 
             medgemmaCopyBtn.addEventListener("click", () => {
