@@ -5796,8 +5796,10 @@ negated bevindingen
                 ta.style.minHeight = '130px';
                 ta.style.overflowY = 'auto';
                 ta.style.height = '130px'; // initial; recalcTaHeight() will override
-                // _autoGrow is a no-op: recalcTaHeight handles the height; ta scrolls internally
-                const _autoGrow = () => {};
+                // Het DMO-venster volgt de tekst, dus na elke wijziging opnieuw meten.
+                // recalcTaHeight is verderop gedefinieerd maar bestaat ruimschoots
+                // voordat er getypt kan worden; de eigen debounce vangt het typen op.
+                const _autoGrow = () => recalcTaHeight();
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
 
@@ -6799,36 +6801,77 @@ negated bevindingen
 
                 pipWindow.document.body.appendChild(wrap);
 
-                // ── Dynamic textarea height ──────────────────────────
-                // Het DMO-venster krijgt altijd de volle resterende hoogte van het
-                // eerste PiP-schermbeeld. Alleen de "chrome" telt mee: de studie-header
-                // boven de textarea en de knoppenbalk eronder. De resultaatvensters
-                // (vertaling, AI, real time verslag check, verslag check, calculator,
-                // multi-study, tooltip, MedGemma) staan ná de knoppenbalk en mogen
-                // buiten het beeld vallen — je scrollt daar in het PiP-venster naar
-                // beneden. Ze mogen het DMO-venster dus NOOIT verkleinen.
+                // ── Hoogte van het DMO-venster ───────────────────────
+                // Het DMO-venster volgt de TEKST, niet het viewport. Dat is de kern:
+                // omdat de hoogte niet meer afhangt van de inhoud van een
+                // resultaatvenster, verschuift de layout niet langer bij elke
+                // verversing — en juist dat verschuiven klemde de leespositie weg van
+                // wie een resultaat aan het lezen was.
                 //
-                // Van het eerste zichtbare resultaatvenster reserveren we een stuk
-                // hoogte ("peek"). Hoeveel hangt af van de ruimte, in drie trappen:
+                // Drie gevallen:
                 //
-                //   1. Ruimte genoeg — het PiP-venster is verticaal groot opgetrokken
-                //      en de gedicteerde tekst past nog naast het volledige
-                //      resultaatvenster: dan krijgt het resultaatvenster zijn volle
-                //      hoogte en zijn beide vensters gewoon leesbaar.
-                //   2. Krap — de tekst is te lang geworden: het DMO-venster krijgt
-                //      voorrang en de peek zakt terug tot maximaal een derde van de
-                //      resterende ruimte, zodat het DMO-venster tweederde houdt.
-                //   3. Ondergrens — hoe krap ook, de grijze kopbalk blijft staan. Die
-                //      laat zien dát er een resultaatvenster is dat zich ververst, is
-                //      aanklikbaar, en houdt het DMO-venster op zijn plek in plaats van
-                //      het te laten verspringen naar een klein venstertje.
+                //   1. Geen resultaatvenster open — het DMO-venster groeit mee met de
+                //      tekst tot het PiP-venster vol is. Daarna krijgt het zijn eigen
+                //      scrollbalk. Nooit ingeklapt.
+                //   2. Resultaatvenster dat er nog volledig naast past — dan blijft het
+                //      DMO-venster op zijn tekstmaat en staat het resultaat er in zijn
+                //      geheel onder, zonder dat je hoeft te scrollen.
+                //   3. Resultaatvenster dat er niet meer bij past, omdat het verslag
+                //      lang is — dan reserveren we een vaste, beperkte plek: de
+                //      kopbalk plus de eerste RESERVE_LINES regels. Je ziet dus dát er
+                //      een resultaat staat en waarover het gaat. Het DMO-venster krijgt
+                //      hierdoor zijn interne scrollbalk; de rest van het resultaat
+                //      bereik je door in het PiP-venster naar beneden te scrollen.
                 //
-                // Het plafond gaat over de ruimte die na de chrome overblijft en niet
-                // over het viewport: een vaste peek van ~160px is bij een venster van
-                // 620px een derde van die ruimte, maar bij 380px bijna tweederde.
+                // De overige resultaatvensters staan daaronder. Het beeld opent altijd
+                // met het DMO-venster bovenaan: een automatische verversing verplaatst
+                // het beeld nooit. Alleen een venster dat je zelf met een knop opent
+                // scrollt in beeld (zie pipRevealPanel), want anders lijkt die knop
+                // niets te doen.
                 let _recalcDebounce = null;
-                const HEAD_PEEK_FALLBACK = 30;      // px, als de kopbalk niet te meten valt
-                const PEEK_MAX_OF_ROOM = 1 / 3;     // bij krappe ruimte: nooit meer dan dit deel
+                const MIN_TA = 130;            // px, ondergrens van het DMO-venster
+                const HEAD_FALLBACK = 30;      // px, als de kopbalk niet te meten valt
+                const RESERVE_LINES = 4;       // regels van het resultaat die meekijken
+
+                // Meet de hoogte die de gedicteerde tekst nodig heeft in een onzichtbare
+                // kopie. De textarea zelf even platdrukken zou werken, maar raakt de
+                // levende layout; scrollHeight van het origineel is bovendien nooit
+                // kleiner dan zijn huidige hoogte en zou de vorige uitkomst
+                // terugrapporteren.
+                let _taMirror = null;
+                const measureTextNeed = () => {
+                    if (!_taMirror) {
+                        _taMirror = pipWindow.document.createElement('textarea');
+                        _taMirror.setAttribute('aria-hidden', 'true');
+                        _taMirror.tabIndex = -1;
+                        _taMirror.className = ta.className;
+                        pipWindow.document.body.appendChild(_taMirror);
+                    }
+                    const cs = pipWindow.getComputedStyle(ta);
+                    _taMirror.style.cssText = 'position:absolute;left:-9999px;top:0;visibility:hidden;'
+                        + 'height:0;min-height:0;max-height:none;overflow:hidden;box-sizing:border-box;'
+                        + 'width:' + ta.clientWidth + 'px;'
+                        + 'padding:' + cs.padding + ';border-width:' + cs.borderWidth + ';'
+                        + 'font:' + cs.font + ';line-height:' + cs.lineHeight + ';'
+                        + 'letter-spacing:' + cs.letterSpacing;
+                    // Geen eigen white-space of word-break opdringen: een textarea
+                    // breekt regels al zoals een textarea, en een afwijkende
+                    // afbreekregel geeft een andere regelval en dus een verkeerde maat.
+                    _taMirror.wrap = ta.wrap || 'soft';
+                    _taMirror.value = ta.value;
+                    // scrollHeight bevat de inhoud plus de padding, maar niet de rand.
+                    // Wat style.height moet worden hangt af van het box-model: bij
+                    // border-box (wat Tailwind overal zet) hoort de rand erbij, bij
+                    // content-box moet de padding er juist af. Zonder deze correctie
+                    // komt het veld enkele pixels tekort en krijgt een tekst die
+                    // precies past alsnog een interne scrollbalk.
+                    const pad = (parseFloat(cs.paddingTop) || 0) + (parseFloat(cs.paddingBottom) || 0);
+                    const border = (parseFloat(cs.borderTopWidth) || 0) + (parseFloat(cs.borderBottomWidth) || 0);
+                    return cs.boxSizing === 'border-box'
+                        ? _taMirror.scrollHeight + border
+                        : _taMirror.scrollHeight - pad;
+                };
+
                 const recalcTaHeight = () => {
                     clearTimeout(_recalcDebounce);
                     _recalcDebounce = pipWindow.setTimeout(() => {
@@ -6836,18 +6879,26 @@ negated bevindingen
                         let usedH = 0;
                         let visCount = 0;
                         let pastBtnRow = false;
-                        let fullPeek = 0; // hele resultaatvenster
-                        let headPeek = 0; // alleen de grijze kopbalk
+                        let fullPanel = 0;   // hele resultaatvenster, inclusief gap
+                        let reserve = 0;     // kopbalk + RESERVE_LINES regels, inclusief gap
                         for (const child of wrap.children) {
                             const visible = pipWindow.getComputedStyle(child).display !== 'none';
                             if (pastBtnRow) {
-                                // Eerste zichtbare resultaatvenster: meet zowel de volle
-                                // hoogte als die van de kopbalk, dan stoppen.
+                                // Eerste zichtbare resultaatvenster bepaalt de maten.
                                 if (!visible) continue;
                                 const head = child.firstElementChild;
                                 const headH = head ? head.offsetHeight : 0;
-                                fullPeek = 12 + child.offsetHeight;
-                                headPeek = 12 + (headH || Math.min(child.offsetHeight, HEAD_PEEK_FALLBACK));
+                                const body = head ? head.nextElementSibling : null;
+                                let lines = 0;
+                                if (body) {
+                                    const bcs = pipWindow.getComputedStyle(body);
+                                    const lineH = parseFloat(bcs.lineHeight) || 22;
+                                    lines = (parseFloat(bcs.paddingTop) || 0) + RESERVE_LINES * lineH;
+                                }
+                                fullPanel = 12 + child.offsetHeight;
+                                reserve = 12 + (headH || Math.min(child.offsetHeight, HEAD_FALLBACK)) + lines;
+                                // Nooit meer reserveren dan het venster zelf hoog is.
+                                reserve = Math.min(reserve, fullPanel);
                                 break;
                             }
                             const isChrome = child !== ta && child !== ce;
@@ -6858,38 +6909,19 @@ negated bevindingen
                             if (child === btnRow) pastBtnRow = true;
                         }
                         const gapTotal = visCount * 12; // gap-3 = 12px per gap tussen ta en elke zichtbare chrome-sibling
-                        const wrapPad = 16; // 8px boven + 8px onder
-                        // De ruimte die DMO-venster en peek samen delen.
+                        const wrapPad = 16;             // 8px boven + 8px onder
                         const room = viewH - usedH - gapTotal - wrapPad;
+                        const textNeed = measureTextNeed();
 
-                        // Hoeveel hoogte de gedicteerde tekst zelf nodig heeft. Even op
-                        // 0 zetten, want scrollHeight is nooit kleiner dan de huidige
-                        // hoogte en zou anders de vorige uitkomst terugrapporteren.
-                        const prevH = ta.style.height;
-                        ta.style.height = '0px';
-                        const textNeed = ta.scrollHeight;
-                        ta.style.height = prevH;
-
-                        let peek;
-                        if (fullPeek && room - fullPeek >= Math.max(130, textNeed)) {
-                            peek = fullPeek;                 // 1. ruimte genoeg: beide leesbaar
+                        let taH;
+                        if (!fullPanel) {
+                            taH = Math.min(textNeed, room);          // 1. groeit met de tekst
+                        } else if (textNeed + fullPanel <= room) {
+                            taH = textNeed;                          // 2. resultaat past er volledig bij
                         } else {
-                            peek = Math.min(fullPeek, Math.floor(room * PEEK_MAX_OF_ROOM));
-                            peek = Math.max(peek, Math.min(fullPeek, headPeek)); // 3. kopbalk blijft
+                            taH = room - reserve;                    // 3. vaste, beperkte plek
                         }
-                        // Deze functie loopt in haar eigen taak (30ms debounce), dus de
-                        // browser heeft tussen de aanleiding en dit moment kunnen
-                        // herschikken. Wordt het DMO-venster hier kleiner, dan krimpt
-                        // het document en klemt een scrollpositie eronder weg — wie het
-                        // resultaat aan het lezen was, springt dan naar boven. Vandaar
-                        // de leespositie rond de hoogtewijziging vasthouden. Dit dekt
-                        // elk resultaatvenster, ongeacht wat de herberekening opriep.
-                        const se = pipWindow.document.scrollingElement || pipWindow.document.documentElement;
-                        const keepTop = se ? se.scrollTop : 0;
-                        ta.style.height = Math.max(130, Math.floor(room - peek)) + 'px';
-                        if (se && se.scrollTop !== keepTop) {
-                            se.scrollTop = Math.min(keepTop, se.scrollHeight - se.clientHeight);
-                        }
+                        ta.style.height = Math.max(MIN_TA, Math.floor(taH)) + 'px';
                     }, 30);
                 };
                 pipWindow.addEventListener('resize', recalcTaHeight);
@@ -7052,6 +7084,9 @@ negated bevindingen
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
                 //   - only run realtime verslag check when realtimeEnabled
+                // Het DMO-venster groeit met de tekst mee, ook los van de real time
+                // check: dit staat vóór de vroege return zodat het altijd gebeurt.
+                ta.addEventListener('input', () => recalcTaHeight());
                 ta.addEventListener('input', () => {
                     if (_pipInlineMode) return;
                     clearTimeout(_pipRealtimeDebounce);
