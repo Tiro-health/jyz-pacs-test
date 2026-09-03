@@ -1040,8 +1040,27 @@
                         <circle cx="12" cy="12" r="3" />
                     </svg>
                     Settings
+                    <!-- Snelknoppen: blijven bruikbaar wanneer Settings is ingeklapt.
+                         Zelfde plek en opmaak als de knoppen bij Clinical information
+                         en Dictation; vierkant omdat het er twee naast elkaar zijn. -->
+                    <div class="ml-auto flex items-center gap-1.5 shrink-0">
+                    <a
+                        id="settings-flow-btn"
+                        href="#"
+                        target="_blank"
+                        title="Template flow"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5z"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></a>
+                    <button
+                        id="settings-pip-btn"
+                        type="button"
+                        aria-pressed="false"
+                        title="Dictation zwevend venster"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0 text-[10px] font-semibold leading-none"
+                    >PiP</button>
+                    </div>
                     <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -1796,6 +1815,12 @@
             const templateFlowBtn = document.getElementById("template-flow-btn");
             const flowParams = new URLSearchParams(window.location.search);
             templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
+            // Dezelfde bestemming voor de snelknop in de Settings-kopbalk. Een klik
+            // in een <summary> klapt het paneel open of dicht, en dat is hier juist
+            // niet de bedoeling: de knop moet werken terwijl Settings ingeklapt is.
+            const settingsFlowBtn = document.getElementById("settings-flow-btn");
+            settingsFlowBtn.setAttribute("href", `flow.html?${flowParams.toString()}`);
+            settingsFlowBtn.addEventListener("click", (e) => e.stopPropagation());
 
 
             // Patient letter button — builds URL from current form values
@@ -5632,6 +5657,17 @@ negated bevindingen
             // Dictation popout (Document PiP — textarea + realtime check)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
+            // Snelknop in de Settings-kopbalk: stuurt dezelfde toggle aan, zodat het
+            // PiP-venster ook te openen is terwijl Settings ingeklapt staat.
+            // stopPropagation, want een klik in een <summary> zou het paneel anders
+            // open of dicht klappen.
+            const settingsPipBtn = document.getElementById('settings-pip-btn');
+            const SETTINGS_PIP_OFF = 'border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200';
+            const SETTINGS_PIP_ON  = 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-700 dark:text-cyan-300';
+            settingsPipBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dictationPopoutToggle.click();
+            });
 
             // Het DMO-venster vult altijd het eerste PiP-schermbeeld (zie
             // recalcTaHeight), dus resultaatvensters staan onder de fold. Bij een
@@ -5704,6 +5740,11 @@ negated bevindingen
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
                 dictationPopoutToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${active ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+                // De snelknop in de kopbalk volgt dezelfde staat, zodat ook met
+                // ingeklapte Settings te zien is of het PiP-venster openstaat.
+                settingsPipBtn.setAttribute('aria-pressed', String(active));
+                settingsPipBtn.className = 'inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors shrink-0 text-[10px] font-semibold leading-none '
+                    + (active ? SETTINGS_PIP_ON : SETTINGS_PIP_OFF);
                 localStorage.setItem('pipActive', active ? '1' : '0');
             }
 
