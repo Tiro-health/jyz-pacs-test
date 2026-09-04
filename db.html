@@ -239,6 +239,18 @@
                 return isNaN(d) ? "" : d.toLocaleString("nl-BE", { dateStyle: "short", timeStyle: "short" });
             };
 
+            /**
+             * Een opvolgdatum ("2027-09-04") kort weergeven als 04/09/27. Andere
+             * schrijfwijzen worden ongemoeid gelaten, dan is de ruwe waarde nog
+             * altijd leesbaarder dan niets.
+             */
+            const fmtOpvolgDatum = (waarde) => {
+                const s = String(waarde || "").trim();
+                if (!s) return "";
+                const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+                return m ? `${m[3]}/${m[2]}/${m[1].slice(2)}` : s;
+            };
+
             /** Alle velden van een record in schemavolgorde, met hun label. */
             function fieldsOf(rec) {
                 const out = [];
@@ -275,6 +287,9 @@
                             store,
                             bron: src.label,
                             categorie: v[src.categoryField] || "(geen categorie)",
+                            // Alleen voor de weergave; het filteren en sorteren
+                            // blijft op de kale categorie werken.
+                            opvolgDatum: fmtOpvolgDatum(v.opv_reminder_datum),
                             pacsnummer: v.pacsnummer || "",
                             datum: v.onderzoek_datum || "",
                             onderzoek: v.onderzoek_type || "",
@@ -412,9 +427,12 @@
                 return box;
             }
 
-            function badge(rec) {
+            function badge(rec, metOpvolgDatum) {
                 const src = SOURCES[rec.store];
-                const b = el("span", "text-xs px-2 py-0.5 rounded-full border whitespace-nowrap " + ACCENTS[src.accent], rec.categorie);
+                const tekst = metOpvolgDatum && rec.opvolgDatum
+                    ? `${rec.categorie} - ${rec.opvolgDatum}`
+                    : rec.categorie;
+                const b = el("span", "text-xs px-2 py-0.5 rounded-full border whitespace-nowrap " + ACCENTS[src.accent], tekst);
                 return b;
             }
 
@@ -455,7 +473,7 @@
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.onderzoek || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.bron));
                     const tdCat = el("td", "px-3 py-2");
-                    tdCat.appendChild(badge(rec));
+                    tdCat.appendChild(badge(rec, true));
                     tr.appendChild(tdCat);
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.betrokkenen.length
                         ? (rec.betrokkenen.length === 1 ? rec.betrokkenen[0] : rec.betrokkenen[0] + " …(" + rec.betrokkenen.length + ")")
