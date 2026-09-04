@@ -744,10 +744,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 Tekst ontvangen
                             </span>
-                            <span id="draft-restored-indicator" class="hidden items-center gap-1 text-xs text-amber-600 dark:text-amber-400" title="Deze tekst is teruggezet uit een bewaard concept van dit onderzoek">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
-                                Concept teruggezet (<span data-draft-time></span>)
-                            </span>
                             <button
                                 id="medgemma-quick-btn"
                                 type="button"
@@ -2060,15 +2056,12 @@
                 document.getElementById("save-progress-btn");
             saveProgressBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
             const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
             validateAndSaveBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
-                saveDictationDraft();
                 const dbParams = new URLSearchParams(window.location.search);
                 dbParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
                 // In een nieuw tabblad, net als Template flow en Patient letter.
@@ -2085,7 +2078,6 @@
             const validateBtn = document.getElementById("validate-btn");
             validateBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
@@ -3099,62 +3091,7 @@
                     latestDictationText = src.value;
                 }
                 _scheduleCalcScan();
-                saveDictationDraft();
             }, { capture: true });
-
-            // ── Vangnet: concept van de gedicteerde tekst ────────────────────
-            // Deze pagina kan verdwijnen zonder dat het werk klaar is: een
-            // herlaadactie, een verkeerde klik, een browser die crasht. Een
-            // Document PiP-venster gaat bovendien altijd met zijn openende
-            // document dicht. Daarom wordt de tekst tijdens het dicteren bewaard
-            // en bij het openen teruggezet.
-            //
-            // Het concept hangt aan het PACS-nummer van het onderzoek. Dat is
-            // hier geen detail maar een voorwaarde: tekst van het ene onderzoek
-            // mag nooit in het dossier van een ander onderzoek belanden.
-            const DRAFT_KEY = "dictationDraft";
-            const DRAFT_MAX_AGE_MS = 12 * 60 * 60 * 1000; // ouder dan een dienst: vervalt
-            const _draftStudyId = new URLSearchParams(window.location.search).get("accessionNumber") || "";
-            let _draftTimer = null;
-
-            function saveDictationDraft(text) {
-                clearTimeout(_draftTimer);
-                _draftTimer = setTimeout(() => {
-                    try {
-                        const t = String(text ?? readDictationText() ?? "").trim();
-                        if (!t) { localStorage.removeItem(DRAFT_KEY); return; }
-                        localStorage.setItem(DRAFT_KEY, JSON.stringify({
-                            text: t, study: _draftStudyId, ts: Date.now(),
-                        }));
-                    } catch (_) { /* opslag vol: het vangnet is een hulpmiddel */ }
-                }, 400);
-            }
-
-            function clearDictationDraft() {
-                clearTimeout(_draftTimer);
-                try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
-            }
-
-            function restoreDictationDraft() {
-                let d = null;
-                try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (_) {}
-                if (!d || !d.text) return false;
-                if (d.study !== _draftStudyId) return false;              // ander onderzoek
-                if (Date.now() - (d.ts || 0) > DRAFT_MAX_AGE_MS) { clearDictationDraft(); return false; }
-                if (String(readDictationText() || "").trim()) return false; // er staat al tekst
-                setDictationText(d.text);
-                latestDictationText = d.text;
-                // Nooit stil terugzetten: bij verslagtekst moet zichtbaar zijn dat
-                // dit een teruggezet concept is en van wanneer het dateert.
-                const ind = document.getElementById("draft-restored-indicator");
-                if (ind) {
-                    const tijd = new Date(d.ts).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
-                    ind.querySelector("[data-draft-time]").textContent = tijd;
-                    ind.classList.remove("hidden");
-                    ind.classList.add("inline-flex");
-                }
-                return true;
-            }
 
             // Intercept copy from the dictation area: strip HTML markup and normalize
             // whitespace so pasting into other apps gives clean plain text.
@@ -4400,56 +4337,39 @@ negated bevindingen
                 storeSnomedForDatabase(hoofdLines, bijLines, negatedLines);
             }
 
+            // Alleen bevindingen met een echte SNOMED CT-code horen in de databank.
+            // resolveSnomedConcepts geeft die terug als "263169008 (Fracture of
+            // distal end of radius)"; een concept dat de terminologieserver niet
+            // kende blijft als losse naam staan en verschijnt daardoor ook niet op
+            // de SNOMED CT-pagina. Zulke regels mogen dus geen pathologie-optie
+            // worden: de databanklijst blijft zo één op één met wat er in de velden
+            // staat.
+            const SNOMED_CODED_LINE = /^\d{6,18}\s*\(/;
+            const onlyCoded = (lines) => (lines || []).filter((l) => SNOMED_CODED_LINE.test(String(l).trim()));
+
             // Schrijf het SNOMED-resultaat weg voor de database-formulieren.
             function storeSnomedForDatabase(hoofd, bij, negated) {
                 try {
                     localStorage.setItem("snomedLastResult", JSON.stringify({
-                        hoofddiagnose: hoofd || [],
-                        bijdiagnose: bij || [],
-                        negated: negated || [],
+                        hoofddiagnose: onlyCoded(hoofd),
+                        bijdiagnose: onlyCoded(bij),
+                        negated: onlyCoded(negated),
                         ts: new Date().toISOString(),
                     }));
                 } catch (_) { /* opslag vol — de lijst is een hulpmiddel, geen vereiste */ }
             }
 
-            // Lees een veld uit een Tiro-formulier op basis van zijn label.
-            function deepReadByLabel(rootEl, labelHint) {
-                function search(root) {
-                    if (!root) return null;
-                    for (const el of root.querySelectorAll("*")) {
-                        const leafText = Array.from(el.childNodes)
-                            .filter(n => n.nodeType === Node.TEXT_NODE)
-                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
-                        if (leafText.includes(labelHint.toLowerCase())) {
-                            let container = el;
-                            for (let i = 0; i < 3 && container; i++) {
-                                const input = container.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea");
-                                if (input) return input.value;
-                                container = container.parentElement;
-                            }
-                        }
-                        if (el.shadowRoot) {
-                            const found = search(el.shadowRoot);
-                            if (found !== null) return found;
-                        }
-                    }
-                    return null;
-                }
-                return search(rootEl.shadowRoot || rootEl);
-            }
-
-            // Bij bewaren: neem eventuele handmatige aanpassingen aan de
-            // SNOMED-velden mee, zodat de database-opties overeenkomen met
-            // wat er effectief in het formulier staat.
-            function refreshSnomedFromForm() {
-                const snomedForm = findSnomedCtTemplateForm();
-                if (!snomedForm) return;
-                const split = (v) => (v || "").split("\n").map(s => s.trim()).filter(Boolean);
-                const hoofd = split(deepReadByLabel(snomedForm, "hoofddiagnose"));
-                const bij   = split(deepReadByLabel(snomedForm, "bijdiagnose"));
-                const neg   = split(deepReadByLabel(snomedForm, "negated"));
-                if (hoofd.length || bij.length || neg.length) storeSnomedForDatabase(hoofd, bij, neg);
-            }
+            // Hier stond een tweede schrijfactie: bij het bewaren werden de drie
+            // SNOMED-velden opnieuw uit het Tiro-formulier gelezen op hun
+            // labeltekst, om handmatige aanpassingen mee te nemen. Dat lezen bleek
+            // niet betrouwbaar — het pakte het eerste veld dat het tegenkwam en kon
+            // daardoor driemaal dezelfde waarde teruggeven, of een categorie
+            // leegmaken als het label niet exact matchte — en het overschreef
+            // daarmee de correcte, gecontroleerde lijst op precies het moment dat
+            // de casus werd bewaard. De lijst die de SNOMED CT-analyse in de velden
+            // zet is nu de enige bron, zodat databank en formulier één op één
+            // overeenkomen. Prijs: een handmatige aanpassing in de SNOMED-velden
+            // komt niet in de databankopties terecht.
 
             // AI resultaten button — synced two-way with Active template checkbox
             function updateAiResultatenBtn() {
@@ -5099,7 +5019,10 @@ negated bevindingen
 
             function _clearStudyFields() {
                 setDictationText('');
-                if (_pipWindow && !_pipWindow.closed && _pipDmoTa) {
+                // Op de textarea zelf kijken en niet op _pipWindow: als die
+                // verwijzing ooit niet meer klopt terwijl het veld wel bestaat,
+                // bleef de tekst van het vorige onderzoek staan.
+                if (_pipDmoTa?.isConnected) {
                     setNativeValue(_pipDmoTa, '');
                     try { _pipDmoTa.style.height = 'auto'; } catch (_) {}
                 }
@@ -5123,6 +5046,82 @@ negated bevindingen
                 }
             }
 
+            // ── Terugknop: de laatste stap in het DMO-venster ongedaan maken ──
+            // Twee soorten stappen komen op de stapel:
+            //
+            //   tekst    — het DMO-venster werd in één keer vervangen of leeggemaakt
+            //              (preset, calculatorresultaat, tekst uit een resultaatvenster,
+            //              of het leegmaken bij een nieuw dossier)
+            //   voegtoe  — er werd een onderzoek aan een multi-study toegevoegd
+            //
+            // Bij een voegtoe-stap wordt dat onderzoek weer uit de rij gehaald en
+            // komt zijn tekst terug in het venster, zodat je het kunt aanpassen en
+            // opnieuw kunt toevoegen of afronden met autofill. Was je al aan een
+            // volgend onderzoek begonnen, dan gaat die tekst eerst op de stapel:
+            // teruggaan mag nooit werk weggooien. Staat het venster leeg — de
+            // gewone situatie net na "voeg toe" — dan wandel je met opeenvolgende
+            // drukken stap voor stap door de eerdere onderzoeken terug.
+            const _dmoUndo = [];
+            const DMO_UNDO_MAX = 20;
+
+            function pushDmoUndo(type, text) {
+                _dmoUndo.push({ type, text: String(text ?? "") });
+                if (_dmoUndo.length > DMO_UNDO_MAX) _dmoUndo.shift();
+                updatePipUndoBtn();
+            }
+
+            // Werk op de elementen zelf en niet op _pipWindow: de textarea en de
+            // knop leven in het venster dat aan buildPipUI is meegegeven, en
+            // isConnected zegt rechtstreeks of ze nog bestaan.
+            let _pipUndoBtnRef = null;
+
+            function _currentDmoText() {
+                if (_pipDmoTa?.isConnected) return _pipDmoTa.value || "";
+                return readDictationText() || "";
+            }
+
+            function _applyDmoText(text) {
+                const t = String(text || "");
+                // De realtime check niet opnieuw laten aanslaan op tekst die we zelf
+                // terugzetten, net zoals de andere plekken die het veld vervangen.
+                _pipRealtimeLastText = t.trim();
+                _pipRealtimeAbort?.abort();
+                clearTimeout(_pipRealtimeDebounce);
+                if (_pipDmoTa?.isConnected) setNativeValue(_pipDmoTa, t);
+                setDictationText(t);
+            }
+
+            function dmoUndoStep() {
+                if (!_dmoUndo.length) return;
+                const huidig = _currentDmoText();
+                const stap = _dmoUndo.pop();
+                if (stap.type === "voegtoe") {
+                    if (_multiStudies.length) _multiStudies.pop();
+                    _updateVoegToeBtns();
+                    if (huidig.trim()) pushDmoUndo("tekst", huidig);
+                } else if (huidig !== stap.text) {
+                    // Nog een druk brengt je weer vooruit naar wat er stond.
+                    pushDmoUndo("tekst", huidig);
+                }
+                _applyDmoText(stap.text);
+                updatePipUndoBtn();
+            }
+
+            function updatePipUndoBtn() {
+                const b = _pipUndoBtnRef?.isConnected ? _pipUndoBtnRef : null;
+                if (!b) return;
+                const kan = _dmoUndo.length > 0;
+                b.disabled = !kan;
+                b.style.opacity = kan ? "" : "0.4";
+                b.style.cursor = kan ? "pointer" : "not-allowed";
+                const top = kan ? _dmoUndo[_dmoUndo.length - 1] : null;
+                b.title = !kan
+                    ? "Niets om terug te zetten"
+                    : top.type === "voegtoe"
+                        ? `Laatste "voeg toe" ongedaan maken en dat onderzoek terugzetten`
+                        : "Vorige tekst in het DMO-venster terugzetten";
+            }
+
             async function _voegToeHandler(dictText) {
                 const label = _getStudyLabel();
                 const tekst = dictText || readDictationText().trim();
@@ -5139,6 +5138,9 @@ negated bevindingen
                 const capturedHeader = _buildTtHeader(); // capture before fields are cleared
                 const labelsDefaultVisible = window._flowLabelsDefaultVisible !== false;
                 const capturedTextTemplate = window._flowTextTemplate || window._flowUserTextTemplate || '';
+                // Deze stap op de terug-stapel, met de ruwe dictatietekst en niet de
+                // versie met header: de terugknop moet exact teruggeven wat er stond.
+                pushDmoUndo('voegtoe', tekst);
                 // Clear fields immediately so user can continue with next study
                 _clearStudyFields();
                 const btn    = document.getElementById('voeg-toe-btn');
@@ -6164,6 +6166,7 @@ negated bevindingen
                         _pipRealtimeLastText = text.trim();
                         _pipRealtimeAbort?.abort();
                         clearTimeout(_pipRealtimeDebounce);
+                        pushDmoUndo('tekst', ta.value);
                         setNativeValue(ta, text);
                         _autoGrow();
                         setDictationText(text);
@@ -6256,10 +6259,22 @@ negated bevindingen
                     }
                     const existing = ta.value.trim();
                     const newVal = existing ? existing + '\n\n' + preset : preset;
+                    pushDmoUndo('tekst', ta.value);
                     setNativeValue(ta, newVal);
                     _autoGrow();
                     setDictationText(newVal);
                 });
+
+                // Terugknop naast Preset: zet de vorige tekst in het DMO-venster
+                // terug. Zit je in een multi-study, dan maakt hij de laatste
+                // "voeg toe" ongedaan en komt dat onderzoek terug in het venster.
+                // Vierkant, in dezelfde maat als de andere kleine PiP-knoppen.
+                const undoBtn = mk('button', 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0');
+                undoBtn.id = 'pip-undo-btn';
+                undoBtn.type = 'button';
+                undoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+                undoBtn.addEventListener('click', () => dmoUndoStep());
+                _pipUndoBtnRef = undoBtn;
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
@@ -6308,6 +6323,7 @@ negated bevindingen
                         setTimeout(() => { btn.textContent = 'Kopiëren'; btn.style.color = ''; }, 2000);
                     }),
                     presetBtn,
+                    undoBtn,
                     sentInd,
                     fontBtns,
                 );
@@ -6541,6 +6557,7 @@ negated bevindingen
                     _pipRealtimeLastText = merged.trim();             // onderdruk realtime her-trigger
                     _pipRealtimeAbort?.abort();
                     clearTimeout(_pipRealtimeDebounce);
+                    pushDmoUndo('tekst', cur);
                     setNativeValue(ta, merged);
                     _autoGrow();
                     setDictationText(merged);
@@ -6984,6 +7001,7 @@ negated bevindingen
                     _pipPanelObserver.observe(child, { attributes: true, attributeFilter: ['style', 'class'] });
                 }
                 recalcTaHeight();
+                updatePipUndoBtn();   // grijs zolang er niets terug te zetten valt
 
                 // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
                 const pipCorrTooltip = mk('div', '');
@@ -7109,12 +7127,9 @@ negated bevindingen
                     clearTimeout(_pipRealtimeDebounce);
                     _pipRealtimeLastText = '';
                     // dicteervelden leegmaken (textarea + contenteditable)
+                    pushDmoUndo('tekst', ta.value);
                     ta.value = '';
                     setNativeValue(ta, '');
-                    // Nieuw dossier: het bewaarde concept hoort hier niet meer bij.
-                    clearDictationDraft();
-                    const _di = document.getElementById('draft-restored-indicator');
-                    if (_di) { _di.classList.add('hidden'); _di.classList.remove('inline-flex'); }
                     _autoGrow();
                     ce.innerHTML = '';
                     const _d = pipWindow.document.createElement('div');
@@ -7141,9 +7156,6 @@ negated bevindingen
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
                 //   - only run realtime verslag check when realtimeEnabled
-                // Ook wat in het PiP-venster gedicteerd wordt hoort in het vangnet,
-                // en meteen — niet pas na de 2-secondenvertraging hieronder.
-                ta.addEventListener('input', () => saveDictationDraft(ta.value));
                 ta.addEventListener('input', () => {
                     if (_pipInlineMode) return;
                     clearTimeout(_pipRealtimeDebounce);
@@ -7242,10 +7254,6 @@ negated bevindingen
                 openDictationPopout().catch(() => {});
             }
 
-            // Bewaard concept terugzetten. Het dicteerveld is een web component,
-            // dus even wachten tot dat is opgebouwd; bij mislukking nog een poging,
-            // want het terugzetten mag niet afhangen van de laadsnelheid.
-            setTimeout(() => { if (!restoreDictationDraft()) setTimeout(restoreDictationDraft, 1200); }, 400);
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");

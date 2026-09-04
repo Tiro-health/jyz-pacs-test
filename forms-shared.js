@@ -1151,7 +1151,11 @@ Voorbeeld van een geldig antwoord:
         } = config;
 
         const modeKey = MODE_KEY_PREFIX + page;
-        const isTemplateMode = () => localStorage.getItem(modeKey) !== "off";
+        // De niet-template mode is de standaard: zonder opgeslagen keuze staat de
+        // pagina op de eigen velden. Alleen een uitdrukkelijke keuze voor template
+        // mode zet "on" in de opslag, dus wie daarvoor koos houdt die keuze; wie
+        // eerder "off" koos blijft ook waar hij was.
+        const isTemplateMode = () => localStorage.getItem(modeKey) === "on";
         const params = new URLSearchParams(location.search);
         let currentRecordId = null;
         let _dirty = false;   // niet-bewaarde wijzigingen in het formulier
