@@ -710,22 +710,23 @@
                         <span id="snomed-error-text" class="flex-1"></span>
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
+                    <!-- DMO-dictaatveld voor de textuele modus. Komt in de plaats van
+                         het gedeactiveerde SDK-veld, en enkel wanneer het PiP-venster
+                         dicht is — zie syncLaunchDmo(). Staat buiten het SDK-element,
+                         want dat wordt bij deactivering volledig verborgen. -->
+                    <div id="launch-dmo-wrap" class="hidden mt-2">
+                        <textarea
+                            id="launch-dmo-ta"
+                            rows="5"
+                            placeholder="Dicteer hier via DMO…"
+                            class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
+                        ></textarea>
+                    </div>
                     <tiro-magic-clipboard
                         for="report-form"
                         dictation-language="nl"
                     >
-                        <!-- DMO-dictaatveld voor de textuele modus. Verschijnt in de
-                             plaats van het ingeklapte SDK-veld, en enkel wanneer het
-                             PiP-venster dicht is — zie syncLaunchDmo(). -->
-                        <div id="launch-dmo-wrap" class="hidden mt-2">
-                            <textarea
-                                id="launch-dmo-ta"
-                                rows="5"
-                                placeholder="Dicteer hier via DMO…"
-                                class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
-                            ></textarea>
-                        </div>
-                        <div class="flex gap-2 mt-2 flex-wrap">
+                        <div id="dictation-actions" class="flex gap-2 mt-2 flex-wrap">
                             <button
                                 id="autofill-btn"
                                 type="submit"
@@ -784,6 +785,10 @@
                             </div>
                         </div>
                     </tiro-magic-clipboard>
+                    <!-- Waar de knoppenrij en het real time-venster naartoe verhuizen
+                         wanneer het SDK-element gedeactiveerd wordt; die blijven dan
+                         gewoon bruikbaar. -->
+                    <div id="dictation-actions-out"></div>
                 </div>
             </details>
 
@@ -2657,37 +2662,50 @@
             // ══════════════════════════════════════════════════════════════════
             // Bij een echte Tiro-template hoort het SDK-veld op volle hoogte te
             // staan: daarin wordt gedicteerd. Staat er enkel een textuele
-            // template (of geen), dan krimpt het SDK-veld tot een dunne strook —
-            // het blijft in de DOM en dus actief voor de AI en de calculatoren —
-            // en komt er een gewoon dicteerveld in de plaats.
+            // template (of geen), dan wordt het SDK-element gedeactiveerd en komt
+            // er een gewoon dicteerveld in de plaats.
             //
-            // Dat dicteerveld bestaat maar op één plaats tegelijk: staat het
-            // PiP-venster open, dan leeft het daar en blijft dit veld dicht. Bij
-            // het openen en sluiten van het PiP-venster verhuist de tekst mee.
+            // Deactiveren gebeurt op het element zelf, niet op een veld binnen de
+            // SDK: die rendert zijn invoerveld in zijn eigen shadow root en
+            // overschrijft opmaak die wij daarop zetten. De knoppenrij en het real
+            // time-venster zijn light-DOM kinderen en zouden met het element
+            // verdwijnen, dus die verhuizen naar een plek ernaast en blijven
+            // bruikbaar. In deze modus is de Autofill-knop toch al type="button"
+            // (zie _updateAutofillBtnType) en loopt hij niet via de SDK; de AI en
+            // de calculatoren lezen de tekst via readDictationText().
             const launchDmoWrap = document.getElementById('launch-dmo-wrap');
             const launchDmoTa = document.getElementById('launch-dmo-ta');
+            const dictationActions = document.getElementById('dictation-actions');
+            const dictationActionsOut = document.getElementById('dictation-actions-out');
+            const realtimePanelEl = document.getElementById('realtime-panel');
 
-            // Genoeg om te zien dát er iets staat, te weinig om in te typen.
-            const SDK_STROOK = 'height:4px;min-height:0;max-height:4px;padding-top:0;padding-bottom:0;overflow:hidden;opacity:0.35;';
+            // Het verhuizen van die kinderen is zelf een DOM-wijziging in het
+            // SDK-element; zonder deze vlag roept de waarnemer verderop zichzelf op.
+            let _sdkBezig = false;
 
             /** Het eigen invoerveld van het SDK-element, licht of in de shadow root. */
             function _sdkInvoerveld() {
                 const kies = "textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']";
-                // Het eigen DMO-veld hangt als light-DOM kind in hetzelfde element
-                // en mag hier nooit voor het SDK-veld doorgaan.
                 for (const el of clipboard.querySelectorAll(kies)) {
-                    if (el !== launchDmoTa && !launchDmoWrap.contains(el)) return el;
+                    if (!dictationActions.contains(el) && !realtimePanelEl.contains(el)) return el;
                 }
                 return clipboard.shadowRoot?.querySelector(kies) || null;
             }
 
-            function _zetSdkStrook(ingeklapt) {
-                const el = _sdkInvoerveld();
-                if (!el) return;
-                if (el.dataset.dmoOrigStyle === undefined) {
-                    el.dataset.dmoOrigStyle = el.getAttribute('style') || '';
+            function _zetSdkGedeactiveerd(uit) {
+                if (_sdkBezig) return;
+                _sdkBezig = true;
+                try {
+                    const doel = uit ? dictationActionsOut : clipboard;
+                    for (const el of [dictationActions, realtimePanelEl]) {
+                        if (el && el.parentNode !== doel) doel.appendChild(el);
+                    }
+                    clipboard.style.display = uit ? 'none' : '';
+                    if (uit) clipboard.setAttribute('aria-hidden', 'true');
+                    else clipboard.removeAttribute('aria-hidden');
+                } finally {
+                    _sdkBezig = false;
                 }
-                el.setAttribute('style', el.dataset.dmoOrigStyle + (ingeklapt ? SDK_STROOK : ''));
             }
 
             const _launchDmoGrow = () => {
@@ -2733,7 +2751,7 @@
                 }
                 _launchDmoWasActief = wordtActief;
 
-                _zetSdkStrook(textueleModus);
+                _zetSdkGedeactiveerd(textueleModus);
                 launchDmoWrap.classList.toggle('hidden', !wordtActief);
                 if (wordtActief) _launchDmoGrow();
             }
@@ -2748,8 +2766,8 @@
                     if (realtimeEnabled) scheduleRealtimeCheck();
                 });
                 // Het SDK-element kan zijn eigen inhoud later opnieuw opbouwen; dan
-                // is de strook weg en moet ze er opnieuw op.
-                new MutationObserver(() => syncLaunchDmo())
+                // moet de stand opnieuw gezet worden.
+                new MutationObserver(() => { if (!_sdkBezig) syncLaunchDmo(); })
                     .observe(clipboard, { childList: true, subtree: true });
             }
 
