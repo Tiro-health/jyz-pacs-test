@@ -714,6 +714,17 @@
                         for="report-form"
                         dictation-language="nl"
                     >
+                        <!-- DMO-dictaatveld voor de textuele modus. Verschijnt in de
+                             plaats van het ingeklapte SDK-veld, en enkel wanneer het
+                             PiP-venster dicht is — zie syncLaunchDmo(). -->
+                        <div id="launch-dmo-wrap" class="hidden mt-2">
+                            <textarea
+                                id="launch-dmo-ta"
+                                rows="5"
+                                placeholder="Dicteer hier via DMO…"
+                                class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
+                            ></textarea>
+                        </div>
                         <div class="flex gap-2 mt-2 flex-wrap">
                             <button
                                 id="autofill-btn"
@@ -2235,6 +2246,11 @@
                 const btn = document.getElementById('autofill-btn');
                 if (btn) btn.type = _hasRealTiroTemplate() ? 'submit' : 'button';
                 updateTextTemplateBackup();
+                // Het dicteerveld hangt af van welke soort template actief is. Deze
+                // functie loopt ook al tijdens de eerste opbouw van de pagina, nog
+                // voor het dicteerveld is opgezet; dan gebeurt dat verderop bij de
+                // eerste syncLaunchDmo().
+                try { syncLaunchDmo(); } catch (_) { }
             }
 
             // ============================================
@@ -2634,6 +2650,107 @@
                     suf.textContent = '';
                     hideTemplatePreview();
                 }
+            }
+
+            // ══════════════════════════════════════════════════════════════════
+            // DMO-dictaatveld op de launch-pagina
+            // ══════════════════════════════════════════════════════════════════
+            // Bij een echte Tiro-template hoort het SDK-veld op volle hoogte te
+            // staan: daarin wordt gedicteerd. Staat er enkel een textuele
+            // template (of geen), dan krimpt het SDK-veld tot een dunne strook —
+            // het blijft in de DOM en dus actief voor de AI en de calculatoren —
+            // en komt er een gewoon dicteerveld in de plaats.
+            //
+            // Dat dicteerveld bestaat maar op één plaats tegelijk: staat het
+            // PiP-venster open, dan leeft het daar en blijft dit veld dicht. Bij
+            // het openen en sluiten van het PiP-venster verhuist de tekst mee.
+            const launchDmoWrap = document.getElementById('launch-dmo-wrap');
+            const launchDmoTa = document.getElementById('launch-dmo-ta');
+
+            // Genoeg om te zien dát er iets staat, te weinig om in te typen.
+            const SDK_STROOK = 'height:4px;min-height:0;max-height:4px;padding-top:0;padding-bottom:0;overflow:hidden;opacity:0.35;';
+
+            /** Het eigen invoerveld van het SDK-element, licht of in de shadow root. */
+            function _sdkInvoerveld() {
+                const kies = "textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']";
+                // Het eigen DMO-veld hangt als light-DOM kind in hetzelfde element
+                // en mag hier nooit voor het SDK-veld doorgaan.
+                for (const el of clipboard.querySelectorAll(kies)) {
+                    if (el !== launchDmoTa && !launchDmoWrap.contains(el)) return el;
+                }
+                return clipboard.shadowRoot?.querySelector(kies) || null;
+            }
+
+            function _zetSdkStrook(ingeklapt) {
+                const el = _sdkInvoerveld();
+                if (!el) return;
+                if (el.dataset.dmoOrigStyle === undefined) {
+                    el.dataset.dmoOrigStyle = el.getAttribute('style') || '';
+                }
+                el.setAttribute('style', el.dataset.dmoOrigStyle + (ingeklapt ? SDK_STROOK : ''));
+            }
+
+            const _launchDmoGrow = () => {
+                if (!launchDmoTa) return;
+                launchDmoTa.style.height = 'auto';
+                launchDmoTa.style.height = launchDmoTa.scrollHeight + 'px';
+            };
+
+            const _pipStaatOpen = () => !!(_pipWindow && !_pipWindow.closed);
+
+            /** Is het eigen DMO-veld op deze pagina nu het actieve dicteerveld? */
+            const launchDmoActief = () =>
+                !!launchDmoWrap && !launchDmoWrap.classList.contains('hidden');
+
+            /** De tekst uit het SDK-veld zelf, buiten het eigen DMO-veld om. */
+            function _sdkTekst() {
+                // Het veld zelf eerst: setDictationText() zet ook eigenschappen op
+                // het host-element, en die kunnen achterlopen op wat er staat.
+                const el = _sdkInvoerveld();
+                const ruw = (el ? extractText(el) : '')
+                    || (clipboard.text ?? clipboard.value ?? clipboard.dictationText)
+                    || latestDictationText || '';
+                return _normalizeDictText(ruw);
+            }
+
+            let _launchDmoWasActief = false;
+
+            function syncLaunchDmo() {
+                if (!launchDmoWrap) return;
+                // Zonder actieve template staat er geen Tiro-formulier klaar, dus
+                // is dit net als bij een textuele template het dicteerveld.
+                const textueleModus = !_hasRealTiroTemplate();
+                const wordtActief = textueleModus && !_pipStaatOpen();
+
+                // Bij het schakelen tussen een Tiro-template en een textuele
+                // template gaat de tekst mee naar het veld dat overneemt.
+                if (wordtActief && !_launchDmoWasActief) {
+                    const over = _sdkTekst();
+                    if (over && !launchDmoTa.value.trim()) launchDmoTa.value = over;
+                } else if (!wordtActief && _launchDmoWasActief) {
+                    const over = launchDmoTa.value;
+                    if (over.trim()) setDictationText(over);
+                }
+                _launchDmoWasActief = wordtActief;
+
+                _zetSdkStrook(textueleModus);
+                launchDmoWrap.classList.toggle('hidden', !wordtActief);
+                if (wordtActief) _launchDmoGrow();
+            }
+
+            if (launchDmoTa) {
+                launchDmoTa.addEventListener('input', () => {
+                    _launchDmoGrow();
+                    // De rest van de pagina leest de dictatietekst via
+                    // readDictationText(); die kijkt eerst hier. Deze buffer houdt
+                    // de tekst ook bij nadat het veld weer dichtgaat.
+                    latestDictationText = launchDmoTa.value;
+                    if (realtimeEnabled) scheduleRealtimeCheck();
+                });
+                // Het SDK-element kan zijn eigen inhoud later opnieuw opbouwen; dan
+                // is de strook weg en moet ze er opnieuw op.
+                new MutationObserver(() => syncLaunchDmo())
+                    .observe(clipboard, { childList: true, subtree: true });
             }
 
             function fillPrompt(template, vars) {
@@ -3208,6 +3325,10 @@
             function sendToDictationFields(text) {
                 if (!text) return;
                 setDictationText(text);
+                if (launchDmoActief()) {
+                    setNativeValue(launchDmoTa, text);
+                    _launchDmoGrow();
+                }
                 if (_pipDmoTa && _pipWindow && !_pipWindow.closed) {
                     setNativeValue(_pipDmoTa, text);
                     _pipDmoTa.style.height = 'auto';
@@ -3216,6 +3337,8 @@
             }
 
             function readDictationText() {
+                // Is het eigen DMO-veld het actieve dicteerveld, dan is dat de bron.
+                if (launchDmoActief()) return _normalizeDictText(launchDmoTa.value || "");
                 let raw = "";
                 // 1. Known public property names the SDK might expose
                 const fromProp = clipboard.text ?? clipboard.value ?? clipboard.dictationText ?? null;
@@ -5853,12 +5976,17 @@ negated bevindingen
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
                 _ttAbort?.abort();
+                // Wat in het PiP-venster stond, verhuist naar het dicteerveld op
+                // deze pagina, dat hierna weer opengaat.
+                const uitPip = _pipDmoTa?.isConnected ? (_pipDmoTa.value || '') : '';
                 _pipWindow = null;
                 _pipTtRef = null;
                 _pipDmoTa = null;
                 _pipUpdateStudyHeader = null;
                 _pipRealtimeLastText = '';
                 _resetMultiStudies();
+                if (uitPip.trim() && launchDmoTa) launchDmoTa.value = uitPip;
+                syncLaunchDmo();
                 updateDictationPopoutToggle(false);
             }
 
@@ -7257,9 +7385,14 @@ negated bevindingen
                     return;
                 }
                 try {
+                    // De tekst uit het dicteerveld op deze pagina verhuist mee naar
+                    // het PiP-venster; daarna sluit dit veld (syncLaunchDmo).
+                    const meeNaarPip = launchDmoActief() ? launchDmoTa.value : '';
                     const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 560 });
                     _pipWindow = pipWindow;
                     buildPipUI(pipWindow);
+                    if (meeNaarPip.trim() && _pipDmoTa) setNativeValue(_pipDmoTa, meeNaarPip);
+                    syncLaunchDmo();
                     updateDictationPopoutToggle(true);
                     pipWindow.addEventListener('pagehide', closeDictationPopout);
                 } catch (err) {
@@ -7276,6 +7409,10 @@ negated bevindingen
                     await openDictationPopout();
                 }
             });
+
+            // Eerste stand van het dicteerveld: tijdens de opbouw van de pagina liep
+            // _updateAutofillBtnType al, nog voor het veld was opgezet.
+            syncLaunchDmo();
 
             // Lees opgeslagen staat VOOR updateDictationPopoutToggle — die functie overschrijft anders localStorage
             const _pipWasActive = localStorage.getItem('pipActive') === '1';
