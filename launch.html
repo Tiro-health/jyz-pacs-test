@@ -1822,6 +1822,34 @@
             settingsFlowBtn.setAttribute("href", `flow.html?${flowParams.toString()}`);
             settingsFlowBtn.addEventListener("click", (e) => e.stopPropagation());
 
+            /**
+             * Het onderzoekstype omzetten naar een zoekterm voor de flow-pagina:
+             * de modaliteit vooraan valt weg, want daarop zoeken levert alle
+             * onderzoeken van die modaliteit op. "ECHO ulnaris" wordt "ulnaris",
+             * "CT abdomen" wordt "abdomen". Staat er geen bekende modaliteit
+             * voor, dan blijft de hele tekst staan.
+             */
+            function flowZoekterm(typeOnderzoek) {
+                const s = String(typeOnderzoek || "").trim();
+                if (!s) return "";
+                const zonder = s.replace(_EXAM_MODALITEIT, "").replace(/^[\s:—–-]+/, "").trim();
+                return zonder || s;
+            }
+
+            /** De flow-bestemming, met het huidige onderzoekstype als zoekterm. */
+            function flowHref() {
+                const p = new URLSearchParams(flowParams.toString());
+                const zoek = flowZoekterm(extractAnyField("type onderzoek", "type of examination", "onderzoek"));
+                if (zoek) p.set("q", zoek); else p.delete("q");
+                return `flow.html?${p.toString()}`;
+            }
+
+            // Het onderzoekstype wordt pas later ingevuld (uit PACS of met de hand),
+            // dus de bestemming wordt bij elke klik opnieuw opgebouwd.
+            for (const btn of [templateFlowBtn, settingsFlowBtn]) {
+                btn.addEventListener("click", () => btn.setAttribute("href", flowHref()));
+            }
+
 
             // Patient letter button — builds URL from current form values
             document.getElementById("patient-letter-btn").addEventListener("click", (e) => {
@@ -2756,7 +2784,10 @@
                 return rawText.replace(/<[^>]+>/g, '');
             }
 
-            const _EXAM_MODALITEIT = /^\s*(RX|CT|CTA|MR|MRI|MRA|NMR|ECHO|ECHOGRAFIE|US|DOPPLER|MAMMO|MAMMOGRAFIE|TOMOSYNTHESE|PET|PET-CT|SPECT|SCINTIGRAFIE|BOTSCAN|DEXA|DOORLICHTING|SCOPIE|ANGIO|ARTROGRAFIE|MYELOGRAFIE|HSG|IVU)\b/i;
+            // PET-CT staat vóór PET: bij een alternatie neemt de regex de eerste
+            // die past, en "PET" past ook op "PET-CT" (het koppelteken is een
+            // woordgrens). De langere schrijfwijze moet dus eerst komen.
+            const _EXAM_MODALITEIT = /^\s*(RX|CTA|CT|MRA|MRI|NMR|MR|ECHOGRAFIE|ECHO|US|DOPPLER|MAMMOGRAFIE|MAMMO|TOMOSYNTHESE|PET-CT|PET|SPECT|SCINTIGRAFIE|BOTSCAN|DEXA|DOORLICHTING|SCOPIE|ANGIO|ARTROGRAFIE|MYELOGRAFIE|HSG|IVU)\b/i;
             function uppercaseExamHeadings(text) {
                 if (!text) return text;
                 return text.split('\n').map(line => {
