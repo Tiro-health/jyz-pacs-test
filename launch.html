@@ -744,6 +744,10 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 Tekst ontvangen
                             </span>
+                            <span id="draft-restored-indicator" class="hidden items-center gap-1 text-xs text-amber-600 dark:text-amber-400" title="Deze tekst is teruggezet uit een bewaard concept van dit onderzoek">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.4 2.6L3 8"/><path d="M3 3v5h5"/></svg>
+                                Concept teruggezet (<span data-draft-time></span>)
+                            </span>
                             <button
                                 id="medgemma-quick-btn"
                                 type="button"
@@ -2064,9 +2068,18 @@
             validateAndSaveBtn.addEventListener("click", (event) => {
                 event.preventDefault();
                 refreshSnomedFromForm();
+                saveDictationDraft();
                 const dbParams = new URLSearchParams(window.location.search);
                 dbParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
-                window.location.href = `cases.html?${dbParams.toString()}`;
+                // In een nieuw tabblad, net als Template flow en Patient letter.
+                // Deze pagina blijft dus staan met de gedicteerde tekst erin, en het
+                // PiP-venster blijft open: een Document PiP-venster gaat namelijk
+                // met zijn openende document dicht, dus wegnavigeren kostte hier
+                // zowel de tekst in het hoofdvenster als het PiP-venster zelf.
+                const tab = window.open(`cases.html?${dbParams.toString()}`, "_blank");
+                // Blokkeert de browser het tabblad, dan is wegnavigeren nog altijd
+                // beter dan een knop die niets doet — het concept staat bewaard.
+                if (!tab) window.location.href = `cases.html?${dbParams.toString()}`;
             });
 
             const validateBtn = document.getElementById("validate-btn");
@@ -3086,7 +3099,62 @@
                     latestDictationText = src.value;
                 }
                 _scheduleCalcScan();
+                saveDictationDraft();
             }, { capture: true });
+
+            // ── Vangnet: concept van de gedicteerde tekst ────────────────────
+            // Deze pagina kan verdwijnen zonder dat het werk klaar is: een
+            // herlaadactie, een verkeerde klik, een browser die crasht. Een
+            // Document PiP-venster gaat bovendien altijd met zijn openende
+            // document dicht. Daarom wordt de tekst tijdens het dicteren bewaard
+            // en bij het openen teruggezet.
+            //
+            // Het concept hangt aan het PACS-nummer van het onderzoek. Dat is
+            // hier geen detail maar een voorwaarde: tekst van het ene onderzoek
+            // mag nooit in het dossier van een ander onderzoek belanden.
+            const DRAFT_KEY = "dictationDraft";
+            const DRAFT_MAX_AGE_MS = 12 * 60 * 60 * 1000; // ouder dan een dienst: vervalt
+            const _draftStudyId = new URLSearchParams(window.location.search).get("accessionNumber") || "";
+            let _draftTimer = null;
+
+            function saveDictationDraft(text) {
+                clearTimeout(_draftTimer);
+                _draftTimer = setTimeout(() => {
+                    try {
+                        const t = String(text ?? readDictationText() ?? "").trim();
+                        if (!t) { localStorage.removeItem(DRAFT_KEY); return; }
+                        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+                            text: t, study: _draftStudyId, ts: Date.now(),
+                        }));
+                    } catch (_) { /* opslag vol: het vangnet is een hulpmiddel */ }
+                }, 400);
+            }
+
+            function clearDictationDraft() {
+                clearTimeout(_draftTimer);
+                try { localStorage.removeItem(DRAFT_KEY); } catch (_) {}
+            }
+
+            function restoreDictationDraft() {
+                let d = null;
+                try { d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (_) {}
+                if (!d || !d.text) return false;
+                if (d.study !== _draftStudyId) return false;              // ander onderzoek
+                if (Date.now() - (d.ts || 0) > DRAFT_MAX_AGE_MS) { clearDictationDraft(); return false; }
+                if (String(readDictationText() || "").trim()) return false; // er staat al tekst
+                setDictationText(d.text);
+                latestDictationText = d.text;
+                // Nooit stil terugzetten: bij verslagtekst moet zichtbaar zijn dat
+                // dit een teruggezet concept is en van wanneer het dateert.
+                const ind = document.getElementById("draft-restored-indicator");
+                if (ind) {
+                    const tijd = new Date(d.ts).toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit" });
+                    ind.querySelector("[data-draft-time]").textContent = tijd;
+                    ind.classList.remove("hidden");
+                    ind.classList.add("inline-flex");
+                }
+                return true;
+            }
 
             // Intercept copy from the dictation area: strip HTML markup and normalize
             // whitespace so pasting into other apps gives clean plain text.
@@ -7043,6 +7111,10 @@ negated bevindingen
                     // dicteervelden leegmaken (textarea + contenteditable)
                     ta.value = '';
                     setNativeValue(ta, '');
+                    // Nieuw dossier: het bewaarde concept hoort hier niet meer bij.
+                    clearDictationDraft();
+                    const _di = document.getElementById('draft-restored-indicator');
+                    if (_di) { _di.classList.add('hidden'); _di.classList.remove('inline-flex'); }
                     _autoGrow();
                     ce.innerHTML = '';
                     const _d = pipWindow.document.createElement('div');
@@ -7069,6 +7141,9 @@ negated bevindingen
                 // 2-second debounce on textarea input:
                 //   - always sync text to PSK dictation field
                 //   - only run realtime verslag check when realtimeEnabled
+                // Ook wat in het PiP-venster gedicteerd wordt hoort in het vangnet,
+                // en meteen — niet pas na de 2-secondenvertraging hieronder.
+                ta.addEventListener('input', () => saveDictationDraft(ta.value));
                 ta.addEventListener('input', () => {
                     if (_pipInlineMode) return;
                     clearTimeout(_pipRealtimeDebounce);
@@ -7166,6 +7241,11 @@ negated bevindingen
             if (_pipWasActive) {
                 openDictationPopout().catch(() => {});
             }
+
+            // Bewaard concept terugzetten. Het dicteerveld is een web component,
+            // dus even wachten tot dat is opgebouwd; bij mislukking nog een poging,
+            // want het terugzetten mag niet afhangen van de laadsnelheid.
+            setTimeout(() => { if (!restoreDictationDraft()) setTimeout(restoreDictationDraft, 1200); }, 400);
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
