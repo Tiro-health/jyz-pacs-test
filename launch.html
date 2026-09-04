@@ -2662,17 +2662,21 @@
             // ══════════════════════════════════════════════════════════════════
             // Bij een echte Tiro-template hoort het SDK-veld op volle hoogte te
             // staan: daarin wordt gedicteerd. Staat er enkel een textuele
-            // template (of geen), dan wordt het SDK-element gedeactiveerd en komt
-            // er een gewoon dicteerveld in de plaats.
+            // template (of geen), dan verdwijnt het SDK-venster uit het beeld en
+            // komt er een gewoon dicteerveld in de plaats.
             //
-            // Deactiveren gebeurt op het element zelf, niet op een veld binnen de
-            // SDK: die rendert zijn invoerveld in zijn eigen shadow root en
-            // overschrijft opmaak die wij daarop zetten. De knoppenrij en het real
-            // time-venster zijn light-DOM kinderen en zouden met het element
-            // verdwijnen, dus die verhuizen naar een plek ernaast en blijven
-            // bruikbaar. In deze modus is de Autofill-knop toch al type="button"
-            // (zie _updateAutofillBtnType) en loopt hij niet via de SDK; de AI en
-            // de calculatoren lezen de tekst via readDictationText().
+            // Het element blijft daarbij actief: het wordt niet op display:none
+            // gezet — dan haalt de browser het uit de rendering en stopt zo'n
+            // component met werken — maar buiten het beeld geschoven op zijn
+            // eigen maat. Het blijft dus gewoon gekoppeld aan het formulier en
+            // beschikbaar voor de AI en de calculatoren, het neemt alleen geen
+            // plaats meer in en is niet meer te zien of aan te klikken.
+            //
+            // Het verbergen gebeurt op het element zelf, niet op een veld binnen
+            // de SDK: die rendert zijn invoerveld in zijn eigen shadow root en
+            // overschrijft opmaak die wij daarop zetten. De knoppenrij en het
+            // real time-venster zijn light-DOM kinderen en zouden mee uit beeld
+            // schuiven, dus die verhuizen naar een plek ernaast.
             const launchDmoWrap = document.getElementById('launch-dmo-wrap');
             const launchDmoTa = document.getElementById('launch-dmo-ta');
             const dictationActions = document.getElementById('dictation-actions');
@@ -2692,7 +2696,13 @@
                 return clipboard.shadowRoot?.querySelector(kies) || null;
             }
 
-            function _zetSdkGedeactiveerd(uit) {
+            // Buiten het beeld, op de eigen breedte zodat de component normaal
+            // blijft meten en werken. Absoluut gepositioneerd, dus het neemt geen
+            // plaats in; pointer-events uit, zodat er niet per ongeluk in geklikt
+            // wordt.
+            const SDK_UIT_BEELD = 'position:absolute;left:-10000px;top:0;width:480px;opacity:0;pointer-events:none;';
+
+            function _zetSdkUitBeeld(uit) {
                 if (_sdkBezig) return;
                 _sdkBezig = true;
                 try {
@@ -2700,7 +2710,11 @@
                     for (const el of [dictationActions, realtimePanelEl]) {
                         if (el && el.parentNode !== doel) doel.appendChild(el);
                     }
-                    clipboard.style.display = uit ? 'none' : '';
+                    clipboard.setAttribute('style', uit ? SDK_UIT_BEELD : '');
+                    // Uit de voorleesboom: het is geen bedienbaar veld meer, het
+                    // DMO-veld heeft die rol. Bewust géén inert — dat blokkeert
+                    // ook focus, en de SDK moet zijn eigen veld kunnen blijven
+                    // aansturen.
                     if (uit) clipboard.setAttribute('aria-hidden', 'true');
                     else clipboard.removeAttribute('aria-hidden');
                 } finally {
@@ -2751,7 +2765,7 @@
                 }
                 _launchDmoWasActief = wordtActief;
 
-                _zetSdkGedeactiveerd(textueleModus);
+                _zetSdkUitBeeld(textueleModus);
                 launchDmoWrap.classList.toggle('hidden', !wordtActief);
                 if (wordtActief) _launchDmoGrow();
             }
