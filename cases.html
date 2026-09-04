@@ -425,8 +425,19 @@
             document.addEventListener("input", refreshDerivedFromNative);
             document.addEventListener("change", refreshDerivedFromNative);
 
-            // Back button: return to launch.html preserving all URL params
+            // Terugknop. Is deze pagina in een eigen tabblad geopend vanaf
+            // launch.html (Store case doet dat, zodat het werk en het PiP-venster
+            // daar blijven staan), dan is teruggaan simpelweg dit tabblad sluiten:
+            // navigeren zou een tweede launch-tabblad opleveren naast het eerste.
             document.getElementById("back-btn").addEventListener("click", () => {
+                const geopendVanaf = window.opener && !window.opener.closed;
+                if (geopendVanaf) {
+                    try { window.opener.focus(); } catch (_) { /* andere origin */ }
+                    window.close();
+                    // Sluiten kan geweigerd worden; dan alsnog navigeren.
+                    setTimeout(() => { window.location.href = `launch.html?${params.toString()}`; }, 150);
+                    return;
+                }
                 window.location.href = `launch.html?${params.toString()}`;
             });
 
