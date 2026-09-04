@@ -2060,14 +2060,12 @@
                 document.getElementById("save-progress-btn");
             saveProgressBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
             const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
             validateAndSaveBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 saveDictationDraft();
                 const dbParams = new URLSearchParams(window.location.search);
                 dbParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
@@ -2085,7 +2083,6 @@
             const validateBtn = document.getElementById("validate-btn");
             validateBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
@@ -4400,56 +4397,39 @@ negated bevindingen
                 storeSnomedForDatabase(hoofdLines, bijLines, negatedLines);
             }
 
+            // Alleen bevindingen met een echte SNOMED CT-code horen in de databank.
+            // resolveSnomedConcepts geeft die terug als "263169008 (Fracture of
+            // distal end of radius)"; een concept dat de terminologieserver niet
+            // kende blijft als losse naam staan en verschijnt daardoor ook niet op
+            // de SNOMED CT-pagina. Zulke regels mogen dus geen pathologie-optie
+            // worden: de databanklijst blijft zo één op één met wat er in de velden
+            // staat.
+            const SNOMED_CODED_LINE = /^\d{6,18}\s*\(/;
+            const onlyCoded = (lines) => (lines || []).filter((l) => SNOMED_CODED_LINE.test(String(l).trim()));
+
             // Schrijf het SNOMED-resultaat weg voor de database-formulieren.
             function storeSnomedForDatabase(hoofd, bij, negated) {
                 try {
                     localStorage.setItem("snomedLastResult", JSON.stringify({
-                        hoofddiagnose: hoofd || [],
-                        bijdiagnose: bij || [],
-                        negated: negated || [],
+                        hoofddiagnose: onlyCoded(hoofd),
+                        bijdiagnose: onlyCoded(bij),
+                        negated: onlyCoded(negated),
                         ts: new Date().toISOString(),
                     }));
                 } catch (_) { /* opslag vol — de lijst is een hulpmiddel, geen vereiste */ }
             }
 
-            // Lees een veld uit een Tiro-formulier op basis van zijn label.
-            function deepReadByLabel(rootEl, labelHint) {
-                function search(root) {
-                    if (!root) return null;
-                    for (const el of root.querySelectorAll("*")) {
-                        const leafText = Array.from(el.childNodes)
-                            .filter(n => n.nodeType === Node.TEXT_NODE)
-                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
-                        if (leafText.includes(labelHint.toLowerCase())) {
-                            let container = el;
-                            for (let i = 0; i < 3 && container; i++) {
-                                const input = container.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea");
-                                if (input) return input.value;
-                                container = container.parentElement;
-                            }
-                        }
-                        if (el.shadowRoot) {
-                            const found = search(el.shadowRoot);
-                            if (found !== null) return found;
-                        }
-                    }
-                    return null;
-                }
-                return search(rootEl.shadowRoot || rootEl);
-            }
-
-            // Bij bewaren: neem eventuele handmatige aanpassingen aan de
-            // SNOMED-velden mee, zodat de database-opties overeenkomen met
-            // wat er effectief in het formulier staat.
-            function refreshSnomedFromForm() {
-                const snomedForm = findSnomedCtTemplateForm();
-                if (!snomedForm) return;
-                const split = (v) => (v || "").split("\n").map(s => s.trim()).filter(Boolean);
-                const hoofd = split(deepReadByLabel(snomedForm, "hoofddiagnose"));
-                const bij   = split(deepReadByLabel(snomedForm, "bijdiagnose"));
-                const neg   = split(deepReadByLabel(snomedForm, "negated"));
-                if (hoofd.length || bij.length || neg.length) storeSnomedForDatabase(hoofd, bij, neg);
-            }
+            // Hier stond een tweede schrijfactie: bij het bewaren werden de drie
+            // SNOMED-velden opnieuw uit het Tiro-formulier gelezen op hun
+            // labeltekst, om handmatige aanpassingen mee te nemen. Dat lezen bleek
+            // niet betrouwbaar — het pakte het eerste veld dat het tegenkwam en kon
+            // daardoor driemaal dezelfde waarde teruggeven, of een categorie
+            // leegmaken als het label niet exact matchte — en het overschreef
+            // daarmee de correcte, gecontroleerde lijst op precies het moment dat
+            // de casus werd bewaard. De lijst die de SNOMED CT-analyse in de velden
+            // zet is nu de enige bron, zodat databank en formulier één op één
+            // overeenkomen. Prijs: een handmatige aanpassing in de SNOMED-velden
+            // komt niet in de databankopties terecht.
 
             // AI resultaten button — synced two-way with Active template checkbox
             function updateAiResultatenBtn() {
