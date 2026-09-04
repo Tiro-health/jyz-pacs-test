@@ -4515,9 +4515,22 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
         // Preserve URL params for back link (theme etc.)
         const params = new URLSearchParams(window.location.search);
-        if (params.toString()) {
+        // Komt er een zoekterm mee (de flow-knop op launch stuurt het
+        // onderzoekstype zonder modaliteit door), dan staat die meteen in het
+        // zoekveld en zijn de kaarten al gefilterd.
+        const _qParam = (params.get("q") || "").trim();
+        if (_qParam) {
+            const si = document.getElementById('search-input');
+            si.value = _qParam;
+            searchQuery = _qParam;
+            renderCards();
+        }
+        // De zoekterm hoort bij deze pagina en gaat niet mee terug naar launch.
+        const _backParams = new URLSearchParams(params.toString());
+        _backParams.delete("q");
+        if (_backParams.toString()) {
             const bl = document.getElementById('back-link');
-            bl.href = `launch.html?${params.toString()}`;
+            bl.href = `launch.html?${_backParams.toString()}`;
         }
 
         // ── Textuele template logica ─────────────────────────────────────────────
