@@ -2032,18 +2032,11 @@
             // "Klinische informatie", …), de Engelse zijn de gangbare
             // DICOM-schrijfwijzen. Zodra de echte response bekend is, hoeft
             // alleen deze tabel bijgewerkt te worden.
-            //
-            // Bewust NIET overgenomen: naam, geboortenaam, geboortedatum,
-            // patiënt-ID, nationaal nummer en bezoeknummer. Dat zijn direct
-            // identificerende gegevens, en wat in deze velden terechtkomt kan
-            // verder de deur uit: de AI-functies sturen de context naar Gemini
-            // en de Tiro-formulieren staan bij sdc.tiro.health. Zolang er geen
-            // reden is om die gegevens automatisch binnen te halen, halen we ze
-            // niet binnen. Leeftijd en geslacht zijn klinisch wél nuttig en niet
-            // identificerend; die mogen erbij als PACS ze meegeeft.
             const PACS_VELDEN = [
-                { id: 'leeftijd',    keys: ['age', 'leeftijd'] },
-                { id: 'geslacht',    keys: ['sex', 'gender', 'geslacht', 'sexe'] },
+                { id: 'naam',        keys: ['patientname', 'patient_name', 'patient', 'patiënt', 'naam', 'name', 'patientnaam'] },
+                { id: 'geboortedatum', keys: ['birthdate', 'dateofbirth', 'geboortedatum', 'dob'] },
+                { id: 'pacsnummer',  keys: ['patientid', 'patient_id', 'patiëntid', 'pacsnummer', 'pacsnumber', 'patientnumber'] },
+                { id: 'rijksregister', keys: ['nationaalnummer', 'nationalnumber', 'ssin', 'rijksregisternummer'] },
                 { id: 'accession',   keys: ['accessionnumber', 'accession_number', 'accession', 'onderzoeksnummer', 'aanvraagnummer'] },
                 { id: 'onderzoekDatum', keys: ['studydate', 'study_date', 'studiedatum', 'onderzoeksdatum', 'onderzoek_datum'] },
                 { id: 'typeOnderzoek', keys: ['studydescription', 'study_description', 'procedure', 'typeonderzoek', 'type_onderzoek', 'examtype'] },
@@ -2085,9 +2078,10 @@
             const PACS_DOELEN = {
                 typeOnderzoek:              { form: () => contextForm,  label: 'type onderzoek' },
                 lateralisatie:              { form: () => contextForm,  label: 'lateralisatie', dropdown: true },
+                naam:                       { form: () => contextForm,  label: 'naam' },
+                geboortedatum:              { form: () => contextForm,  label: 'geboortedatum' },
                 onderzoekDatum:             { form: () => contextForm,  label: 'datum onderzoek' },
-                leeftijd:                   { form: () => contextForm,  label: 'leeftijd' },
-                geslacht:                   { form: () => contextForm,  label: 'geslacht', dropdown: true },
+                pacsnummer:                 { form: () => contextForm,  label: 'pacsnummer' },
                 klinischeInlichtingen:      { form: () => clinicalForm, label: 'klinische inlichtingen' },
                 diagnostischeVraagstelling: { form: () => clinicalForm, label: 'diagnostische vraagstelling' },
             };
@@ -2096,9 +2090,10 @@
             const PACS_ZOEKTERMEN = {
                 typeOnderzoek:              ['type onderzoek', 'type of examination'],
                 lateralisatie:              ['lateralisatie', 'laterality'],
+                naam:                       ['naam', 'name', 'patiënt'],
+                geboortedatum:              ['geboortedatum', 'birthdate', 'date of birth'],
                 onderzoekDatum:             ['datum onderzoek', 'onderzoeksdatum'],
-                leeftijd:                   ['leeftijd', 'age'],
-                geslacht:                   ['geslacht', 'gender', 'sexe', 'sex'],
+                pacsnummer:                 ['pacsnummer', 'patient id'],
                 klinischeInlichtingen:      ['klinische inlichtingen', 'clinical information'],
                 diagnostischeVraagstelling: ['diagnostische vraagstelling', 'diagnostic question'],
             };
