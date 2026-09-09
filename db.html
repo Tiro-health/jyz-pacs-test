@@ -228,7 +228,8 @@
             let tab = params.get("from") || "all";              // all | qc | database
             let categories = new Set();                          // actieve niveau-2 filters
             let view = localStorage.getItem("dbView") || "table"; // table | cards
-            let sortBy = "updatedAt-desc";
+            const STANDAARD_SORTERING = "updatedAt-desc";
+            let sortBy = STANDAARD_SORTERING;
 
             // ── Hulpjes ─────────────────────────────────────────────────────
             const el = (tag, cls, text) => {
@@ -478,9 +479,9 @@
             }
 
             /**
-             * De sorteerlijst opbouwen uit COLS, zodat er op elke zichtbare kolom
-             * gesorteerd kan worden en de lijst niet achterop raakt wanneer de
-             * kolommen wijzigen.
+             * De sorteerlijst opbouwen uit COLS. In de tabelweergave sorteer je op
+             * de kolomkoppen zelf en staat deze lijst weg; in de kaartweergave
+             * zijn er geen koppen, dus daar blijft ze de enige manier.
              */
             function vulSorteerlijst() {
                 const sel = document.getElementById("sort");
@@ -503,6 +504,23 @@
                 sel.value = sortBy;
             }
 
+            /**
+             * Op een kolomkop klikken: eerst sorteren, dan omkeren, dan weer uit.
+             * Datumkolommen beginnen aflopend — bij een datum wil je doorgaans
+             * eerst het recentste zien, bij tekst juist A→Z.
+             */
+            function sorteerOpKolom(key) {
+                const [huidigeKey, huidigeDir] = sortBy.split("-");
+                const eerste = DATUM_KOLOMMEN.has(key) ? "desc" : "asc";
+                const tweede = eerste === "asc" ? "desc" : "asc";
+                if (huidigeKey !== key) sortBy = `${key}-${eerste}`;
+                else if (huidigeDir === eerste) sortBy = `${key}-${tweede}`;
+                else sortBy = STANDAARD_SORTERING;
+                const sel = document.getElementById("sort");
+                if (sel && [...sel.options].some((o) => o.value === sortBy)) sel.value = sortBy;
+                draw();
+            }
+
             function drawTable(rows) {
                 const wrap = el("div", "bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden");
                 const scroll = el("div", "overflow-x-auto");
@@ -511,8 +529,36 @@
                 const thead = el("thead", "bg-neutral-50 dark:bg-muted");
                 const htr = el("tr");
                 htr.appendChild(el("th", "w-8"));
+                const [actieveKey, actieveDir] = sortBy.split("-");
                 COLS.forEach((c) => {
-                    htr.appendChild(el("th", "text-left px-3 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap", c.label));
+                    const th = el("th", "text-left px-0 py-0 whitespace-nowrap");
+                    const actief = c.key === actieveKey;
+                    th.setAttribute("aria-sort", actief
+                        ? (actieveDir === "asc" ? "ascending" : "descending")
+                        : "none");
+                    // Een knop in plaats van een klikbare th: zo is de kop ook met
+                    // het toetsenbord te bereiken en te bedienen.
+                    const btn = el("button", "w-full flex items-center gap-1 px-3 py-2 text-xs font-medium text-left "
+                        + "hover:bg-neutral-100 dark:hover:bg-accent transition-colors "
+                        + (actief
+                            ? "text-neutral-800 dark:text-neutral-100"
+                            : "text-neutral-500 dark:text-neutral-400"));
+                    btn.type = "button";
+                    btn.title = actief
+                        ? (actieveDir === "asc"
+                            ? "Klik om de sortering om te keren, nog eens om ze uit te zetten"
+                            : "Klik om de sortering uit te zetten")
+                        : `Sorteren op ${c.label}`;
+                    btn.appendChild(el("span", "", c.label));
+                    // Altijd een teken, ook inactief: dan is te zien dát de kolom
+                    // te sorteren valt. Inactief lichter, zodat de actieve kolom
+                    // er meteen uit springt.
+                    btn.appendChild(el("span",
+                        "text-[10px] leading-none " + (actief ? "" : "opacity-30"),
+                        actief ? (actieveDir === "asc" ? "▲" : "▼") : "⇅"));
+                    btn.addEventListener("click", () => sorteerOpKolom(c.key));
+                    th.appendChild(btn);
+                    htr.appendChild(th);
                 });
                 thead.appendChild(htr);
                 table.appendChild(thead);
@@ -652,6 +698,9 @@
                 drawTabs();
                 drawChips();
                 drawViewButtons();
+                // In de tabel sorteer je op de koppen; dan is de keuzelijst dubbel.
+                const sel = document.getElementById("sort");
+                if (sel) sel.classList.toggle("hidden", view === "table");
                 const rows = visible();
                 const area = document.getElementById("result-area");
                 const empty = document.getElementById("empty-state");
