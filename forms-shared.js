@@ -38,15 +38,19 @@
      * "Wijzigen" uit db.html, dan hoort dat db.html te zijn en niet launch.html.
      * Geeft null wanneer de gewone bestemming geldt.
      *
-     * @param {string} page  "qc" of "database" — bepaalt welk tabblad opent.
+     * Er gaat bewust géén "from" mee: db.html leest die parameter in zijn eigen
+     * terugknop om te bepalen waar díe naartoe gaat. Zou hij hier meegestuurd
+     * worden, dan belandde Back op de databankpagina weer op de wijzigpagina in
+     * plaats van op launch.html. Voor het tabblad heeft hij ook geen zin — bij
+     * het openen zet db.html dat toch op "Alles".
      */
-    function terugNaarDatabank(page) {
+    function terugNaarDatabank() {
         const sp = new URLSearchParams(location.search);
         if (sp.get("terug") !== "db") return null;
         sp.delete("terug");
         sp.delete("recordId");
-        sp.set("from", page);
-        return "db.html?" + sp.toString();
+        sp.delete("from");
+        return "db.html" + (sp.toString() ? "?" + sp.toString() : "");
     }
 
     const RecordStore = {

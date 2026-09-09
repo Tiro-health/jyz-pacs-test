@@ -556,7 +556,7 @@
             // Terugknop: naar launch.html met alle parameters — of naar de
             // databank wanneer je daar via "Wijzigen" uit kwam.
             document.getElementById("back-btn").addEventListener("click", () => {
-                const naarDb = JyzForms.terugNaarDatabank("qc");
+                const naarDb = JyzForms.terugNaarDatabank();
                 window.location.href = naarDb || `launch.html?${params.toString()}`;
             });
 
