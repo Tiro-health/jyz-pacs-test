@@ -156,12 +156,8 @@
                         <input id="search" type="search" placeholder="Zoek in alle velden, namen, pathologie…"
                             class="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
                     </div>
-                    <select id="sort" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                        <option value="updatedAt-desc">Nieuwste eerst</option>
-                        <option value="updatedAt-asc">Oudste eerst</option>
-                        <option value="pacsnummer-asc">Pacsnummer A→Z</option>
-                        <option value="categorie-asc">Categorie A→Z</option>
-                    </select>
+                    <!-- De opties komen uit COLS, zie vulSorteerlijst() -->
+                    <select id="sort" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"></select>
                     <button id="clear-filters" type="button"
                         class="px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">
                         Filters wissen
@@ -323,7 +319,10 @@
                 });
                 const [key, dir] = sortBy.split("-");
                 rows.sort((a, b) => {
-                    const av = String(a[key] ?? ""), bv = String(b[key] ?? "");
+                    const av = _sorteerWaarde(key, a[key]), bv = _sorteerWaarde(key, b[key]);
+                    // Lege velden horen achteraan, in beide richtingen: een
+                    // scherm dat opent met een rij streepjes zegt niets.
+                    if (!av !== !bv) return av ? -1 : 1;
                     return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
                 });
                 return rows;
@@ -464,6 +463,45 @@
                 { key: "aanvrager",  label: "Aanvrager" },
                 { key: "categorie",  label: "Categorie" },
             ];
+
+            // Kolommen met een datum erin. Die staan als dd/mm/jjjj in het
+            // record, en dat sorteert als tekst verkeerd: "15/06" komt dan na
+            // "08/09". Voor het vergelijken worden ze omgezet naar jjjj-mm-dd.
+            const DATUM_KOLOMMEN = new Set(["datum"]);
+
+            function _sorteerWaarde(key, waarde) {
+                const s = String(waarde ?? "").trim();
+                if (!s || !DATUM_KOLOMMEN.has(key)) return s;
+                const m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/.exec(s);
+                if (!m) return s;   // al jjjj-mm-dd, of iets anders
+                return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+            }
+
+            /**
+             * De sorteerlijst opbouwen uit COLS, zodat er op elke zichtbare kolom
+             * gesorteerd kan worden en de lijst niet achterop raakt wanneer de
+             * kolommen wijzigen.
+             */
+            function vulSorteerlijst() {
+                const sel = document.getElementById("sort");
+                const opties = [
+                    ["updatedAt-desc", "Laatst bewaard eerst"],
+                    ["updatedAt-asc", "Eerst bewaard eerst"],
+                ];
+                for (const c of COLS) {
+                    const datum = DATUM_KOLOMMEN.has(c.key);
+                    opties.push([`${c.key}-asc`, `${c.label} — ${datum ? "oudste eerst" : "A→Z"}`]);
+                    opties.push([`${c.key}-desc`, `${c.label} — ${datum ? "nieuwste eerst" : "Z→A"}`]);
+                }
+                sel.innerHTML = "";
+                for (const [waarde, label] of opties) {
+                    const o = document.createElement("option");
+                    o.value = waarde;
+                    o.textContent = label;
+                    sel.appendChild(o);
+                }
+                sel.value = sortBy;
+            }
 
             function drawTable(rows) {
                 const wrap = el("div", "bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden");
@@ -662,6 +700,7 @@
             });
 
             (async function init() {
+                vulSorteerlijst();
                 await loadAll();
                 // "from" duidt aan waar je vandaan komt; als beginselectie is
                 // "Alles" duidelijker, dus enkel de terugknop gebruikt het.
