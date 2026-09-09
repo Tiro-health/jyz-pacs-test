@@ -1946,6 +1946,22 @@
             const qcParams = new URLSearchParams(flowParams.toString());
             qcParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
             qcBtn.href = `qc.html?${qcParams.toString()}`;
+            // In een nieuw tabblad, net als Store case: een Document PiP-venster
+            // gaat met zijn openende document dicht, dus wegnavigeren kostte hier
+            // zowel de gedicteerde tekst als het PiP-venster zelf.
+            //
+            // Dat gebeurt met window.open en niet met target="_blank": browsers
+            // zetten op zo'n link impliciet rel="noopener", en dan is
+            // window.opener leeg — precies wat qc.html nodig heeft om dit tabblad
+            // bij "Back" weer te kunnen sluiten.
+            qcBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const url = `qc.html?${qcParams.toString()}`;
+                const tab = window.open(url, "_blank");
+                // Blokkeert de browser het tabblad, dan is wegnavigeren nog altijd
+                // beter dan een knop die niets doet.
+                if (!tab) window.location.href = url;
+            });
 
             // Initialize context form with fixed questionnaire
             const contextForm = document.getElementById("context-form");
