@@ -424,6 +424,11 @@
                     const sp = new URLSearchParams(location.search);
                     sp.delete("from");
                     sp.set("recordId", rec.id);
+                    // Zodat de terugknop op de wijzigpagina hierheen leidt en niet
+                    // naar launch: je komt uit de databank, dus daar wil je terug.
+                    // recordId wordt daar uit de adresbalk gehaald na het inladen,
+                    // deze parameter blijft staan — ook na een verversing.
+                    sp.set("terug", "db");
                     location.href = SOURCES[rec.store].page + "?" + sp.toString();
                 });
                 const del = el("button", "px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors", "Verwijderen");
