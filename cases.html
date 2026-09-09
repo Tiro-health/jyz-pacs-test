@@ -430,6 +430,11 @@
             // daar blijven staan), dan is teruggaan simpelweg dit tabblad sluiten:
             // navigeren zou een tweede launch-tabblad opleveren naast het eerste.
             document.getElementById("back-btn").addEventListener("click", () => {
+                // Kom je via "Wijzigen" uit de databank, dan hoort teruggaan daar
+                // te eindigen. Dit gaat vóór de tabblad-logica hieronder: die
+                // geldt alleen voor Store case vanaf launch.html.
+                const naarDb = JyzForms.terugNaarDatabank("database");
+                if (naarDb) { window.location.href = naarDb; return; }
                 const geopendVanaf = window.opener && !window.opener.closed;
                 if (geopendVanaf) {
                     try { window.opener.focus(); } catch (_) { /* andere origin */ }

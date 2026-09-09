@@ -196,6 +196,11 @@
                     categoryField: "reden",
                     categories: ["Aanvraag", "Medisch - aanvrager", "Feedback radioloog", "Tweede lezing"],
                     accent: "cyan",
+                    // Bij kwaliteitscontrole is de subreden alleen bij een
+                    // aanvraag uitgesplitst ("Slechte aanvraag", "Links-Rechts
+                    // fout", "Verkeerde aanvraag"); de andere redenen hebben er
+                    // geen, dan blijft de kolom leeg.
+                    detail: (v) => v.aanvraag_soort || "",
                     betrokkene: (v) => [
                         v.feedback_radioloog, v.tweede_naam_radioloog,
                         v.medisch_naam_aanvrager, v.aanvraag_naam_aanvrager,
@@ -209,6 +214,10 @@
                     categoryField: "casus_type",
                     categories: ["Interessante casus", "Op te volgen casus"],
                     accent: "violet",
+                    // Bij casuïstiek staat op die plaats de pathologie, uit de
+                    // interessante of de op te volgen tak.
+                    detail: (v) => [].concat(v.int_pathologie || [], v.opv_pathologie || [])
+                        .filter(Boolean).join(", "),
                     betrokkene: (v) => [].concat(v.int_radioloog || [], v.opv_radioloog || []).filter(Boolean),
                 },
             };
@@ -292,7 +301,10 @@
                             opvolgDatum: fmtOpvolgDatum(v.opv_reminder_datum),
                             pacsnummer: v.pacsnummer || "",
                             datum: v.onderzoek_datum || "",
+                            modaliteit: v.onderzoek_modaliteit || "",
                             onderzoek: v.onderzoek_type || "",
+                            aanvrager: v.aanvrager || "",
+                            detail: src.detail(v),
                             betrokkenen: src.betrokkene(v),
                             zoektekst: JSON.stringify(v).toLowerCase(),
                         });
@@ -412,6 +424,11 @@
                     const sp = new URLSearchParams(location.search);
                     sp.delete("from");
                     sp.set("recordId", rec.id);
+                    // Zodat de terugknop op de wijzigpagina hierheen leidt en niet
+                    // naar launch: je komt uit de databank, dus daar wil je terug.
+                    // recordId wordt daar uit de adresbalk gehaald na het inladen,
+                    // deze parameter blijft staan — ook na een verversing.
+                    sp.set("terug", "db");
                     location.href = SOURCES[rec.store].page + "?" + sp.toString();
                 });
                 const del = el("button", "px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors", "Verwijderen");
@@ -438,13 +455,14 @@
 
             // ── Tabelweergave ───────────────────────────────────────────────
             const COLS = [
-                { key: "pacsnummer", label: "Pacsnummer" },
                 { key: "datum",      label: "Datum" },
+                { key: "modaliteit", label: "Modaliteit" },
                 { key: "onderzoek",  label: "Onderzoek" },
-                { key: "bron",       label: "Soort" },
+                // Eén kolom die per bron iets anders draagt: bij casuïstiek de
+                // pathologie, bij kwaliteitscontrole de subreden.
+                { key: "detail",     label: "Pathologie / reden" },
+                { key: "aanvrager",  label: "Aanvrager" },
                 { key: "categorie",  label: "Categorie" },
-                { key: "betrokken",  label: "Betrokkene" },
-                { key: "updatedAt",  label: "Bewaard" },
             ];
 
             function drawTable(rows) {
@@ -468,17 +486,14 @@
                     chev.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform"><path d="m9 18 6-6-6-6"/></svg>';
                     tr.appendChild(chev);
 
-                    tr.appendChild(el("td", "px-3 py-2 font-mono text-xs whitespace-nowrap", rec.pacsnummer || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.datum || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.modaliteit || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.onderzoek || "—"));
-                    tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.bron));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.detail || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.aanvrager || "—"));
                     const tdCat = el("td", "px-3 py-2");
                     tdCat.appendChild(badge(rec, true));
                     tr.appendChild(tdCat);
-                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.betrokkenen.length
-                        ? (rec.betrokkenen.length === 1 ? rec.betrokkenen[0] : rec.betrokkenen[0] + " …(" + rec.betrokkenen.length + ")")
-                        : "—"));
-                    tr.appendChild(el("td", "px-3 py-2 text-xs text-neutral-400 dark:text-neutral-500 whitespace-nowrap", fmtDate(rec.updatedAt || rec.createdAt)));
 
                     const detailTr = el("tr", "detail-row hidden");
                     const td = el("td", "");

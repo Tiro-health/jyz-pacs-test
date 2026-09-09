@@ -33,6 +33,22 @@
     // ═══════════════════════════════════════════════════════════════════════
     // RecordStore — IndexedDB
     // ═══════════════════════════════════════════════════════════════════════
+    /**
+     * Waar de terugknop van een wijzigpagina naartoe moet. Kom je via
+     * "Wijzigen" uit db.html, dan hoort dat db.html te zijn en niet launch.html.
+     * Geeft null wanneer de gewone bestemming geldt.
+     *
+     * @param {string} page  "qc" of "database" — bepaalt welk tabblad opent.
+     */
+    function terugNaarDatabank(page) {
+        const sp = new URLSearchParams(location.search);
+        if (sp.get("terug") !== "db") return null;
+        sp.delete("terug");
+        sp.delete("recordId");
+        sp.set("from", page);
+        return "db.html?" + sp.toString();
+    }
+
     const RecordStore = {
         DB_NAME: "jyzForms",
         DB_VERSION: 1,
@@ -1524,6 +1540,7 @@ Voorbeeld van een geldig antwoord:
         SnomedOptions,
         mountFormsUI,
         resolveOptions,
+        terugNaarDatabank,
         DEFAULT_FORM_FILL_PROMPT,
         styles: { BTN, BTN_PRIMARY, BTN_SMALL, INPUT, LABEL, PANEL, OVERLAY },
         el,

@@ -553,9 +553,11 @@
             document.addEventListener("input", refreshDerivedFromNative);
             document.addEventListener("change", refreshDerivedFromNative);
 
-            // Back button: return to launch.html preserving all URL params
+            // Terugknop: naar launch.html met alle parameters — of naar de
+            // databank wanneer je daar via "Wijzigen" uit kwam.
             document.getElementById("back-btn").addEventListener("click", () => {
-                window.location.href = `launch.html?${params.toString()}`;
+                const naarDb = JyzForms.terugNaarDatabank("qc");
+                window.location.href = naarDb || `launch.html?${params.toString()}`;
             });
 
             // Save: submit both forms
