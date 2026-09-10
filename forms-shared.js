@@ -33,6 +33,65 @@
     // ═══════════════════════════════════════════════════════════════════════
     // RecordStore — IndexedDB
     // ═══════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    // Opvolging — welke casussen vragen aandacht
+    // ═══════════════════════════════════════════════════════════════════════
+    // Eén definitie, gebruikt door launch.html (het cijfer op de QC-knop) en
+    // db.html (het bolletje bij de rij). Zet je de reminder op "Nee" of maak je
+    // de datum leeg, dan valt de casus vanzelf buiten deze regel en verdwijnt de
+    // aanduiding — daar is geen aparte "gezien"-stand voor nodig.
+    const Opvolging = {
+        /** Vandaag als jjjj-mm-dd, in de tijdzone van de gebruiker. */
+        vandaag() {
+            const d = new Date();
+            const p = (n) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+        },
+
+        /**
+         * Vraagt deze casus aandacht? Enkel een op te volgen casus met de
+         * reminder op "Ja" en een datum die bereikt of verstreken is.
+         *
+         * De datum komt uit een date-invoerveld, dus jjjj-mm-dd; die vorm
+         * vergelijkt als tekst correct. Een andere schrijfwijze wordt omgezet.
+         */
+        isDue(values, vandaag) {
+            const v = values || {};
+            if (v.casus_type !== "Op te volgen casus") return false;
+            if (v.opv_reminder !== "Ja") return false;
+            const datum = this._isoDatum(v.opv_reminder_datum);
+            if (!datum) return false;
+            return datum <= (vandaag || this.vandaag());
+        },
+
+        /** dd/mm/jjjj en jjjj-mm-dd tot jjjj-mm-dd brengen; anders leeg. */
+        _isoDatum(waarde) {
+            const s = String(waarde || "").trim();
+            if (!s) return "";
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+            const m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/.exec(s);
+            if (!m) return "";
+            return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+        },
+
+        /**
+         * De id's van de casussen die aandacht vragen. Leest de casuïstiektabel;
+         * bij een fout geeft ze een lege lijst terug, want een aanduiding die
+         * ontbreekt is beter dan een pagina die niet opent.
+         */
+        async due() {
+            try {
+                const vandaag = this.vandaag();
+                const records = await RecordStore.all("database");
+                return records
+                    .filter((r) => this.isDue(r.values, vandaag))
+                    .map((r) => r.id);
+            } catch (_) {
+                return [];
+            }
+        },
+    };
+
     /**
      * Waar de terugknop van een wijzigpagina naartoe moet. Kom je via
      * "Wijzigen" uit db.html, dan hoort dat db.html te zijn en niet launch.html.
@@ -1545,6 +1604,7 @@ Voorbeeld van een geldig antwoord:
         mountFormsUI,
         resolveOptions,
         terugNaarDatabank,
+        Opvolging,
         DEFAULT_FORM_FILL_PROMPT,
         styles: { BTN, BTN_PRIMARY, BTN_SMALL, INPUT, LABEL, PANEL, OVERLAY },
         el,
