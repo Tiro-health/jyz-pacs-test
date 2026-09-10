@@ -375,6 +375,18 @@
             return this.persons().find((p) => p.name.toLowerCase() === target) || null;
         },
 
+        /** De specialisatie bij een naam, of "" wanneer die niet gekend is. */
+        disciplineFor(name) {
+            return this.personFor(name)?.discipline || "";
+        },
+
+        /** Alle specialisaties die in de namenlijst voorkomen, alfabetisch. */
+        disciplines() {
+            const uit = new Set();
+            this.persons().forEach((p) => { if (p.discipline) uit.add(p.discipline); });
+            return [...uit].sort((a, b) => a.localeCompare(b));
+        },
+
         /** Vorm voor de JSON-export. */
         all() {
             return { [this.KEY]: this.persons() };
@@ -1495,6 +1507,12 @@ Voorbeeld van een geldig antwoord:
         async function saveRecord({ send = false } = {}) {
             const { values, screenshots } = collect();
             if (!Object.keys(values).length) { flash("Niets in te vullen gevonden.", true); return; }
+            // De specialisatie van de aanvrager meebewaren zoals ze nu in de
+            // namenlijst staat. Verandert die persoon later van dienst, dan
+            // blijft dit record de situatie van toen. Staat ze er niet in, dan
+            // wordt er niets bewaard en zoekt de databank ze live op.
+            const _spec = NameLists.disciplineFor(values.aanvrager);
+            if (_spec) values.aanvrager_specialisatie = _spec;
             const record = await RecordStore.save(page, {
                 id: currentRecordId || undefined,
                 form: page,

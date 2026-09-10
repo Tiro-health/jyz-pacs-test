@@ -156,6 +156,9 @@
                         <input id="search" type="search" placeholder="Zoek in alle velden, namen, pathologie…"
                             class="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
                     </div>
+                    <!-- Filter op specialisatie; opties uit de records zelf, zie
+                         vulSpecialisatieLijst() -->
+                    <select id="spec-filter" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"></select>
                     <!-- De opties komen uit COLS, zie vulSorteerlijst() -->
                     <select id="sort" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"></select>
                     <button id="clear-filters" type="button"
@@ -228,6 +231,10 @@
             let tab = params.get("from") || "all";              // all | qc | database
             let categories = new Set();                          // actieve niveau-2 filters
             let view = localStorage.getItem("dbView") || "table"; // table | cards
+            // Eén schrijfwijze voor "niet gekend", zodat de kolom en het filter
+            // hetzelfde zeggen.
+            const SPEC_ONBEKEND = "niet gekend";
+            let specFilter = "";   // "" betekent: alle specialisaties
             const STANDAARD_SORTERING = "updatedAt-desc";
             let sortBy = STANDAARD_SORTERING;
 
@@ -306,6 +313,11 @@
                             modaliteit: v.onderzoek_modaliteit || "",
                             onderzoek: v.onderzoek_type || "",
                             aanvrager: v.aanvrager || "",
+                            // Bewaard bij het opslaan; is dat er niet (oudere
+                            // records), dan live uit de namenlijst.
+                            specialisatie: v.aanvrager_specialisatie
+                                || JyzForms.NameLists.disciplineFor(v.aanvrager)
+                                || SPEC_ONBEKEND,
                             detail: src.detail(v),
                             betrokkenen: src.betrokkene(v),
                             zoektekst: JSON.stringify(v).toLowerCase(),
@@ -320,6 +332,7 @@
                 let rows = ALL.filter((r) => {
                     if (tab !== "all" && r.store !== tab) return false;
                     if (categories.size && !categories.has(r.categorie)) return false;
+                    if (specFilter && r.specialisatie !== specFilter) return false;
                     if (q && !r.zoektekst.includes(q) && !r.categorie.toLowerCase().includes(q)) return false;
                     return true;
                 });
@@ -467,6 +480,7 @@
                 // pathologie, bij kwaliteitscontrole de subreden.
                 { key: "detail",     label: "Pathologie / reden" },
                 { key: "aanvrager",  label: "Aanvrager" },
+                { key: "specialisatie", label: "Specialisatie" },
                 { key: "categorie",  label: "Categorie" },
             ];
 
@@ -488,6 +502,36 @@
              * de kolomkoppen zelf en staat deze lijst weg; in de kaartweergave
              * zijn er geen koppen, dus daar blijft ze de enige manier.
              */
+            /**
+             * De specialisaties die in de records voorkomen, plus "niet gekend"
+             * wanneer er records zonder zijn. Uit de records en niet uit de
+             * namenlijst: zo staat er nooit een keuze in die niets oplevert.
+             */
+            function vulSpecialisatieLijst() {
+                const sel = document.getElementById("spec-filter");
+                if (!sel) return;
+                const aanwezig = [...new Set(ALL.map((r) => r.specialisatie))]
+                    .filter((x) => x && x !== SPEC_ONBEKEND)
+                    .sort((a, b) => a.localeCompare(b));
+                if (ALL.some((r) => r.specialisatie === SPEC_ONBEKEND)) aanwezig.push(SPEC_ONBEKEND);
+
+                sel.innerHTML = "";
+                const alle = document.createElement("option");
+                alle.value = "";
+                alle.textContent = "Alle specialisaties";
+                sel.appendChild(alle);
+                for (const spec of aanwezig) {
+                    const o = document.createElement("option");
+                    o.value = spec;
+                    o.textContent = spec;
+                    sel.appendChild(o);
+                }
+                // Was er op iets gefilterd dat niet meer voorkomt, dan valt het
+                // filter terug op alles in plaats van een leeg scherm te geven.
+                if (specFilter && !aanwezig.includes(specFilter)) specFilter = "";
+                sel.value = specFilter;
+            }
+
             function vulSorteerlijst() {
                 const sel = document.getElementById("sort");
                 const opties = [
@@ -589,6 +633,7 @@
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.onderzoek || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.detail || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.aanvrager || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.specialisatie));
                     const tdCat = el("td", "px-3 py-2");
                     tdCat.appendChild(badge(rec, true));
                     tr.appendChild(tdCat);
@@ -740,9 +785,15 @@
             });
             document.getElementById("search").addEventListener("input", draw);
             document.getElementById("sort").addEventListener("change", (e) => { sortBy = e.target.value; draw(); });
+            document.getElementById("spec-filter").addEventListener("change", (e) => {
+                specFilter = e.target.value;
+                draw();
+            });
             document.getElementById("clear-filters").addEventListener("click", () => {
                 document.getElementById("search").value = "";
                 categories.clear();
+                specFilter = "";
+                document.getElementById("spec-filter").value = "";
                 tab = "all";
                 draw();
             });
@@ -765,6 +816,7 @@
             (async function init() {
                 vulSorteerlijst();
                 await loadAll();
+                vulSpecialisatieLijst();
                 // "from" duidt aan waar je vandaan komt; als beginselectie is
                 // "Alles" duidelijker, dus enkel de terugknop gebruikt het.
                 tab = "all";
