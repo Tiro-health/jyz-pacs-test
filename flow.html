@@ -3775,6 +3775,11 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 }
             });
 
+            // Zie de opmerking bij de labelsync hieronder: dat overnemen mag
+            // maar één keer per installatie gebeuren.
+            const _LABEL_SYNC_KEY = 'flowLabelSyncUitDef_v1';
+            const _labelSyncEenmalig = !localStorage.getItem(_LABEL_SYNC_KEY);
+
             DEFAULT_EXAM_TYPES.forEach(def => {
                 const et = state.examTypes.find(t => t.id === def.id);
                 if (!et) {
@@ -3827,10 +3832,18 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 if (et.userLabelsDefaultVisible === undefined) { et.userLabelsDefaultVisible = true; changed = true; }
                 // Migrate: add default sectionOrder
                 if (et.sectionOrder === undefined) { et.sectionOrder = ['ai','user','dept']; changed = true; }
-                // Sync from def if explicitly set
-                if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
-                if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
+                // Eenmalig overnemen uit de standaardtemplate. Dit liep vroeger
+                // bij élke paginalading, en dan werd een uitgevinkt label bij de
+                // volgende lading weer aangezet: de keuze was niet vast te
+                // houden. Bestaande installaties krijgen de standaard dus één
+                // keer, daarna is het vinkje van de gebruiker.
+                if (_labelSyncEenmalig) {
+                    if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
+                    if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
+                }
             });
+            if (_labelSyncEenmalig) localStorage.setItem(_LABEL_SYNC_KEY, '1');
+
             // Seed calculator-koppelingen (eenmalig, enkel wanneer nog niet ingesteld)
             // Eenmalige correctie: verwijder foutieve blaasvolume-koppeling op galblaas-onderzoeken
             // (oude heuristiek matchte "galblaas" op substring "blaas")
@@ -4479,8 +4492,12 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
                 calculators:   editCalculators,
-                deptLabelsDefaultVisible: _existingForSave?.deptLabelsDefaultVisible !== false,
-                userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible !== false,
+                // Behoud wat er staat; enkel een nieuw onderzoekstype begint met
+                // labels aan. Stond hier "!== false", en dat legde dezelfde vlag
+                // anders uit dan de kaartweergave en de editor, die "=== true"
+                // lezen.
+                deptLabelsDefaultVisible: _existingForSave?.deptLabelsDefaultVisible ?? true,
+                userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible ?? true,
                 deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
                 userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
                 sectionOrder:  (() => { const c = document.getElementById('flow-sections-container'); return c ? Array.from(c.querySelectorAll(':scope > details')).map(e => SECTION_KEY_MAP[e.id]).filter(Boolean) : (_existingForSave?.sectionOrder || ['ai','user','dept']); })(),
