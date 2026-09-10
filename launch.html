@@ -702,10 +702,10 @@
                         <span id="snomed-error-text" class="flex-1"></span>
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
-                    <!-- Dicteerveld voor de eigen DMO-licentie (SpeechKit Browser edition).
-                         SpeechKit speech-enabled enkel gewone velden in de light DOM, niet
-                         de shadow DOM van tiro-magic-clipboard. Wat hier binnenkomt wordt
-                         doorgegeven aan dezelfde dictatie-pijplijn. -->
+                    <!-- Dicteerveld voor de eigen DMO-licentie. Een gewoon tekstveld,
+                         want SpeechKit speech-enabled geen velden in de shadow DOM van
+                         tiro-magic-clipboard. Wat hier binnenkomt gaat door dezelfde
+                         dictatie-pijplijn als de andere providers. -->
                     <div id="dmo-own-dictation" class="hidden mb-2">
                         <div class="flex items-center justify-between mb-1">
                             <label for="dmo-dictation-text" class="text-xs font-medium text-neutral-600 dark:text-neutral-400">Dictaat — Dragon Medical One (eigen licentie)</label>
@@ -1132,57 +1132,22 @@
                         </summary>
                         <div class="px-2 py-2 border-t border-neutral-200 dark:border-slate-700 space-y-2">
                             <p class="text-xs text-neutral-500 dark:text-neutral-400">
-                                Importeer je <code>SoD.exe.config</code> van de DMO-desktopapplicatie. Daaruit halen we de SAS-server en de organization token; de partner GUID en je DMO-gebruikersnaam vul je zelf aan.
+                                De licentiegegevens worden hier niet ingetypt. Ze komen uit een bestand dat je inleest op de
+                                <a href="qc.html" target="_blank" rel="noopener" class="underline hover:text-neutral-700 dark:hover:text-neutral-200">QC-pagina</a>
+                                onder <span class="whitespace-nowrap">Export / Import</span> (achter de pincode), kolom “DMO-licentie”. Ze blijven in deze browser.
                             </p>
-                            <p class="text-xs text-amber-700 dark:text-amber-400">
-                                De organization token is een credential. Hij blijft uitsluitend in de localStorage van deze browser — hij gaat niet naar een server en staat niet in de code. Gebruik “Wissen” op een gedeelde pc.
-                            </p>
-
-                            <div>
-                                <label for="dmo-config-file" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">SoD.exe.config importeren</label>
-                                <input id="dmo-config-file" type="file" accept=".config,.xml,.txt" class="w-full text-xs text-neutral-600 dark:text-neutral-400 file:mr-2 file:px-2 file:py-1 file:text-xs file:font-medium file:rounded-md file:border-0 file:bg-neutral-200 dark:file:bg-slate-700 file:text-neutral-700 dark:file:text-neutral-200 hover:file:bg-neutral-300 dark:hover:file:bg-slate-600 cursor-pointer" />
-                            </div>
 
                             <dl id="dmo-config-summary" class="hidden text-xs grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-neutral-600 dark:text-neutral-400"></dl>
-
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label for="dmo-partner-guid" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Partner GUID</label>
-                                    <input id="dmo-partner-guid" type="text" placeholder="00000000-0000-0000-0000-000000000000" class="w-full px-2 py-1 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-                                </div>
-                                <div>
-                                    <label for="dmo-user-id" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">DMO-gebruikersnaam</label>
-                                    <input id="dmo-user-id" type="text" placeholder="zoals in DMO" class="w-full px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-                                </div>
-                            </div>
-
-                            <div class="grid grid-cols-2 gap-2">
-                                <div>
-                                    <label for="dmo-channel" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Release channel</label>
-                                    <select id="dmo-channel" class="w-full px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                                        <option value="mainline">mainline</option>
-                                        <option value="delayed">delayed</option>
-                                        <option value="beta">beta</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="dmo-topic" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Topic</label>
-                                    <select id="dmo-topic" class="w-full px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"></select>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label for="dmo-resource-url" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Resource-URL (Nuance.SpeechAnywhere.js)</label>
-                                <input id="dmo-resource-url" type="text" placeholder="https://speechanywhere-prod-xx.nuancehdp.com/mainline/scripts/Nuance.SpeechAnywhere.js" class="w-full px-2 py-1 text-xs font-mono rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
-                                <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Afgeleid uit de SAS-regio. Klopt hij niet, neem dan de URL uit de <a href="https://learn.microsoft.com/en-us/industry/healthcare/speechkit/browser/release-channels" target="_blank" rel="noopener" class="underline hover:text-neutral-600">Release channels</a>-documentatie.</p>
-                            </div>
 
                             <div class="flex gap-2 flex-wrap items-center">
                                 <button id="dmo-connect-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Verbinden</button>
                                 <button id="dmo-disconnect-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors">Verbreken</button>
-                                <button id="dmo-clear-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">Wissen</button>
+                                <button id="dmo-reload-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors" title="Opnieuw inlezen na een import op de QC-pagina">Herlaad</button>
+                                <button id="dmo-diagnose-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors" title="Controleer alles wat zonder geldige licentie al te testen valt">Diagnose</button>
                                 <span id="dmo-status" class="text-xs text-neutral-500 dark:text-neutral-400"></span>
                             </div>
+
+                            <ul id="dmo-diagnose-list" class="hidden text-xs space-y-0.5"></ul>
                         </div>
                     </details>
 
@@ -2553,11 +2518,12 @@
             // Sync dictation provider dropdown with magic clipboard
             const dictationSelect =
                 document.getElementById("dictation-provider");
-            // "own-dmsk" = eigen DMO-licentie via SpeechKit Browser edition. Dat is
+            // "own-dmsk" = de eigen licentie via SpeechKit Browser edition. Dat is
             // geen Tiro-endpoint, dus dan zetten we dictation-endpoint juist af.
             const OWN_DMSK = "own-dmsk";
             const applyDictationProvider = () => {
-                if (dictationSelect.value && dictationSelect.value !== OWN_DMSK) {
+                const own = dictationSelect.value === OWN_DMSK;
+                if (dictationSelect.value && !own) {
                     clipboard.setAttribute(
                         "dictation-endpoint",
                         dictationSelect.value,
@@ -2566,7 +2532,7 @@
                     clipboard.removeAttribute("dictation-endpoint");
                 }
                 const ownField = document.getElementById("dmo-own-dictation");
-                if (ownField) ownField.classList.toggle("hidden", dictationSelect.value !== OWN_DMSK);
+                if (ownField) ownField.classList.toggle("hidden", !own);
             };
             const _savedProvider = localStorage.getItem('dictationProvider');
             if (_savedProvider !== null) dictationSelect.value = _savedProvider;
@@ -2586,22 +2552,14 @@
                 const DMO = window.DMOLicense;
                 if (!DMO) return;
 
-                const fileInput   = document.getElementById("dmo-config-file");
                 const summaryEl   = document.getElementById("dmo-config-summary");
-                const partnerEl   = document.getElementById("dmo-partner-guid");
-                const userEl      = document.getElementById("dmo-user-id");
-                const channelEl   = document.getElementById("dmo-channel");
-                const topicEl     = document.getElementById("dmo-topic");
-                const resourceEl  = document.getElementById("dmo-resource-url");
                 const connectBtn  = document.getElementById("dmo-connect-btn");
                 const disconnBtn  = document.getElementById("dmo-disconnect-btn");
-                const clearBtn    = document.getElementById("dmo-clear-btn");
+                const reloadBtn   = document.getElementById("dmo-reload-btn");
                 const statusEl    = document.getElementById("dmo-status");
                 const badgeEl     = document.getElementById("dmo-license-badge");
                 const ownStatusEl = document.getElementById("dmo-own-status");
                 const dictTa      = document.getElementById("dmo-dictation-text");
-
-                let cfg = DMO.load() || {};
 
                 function setStatus(text, tone) {
                     statusEl.textContent = text || "";
@@ -2612,19 +2570,19 @@
                     );
                 }
 
+                // Alleen gemaskeerde gegevens tonen: de token en het wachtwoord
+                // komen hier nooit voluit op het scherm.
                 function renderSummary() {
-                    if (!cfg.organizationToken && !cfg.serverUrl) {
-                        summaryEl.classList.add("hidden");
-                        return;
-                    }
-                    const region = DMO.regionFromServerUrl(cfg.serverUrl);
+                    const s = DMO.summary();
+                    if (!s) { summaryEl.classList.add("hidden"); return; }
                     const rows = [
-                        ["SAS-server", cfg.serverUrl || "—"],
-                        ["Regio", region === null ? "eigen/on-premise" : (region || "globaal")],
-                        ["Organization token", DMO.mask(cfg.organizationToken)],
-                        ["Authenticatie", cfg.authentication || "—"],
-                        ["Taal", (cfg.languages || []).join(", ") || "—"],
-                        ["DMO-versie", cfg.sodVersion || "—"],
+                        ["Gebruiker", s.userId || "—"],
+                        ["SAS-server", s.serverUrl || "—"],
+                        ["Regio", s.region],
+                        ["Organization token", s.organizationToken || "—"],
+                        ["Partner GUID", s.partnerGuid || "—"],
+                        ["Wachtwoord", s.password],
+                        ["Taal / topic", [s.language, s.topic].filter(Boolean).join(" · ") || "—"],
                     ];
                     summaryEl.innerHTML = "";
                     rows.forEach(([k, v]) => {
@@ -2639,89 +2597,47 @@
                     summaryEl.classList.remove("hidden");
                 }
 
-                function renderTopics() {
-                    const topics = (cfg.topics && cfg.topics.length) ? cfg.topics : ["GeneralMedicine"];
-                    topicEl.innerHTML = "";
-                    topics.forEach((t) => {
-                        const o = document.createElement("option");
-                        o.value = t; o.textContent = t;
-                        topicEl.appendChild(o);
-                    });
-                    if (cfg.topic && topics.includes(cfg.topic)) topicEl.value = cfg.topic;
-                }
-
                 function renderBadge() {
                     const st = DMO.state().state;
-                    if (st === "connected")  { badgeEl.textContent = "verbonden";   badgeEl.className = "ml-auto text-xs font-normal text-green-600 dark:text-green-400"; }
-                    else if (st === "error") { badgeEl.textContent = "fout";         badgeEl.className = "ml-auto text-xs font-normal text-red-600 dark:text-red-400"; }
-                    else if (cfg.organizationToken) { badgeEl.textContent = "ingesteld"; badgeEl.className = "ml-auto text-xs font-normal text-neutral-400 dark:text-neutral-500"; }
-                    else { badgeEl.textContent = "niet ingesteld"; badgeEl.className = "ml-auto text-xs font-normal text-neutral-400 dark:text-neutral-500"; }
+                    const has = !!DMO.load();
+                    let text = "niet ingesteld", cls = "text-neutral-400 dark:text-neutral-500";
+                    if (st === "connected")  { text = "verbonden"; cls = "text-green-600 dark:text-green-400"; }
+                    else if (st === "error") { text = "fout";      cls = "text-red-600 dark:text-red-400"; }
+                    else if (has)            { text = "ingesteld"; }
+                    badgeEl.textContent = text;
+                    badgeEl.className = "ml-auto text-xs font-normal " + cls;
                 }
 
                 function renderAll() {
-                    partnerEl.value  = cfg.partnerGuid  || "";
-                    userEl.value     = cfg.userId       || "";
-                    channelEl.value  = cfg.channel      || "mainline";
-                    resourceEl.value = cfg.resourceUrl  || "";
-                    renderTopics();
                     renderSummary();
                     renderBadge();
                 }
 
-                function persist() {
-                    cfg.partnerGuid = partnerEl.value.trim();
-                    cfg.userId      = userEl.value.trim();
-                    cfg.channel     = channelEl.value;
-                    cfg.topic       = topicEl.value;
-                    cfg.resourceUrl = resourceEl.value.trim();
-                    cfg.language    = (cfg.languages || [])[0] || "";
-                    DMO.save(cfg);
-                    renderBadge();
+                /**
+                 * De velden die standaard mee moeten: het dicteervenster op deze
+                 * pagina en dat van het PiP-venster wanneer dat open staat.
+                 */
+                function defaultTargets() {
+                    const targets = [dictTa];
+                    if (_pipDmoTa && _pipWindow && !_pipWindow.closed) targets.push(_pipDmoTa);
+                    return targets.filter(Boolean);
                 }
 
-                [partnerEl, userEl, resourceEl].forEach((el) => el.addEventListener("input", persist));
-                [channelEl, topicEl].forEach((el) => el.addEventListener("change", () => {
-                    // Kanaal wisselen betekent een andere resource-URL, tenzij de
-                    // gebruiker er zelf een heeft ingevuld voor een andere host.
-                    if (el === channelEl) {
-                        const derived = DMO.resourceUrl(cfg.serverUrl, channelEl.value);
-                        if (derived) resourceEl.value = derived;
-                    }
-                    persist();
-                }));
-
-                fileInput.addEventListener("change", async () => {
-                    const file = fileInput.files && fileInput.files[0];
-                    if (!file) return;
-                    try {
-                        const parsed = DMO.parseSodConfig(await file.text());
-                        cfg = Object.assign({}, cfg, parsed);
-                        const derived = DMO.resourceUrl(cfg.serverUrl, cfg.channel || channelEl.value);
-                        if (derived) cfg.resourceUrl = derived;
-                        if (cfg.authentication && cfg.authentication !== "none") {
-                            setStatus(`Config ingelezen. Let op: authenticatie staat op "${cfg.authentication}" — dan is een gebruikersnaam alleen mogelijk niet genoeg.`, null);
-                        } else {
-                            setStatus("Config ingelezen. Vul de partner GUID en je DMO-gebruikersnaam aan.", "ok");
-                        }
-                        DMO.save(cfg);
-                        renderAll();
-                        persist();
-                    } catch (e) {
-                        setStatus(e && e.message ? e.message : "Bestand kon niet gelezen worden.", "error");
-                    } finally {
-                        fileInput.value = "";
-                    }
-                });
-
                 connectBtn.addEventListener("click", async () => {
-                    persist();
+                    const cfg = DMO.load();
+                    if (!cfg) {
+                        setStatus("Nog geen licentiebestand ingelezen — doe dat op de QC-pagina.", "error");
+                        return;
+                    }
                     const missing = DMO.validate(cfg);
-                    if (missing.length) { setStatus(`Nog niet volledig: ${missing.join(", ")}.`, "error"); return; }
+                    if (missing.length) {
+                        setStatus(`Licentiebestand onvolledig: ${missing.join(", ")}.`, "error");
+                        return;
+                    }
                     setStatus("Verbinden…", null);
-                    const ok = await DMO.connect(cfg, [dictTa]);
+                    const ok = await DMO.connect(cfg, defaultTargets());
                     if (ok) {
-                        setStatus("Verbonden — dicteer in het veld “Dictaat”.", "ok");
-                        // Zet de provider mee om, anders blijft het Tiro-endpoint actief.
+                        setStatus("Verbonden — klik in een veld en dicteer.", "ok");
                         if (dictationSelect.value !== OWN_DMSK) {
                             dictationSelect.value = OWN_DMSK;
                             dictationSelect.dispatchEvent(new Event("change", { bubbles: true }));
@@ -2736,13 +2652,41 @@
                     setStatus("Verbinding verbroken. Herlaad de pagina om DMO volledig los te laten.", null);
                 });
 
-                clearBtn.addEventListener("click", () => {
-                    if (!confirm("Licentiegegevens (inclusief organization token) uit deze browser wissen?")) return;
-                    DMO.disconnect();
-                    DMO.clear();
-                    cfg = {};
+                reloadBtn.addEventListener("click", () => {
                     renderAll();
-                    setStatus("Gewist.", null);
+                    const cfg = DMO.load();
+                    if (!cfg) { setStatus("Nog geen licentiebestand ingelezen.", "error"); return; }
+                    const missing = DMO.validate(cfg);
+                    setStatus(missing.length ? `Onvolledig: ${missing.join(", ")}.` : "Licentie ingelezen en volledig.",
+                              missing.length ? "error" : "ok");
+                });
+
+                const diagnoseBtn  = document.getElementById("dmo-diagnose-btn");
+                const diagnoseList = document.getElementById("dmo-diagnose-list");
+                diagnoseBtn.addEventListener("click", async () => {
+                    diagnoseBtn.disabled = true;
+                    setStatus("Diagnose loopt…", null);
+                    const rows = await DMO.diagnose();
+                    diagnoseList.innerHTML = "";
+                    rows.forEach(({ label, ok, detail }) => {
+                        const li = document.createElement("li");
+                        li.className = "flex gap-2 " + (
+                            ok === true  ? "text-green-600 dark:text-green-400" :
+                            ok === false ? "text-red-600 dark:text-red-400" :
+                                           "text-neutral-500 dark:text-neutral-400"
+                        );
+                        const mark = document.createElement("span");
+                        mark.textContent = ok === true ? "✓" : ok === false ? "✕" : "?";
+                        const text = document.createElement("span");
+                        text.textContent = `${label} — ${detail}`;
+                        li.append(mark, text);
+                        diagnoseList.appendChild(li);
+                    });
+                    diagnoseList.classList.remove("hidden");
+                    const fouten = rows.filter((r) => r.ok === false).length;
+                    setStatus(fouten ? `${fouten} punt(en) nog niet in orde.` : "Alles wat testbaar is, is in orde.",
+                              fouten ? "error" : "ok");
+                    diagnoseBtn.disabled = false;
                 });
 
                 DMO.onStateChange((state, error) => {
@@ -2756,6 +2700,17 @@
                         ownStatusEl.title = error || "";
                     }
                 });
+
+                // ── Dicteren in het veld waar je klikt ──────────────────────
+                // Standaard staan het dicteervenster van deze pagina en dat van
+                // het PiP-venster aan; klik je in een ander tekstveld, dan wordt
+                // dat er bij aangemeld.
+                function attachOnFocus(event) {
+                    const el = event.target;
+                    if (DMO.isDictatable(el)) DMO.attach(el);
+                }
+                document.addEventListener("focusin", attachOnFocus);
+                window.DMO_ATTACH_ON_FOCUS = attachOnFocus;   // het PiP-venster hangt dezelfde listener op
 
                 // Dictaat doorgeven aan dezelfde pijplijn als de andere providers,
                 // zodat Autofill, Verslag check, SNOMED en het PiP-venster werken.
@@ -5871,6 +5826,16 @@ negated bevindingen
                 const _autoGrow = () => {};
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
+
+                // Eigen DMO-licentie: dit dicteerveld meteen aanmelden, en ook in
+                // dit venster geldt "dicteren waar je klikt". Het PiP-venster is
+                // hetzelfde origin, dus dezelfde SpeechKit-sessie kan het bedienen.
+                try {
+                    window.DMOLicense?.attach(ta);
+                    if (window.DMO_ATTACH_ON_FOCUS) {
+                        pipWindow.document.addEventListener('focusin', window.DMO_ATTACH_ON_FOCUS);
+                    }
+                } catch (_) { /* zonder DMO-sessie is dit niet van belang */ }
 
                 // ── Inline correction mode (contenteditable) ────────
                 const _pipInlineMode = false; // inline toggle removed; always use textarea

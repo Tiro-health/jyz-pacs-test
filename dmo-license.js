@@ -5,10 +5,15 @@
  * radiology.tiro.health, zonder afhankelijk te zijn van de Tiro-side
  * "Endpoint/dmsk"-licentie.
  *
- * Werkwijze: de gebruiker importeert zijn SoD.exe.config (het configuratie-
- * bestand van de DMO-desktopapplicatie). Daaruit halen we de SAS-server en de
- * organization token. Samen met een partner GUID en de DMO-gebruikersnaam
- * openen we in de browser een Dragon Medical SpeechKit-sessie (Browser edition).
+ * Werkwijze: de gebruiker levert zijn gegevens aan via een bestand — een JSON
+ * met de licentiegegevens, of rechtstreeks het SoD.exe.config van de
+ * DMO-desktopapplicatie. Dat bestand wordt geïmporteerd op qc.html, achter de
+ * pincode van Export / Import. Met die gegevens openen we in de browser een
+ * Dragon Medical SpeechKit-sessie (Browser edition).
+ *
+ * Er staan dus GEEN organization token, gebruikersnaam of wachtwoord in de
+ * code van dit project — die komen uitsluitend uit het bestand dat de
+ * gebruiker zelf inleest, en blijven in de localStorage van zijn browser.
  *
  * Documentatie (Microsoft Learn):
  *   Browser edition          learn.microsoft.com/industry/healthcare/speechkit/browser/
@@ -112,6 +117,104 @@
             .split("|")
             .map((s) => s.trim())
             .filter(Boolean);
+    }
+
+    // ── Licentiebestand inlezen (JSON of SoD.exe.config) ────────────────────
+
+    const FILE_KIND = "dmo-licentie";
+
+    /** Velden die uit een JSON-licentiebestand overgenomen worden. */
+    const JSON_FIELDS = [
+        "serverUrl", "organizationToken", "partnerGuid", "userId", "password",
+        "applicationName", "language", "topic", "channel", "resourceUrl",
+        "authentication",
+    ];
+
+    /**
+     * Leest een aangeleverd bestand: JSON met licentiegegevens, of het
+     * SoD.exe.config van de DMO-desktop. Geeft {cfg, source} terug.
+     */
+    function parseLicenseFile(text) {
+        const trimmed = String(text || "").trim();
+        if (!trimmed) throw new Error("Het bestand is leeg.");
+        if (trimmed[0] === "{") {
+            return { cfg: parseLicenseJson(JSON.parse(trimmed)), source: "json" };
+        }
+        return { cfg: parseSodConfig(trimmed), source: "config" };
+    }
+
+    /** JSON-licentiebestand → configuratie. Onbekende velden worden genegeerd. */
+    function parseLicenseJson(obj) {
+        if (!obj || typeof obj !== "object") throw new Error("Ongeldig JSON-bestand.");
+        if (obj.kind && obj.kind !== FILE_KIND) {
+            throw new Error(`Dit bestand is van het type "${obj.kind}" — verwacht "${FILE_KIND}".`);
+        }
+        const cfg = {};
+        JSON_FIELDS.forEach((k) => {
+            if (typeof obj[k] === "string" && obj[k].trim()) cfg[k] = obj[k].trim();
+        });
+        if (Array.isArray(obj.languages)) cfg.languages = obj.languages.filter((s) => typeof s === "string");
+        if (Array.isArray(obj.topics))    cfg.topics    = obj.topics.filter((s) => typeof s === "string");
+        // Een bestand mag aanvullend zijn: de SoD.exe.config levert de token en
+        // de server, een JSON daarnaast de partner GUID en de aanmeldgegevens.
+        // Enkel een bestand zonder één enkel bruikbaar veld is een fout.
+        if (!Object.keys(cfg).length) {
+            throw new Error("Geen bruikbare velden in het bestand gevonden (verwacht bv. organizationToken, partnerGuid, userId).");
+        }
+        if (!cfg.resourceUrl && cfg.serverUrl) {
+            cfg.resourceUrl = resourceUrl(cfg.serverUrl, cfg.channel);
+        }
+        return cfg;
+    }
+
+    /** Leeg voorbeeldbestand, zodat het formaat duidelijk is. */
+    function template() {
+        return {
+            kind: FILE_KIND,
+            version: "1.0",
+            _uitleg: "Vul de waarden in en importeer dit bestand op qc.html via Export / Import. Bewaar het lokaal — het bevat je licentiegegevens.",
+            serverUrl: "https://sas-xx.nuancehdp.com/basic",
+            organizationToken: "",
+            partnerGuid: "",
+            userId: "",
+            password: "",
+            applicationName: APP_NAME,
+            language: "nl-NL",
+            topic: "GeneralMedicine",
+            channel: "mainline",
+            resourceUrl: "",
+        };
+    }
+
+    /** Huidige configuratie als JSON-bestand (bevat de credentials). */
+    function exportPayload(cfg) {
+        const c = cfg || load() || {};
+        const out = { kind: FILE_KIND, version: "1.0" };
+        JSON_FIELDS.forEach((k) => { if (c[k]) out[k] = c[k]; });
+        if (c.languages && c.languages.length) out.languages = c.languages;
+        if (c.topics && c.topics.length) out.topics = c.topics;
+        return out;
+    }
+
+    /** Wat de UI mag tonen: nooit de token, nooit het wachtwoord. */
+    function summary(cfg) {
+        const c = cfg || load();
+        if (!c) return null;
+        const region = regionFromServerUrl(c.serverUrl);
+        return {
+            serverUrl: c.serverUrl || "",
+            region: region === null ? "eigen/on-premise" : (region || "globaal"),
+            organizationToken: mask(c.organizationToken),
+            partnerGuid: mask(c.partnerGuid),
+            userId: c.userId || "",
+            password: c.password ? "ingesteld" : "geen",
+            authentication: c.authentication || "none",
+            language: c.language || (c.languages || [])[0] || "",
+            topic: c.topic || "",
+            channel: c.channel || "mainline",
+            resourceUrl: c.resourceUrl || "",
+            sodVersion: c.sodVersion || "",
+        };
     }
 
     // ── URL's afleiden ──────────────────────────────────────────────────────
@@ -240,10 +343,12 @@
             window.NUSA_applicationName = cfg.applicationName || APP_NAME;
             window.NUSA_ServerURL = nusaServerUrl(cfg.serverUrl);
             window.NUSA_ResourceURL = cfg.resourceUrl;
-            // Taal en topic staan niet in de publieke API-lijst; kent de SDK ze
-            // niet, dan blijven ze zonder effect en beslist het gebruikersprofiel.
+            // Taal, topic en wachtwoord staan niet in de publieke API-lijst;
+            // kent de SDK ze niet, dan blijven ze zonder effect en beslist het
+            // gebruikersprofiel (of toont de SDK zelf een aanmeldscherm).
             if (cfg.language) window.NUSA_language = cfg.language;
             if (cfg.topic)    window.NUSA_topic = cfg.topic;
+            if (cfg.password) window.NUSA_password = cfg.password;
         };
 
         // 3. Script inladen (eenmalig).
@@ -263,6 +368,7 @@
         }
         try {
             window.NUSA_initialize(elements && elements.length ? elements : undefined);
+            (elements || []).forEach((el) => { if (el) _attached.add(el); });
         } catch (e) {
             setState("error", `Initialiseren mislukt: ${e && e.message ? e.message : e}`);
             return false;
@@ -270,6 +376,115 @@
 
         setState("connected");
         return true;
+    }
+
+    // Velden die al speech-enabled zijn. Een WeakSet, zodat velden uit een
+    // gesloten PiP-venster vanzelf opgeruimd worden.
+    const _attached = new WeakSet();
+
+    /**
+     * Eén veld alsnog speech-enabled maken — bijvoorbeeld het veld waar de
+     * gebruiker net in klikt. Doet niets zonder actieve sessie, en elk veld
+     * wordt hoogstens één keer aangemeld.
+     *
+     * Werkt ook voor velden in een Document Picture-in-Picture-venster: dat is
+     * hetzelfde origin en dezelfde JS-omgeving. Of SpeechKit daar effectief mee
+     * overweg kan, hangt van de SDK af — vandaar de try/catch.
+     */
+    function attach(el) {
+        if (!el || _state !== "connected") return false;
+        if (_attached.has(el)) return true;
+        if (typeof window.NUSA_initialize !== "function") return false;
+        try {
+            window.NUSA_initialize([el]);
+            _attached.add(el);
+            return true;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    /** Is dit een veld waar gedicteerd kan worden? */
+    function isDictatable(el) {
+        if (!el || el.nodeType !== 1) return false;
+        const tag = el.tagName;
+        if (tag === "TEXTAREA") return !el.readOnly && !el.disabled;
+        if (tag === "INPUT") {
+            const type = (el.getAttribute("type") || "text").toLowerCase();
+            return ["text", "search", "url", "email", "tel", ""].includes(type) && !el.readOnly && !el.disabled;
+        }
+        return el.isContentEditable === true;
+    }
+
+    // ── Diagnose ────────────────────────────────────────────────────────────
+
+    /**
+     * Loopt alles na wat we zonder geldige licentie al kunnen controleren, zodat
+     * duidelijk is wat er nog ontbreekt zodra de partner GUID er is. Elke regel:
+     * { label, ok: true|false|null, detail }. null = niet automatisch te testen.
+     */
+    async function diagnose(cfg) {
+        const c = cfg || load();
+        const out = [];
+
+        const missing = validate(c);
+        out.push({
+            label: "Licentiebestand",
+            ok: !missing.length,
+            detail: missing.length ? `ontbreekt: ${missing.join(", ")}` : "volledig",
+        });
+
+        out.push({
+            label: "Beveiligde verbinding (https)",
+            ok: !!window.isSecureContext,
+            detail: !window.isSecureContext
+                ? `${location.protocol}// — SpeechKit vereist https`
+                : (location.protocol === "https:" ? "https" : "localhost (geldt als beveiligd)"),
+        });
+
+        // Cookies moeten schrijfbaar zijn: de GUIDs reizen als cookie mee.
+        let cookieOk = false;
+        try {
+            document.cookie = "NUSA_test=1; path=/";
+            cookieOk = document.cookie.includes("NUSA_test=1");
+            document.cookie = "NUSA_test=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        } catch (_) { cookieOk = false; }
+        out.push({
+            label: "Cookies schrijfbaar",
+            ok: cookieOk,
+            detail: cookieOk ? "NUSA_Guids kan gezet worden" : "de browser weigert cookies te zetten",
+        });
+
+        // Microfoon: SpeechKit heeft 16-bit / minstens 16 kHz nodig.
+        let mic = null, micDetail = "kon niet opgevraagd worden";
+        try {
+            const st = await navigator.permissions.query({ name: "microphone" });
+            mic = st.state === "granted" ? true : (st.state === "denied" ? false : null);
+            micDetail = st.state;
+        } catch (_) { /* niet elke browser kent deze permissie-naam */ }
+        out.push({ label: "Microfoontoegang", ok: mic, detail: micDetail });
+
+        // Resource-URL: laadt Nuance.SpeechAnywhere.js en levert dat de API?
+        if (c && c.resourceUrl) {
+            let scriptOk = false, scriptDetail = "";
+            try {
+                await loadScript(c.resourceUrl);
+                scriptOk = typeof window.NUSA_initialize === "function";
+                scriptDetail = scriptOk ? "geladen, API aanwezig" : "geladen, maar NUSA_initialize ontbreekt";
+            } catch (_) {
+                scriptDetail = "niet bereikbaar — klopt de URL en laat het netwerk nuancehdp.com toe?";
+            }
+            out.push({ label: "Nuance.SpeechAnywhere.js", ok: scriptOk, detail: scriptDetail });
+        } else {
+            out.push({ label: "Nuance.SpeechAnywhere.js", ok: false, detail: "geen resource-URL in het licentiebestand" });
+        }
+
+        // Deze twee staan als vereiste in de docs maar zijn niet betrouwbaar
+        // vanuit de pagina te meten.
+        out.push({ label: "Derde-partij-cookies toegestaan", ok: null, detail: "handmatig na te kijken in de browserinstellingen" });
+        out.push({ label: "Pop-ups toegestaan", ok: null, detail: "handmatig na te kijken; SpeechKit opent een aanmeld-/hulpvenster" });
+
+        return out;
     }
 
     /** Na het toevoegen of verwijderen van speech-enabled velden. */
@@ -311,7 +526,16 @@
     window.DMOLicense = {
         STORAGE_KEY,
         CHANNELS,
+        FILE_KIND,
+        parseLicenseFile,
+        parseLicenseJson,
         parseSodConfig,
+        template,
+        exportPayload,
+        summary,
+        attach,
+        isDictatable,
+        diagnose,
         regionFromServerUrl,
         nusaServerUrl,
         resourceUrl,

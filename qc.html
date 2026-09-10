@@ -241,13 +241,13 @@
 
         <!-- Export/Import modal — drie aparte bestanden -->
         <div id="export-import-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/40 p-4">
-            <div class="bg-white dark:bg-muted rounded-lg shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh]">
+            <div class="bg-white dark:bg-muted rounded-lg shadow-xl w-full max-w-5xl flex flex-col max-h-[85vh]">
                 <div class="flex items-center px-5 py-3 border-b border-neutral-200 dark:border-slate-700">
                     <h2 class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">Export / Import</h2>
                     <button id="close-export-modal-btn" type="button" class="ml-auto text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 text-lg leading-none cursor-pointer">×</button>
                 </div>
 
-                <div class="overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="overflow-y-auto p-5 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
                     <!-- Configuratie -->
                     <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
@@ -286,6 +286,21 @@
                             <input type="file" id="import-db-input" accept=".json" class="hidden">
                         </label>
                         <p class="text-xs text-neutral-400 dark:text-neutral-500">Voegt toe aan de bestaande casussen.</p>
+                    </div>
+
+                    <!-- DMO-licentie -->
+                    <div class="flex flex-col gap-2 rounded-lg border border-neutral-200 dark:border-slate-700 p-3">
+                        <h3 class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">DMO-licentie</h3>
+                        <p class="text-xs text-neutral-500 dark:text-neutral-400 flex-1">Dragon Medical One met de licentie van je eigen ziekenhuis. Een JSON-bestand of je <code>SoD.exe.config</code>. <span class="text-amber-600 dark:text-amber-400 font-medium">Bevat organization token, gebruikersnaam en wachtwoord.</span></p>
+                        <span id="dmo-license-count" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                        <button id="dmo-template-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 transition-colors">⬇ Leeg voorbeeld</button>
+                        <button id="dmo-export-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">⬇ Exporteer</button>
+                        <label class="w-full px-3 py-2 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-slate-800 cursor-pointer text-center">
+                            ⬆ Importeer
+                            <input type="file" id="dmo-import-input" accept=".json,.config,.xml,.txt" class="hidden">
+                        </label>
+                        <button id="dmo-wipe-btn" type="button" class="w-full px-3 py-2 text-sm font-medium rounded-md border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors">Wissen uit deze browser</button>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500">Blijft in deze browser; staat niet in de code en gaat niet naar een server.</p>
                     </div>
 
                 </div>
@@ -416,6 +431,7 @@
         <!-- Niet-template mode — zie het verwijder-recept bovenaan mountFormsUI in forms-shared.js -->
         <script src="forms-shared.js"></script>
         <script src="qc-schema.js"></script>
+        <script src="dmo-license.js"></script>
 
         <script>
             const STUDY_QUESTIONNAIRE = "http://templates.tiro.health/templates/dd231d6f2ccf4685afa5347afdab9f72|2.0.0";
@@ -1005,7 +1021,69 @@
                     const nPrompts = PROMPT_KEYS.filter(([k]) => localStorage.getItem(k)).length;
                     document.getElementById('config-count').textContent =
                         fmt(nTypes, 'onderzoekstype', 'onderzoekstypes') + ' · ' + fmt(nPrompts, 'prompt', 'prompts');
+                    refreshDmoCount();
                 }
+
+                // ── DMO-licentie ────────────────────────────────────────────
+                // De licentiegegevens komen uitsluitend uit een bestand dat de
+                // gebruiker hier inleest. Ze worden nooit voluit getoond.
+                function refreshDmoCount() {
+                    const el = document.getElementById('dmo-license-count');
+                    if (!el || !window.DMOLicense) return;
+                    const s = DMOLicense.summary();
+                    if (!s) { el.textContent = 'niet ingesteld'; return; }
+                    const ontbreekt = DMOLicense.validate(DMOLicense.load());
+                    el.textContent = ontbreekt.length
+                        ? `${s.userId || 'geen gebruiker'} · onvolledig (${ontbreekt.length})`
+                        : `${s.userId} · ${s.region} · token ${s.organizationToken}`;
+                }
+
+                document.getElementById('dmo-template-btn').addEventListener('click', () => {
+                    downloadJson(DMOLicense.template(), 'dmo-licentie-voorbeeld');
+                });
+
+                document.getElementById('dmo-export-btn').addEventListener('click', () => {
+                    const cfg = DMOLicense.load();
+                    if (!cfg) { alert('Er is nog geen DMO-licentie ingesteld. Importeer eerst een bestand.'); return; }
+                    if (!confirm('Dit bestand bevat je organization token, gebruikersnaam en wachtwoord. Alleen lokaal bewaren. Doorgaan?')) return;
+                    downloadJson(DMOLicense.exportPayload(cfg), 'dmo-licentie');
+                });
+
+                document.getElementById('dmo-import-input').addEventListener('change', async (e) => {
+                    const file = e.target.files && e.target.files[0];
+                    if (!file) return;
+                    try {
+                        const { cfg, source } = DMOLicense.parseLicenseFile(await file.text());
+                        const merged = Object.assign({}, DMOLicense.load() || {}, cfg);
+                        if (!merged.resourceUrl && merged.serverUrl) {
+                            merged.resourceUrl = DMOLicense.resourceUrl(merged.serverUrl, merged.channel);
+                        }
+                        if (!merged.language) merged.language = (merged.languages || [])[0] || '';
+                        if (!merged.topic)    merged.topic    = (merged.topics || [])[0] || '';
+                        if (!merged.channel)  merged.channel  = 'mainline';
+                        DMOLicense.save(merged);
+                        refreshDmoCount();
+                        const ontbreekt = DMOLicense.validate(merged);
+                        alert(source === 'config'
+                            ? (ontbreekt.length
+                                ? `SoD.exe.config ingelezen. Nog aan te vullen via een JSON-bestand: ${ontbreekt.join(', ')}.`
+                                : 'SoD.exe.config ingelezen. De licentie is volledig.')
+                            : (ontbreekt.length
+                                ? `Licentiebestand ingelezen. Nog ontbrekend: ${ontbreekt.join(', ')}.`
+                                : 'Licentiebestand ingelezen. De licentie is volledig.'));
+                    } catch (err) {
+                        alert(err && err.message ? err.message : 'Het bestand kon niet gelezen worden.');
+                    } finally {
+                        e.target.value = '';
+                    }
+                });
+
+                document.getElementById('dmo-wipe-btn').addEventListener('click', () => {
+                    if (!DMOLicense.load()) { alert('Er is niets om te wissen.'); return; }
+                    if (!confirm('De DMO-licentiegegevens uit deze browser verwijderen?')) return;
+                    DMOLicense.clear();
+                    refreshDmoCount();
+                });
 
                 document.getElementById('export-qc-btn').addEventListener('click', () =>
                     exportRecords('qc', 'quality-control', 'qc-records'));
