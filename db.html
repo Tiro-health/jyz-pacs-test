@@ -284,6 +284,8 @@
 
             async function loadAll() {
                 ALL = [];
+                // Eén keer per ronde: anders zou elke rij de datum opnieuw bepalen.
+                const _vandaag = JyzForms.Opvolging.vandaag();
                 for (const store of Object.keys(SOURCES)) {
                     const src = SOURCES[store];
                     for (const rec of await RecordStore.all(store)) {
@@ -296,6 +298,9 @@
                             // Alleen voor de weergave; het filteren en sorteren
                             // blijft op de kale categorie werken.
                             opvolgDatum: fmtOpvolgDatum(v.opv_reminder_datum),
+                            // Vraagt deze casus aandacht? Zelfde definitie als de
+                            // teller op de QC-knop, uit forms-shared.
+                            opvolgDue: JyzForms.Opvolging.isDue(v, _vandaag),
                             pacsnummer: v.pacsnummer || "",
                             datum: v.onderzoek_datum || "",
                             modaliteit: v.onderzoek_modaliteit || "",
@@ -566,8 +571,17 @@
                 const tbody = el("tbody");
                 rows.forEach((rec) => {
                     const tr = el("tr", "border-t border-neutral-200 dark:border-slate-700 hover:bg-neutral-50 dark:hover:bg-accent cursor-pointer transition-colors");
-                    const chev = el("td", "px-2 text-neutral-400");
+                    const chev = el("td", "px-2 text-neutral-400 whitespace-nowrap");
                     chev.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform"><path d="m9 18 6-6-6-6"/></svg>';
+                    if (rec.opvolgDue) {
+                        // Een bolletje vóór de rij, dezelfde aanduiding als het
+                        // cijfer op de QC-knop. Zet de reminder op "Nee" of maak
+                        // de datum leeg, en het verdwijnt.
+                        const bol = el("span", "inline-block w-2 h-2 ml-1 rounded-full bg-red-600 align-middle");
+                        bol.title = "Op te volgen: de datum is bereikt";
+                        bol.dataset.opvolgDue = "1";
+                        chev.appendChild(bol);
+                    }
                     tr.appendChild(chev);
 
                     tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.datum || "—"));

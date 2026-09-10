@@ -273,6 +273,12 @@
             class="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold shadow-lg transition-colors" style="will-change:transform"
         >
             QC
+            <!-- Aantal op te volgen casussen waarvan de datum bereikt is. Blijft
+                 verborgen zolang er geen zijn; zie updateOpvolgBadge(). -->
+            <span
+                id="opvolg-badge"
+                class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[11px] font-bold leading-none shadow ring-2 ring-neutral-50 dark:ring-[#161f27]"
+            ></span>
         </a>
 
 
@@ -1437,6 +1443,10 @@
         <!-- Tiro Web SDK IIFE Bundle -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
         <script src="calculators.js"></script>
+        <!-- Alleen voor de opvolgteller op de QC-knop: RecordStore en de
+             gedeelde definitie van "vraagt aandacht". Deze bestanden doen bij
+             het laden niets aan de pagina, ze definiëren enkel. -->
+        <script src="forms-shared.js"></script>
 
         <script>
             // ============================================
@@ -1946,6 +1956,33 @@
             const qcParams = new URLSearchParams(flowParams.toString());
             qcParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
             qcBtn.href = `qc.html?${qcParams.toString()}`;
+            // ── Opvolgteller op de QC-knop ────────────────────────────────
+            // Het cijfer telt de op te volgen casussen waarvan de opvolgdatum
+            // bereikt of verstreken is. Wordt opnieuw geteld wanneer dit tabblad
+            // de aandacht terugkrijgt: je past de casus aan in een ander tabblad,
+            // en dan moet het bolletje hier meteen kloppen.
+            const opvolgBadge = document.getElementById("opvolg-badge");
+
+            async function updateOpvolgBadge() {
+                if (!opvolgBadge || typeof JyzForms === "undefined") return;
+                const ids = await JyzForms.Opvolging.due();
+                const n = ids.length;
+                opvolgBadge.textContent = n > 99 ? "99+" : String(n);
+                opvolgBadge.classList.toggle("hidden", n === 0);
+                opvolgBadge.title = n === 1
+                    ? "1 op te volgen casus vraagt aandacht"
+                    : `${n} op te volgen casussen vragen aandacht`;
+                qcBtn.title = n
+                    ? `Quality Control — ${opvolgBadge.title}`
+                    : "Quality Control";
+            }
+
+            updateOpvolgBadge();
+            window.addEventListener("focus", updateOpvolgBadge);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) updateOpvolgBadge();
+            });
+
             // In een nieuw tabblad, net als Store case: een Document PiP-venster
             // gaat met zijn openende document dicht, dus wegnavigeren kostte hier
             // zowel de gedicteerde tekst als het PiP-venster zelf.
