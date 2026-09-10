@@ -4055,6 +4055,13 @@ UITVOERFORMAAT — STRIKT:
                     mainPanels.classList.add('flex-col','pb-40');
                     templateEl.classList.add('flex-1','min-h-0','flex','flex-col');
                 }
+                // Settings staat nu in de andere kolom; de twee panelen die
+                // erachter horen moeten mee.
+                // De try is er omdat applySplitView ook vroeg in de init loopt,
+                // voor _pipWindow en de paneellijst hieronder bestaan.
+                try {
+                    plaatsPanelenBijSettings(!(_pipWindow && !_pipWindow.closed));
+                } catch (e) { /* nog te vroeg; de init zet ze zelf op hun plaats */ }
             }
 
             function updateSplitViewToggle() {
@@ -6098,6 +6105,41 @@ negated bevindingen
             let _pipRealtimeLastText = '';
             let _pipTtRef = null;
 
+            // ── Waar het textuele standaardverslag en Template thuishoren ──────
+            // Met het PiP-venster open leven die twee daar, onder het
+            // dictaatveld. Sluit je het PiP om op de hoofdpagina te werken, dan
+            // horen ze hier onder Settings te staan.
+            //
+            // Ze worden achter Settings geplaatst en niet in een vaste kolom:
+            // Settings verhuist zelf tussen de kolommen mee met de split view,
+            // en zo volgen deze twee dat automatisch.
+            const _verhuisPanelen = ['text-template-accordion', 'template-accordion']
+                .map((id) => document.getElementById(id))
+                .filter(Boolean);
+
+            // Een merkpunt op de oorspronkelijke plaats van elk paneel, zodat
+            // terugzetten exact klopt in plaats van op een gegokte positie.
+            const _panelAnkers = new Map();
+            for (const el of _verhuisPanelen) {
+                const anker = document.createComment('oorspronkelijke plaats van ' + el.id);
+                el.parentNode.insertBefore(anker, el);
+                _panelAnkers.set(el, anker);
+            }
+
+            function plaatsPanelenBijSettings(bijSettings) {
+                const settingsEl = document.getElementById('settings-accordion');
+                if (!settingsEl || !_verhuisPanelen.length) return;
+                if (bijSettings) {
+                    let na = settingsEl;
+                    for (const el of _verhuisPanelen) { na.after(el); na = el; }
+                } else {
+                    for (const el of _verhuisPanelen) {
+                        const anker = _panelAnkers.get(el);
+                        if (anker?.parentNode) anker.parentNode.insertBefore(el, anker.nextSibling);
+                    }
+                }
+            }
+
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
                 dictationPopoutToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
@@ -6108,6 +6150,9 @@ negated bevindingen
                 settingsPipBtn.className = 'inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors shrink-0 text-[10px] font-semibold leading-none '
                     + (active ? SETTINGS_PIP_ON : SETTINGS_PIP_OFF);
                 localStorage.setItem('pipActive', active ? '1' : '0');
+                // Staat het PiP-venster dicht, dan komen het textuele
+                // standaardverslag en Template onder Settings te staan.
+                plaatsPanelenBijSettings(!active);
             }
 
             function closeDictationPopout() {
