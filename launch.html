@@ -4854,10 +4854,26 @@ negated bevindingen
              * Correctie-spans van de verslag check blijven ongemoeid — die houden hun
              * eigen rode kleur. Idempotent: al getinte tekst wordt overgeslagen.
              */
+            /** "- Supraspinatus:" en "Supraspinatus" tot dezelfde sleutel brengen. */
+            function _veldSleutel(s) {
+                return String(s || '')
+                    .replace(/^[\s\-–—•*]+/, '')   // opsommingstekens vooraan
+                    .replace(/[:\s]+$/, '')        // dubbele punt achteraan
+                    .trim()
+                    .toLowerCase();
+            }
+
             function applyAiTint(el, classification) {
                 if (!el || !classification || !classification.size) return;
                 const doc = el.ownerDocument;
-                el.querySelectorAll('.tt-section-label').forEach((label) => {
+                const labels = el.querySelectorAll('.tt-section-label');
+                // Fase 2, de verslag check, haalt de [- Label:]-haakjes uit de tekst.
+                // Dan valt er per label niets meer te vinden en bleef het hele
+                // resultaat één kleur — precies het verschil met een toegevoegd
+                // onderzoek, dat enkel fase 1 doorloopt en zijn haakjes houdt.
+                // Zonder labels tinten we daarom per regel, op de veldnaam.
+                if (!labels.length) { _aiTintPerRegel(el, classification); return; }
+                labels.forEach((label) => {
                     if (classification.get(label.textContent.trim()) !== true) return;
                     // Een compact label heeft zijn <br> binnenin; de waarde staat dan
                     // op de volgende regel maar hoort nog bij dit label.
@@ -4876,6 +4892,43 @@ negated bevindingen
                         node = next;
                     }
                 });
+            }
+
+            /**
+             * Terugval voor tekst zonder [- Label:]-haakjes: elke regel die begint
+             * met een veldnaam en een dubbele punt wordt tegen de classificatie
+             * gelegd, en bij een AI-ingevuld veld gaat de rest van de regel in
+             * .tt-ai. Correctie-spans van de verslag check blijven staan; alleen
+             * losse tekstknopen worden ingepakt.
+             */
+            function _aiTintPerRegel(el, classification) {
+                const doc = el.ownerDocument;
+                // Sleutels van de classificatie, genormaliseerd.
+                const aiVelden = new Set();
+                classification.forEach((isAi, label) => { if (isAi === true) aiVelden.add(_veldSleutel(label)); });
+                if (!aiVelden.size) return;
+
+                // Per regel werken: regels worden door <br> of een blokelement
+                // gescheiden. Een tekstknoop met "Naam:" erin start een veld.
+                const wandel = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                const knopen = [];
+                for (let n = wandel.nextNode(); n; n = wandel.nextNode()) knopen.push(n);
+
+                for (const knoop of knopen) {
+                    if (knoop.parentNode?.closest?.('.tt-ai, .corr')) continue;
+                    const m = /^(\s*)([^:\n]{2,60}):(\s*)(.+)$/.exec(knoop.textContent);
+                    if (!m) continue;
+                    if (!aiVelden.has(_veldSleutel(m[2]))) continue;
+                    // De naam en de dubbele punt blijven staan; de waarde erachter
+                    // wordt getint.
+                    const voor = doc.createTextNode(m[1] + m[2] + ':' + m[3]);
+                    const span = doc.createElement('span');
+                    span.className = 'tt-ai';
+                    span.textContent = m[4];
+                    knoop.parentNode.insertBefore(voor, knoop);
+                    knoop.parentNode.insertBefore(span, knoop);
+                    knoop.parentNode.removeChild(knoop);
+                }
             }
 
             function applyLabelVisibility() {
