@@ -743,30 +743,12 @@
                             placeholder="Dicteer hier via DMO…"
                             class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
                         ></textarea>
-                        <!-- Preset en terug horen bij het dicteerveld zelf en
-                             staan daarom rechtsonder in dit venster, net als de
-                             knoppen bij het DMO-venster in het PiP. -->
-                        <div class="flex items-center justify-end gap-2 mt-2">
-                            <!-- Allebei h-8, anders staat de tekstknop een paar
-                                 pixels hoger dan het vierkante knopje ernaast. -->
-                            <button
-                                id="launch-preset-btn"
-                                type="button"
-                                title="Preset verslag van dit onderzoekstype toevoegen"
-                                class="inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
-                            >📋 Preset</button>
-                            <button
-                                id="launch-undo-btn"
-                                type="button"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                            ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
-                        </div>
                     </div>
                     <tiro-magic-clipboard
                         for="report-form"
                         dictation-language="nl"
                     >
-                        <div id="dictation-actions" class="flex gap-2 mt-2 flex-wrap">
+                        <div id="dictation-actions" class="flex items-center gap-2 mt-2 flex-wrap">
                             <button
                                 id="autofill-btn"
                                 type="submit"
@@ -793,9 +775,22 @@
                                 Kopiëren
                             </button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Tekst ontvangen
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Tekst ontvangen
                             </span>
+                            <!-- Preset en terug horen bij het dicteerveld en staan
+                                 daarom rechts op dezelfde regel als de andere knoppen. -->
+                            <button
+                            id="launch-preset-btn"
+                            type="button"
+                            title="Preset verslag van dit onderzoekstype toevoegen"
+                            class="ml-auto inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >📋 Preset</button>
+                            <button
+                            id="launch-undo-btn"
+                            type="button"
+                            class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                            ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
                         </div>
                         <!-- Real-time verslag check panel -->
                         <div id="realtime-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
