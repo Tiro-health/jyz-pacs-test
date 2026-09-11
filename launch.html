@@ -651,6 +651,12 @@
                     Dictation
                     <div class="ml-auto flex items-center gap-2 shrink-0">
                     <button
+                        id="launch-calc-btn"
+                        type="button"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors shrink-0"
+                        title="Calculator openen"
+                    >🧮</button>
+                    <button
                         id="translate-small-btn"
                         type="button"
                         class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
@@ -773,12 +779,6 @@
                                 type="button"
                                 class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                             ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
-                            <button
-                                id="launch-calc-btn"
-                                type="button"
-                                title="Calculator openen"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors shrink-0"
-                            >🧮</button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 Tekst ontvangen
@@ -5607,7 +5607,11 @@ negated bevindingen
             // verschijnt als er voor dit onderzoekstype eentje aanstaat. Staat er
             // geen enkele aan, dan opent deze knop "Actieve template", want daar
             // vink je ze aan.
-            document.getElementById('launch-calc-btn')?.addEventListener('click', () => {
+            document.getElementById('launch-calc-btn')?.addEventListener('click', (e) => {
+                // De knop staat in de summary van Dictation; zonder dit klapt die
+                // bij elke klik mee open of dicht.
+                e.preventDefault();
+                e.stopPropagation();
                 const calc = document.getElementById('calc-accordion');
                 const doel = (calc && !calc.classList.contains('hidden'))
                     ? calc
