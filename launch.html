@@ -295,8 +295,7 @@
                             rows="3"
                             class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
                             placeholder="Klinische inlichtingen..."
-                        ></textarea>
-                    </div>
+                        ></textarea>                    </div>
                     <div>
                         <label for="modal-dv" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Diagnostische vraagstelling</label>
                         <textarea
@@ -651,11 +650,22 @@
                     Dictation
                     <div class="ml-auto flex items-center gap-2 shrink-0">
                     <button
-                        id="launch-calc-btn"
+                        id="ai-consult-btn"
                         type="button"
-                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors shrink-0"
-                        title="Calculator openen"
-                    >🧮</button>
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
+                        title="AI Radiologie Assistent"
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+                    <button
+                    id="medgemma-quick-btn"
+                    type="button"
+                    style="display:none"
+                    title="Beeldanalyse"
+                    class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+                    </svg>
+                    </button>
                     <button
                         id="translate-small-btn"
                         type="button"
@@ -663,11 +673,22 @@
                         title="Translate"
                     ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></button>
                     <button
-                        id="ai-consult-btn"
+                        id="launch-calc-btn"
                         type="button"
-                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
-                        title="AI Radiologie Assistent"
-                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors shrink-0"
+                        title="Calculator openen"
+                    >🧮</button>
+                    <button
+                        id="verslag-check-btn"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Verslag check
+                    </button>
                     <button
                         id="ai-resultaten-btn"
                         type="button"
@@ -688,17 +709,6 @@
                             <path d="M12 8v4l3 3"/>
                         </svg>
                         SNOMED CT
-                    </button>
-                    <button
-                        id="verslag-check-btn"
-                        type="button"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        Verslag check
                     </button>
                     </div><!-- /ml-auto button group -->
                     <svg
@@ -733,6 +743,22 @@
                             placeholder="Dicteer hier via DMO…"
                             class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
                         ></textarea>
+                        <!-- Preset en terug horen bij het dicteerveld zelf en
+                             staan daarom rechtsonder in dit venster, net als de
+                             knoppen bij het DMO-venster in het PiP. -->
+                        <div class="flex items-center justify-end gap-2 mt-2">
+                                <button
+                                    id="launch-preset-btn"
+                                    type="button"
+                                    title="Preset verslag van dit onderzoekstype toevoegen"
+                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                                >📋 Preset</button>
+                                <button
+                                    id="launch-undo-btn"
+                                    type="button"
+                                    class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                                ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+                        </div>
                     </div>
                     <tiro-magic-clipboard
                         for="report-form"
@@ -764,36 +790,10 @@
                                 </svg>
                                 Kopiëren
                             </button>
-                            <!-- Dezelfde drie knoppen als naast het DMO-venster in
-                                 het PiP: de preset van het onderzoekstype erbij
-                                 plakken, de laatste stap terugzetten, en de
-                                 calculator openen. -->
-                            <button
-                                id="launch-preset-btn"
-                                type="button"
-                                title="Preset verslag van dit onderzoekstype toevoegen"
-                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
-                            >📋 Preset</button>
-                            <button
-                                id="launch-undo-btn"
-                                type="button"
-                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                            ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 Tekst ontvangen
                             </span>
-                            <button
-                                id="medgemma-quick-btn"
-                                type="button"
-                                style="display:none"
-                                title="Beeldanalyse"
-                                class="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
-                                </svg>
-                            </button>
                         </div>
                         <!-- Real-time verslag check panel -->
                         <div id="realtime-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
@@ -4111,8 +4111,8 @@ UITVOERFORMAAT — STRIKT:
 
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
-            const CAM_BTN_OFF   = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
-            const CAM_BTN_ON    = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+            const CAM_BTN_OFF   = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
+            const CAM_BTN_ON    = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
             const PIP_CAM_OFF   = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer leading-none";
             const PIP_CAM_ON    = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors cursor-pointer leading-none";
 
@@ -6117,7 +6117,13 @@ negated bevindingen
                 medgemmaQuickBtn.className = medgemmaAccordionActive ? CAM_BTN_ON : CAM_BTN_OFF;
             }
 
-            medgemmaQuickBtn.addEventListener("click", toggleMedgemmaAccordion);
+            // De knop staat in de summary van Dictation: de klik mag dat
+            // accordeon niet mee open- of dichtklappen.
+            medgemmaQuickBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMedgemmaAccordion();
+            });
 
             function updateMedgemmaToggle() {
                 // Settings toggle only shows/hides the camera button; accordion visibility is
@@ -6689,7 +6695,8 @@ negated bevindingen
                         releasePanelHeight(trPanel);
                     }
                 });
-                fontBtns.append(btnPipAI, btnPipVc, btnPipCalc, btnPipCam, btnPipTranslate, btnFontDown, btnFontUp);
+                // Zelfde volgorde als in de kopbalk van Dictation op de hoofdpagina.
+                fontBtns.append(btnPipAI, btnPipCam, btnPipTranslate, btnPipCalc, btnPipVc, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
