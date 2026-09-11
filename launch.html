@@ -758,6 +758,27 @@
                                 </svg>
                                 Kopiëren
                             </button>
+                            <!-- Dezelfde drie knoppen als naast het DMO-venster in
+                                 het PiP: de preset van het onderzoekstype erbij
+                                 plakken, de laatste stap terugzetten, en de
+                                 calculator openen. -->
+                            <button
+                                id="launch-preset-btn"
+                                type="button"
+                                title="Preset verslag van dit onderzoekstype toevoegen"
+                                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >📋 Preset</button>
+                            <button
+                                id="launch-undo-btn"
+                                type="button"
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                            ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+                            <button
+                                id="launch-calc-btn"
+                                type="button"
+                                title="Calculator openen"
+                                class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors shrink-0"
+                            >🧮</button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                                 Tekst ontvangen
@@ -795,6 +816,23 @@
                          wanneer het SDK-element gedeactiveerd wordt; die blijven dan
                          gewoon bruikbaar. -->
                     <div id="dictation-actions-out"></div>
+                    <!-- Vertaling: hetzelfde paneel als in het PiP-venster, onder
+                         het dicteerveld, in plaats van een modaal venster. -->
+                    <div id="launch-translate-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Vertaling</span>
+                            <div class="flex items-center gap-2">
+                                <span id="launch-translate-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                                <button type="button" id="launch-translate-close" title="Sluiten" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base">×</button>
+                            </div>
+                        </div>
+                        <div id="launch-translate-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed"></div>
+                        <div id="launch-translate-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                            <button id="launch-translate-orig" type="button" style="display:none" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
+                            <button id="launch-translate-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                            <button id="launch-translate-send" type="button" title="Stuur naar dictatie (vervangt tekst)" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
+                        </div>
+                    </div>
                 </div>
             </details>
 
@@ -2823,6 +2861,12 @@
                 if (wordtActief) _launchDmoGrow();
             }
 
+            // Het SDK-element hoort mee te weten wat er in het eigen veld staat:
+            // de calculator-scan en de auto-detectie van het onderzoekstype
+            // hangen aan zijn input-gebeurtenis. In het PiP-venster gebeurt dat
+            // vanzelf, omdat dat elke ronde setDictationText() aanroept.
+            let _launchDmoSpiegelTimer = null;
+
             if (launchDmoTa) {
                 launchDmoTa.addEventListener('input', () => {
                     _launchDmoGrow();
@@ -2831,6 +2875,16 @@
                     // de tekst ook bij nadat het veld weer dichtgaat.
                     latestDictationText = launchDmoTa.value;
                     if (realtimeEnabled) scheduleRealtimeCheck();
+                    // Zelfde wachttijd als in het PiP-venster, zodat er niet bij
+                    // elke aanslag een scan loopt.
+                    clearTimeout(_launchDmoSpiegelTimer);
+                    _launchDmoSpiegelTimer = setTimeout(() => {
+                        const tekst = launchDmoTa.value.trim();
+                        if (!tekst) return;
+                        setDictationText(tekst);
+                        _scheduleCalcScan();
+                        if (autoStudyDetect) _tryAutoDetectStudyType(tekst);
+                    }, 2000);
                 });
                 // Het SDK-element kan zijn eigen inhoud later opnieuw opbouwen; dan
                 // moet de stand opnieuw gezet worden.
@@ -3409,6 +3463,12 @@
 
             function sendToDictationFields(text) {
                 if (!text) return;
+                // Zelfde afspraak als de pijlknoppen in het PiP-venster: wat er
+                // stond gaat op de terug-stapel, en de realtime check slaat niet
+                // opnieuw aan op tekst die we hier zelf neerzetten.
+                const _vorige = _currentDmoText();
+                if (_vorige !== text) pushDmoUndo('tekst', _vorige);
+                _realtimeLastText = String(text).trim();
                 setDictationText(text);
                 if (launchDmoActief()) {
                     setNativeValue(launchDmoTa, text);
@@ -3443,22 +3503,78 @@
                 return _normalizeDictText(raw);
             }
 
+            // ── Vertaalpaneel onder het dicteerveld (zoals in het PiP-venster) ──
+            const trPanelEl   = document.getElementById('launch-translate-panel');
+            const trContentEl = document.getElementById('launch-translate-content');
+            const trStatusEl  = document.getElementById('launch-translate-status');
+            const trActionsEl = document.getElementById('launch-translate-actions');
+            const trOrigBtnEl = document.getElementById('launch-translate-orig');
+            let _trLaunchOrig = null, _trLaunchToontOrig = false, _trLaunchResultHTML = null;
+
+            const _trLaunchToon = () => {
+                trPanelEl.classList.remove('hidden');
+                trActionsEl.classList.remove('hidden');
+                trActionsEl.classList.add('flex');
+            };
+
+            document.getElementById('launch-translate-close').addEventListener('click', () => {
+                trPanelEl.classList.add('hidden');
+            });
+            trOrigBtnEl.addEventListener('click', () => {
+                _trLaunchToontOrig = !_trLaunchToontOrig;
+                if (_trLaunchToontOrig) {
+                    _trLaunchResultHTML = trContentEl.innerHTML;
+                    trContentEl.innerHTML = (_trLaunchOrig || '').replace(/\n/g, '<br>');
+                    trOrigBtnEl.textContent = '↩ Vertaald';
+                } else {
+                    trContentEl.innerHTML = _trLaunchResultHTML;
+                    trOrigBtnEl.textContent = '↩ Origineel';
+                }
+            });
+            document.getElementById('launch-translate-copy').addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const tekst = _trLaunchToontOrig ? (_trLaunchOrig || '') : (trContentEl.innerText || '');
+                navigator.clipboard.writeText(tekst).catch(() => {});
+                btn.textContent = 'Gekopieerd ✓';
+                setTimeout(() => { btn.textContent = 'Kopiëren'; }, 2000);
+            });
+            document.getElementById('launch-translate-send').addEventListener('click', () => {
+                const tekst = _trLaunchToontOrig ? (_trLaunchOrig || '') : (trContentEl.innerText || '');
+                if (!tekst.trim()) return;
+                sendToDictationFields(tekst);
+                trPanelEl.classList.add('hidden');
+            });
+
             translateBtn.addEventListener("click", async () => {
                 const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
                 const dictText = readDictationText();
                 if (!dictText.trim()) { alert("Geen dictatietekst gevonden. Dicteer eerst een verslag."); return; }
                 const prompt = fillPrompt(template, { text: dictText });
+                _trLaunchOrig = dictText;
+                _trLaunchToontOrig = false;
+                _trLaunchResultHTML = null;
+                trOrigBtnEl.textContent = '↩ Origineel';
+                trOrigBtnEl.style.display = 'none';
+                trContentEl.innerHTML = '';
+                trPanelEl.classList.remove('hidden');
+                trActionsEl.classList.add('hidden');
+                trActionsEl.classList.remove('flex');
                 if (GEMINI_API_KEY) {
-                    openGeminiModal("Vertaling");
-                    try { resolveGeminiModal(await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal())); }
-                    catch (e) {
-                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
-                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                    trStatusEl.textContent = 'Bezig…';
+                    try {
+                        const resultaat = await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal());
+                        trContentEl.innerHTML = renderMarkdown(resultaat);
+                        trStatusEl.textContent = '';
+                        trOrigBtnEl.style.display = '';
+                        _trLaunchToon();
+                    } catch (e) {
+                        if (e.name === "AbortError" && !_abortedByUser) trStatusEl.textContent = 'Tijdslimiet overschreden (60 seconden). Probeer opnieuw.';
+                        else if (e.name !== "AbortError") trStatusEl.textContent = 'Fout: ' + e.message;
                     }
                 } else {
-                    openGeminiModal("Geen API-sleutel");
-                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
-                    geminiContent.innerHTML = noApiKeyHtml(prompt);
+                    trStatusEl.textContent = '';
+                    trContentEl.innerHTML = noApiKeyHtml(prompt);
+                    _trLaunchToon();
                 }
             });
 
@@ -3469,6 +3585,10 @@
                 _realtimeResumePause();
                 const text = readDictationText();
                 if (!text) return;
+                // Net als in het PiP-venster: kopiëren rondt het verslag af, dus
+                // het dicteerveld en de resultaatvensters gaan schoon voor het
+                // volgende onderzoek. De terugknop haalt de tekst desnoods terug.
+                _launchReset();
                 navigator.clipboard.writeText(text).then(() => {
                     const icon = dictationCopyBtn.querySelector('svg').outerHTML;
                     dictationCopyBtn.innerHTML = icon + ' Gekopieerd';
@@ -4202,7 +4322,9 @@ UITVOERFORMAAT — STRIKT:
                 realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
                 realtimeToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${realtimeEnabled ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 realtimeToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${realtimeEnabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
-                realtimePanel.classList.toggle('hidden', !realtimeEnabled);
+                // Het venster verschijnt pas bij het eerste resultaat (zie
+                // runRealtimeCheck). Aanzetten toont dus geen leeg kader meer.
+                if (!realtimeEnabled) realtimePanel.classList.add('hidden');
                 if (realtimeEnabled) {
                     // Force verslag check button to active/green and disable it
                     verslagCheckActive = true;
@@ -5325,12 +5447,44 @@ negated bevindingen
                     setNativeValue(_pipDmoTa, '');
                     try { _pipDmoTa.style.height = 'auto'; } catch (_) {}
                 }
+                // En het eigen dicteerveld op deze pagina: zonder dit bleef bij
+                // "voeg toe" de tekst van het vorige onderzoek gewoon staan.
+                if (launchDmoTa) {
+                    setNativeValue(launchDmoTa, '');
+                    _launchDmoGrow();
+                }
                 _autoStudyLastDetected = '';
                 if (contextForm) {
                     deepFillByLabel(contextForm, "type onderzoek", "");
                     deepClearSelectByLabel(contextForm, "lateralisatie");
                     deepFillByLabel(contextForm, "klinische inlichtingen", "");
                     deepFillByLabel(contextForm, "diagnostische vraagstelling", "");
+                }
+            }
+
+            // Het verslag afronden op de hoofdpagina: hetzelfde wat _pipReset() in
+            // het PiP-venster doet na kopiëren.
+            function _launchReset() {
+                _realtimeAbort?.abort();
+                clearTimeout(_realtimeDebounce);
+                _realtimeLastText = '';
+                if (launchDmoTa) {
+                    pushDmoUndo('tekst', launchDmoTa.value);
+                    setNativeValue(launchDmoTa, '');
+                    _launchDmoGrow();
+                }
+                setDictationText('');
+                latestDictationText = '';
+                // Auto-detectie opnieuw laten aanslaan bij het volgende onderzoek.
+                if (autoStudyDetect) {
+                    _autoStudyLastDetected = '';
+                    if (contextForm) {
+                        deepFillByLabel(contextForm, "type onderzoek", "");
+                        deepClearSelectByLabel(contextForm, "lateralisatie");
+                    }
+                }
+                for (const id of ['realtime-panel', 'tt-result-panel', 'launch-translate-panel']) {
+                    document.getElementById(id)?.classList.add('hidden');
                 }
             }
 
@@ -5387,6 +5541,8 @@ negated bevindingen
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
                 if (_pipDmoTa?.isConnected) setNativeValue(_pipDmoTa, t);
+                if (launchDmoTa) { setNativeValue(launchDmoTa, t); _launchDmoGrow(); }
+                _realtimeLastText = t.trim();
                 setDictationText(t);
             }
 
@@ -5407,19 +5563,60 @@ negated bevindingen
             }
 
             function updatePipUndoBtn() {
-                const b = _pipUndoBtnRef?.isConnected ? _pipUndoBtnRef : null;
-                if (!b) return;
+                // Dezelfde stapel bedient twee knoppen: die in het PiP-venster en
+                // die naast het eigen DMO-veld op deze pagina.
+                const knoppen = [
+                    _pipUndoBtnRef?.isConnected ? _pipUndoBtnRef : null,
+                    document.getElementById('launch-undo-btn'),
+                ].filter(Boolean);
+                if (!knoppen.length) return;
                 const kan = _dmoUndo.length > 0;
-                b.disabled = !kan;
-                b.style.opacity = kan ? "" : "0.4";
-                b.style.cursor = kan ? "pointer" : "not-allowed";
                 const top = kan ? _dmoUndo[_dmoUndo.length - 1] : null;
-                b.title = !kan
+                const titel = !kan
                     ? "Niets om terug te zetten"
                     : top.type === "voegtoe"
                         ? `Laatste "voeg toe" ongedaan maken en dat onderzoek terugzetten`
                         : "Vorige tekst in het DMO-venster terugzetten";
+                for (const b of knoppen) {
+                    b.disabled = !kan;
+                    b.style.opacity = kan ? "" : "0.4";
+                    b.style.cursor = kan ? "pointer" : "not-allowed";
+                    b.title = titel;
+                }
             }
+
+            // ── Preset- en terugknop naast het eigen DMO-veld ──────────────────
+            // Beide doen precies hetzelfde als hun tegenhangers in het PiP-venster.
+            document.getElementById('launch-undo-btn')?.addEventListener('click', () => dmoUndoStep());
+            document.getElementById('launch-preset-btn')?.addEventListener('click', () => {
+                const preset = window._flowPresetText || '';
+                if (!preset.trim()) {
+                    alert('Geen preset verslag ingesteld voor dit onderzoekstype. Stel een preset in via de Flow configuratie pagina.');
+                    return;
+                }
+                const bestaand = launchDmoTa.value.trim();
+                const nieuw = bestaand ? bestaand + '\n\n' + preset : preset;
+                pushDmoUndo('tekst', launchDmoTa.value);
+                setNativeValue(launchDmoTa, nieuw);
+                _launchDmoGrow();
+                latestDictationText = nieuw;
+                setDictationText(nieuw);
+            });
+
+            // Calculatorknop: de calculators wonen in hun eigen venster, dat alleen
+            // verschijnt als er voor dit onderzoekstype eentje aanstaat. Staat er
+            // geen enkele aan, dan opent deze knop "Actieve template", want daar
+            // vink je ze aan.
+            document.getElementById('launch-calc-btn')?.addEventListener('click', () => {
+                const calc = document.getElementById('calc-accordion');
+                const doel = (calc && !calc.classList.contains('hidden'))
+                    ? calc
+                    : document.getElementById('active-template-accordion');
+                if (!doel) return;
+                doel.open = true;
+                doel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+            updatePipUndoBtn();
 
             async function _voegToeHandler(dictText) {
                 const label = _getStudyLabel();
