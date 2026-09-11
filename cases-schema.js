@@ -57,6 +57,7 @@
             {
                 id: "int_discipline", label: "Discipline", type: "dynamicCheckboxes",
                 optionsFrom: "disciplines", addLabel: "Andere toevoegen",
+                searchable: true, searchPlaceholder: "Zoek een discipline…",
                 addPlaceholder: "Discipline toevoegen…",
                 emptyHint: "Nog geen disciplines in de personendatabank. Vul ze aan op de flow-pagina, of gebruik “Andere toevoegen”.",
                 defaultFrom: "aanvragerDiscipline",
@@ -92,6 +93,7 @@
             {
                 id: "opv_discipline", label: "Discipline", type: "dynamicCheckboxes",
                 optionsFrom: "disciplines", addLabel: "Andere toevoegen",
+                searchable: true, searchPlaceholder: "Zoek een discipline…",
                 addPlaceholder: "Discipline toevoegen…",
                 emptyHint: "Nog geen disciplines in de personendatabank. Vul ze aan op de flow-pagina, of gebruik “Andere toevoegen”.",
                 defaultFrom: "aanvragerDiscipline",
