@@ -519,6 +519,9 @@
             case "radiologen": return NameLists.get("radiologen");
             case "aanvragers": return NameLists.get("aanvragers");
             case "snomed":     return SnomedOptions.options();
+            // De disciplines zoals ze in de personendatabank staan; die lijst
+            // groeit dus mee met de namenlijst op de flow-pagina.
+            case "disciplines": return NameLists.disciplines();
             default:           return [];
         }
     }
@@ -684,7 +687,7 @@
                     if (f.type === "dynamicCheckboxes") {
                         if (!known.length && !sel.length) {
                             input.appendChild(el("p", "text-xs text-neutral-400 dark:text-neutral-500",
-                                "Nog geen SNOMED CT-resultaten. Gebruik “Andere toevoegen”."));
+                                f.emptyHint || "Nog geen SNOMED CT-resultaten. Gebruik “Andere toevoegen”."));
                         }
                         const add = el("button", "self-end text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer bg-transparent border-0 p-0", f.addLabel || "Andere toevoegen");
                         add.type = "button";
@@ -692,7 +695,7 @@
                             const wrap = el("div", "flex gap-2 items-center pt-1");
                             const txt = el("input", INPUT + " !py-1 text-sm");
                             txt.type = "text";
-                            txt.placeholder = "Pathologie toevoegen…";
+                            txt.placeholder = f.addPlaceholder || "Pathologie toevoegen…";
                             const ok = el("button", BTN_SMALL, "Toevoegen");
                             ok.type = "button";
                             const commit = () => {
@@ -1328,7 +1331,63 @@ Voorbeeld van een geldig antwoord:
                     const touched = () => { _dirty = true; updateSendButton(); };
                     native.addEventListener("change", touched);
                     native.addEventListener("input", touched);
+                    // De discipline volgt de aanvrager, tot je er zelf aankomt.
+                    const disciplineWatch = (e) => {
+                        const eigenRij = e.target.closest?.("[data-field-id]");
+                        if (eigenRij && eigenRij.dataset.discipline === "1") {
+                            eigenRij.dataset.handmatig = "1";
+                            return;
+                        }
+                        syncDisciplineVanAanvrager();
+                    };
+                    native.addEventListener("change", disciplineWatch);
+                    native.addEventListener("input", disciplineWatch);
                 }
+            });
+            _markeerDisciplineRijen();
+            syncDisciplineVanAanvrager();
+        }
+
+        // ── Discipline volgt de aanvrager ───────────────────────────────
+        // Wie een aanvrager invult, krijgt diens discipline aangevinkt. Zodra
+        // je zelf in dat veld klikt, blijft jouw keuze staan: het overschrijft
+        // nooit iets wat er al staat.
+        const DISCIPLINE_BRON = "aanvragerDiscipline";
+
+        function _disciplineRijen() {
+            const uit = [];
+            sections.forEach(({ native, schema }) => {
+                if (!native) return;
+                (schema.fields || []).forEach((f) => {
+                    if (f.defaultFrom !== DISCIPLINE_BRON) return;
+                    const row = native.querySelector('[data-field-id="' + f.id + '"]');
+                    if (row) uit.push({ f, row, native, schema });
+                });
+            });
+            return uit;
+        }
+
+        function _markeerDisciplineRijen() {
+            _disciplineRijen().forEach(({ row }) => { row.dataset.discipline = "1"; });
+        }
+
+        function syncDisciplineVanAanvrager() {
+            const rijen = _disciplineRijen();
+            if (!rijen.length) return;
+            const aanvrager = collect().values.aanvrager || "";
+            const discipline = NameLists.disciplineFor(aanvrager);
+            if (!discipline) return;
+            rijen.forEach(({ f, row, native, schema }) => {
+                if (row.dataset.handmatig === "1") return;
+                const aangevinkt = Array.from(row.querySelectorAll(
+                    "input[type=checkbox]:checked:not([data-select-all])")).map((c) => c.value);
+                // Leeg, of nog precies wat wij er zelf hadden gezet: dan mag het
+                // meeschuiven naar de nieuwe aanvrager. Alles wat de gebruiker
+                // zelf koos blijft staan.
+                if (aangevinkt.length
+                    && aangevinkt.join("\u0000") !== (row.dataset.auto || "")) return;
+                SchemaForm.fill(native, schema, { [f.id]: [discipline] });
+                row.dataset.auto = discipline;
             });
         }
 
