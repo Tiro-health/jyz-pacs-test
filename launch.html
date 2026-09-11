@@ -727,6 +727,21 @@
                             placeholder="Dicteer hier via DMO…"
                             class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
                         ></textarea>
+                        <!-- Dezelfde twee knoppen als naast het DMO-venster in het
+                             PiP: de preset van het onderzoekstype erbij plakken, en
+                             de laatste stap terugzetten. -->
+                        <div class="flex items-center gap-2 mt-2">
+                            <button
+                                id="launch-preset-btn"
+                                type="button"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >📋 Preset</button>
+                            <button
+                                id="launch-undo-btn"
+                                type="button"
+                                class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                            ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+                        </div>
                     </div>
                     <tiro-magic-clipboard
                         for="report-form"
@@ -2823,6 +2838,12 @@
                 if (wordtActief) _launchDmoGrow();
             }
 
+            // Het SDK-element hoort mee te weten wat er in het eigen veld staat:
+            // de calculator-scan en de auto-detectie van het onderzoekstype
+            // hangen aan zijn input-gebeurtenis. In het PiP-venster gebeurt dat
+            // vanzelf, omdat dat elke ronde setDictationText() aanroept.
+            let _launchDmoSpiegelTimer = null;
+
             if (launchDmoTa) {
                 launchDmoTa.addEventListener('input', () => {
                     _launchDmoGrow();
@@ -2831,6 +2852,16 @@
                     // de tekst ook bij nadat het veld weer dichtgaat.
                     latestDictationText = launchDmoTa.value;
                     if (realtimeEnabled) scheduleRealtimeCheck();
+                    // Zelfde wachttijd als in het PiP-venster, zodat er niet bij
+                    // elke aanslag een scan loopt.
+                    clearTimeout(_launchDmoSpiegelTimer);
+                    _launchDmoSpiegelTimer = setTimeout(() => {
+                        const tekst = launchDmoTa.value.trim();
+                        if (!tekst) return;
+                        setDictationText(tekst);
+                        _scheduleCalcScan();
+                        if (autoStudyDetect) _tryAutoDetectStudyType(tekst);
+                    }, 2000);
                 });
                 // Het SDK-element kan zijn eigen inhoud later opnieuw opbouwen; dan
                 // moet de stand opnieuw gezet worden.
@@ -3409,6 +3440,12 @@
 
             function sendToDictationFields(text) {
                 if (!text) return;
+                // Zelfde afspraak als de pijlknoppen in het PiP-venster: wat er
+                // stond gaat op de terug-stapel, en de realtime check slaat niet
+                // opnieuw aan op tekst die we hier zelf neerzetten.
+                const _vorige = _currentDmoText();
+                if (_vorige !== text) pushDmoUndo('tekst', _vorige);
+                _realtimeLastText = String(text).trim();
                 setDictationText(text);
                 if (launchDmoActief()) {
                     setNativeValue(launchDmoTa, text);
@@ -5325,6 +5362,12 @@ negated bevindingen
                     setNativeValue(_pipDmoTa, '');
                     try { _pipDmoTa.style.height = 'auto'; } catch (_) {}
                 }
+                // En het eigen dicteerveld op deze pagina: zonder dit bleef bij
+                // "voeg toe" de tekst van het vorige onderzoek gewoon staan.
+                if (launchDmoTa) {
+                    setNativeValue(launchDmoTa, '');
+                    _launchDmoGrow();
+                }
                 _autoStudyLastDetected = '';
                 if (contextForm) {
                     deepFillByLabel(contextForm, "type onderzoek", "");
@@ -5387,6 +5430,8 @@ negated bevindingen
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
                 if (_pipDmoTa?.isConnected) setNativeValue(_pipDmoTa, t);
+                if (launchDmoTa) { setNativeValue(launchDmoTa, t); _launchDmoGrow(); }
+                _realtimeLastText = t.trim();
                 setDictationText(t);
             }
 
@@ -5407,19 +5452,46 @@ negated bevindingen
             }
 
             function updatePipUndoBtn() {
-                const b = _pipUndoBtnRef?.isConnected ? _pipUndoBtnRef : null;
-                if (!b) return;
+                // Dezelfde stapel bedient twee knoppen: die in het PiP-venster en
+                // die naast het eigen DMO-veld op deze pagina.
+                const knoppen = [
+                    _pipUndoBtnRef?.isConnected ? _pipUndoBtnRef : null,
+                    document.getElementById('launch-undo-btn'),
+                ].filter(Boolean);
+                if (!knoppen.length) return;
                 const kan = _dmoUndo.length > 0;
-                b.disabled = !kan;
-                b.style.opacity = kan ? "" : "0.4";
-                b.style.cursor = kan ? "pointer" : "not-allowed";
                 const top = kan ? _dmoUndo[_dmoUndo.length - 1] : null;
-                b.title = !kan
+                const titel = !kan
                     ? "Niets om terug te zetten"
                     : top.type === "voegtoe"
                         ? `Laatste "voeg toe" ongedaan maken en dat onderzoek terugzetten`
                         : "Vorige tekst in het DMO-venster terugzetten";
+                for (const b of knoppen) {
+                    b.disabled = !kan;
+                    b.style.opacity = kan ? "" : "0.4";
+                    b.style.cursor = kan ? "pointer" : "not-allowed";
+                    b.title = titel;
+                }
             }
+
+            // ── Preset- en terugknop naast het eigen DMO-veld ──────────────────
+            // Beide doen precies hetzelfde als hun tegenhangers in het PiP-venster.
+            document.getElementById('launch-undo-btn')?.addEventListener('click', () => dmoUndoStep());
+            document.getElementById('launch-preset-btn')?.addEventListener('click', () => {
+                const preset = window._flowPresetText || '';
+                if (!preset.trim()) {
+                    alert('Geen preset verslag ingesteld voor dit onderzoekstype. Stel een preset in via de Flow configuratie pagina.');
+                    return;
+                }
+                const bestaand = launchDmoTa.value.trim();
+                const nieuw = bestaand ? bestaand + '\n\n' + preset : preset;
+                pushDmoUndo('tekst', launchDmoTa.value);
+                setNativeValue(launchDmoTa, nieuw);
+                _launchDmoGrow();
+                latestDictationText = nieuw;
+                setDictationText(nieuw);
+            });
+            updatePipUndoBtn();
 
             async function _voegToeHandler(dictText) {
                 const label = _getStudyLabel();
