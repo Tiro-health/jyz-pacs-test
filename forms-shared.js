@@ -270,21 +270,62 @@
         ROLES: ["radioloog", "aanvrager"],
         ARTS_TYPES: ["Specialist", "Specialist in opleiding"],
 
+        // Een geïmporteerd bestand komt zelden precies in onze veldnamen binnen.
+        // Deze aliassen vangen de Nederlandse en Engelse schrijfwijzen op, zodat
+        // een lijst met "specialisatie" of "dienst" niet stil zonder
+        // specialisatie binnenkomt.
+        ALIAS: {
+            name: ["name", "naam", "fullName", "volledige_naam"],
+            email: ["email", "e-mail", "mail", "emailadres", "e_mail"],
+            phone: ["phone", "telefoon", "tel", "gsm", "telefoonnummer"],
+            artsType: ["artsType", "arts_type", "type", "graad"],
+            discipline: ["discipline", "specialisatie", "specialty", "speciality",
+                "dienst", "vakgebied", "specialisme"],
+            roles: ["roles", "rollen", "rol", "role"],
+        },
+
+        _veld(e, sleutel) {
+            for (const naam of this.ALIAS[sleutel]) {
+                const v = e[naam];
+                if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+            }
+            return "";
+        },
+
         /** Breng elke bekende schrijfwijze terug tot één vorm. */
         _normalise(entry, fallbackRole) {
             const e = typeof entry === "string" ? { name: entry } : (entry || {});
-            const roles = Array.isArray(e.roles) && e.roles.length
-                ? e.roles.filter((r) => this.ROLES.includes(r))
-                : (fallbackRole ? [fallbackRole] : []);
+            const ruweRollen = this._veld(e, "roles");
+            const lijst = Array.isArray(ruweRollen)
+                ? ruweRollen
+                : (ruweRollen ? String(ruweRollen).split(/[,;/]+/) : []);
+            const roles = lijst
+                .map((r) => String(r).trim().toLowerCase())
+                .map((r) => (r.startsWith("radiolo") ? "radioloog" : r.startsWith("aanvrag") ? "aanvrager" : r))
+                .filter((r) => this.ROLES.includes(r));
+            const artsType = String(this._veld(e, "artsType") || "").trim();
             return {
-                name: String(e.name || "").trim(),
-                email: String(e.email || "").trim(),
-                phone: String(e.phone || "").trim(),
-                artsType: this.ARTS_TYPES.includes(e.artsType) ? e.artsType : "",
-                discipline: String(e.discipline || "").trim(),
-                roles: [...new Set(roles)],
+                name: String(this._veld(e, "name")).trim(),
+                email: String(this._veld(e, "email")).trim(),
+                phone: String(this._veld(e, "phone")).trim(),
+                artsType: this.ARTS_TYPES.includes(artsType) ? artsType : "",
+                discipline: String(this._veld(e, "discipline")).trim(),
+                roles: [...new Set(roles.length ? roles : (fallbackRole ? [fallbackRole] : []))],
                 isUser: e.isUser === true,
             };
+        },
+
+        /**
+         * Naam tot een vergelijkbare vorm: kleine letters, geen titels of
+         * leestekens. "Dr. Peeters Jan" en "peeters  jan" worden hetzelfde.
+         */
+        _naamSleutel(naam) {
+            return String(naam || "")
+                .toLowerCase()
+                .replace(/\b(dr|prof|mevr|mevrouw|dhr|de?\s?heer|md)\b\.?/g, " ")
+                .replace(/[^a-zà-ſ\s-]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
         },
 
         /** Voeg personen met dezelfde naam samen; rollen en velden worden aangevuld. */
@@ -368,11 +409,31 @@
             return this.persons().find((p) => p.name.toLowerCase() === target)?.email || "";
         },
 
-        /** De volledige persoon bij een naam. */
+        /**
+         * De volledige persoon bij een naam. Eerst de letterlijke naam; lukt dat
+         * niet, dan zonder titels en leestekens, en ten slotte met omgekeerde
+         * woordvolgorde ("Jan Peeters" voor "Peeters Jan"). Die laatste twee
+         * alleen wanneer er precies één persoon op past — anders liever "niet
+         * gekend" dan de verkeerde specialisatie.
+         */
         personFor(name) {
             const target = String(name || "").trim().toLowerCase();
             if (!target) return null;
-            return this.persons().find((p) => p.name.toLowerCase() === target) || null;
+            const lijst = this.persons();
+            const exact = lijst.find((p) => p.name.toLowerCase() === target);
+            if (exact) return exact;
+
+            const sleutel = this._naamSleutel(name);
+            if (!sleutel) return null;
+            const passend = (fn) => {
+                const treffers = lijst.filter(fn);
+                return treffers.length === 1 ? treffers[0] : null;
+            };
+            const opSleutel = passend((p) => this._naamSleutel(p.name) === sleutel);
+            if (opSleutel) return opSleutel;
+
+            const omgekeerd = sleutel.split(" ").reverse().join(" ");
+            return passend((p) => this._naamSleutel(p.name) === omgekeerd);
         },
 
         /** De specialisatie bij een naam, of "" wanneer die niet gekend is. */
@@ -398,9 +459,15 @@
          */
         importFrom(nameLists) {
             if (!nameLists || typeof nameLists !== "object") return 0;
+            // Een bestand kan de lijst op verschillende dieptes aanleveren: kaal,
+            // onder nameLists, of onder een van de bekende sleutels.
+            if (Array.isArray(nameLists)) nameLists = { [this.KEY]: nameLists };
+            else if (nameLists.nameLists) nameLists = nameLists.nameLists;
             const uit = [];
-            if (Array.isArray(nameLists[this.KEY])) {
-                nameLists[this.KEY].forEach((e) => uit.push(this._normalise(e)));
+            for (const sleutel of [this.KEY, "personen", "persons", "namen"]) {
+                if (Array.isArray(nameLists[sleutel])) {
+                    nameLists[sleutel].forEach((e) => uit.push(this._normalise(e)));
+                }
             }
             Object.entries(this.LEGACY).forEach(([rol, key]) => {
                 if (Array.isArray(nameLists[key])) {
