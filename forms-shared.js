@@ -512,6 +512,69 @@
         },
     };
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // De disciplines van het ziekenhuis — vaste keuzelijst
+    // Aangeleverd als lijst; hier genormaliseerd: alles in kleine letters,
+    // "&" voluit als "en", en drie paren samengevoegd die twee schrijfwijzen
+    // van dezelfde discipline waren. De disciplines uit de personendatabank
+    // komen hier bovenop, zodat een eigen toevoeging niet verdwijnt.
+    // ═══════════════════════════════════════════════════════════════════════
+    const DEFAULT_DISCIPLINES = [
+        "algemene en abdominale heelkunde",
+        "algemene, abdominale, laparoscopische heelkunde",
+        "anatomopathologie",
+        "anesthesie",
+        "anesthesie en urgentiegeneeskunde",
+        "anesthesie en pijntherapie",
+        "anesthesie-reanimatie",
+        "cardiologie",
+        "cardiologie en cardiale revalidatie",
+        "dermato-venereologie",
+        "dermatologie",
+        "endocrinologie-diabetologie",
+        "fysische geneeskunde",
+        "gastro-enterologie",
+        "geriatrie",
+        "geriatrie en palliatieve zorg",
+        "gynaecologie",
+        "hematologie",
+        "intensieve zorg en anesthesie-reanimatie",
+        "interventionele cardiologie",
+        "inwendige ziekten en nierziekten",
+        "inwendige ziekten, nierziekten en infectieziekten",
+        "klinische biologie",
+        "medische beeldvorming",
+        "medische oncologie",
+        "mond-, kaak- en aangezichtschirurgie",
+        "nefrologie en klinische infectiologie",
+        "neurologie",
+        "neus-keel-oorziekten en hoofd- en halschirurgie",
+        "nucleaire geneeskunde",
+        "oftalmologie",
+        "orthopedische heelkunde",
+        "pediatrie",
+        "plastische heelkunde",
+        "pneumologie",
+        "pneumologie en respiratoire oncologie",
+        "psychiatrie",
+        "reumatologie",
+        "spinale pathologie",
+        "thorax- en vaatheelkunde",
+        "urgentiegeneeskunde",
+        "urologie",
+    ];
+
+    /** Vaste lijst plus wat er in de personendatabank staat, ontdubbeld. */
+    function alleDisciplines() {
+        const uit = new Map();
+        [...DEFAULT_DISCIPLINES, ...NameLists.disciplines()].forEach((d) => {
+            const naam = String(d || "").trim();
+            const sleutel = naam.toLowerCase();
+            if (naam && !uit.has(sleutel)) uit.set(sleutel, naam);
+        });
+        return [...uit.values()].sort((a, b) => a.localeCompare(b, "nl"));
+    }
+
     /** Los een optionsFrom-verwijzing op naar een concrete optielijst. */
     function resolveOptions(field) {
         if (field.options && field.options.length) return field.options;
@@ -521,7 +584,7 @@
             case "snomed":     return SnomedOptions.options();
             // De disciplines zoals ze in de personendatabank staan; die lijst
             // groeit dus mee met de namenlijst op de flow-pagina.
-            case "disciplines": return NameLists.disciplines();
+            case "disciplines": return alleDisciplines();
             default:           return [];
         }
     }
@@ -1775,6 +1838,8 @@ Voorbeeld van een geldig antwoord:
         AiImageFill,
         NameLists,
         SnomedOptions,
+        DEFAULT_DISCIPLINES,
+        alleDisciplines,
         mountFormsUI,
         resolveOptions,
         terugNaarDatabank,
