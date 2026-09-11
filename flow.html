@@ -608,7 +608,11 @@
                 </div>
                 <div class="px-5 py-3 border-t border-neutral-200 dark:border-slate-700 flex items-center gap-2">
                     <span class="text-xs text-neutral-400 dark:text-neutral-500">Vink bij &eacute;&eacute;n radioloog &quot;ik&quot; aan; die naam komt standaard in het veld Radioloog.</span>
-                    <button id="names-save-btn" class="ml-auto px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                    <input type="file" id="names-import-input" accept=".json" class="hidden">
+                    <button id="names-import-btn" type="button" class="ml-auto px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">Importeer JSON</button>
+                    <button id="names-export-btn" type="button" class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">Exporteer JSON</button>
+                    <span id="names-import-melding" class="text-xs text-neutral-500 dark:text-neutral-400"></span>
+                    <button id="names-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
                 </div>
                 </div>
             </div>
@@ -634,6 +638,8 @@
 
         <!-- ── Script ─────────────────────────────────────────────────────────── -->
         <script src="calculators.js"></script>
+        <!-- Voor het inlezen van een namenlijst in de personendatabank. -->
+        <script src="forms-shared.js"></script>
         <script>
         const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
 
@@ -5063,6 +5069,50 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             modal.addEventListener('click', e => {
                 if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
             });
+            // ── Import en export van de namenlijst ──────────────────────────
+            // Het inlezen loopt via JyzForms.NameLists, zodat een bestand met
+            // "specialisatie" of "specialty" in plaats van "discipline" toch
+            // met discipline binnenkomt — dat is precies het veld waar de
+            // kolom Specialisatie in de databank op steunt.
+            const importInput = document.getElementById('names-import-input');
+            const importMelding = document.getElementById('names-import-melding');
+            const meld = (tekst, fout) => {
+                importMelding.textContent = tekst;
+                importMelding.className = 'text-xs ' + (fout
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-green-600 dark:text-green-400');
+                setTimeout(() => { importMelding.textContent = ''; }, 6000);
+            };
+
+            document.getElementById('names-import-btn').addEventListener('click', () => importInput.click());
+            importInput.addEventListener('change', async () => {
+                const bestand = importInput.files?.[0];
+                importInput.value = '';
+                if (!bestand) return;
+                if (!window.JyzForms?.NameLists) { meld('Inlezen niet beschikbaar.', true); return; }
+                try {
+                    const data = JSON.parse(await bestand.text());
+                    const n = window.JyzForms.NameLists.importFrom(data);
+                    if (!n) { meld('Geen personen in dit bestand gevonden.', true); return; }
+                    personen = laad();
+                    teken();
+                    const zonder = personen.filter(p => !p.discipline).length;
+                    meld(`${n} personen ingelezen`
+                        + (zonder ? ` — ${zonder} zonder discipline` : '') + '.', false);
+                } catch (e) {
+                    meld('Kon het bestand niet lezen: ' + e.message, true);
+                }
+            });
+
+            document.getElementById('names-export-btn').addEventListener('click', () => {
+                const inhoud = JSON.stringify({ nameLists: { [KEY]: personen } }, null, 2);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' }));
+                a.download = 'personendatabank.json';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            });
+
             saveBtn.addEventListener('click', () => {
                 const schoon = personen.map(p => normaliseer(p)).filter(p => p.name);
                 let gezien = false;
