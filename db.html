@@ -313,11 +313,13 @@
                             modaliteit: v.onderzoek_modaliteit || "",
                             onderzoek: v.onderzoek_type || "",
                             aanvrager: v.aanvrager || "",
-                            // Bewaard bij het opslaan; is dat er niet (oudere
-                            // records), dan live uit de namenlijst.
-                            specialisatie: v.aanvrager_specialisatie
-                                || JyzForms.NameLists.disciplineFor(v.aanvrager)
-                                || SPEC_ONBEKEND,
+                            // Wat op de casus zelf is aangeduid gaat voor: dat
+                            // is het veld Discipline dat je bij het bewerken
+                            // invult. Staat daar niets, dan de specialisatie die
+                            // bij het opslaan is meegenomen, en anders live uit
+                            // de namenlijst.
+                            specialisaties: _specialisaties(v),
+                            specialisatie: _specialisaties(v).join(", ") || SPEC_ONBEKEND,
                             detail: src.detail(v),
                             betrokkenen: src.betrokkene(v),
                             zoektekst: JSON.stringify(v).toLowerCase(),
@@ -326,13 +328,33 @@
                 }
             }
 
+            /**
+             * De disciplines van één casus. Het veld Discipline op de casus zelf
+             * is de waarheid; is dat leeg, dan valt het terug op de specialisatie
+             * van de aanvrager.
+             */
+            function _specialisaties(v) {
+                const eigen = [].concat(v.int_discipline || [], v.opv_discipline || [])
+                    .map((x) => String(x).trim())
+                    .filter(Boolean);
+                if (eigen.length) return [...new Set(eigen)];
+                const vanAanvrager = v.aanvrager_specialisatie
+                    || JyzForms.NameLists.disciplineFor(v.aanvrager);
+                return vanAanvrager ? [vanAanvrager] : [];
+            }
+
             // ── Filteren en sorteren ────────────────────────────────────────
             function visible() {
                 const q = document.getElementById("search").value.trim().toLowerCase();
                 let rows = ALL.filter((r) => {
                     if (tab !== "all" && r.store !== tab) return false;
                     if (categories.size && !categories.has(r.categorie)) return false;
-                    if (specFilter && r.specialisatie !== specFilter) return false;
+                    if (specFilter) {
+                        const past = specFilter === SPEC_ONBEKEND
+                            ? !r.specialisaties.length
+                            : r.specialisaties.includes(specFilter);
+                        if (!past) return false;
+                    }
                     if (q && !r.zoektekst.includes(q) && !r.categorie.toLowerCase().includes(q)) return false;
                     return true;
                 });
@@ -510,10 +532,10 @@
             function vulSpecialisatieLijst() {
                 const sel = document.getElementById("spec-filter");
                 if (!sel) return;
-                const aanwezig = [...new Set(ALL.map((r) => r.specialisatie))]
-                    .filter((x) => x && x !== SPEC_ONBEKEND)
+                const aanwezig = [...new Set(ALL.flatMap((r) => r.specialisaties))]
+                    .filter(Boolean)
                     .sort((a, b) => a.localeCompare(b));
-                if (ALL.some((r) => r.specialisatie === SPEC_ONBEKEND)) aanwezig.push(SPEC_ONBEKEND);
+                if (ALL.some((r) => !r.specialisaties.length)) aanwezig.push(SPEC_ONBEKEND);
 
                 sel.innerHTML = "";
                 const alle = document.createElement("option");
