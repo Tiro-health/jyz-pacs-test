@@ -645,6 +645,31 @@
                         ? " max-h-44 overflow-y-auto rounded-md border border-neutral-200 dark:border-slate-700 p-2"
                         : ""));
                     boxes.dataset.boxes = "1";
+
+                    // Zoekbalk voor lange keuzelijsten: typen dunt de lijst uit.
+                    // Wat al aangevinkt is blijft altijd staan, zodat je je
+                    // keuze niet uit het oog verliest tijdens het zoeken.
+                    let zoekveld = null;
+                    if (f.searchable && known.length > 5) {
+                        zoekveld = el("input", INPUT + " !py-1 text-sm");
+                        zoekveld.type = "search";
+                        zoekveld.dataset.zoek = "1";
+                        zoekveld.placeholder = f.searchPlaceholder || "Typ om te zoeken…";
+                        const filter = () => {
+                            const q = zoekveld.value.trim().toLowerCase();
+                            boxes.querySelectorAll("label").forEach((lbl) => {
+                                const cb = lbl.querySelector("input[type=checkbox]");
+                                const tekst = (lbl.textContent || "").toLowerCase();
+                                const past = !q || tekst.includes(q) || (cb && cb.checked);
+                                lbl.classList.toggle("hidden", !past);
+                            });
+                        };
+                        zoekveld.addEventListener("input", filter);
+                        zoekveld.addEventListener("change", filter);
+                        input.appendChild(zoekveld);
+                        // Aan- of afvinken kan de zichtbaarheid veranderen.
+                        boxes.addEventListener("change", filter);
+                    }
                     input.appendChild(boxes);
 
                     /** Houd "alle" in lijn met de afzonderlijke vakjes. */
@@ -1328,11 +1353,16 @@ Voorbeeld van een geldig antwoord:
                 SchemaForm.render(native, schema, prefillFromParams(schema, params));
                 if (!native.dataset.sendWatch) {
                     native.dataset.sendWatch = "1";
-                    const touched = () => { _dirty = true; updateSendButton(); };
+                    const touched = (e) => {
+                        if (e?.target?.dataset?.zoek === "1") return;  // zoeken is geen wijziging
+                        _dirty = true;
+                        updateSendButton();
+                    };
                     native.addEventListener("change", touched);
                     native.addEventListener("input", touched);
                     // De discipline volgt de aanvrager, tot je er zelf aankomt.
                     const disciplineWatch = (e) => {
+                        if (e.target.dataset?.zoek === "1") return;   // enkel filteren
                         const eigenRij = e.target.closest?.("[data-field-id]");
                         if (eigenRij && eigenRij.dataset.discipline === "1") {
                             eigenRij.dataset.handmatig = "1";
