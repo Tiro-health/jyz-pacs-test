@@ -2410,10 +2410,13 @@
                 if (inp.type === 'number') {
                     return `<div>${lbl(inp.label)}<input type="number" id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}" ${inp.min!=null?`min="${inp.min}"`:''} ${inp.max!=null?`max="${inp.max}"`:''} step="${inp.step||'any'}" ${inp.default!=null?`value="${inp.default}"`:''}>${help}</div>`;
                 }
-                if (inp.type === 'date') {
-                    // Datumveld: uitlezen gebeurt al via de gewone .value-tak,
-                    // dus alleen de weergave hoort hier.
-                    return `<div>${lbl(inp.label)}<input type="date" id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}" ${inp.max!=null?`max="${inp.max}"`:''}>${help}</div>`;
+                if (inp.type === 'date' || inp.type === 'text') {
+                    // Bewust een gewoon tekstveld: de native datumkiezer vult per
+                    // segment en volgt de taal van de browser, waardoor een
+                    // ingetypte datum stil verloren gaat. Uitlezen loopt al via
+                    // de gewone .value-tak; de calculator leest de tekst zelf.
+                    const ph = inp.placeholder || (inp.type === 'date' ? 'dd/mm/jjjj' : '');
+                    return `<div>${lbl(inp.label)}<input type="text" id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}" ${ph?`placeholder="${ph}"`:''} ${inp.type==='date'?'inputmode="numeric" autocomplete="off"':''}>${help}</div>`;
                 }
                 if (inp.type === 'select' || inp.type === 'radio') {
                     const opts = (inp.opties || []).map(o => `<option value="${String(o.v).replace(/"/g,'&quot;')}" ${inp.default===o.v?'selected':''}>${o.l}</option>`).join('');

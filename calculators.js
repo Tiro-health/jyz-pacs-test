@@ -1837,10 +1837,25 @@
   const pedBand = (tabel, maanden) =>
     tabel.find((b) => maanden >= b[0] && maanden < b[1]) || null;
 
+  /**
+   * Een ingetypte geboortedatum lezen. Dagelijkse schrijfwijze eerst
+   * (15/03/2020, ook met streepjes of punten), daarnaast jjjj-mm-dd zoals een
+   * datumkiezer die aanlevert.
+   */
+  function pedDatum(tekst) {
+    const t = String(tekst || "").trim();
+    if (!t) return null;
+    let m = /^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4})$/.exec(t);
+    if (m) return new Date(+m[3], +m[2] - 1, +m[1]);
+    m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(t);
+    if (m) return new Date(+m[1], +m[2] - 1, +m[3]);
+    return null;
+  }
+
   /** Leeftijd in maanden tussen twee datums, met de dag van de maand erbij. */
   function pedLeeftijdMaanden(geboorte, peildatum) {
-    const g = new Date(geboorte + "T00:00:00");
-    if (isNaN(g.getTime())) return NaN;
+    const g = pedDatum(geboorte);
+    if (!g || isNaN(g.getTime())) return NaN;
     const p = peildatum || new Date();
     let m = (p.getFullYear() - g.getFullYear()) * 12 + (p.getMonth() - g.getMonth());
     // Deel van de lopende maand meerekenen, zodat "0-1 week" ook klopt.
@@ -1868,8 +1883,8 @@
     triggerKeywords: ["abdomen kind", "pediatrisch abdomen", "nier kind", "milt kind", "lever kind",
       "kinderecho", "echo abdomen kind", "nierlengte", "miltlengte", "leverlengte"],
     inputs: [
-      { id: "geboortedatum", label: "Geboortedatum kind", type: "date",
-        help: "De leeftijd wordt berekend tegenover vandaag." },
+      { id: "geboortedatum", label: "Geboortedatum kind", type: "date", placeholder: "dd/mm/jjjj",
+        help: "Bijvoorbeeld 15/03/2020. De leeftijd wordt berekend tegenover vandaag." },
       { id: "nierL", label: "Diameter linker nier", type: "number", eenheid: "mm", min: 0, step: 1 },
       { id: "nierR", label: "Diameter rechter nier", type: "number", eenheid: "mm", min: 0, step: 1 },
       { id: "milt", label: "Diameter milt", type: "number", eenheid: "mm", min: 0, step: 1 },
@@ -1879,7 +1894,11 @@
     ],
     compute(v) {
       const maanden = pedLeeftijdMaanden(v.geboortedatum);
-      if (isNaN(maanden)) return fout("Geef de geboortedatum van het kind in.");
+      if (isNaN(maanden)) {
+        return fout(String(v.geboortedatum || "").trim()
+          ? "Geboortedatum niet begrepen. Schrijf ze als dd/mm/jjjj, bijvoorbeeld 15/03/2020."
+          : "Geef de geboortedatum van het kind in.");
+      }
       if (maanden < 0) return fout("De geboortedatum ligt in de toekomst.");
 
       const metingen = [
