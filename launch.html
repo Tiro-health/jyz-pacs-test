@@ -891,6 +891,13 @@
                         <select id="calc-picker" class="flex-1 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-cyan-500 text-neutral-800 dark:text-neutral-200"></select>
                     </div>
                     <p id="calc-bron" class="text-[11px] text-neutral-400 dark:text-neutral-500"></p>
+                    <!-- Velden invullen met wat er gedicteerd is; de bronzin komt
+                         in de tooltip van elk ingevuld veld te staan. -->
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button id="calc-prefill-btn" type="button" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 transition-colors">Vul in uit dictaat</button>
+                        <button id="calc-prefill-undo" type="button" style="display:none" class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Ongedaan maken</button>
+                    </div>
+                    <p id="calc-prefill-melding" class="text-[11px] text-neutral-500 dark:text-neutral-400"></p>
                     <div id="calc-inputs" class="space-y-2.5"></div>
                     <div id="calc-result" class="hidden rounded-md border border-cyan-200 dark:border-cyan-900/40 bg-cyan-50/60 dark:bg-cyan-900/10 px-3 py-2.5 space-y-1.5"></div>
                     <div id="calc-actions" class="hidden items-center gap-2 flex-wrap">
@@ -1221,6 +1228,7 @@
                         <textarea id="ai-consult-url"></textarea>
                         <textarea id="snomed-ct-action-url"></textarea>
                         <textarea id="medgemma-action-url"></textarea>
+                        <textarea id="calc-prefill-url"></textarea>
                     </div>
 
                     <!-- Template Flow -->
@@ -2449,6 +2457,303 @@
                 return '';
             }
 
+            // ══════════════════════════════════════════════════════════════
+            // Calculator invullen uit het dictaat
+            // De velden van de actieve calculator worden als schema meegegeven
+            // aan het model, samen met de gedicteerde tekst. Terug komt per veld
+            // een waarde én de letterlijke zin waaruit ze komt, zodat je het kunt
+            // nalezen. Alles wat niet door de nacontrole komt, valt weg.
+            // ══════════════════════════════════════════════════════════════
+            const DEFAULT_CALC_PREFILL_PROMPT = `Je leest een gedicteerd radiologisch verslag en vult daarmee de velden van een rekenhulp in.
+
+=== VELDEN ===
+{velden}
+=== EINDE VELDEN ===
+
+=== GEDICTEERDE TEKST ===
+{tekst}
+=== EINDE TEKST ===
+
+REGELS:
+- Vul een veld alleen in wanneer de waarde letterlijk in de tekst staat. Leid niets af, schat niets, reken niets uit wat er niet staat.
+- Staat een waarde er niet, laat het veld dan volledig weg uit je antwoord. Een leeg veld is beter dan een gegokt veld.
+- Links en rechts: vul een zijde alleen in wanneer die er uitdrukkelijk bij staat. Bij twijfel beide velden weglaten.
+- Eenheden: geef de waarde in de eenheid die bij het veld staat. Staat er in de tekst een andere eenheid, reken dan om en schrijf de omrekening in "bron" (bijvoorbeeld "7,5 cm = 75 mm").
+- Keuzevelden: gebruik uitsluitend een van de opgegeven waarden, letterlijk overgenomen. Past niets, laat het veld dan weg.
+- Ja/nee-velden: true of false, alleen wanneer de tekst het uitdrukkelijk zegt.
+- Getallen: gebruik een punt als decimaalteken, zonder eenheid of andere tekst.
+- "bron" is de letterlijke zin of zinsnede uit de tekst waaruit je de waarde haalt, ongewijzigd overgenomen.
+
+ANTWOORD:
+Uitsluitend JSON, zonder uitleg eromheen, in deze vorm:
+{"veld-id": {"waarde": <waarde>, "bron": "letterlijke zin uit de tekst"}}
+Geen enkel veld gevonden? Antwoord dan {}.`;
+
+            const calcPrefillUrlInput = document.getElementById("calc-prefill-url");
+            calcPrefillUrlInput.value = localStorage.getItem("calcPrefillUrl") || DEFAULT_CALC_PREFILL_PROMPT;
+            calcPrefillUrlInput.addEventListener("input", () => {
+                localStorage.setItem("calcPrefillUrl", calcPrefillUrlInput.value);
+            });
+
+            /** De velden van een calculator als tekst voor het prompt. */
+            function _calcVeldenBeschrijving(calc) {
+                const regels = [];
+                (calc.inputs || []).forEach((inp) => {
+                    if (inp.type === 'info') return;
+                    const deel = ['- ' + inp.id + ': ' + (inp.label || inp.id)];
+                    if (inp.eenheid) deel.push('eenheid ' + inp.eenheid);
+                    if (inp.type === 'number') {
+                        deel.push('getal');
+                        if (inp.min != null) deel.push('minimaal ' + inp.min);
+                        if (inp.max != null) deel.push('maximaal ' + inp.max);
+                    } else if (inp.type === 'checkbox') {
+                        deel.push('ja/nee (true of false)');
+                    } else if (inp.type === 'checkbox-group') {
+                        deel.push('meerdere keuzes toegestaan, als lijst');
+                        deel.push('toegestane waarden: ' + (inp.opties || []).map((o) => o.v).join(' | '));
+                    } else if (inp.type === 'date') {
+                        deel.push('datum als dd/mm/jjjj');
+                    } else if (inp.opties && inp.opties.length) {
+                        deel.push('één keuze');
+                        deel.push('toegestane waarden: ' + inp.opties.map((o) => o.v + ' = ' + o.l).join(' | '));
+                    }
+                    if (inp.help) deel.push(inp.help);
+                    regels.push(deel.join('; '));
+                });
+                return regels.join('\n');
+            }
+
+            /** JSON uit een antwoord halen, ook met ```json-hekjes eromheen. */
+            function _calcPrefillJson(ruw) {
+                let t = String(ruw || '').trim();
+                t = t.replace(/^[`~]{3}\s*json?/i, '').replace(/[`~]{3}\s*$/, '').trim();
+                const start = t.indexOf('{'), eind = t.lastIndexOf('}');
+                if (start < 0 || eind <= start) return null;
+                try { return JSON.parse(t.slice(start, eind + 1)); } catch (_) { return null; }
+            }
+
+            /**
+             * Voorstellen langs de velddefinitie leggen. Wat niet klopt gaat eruit:
+             * een getal buiten min/max, een keuze die niet bestaat, een onbekend
+             * veld. Liever niets invullen dan iets dat nergens op slaat.
+             */
+            function _calcPrefillControle(calc, voorstel) {
+                const goed = [];
+                const geweigerd = [];
+                const velden = new Map((calc.inputs || []).map((i) => [i.id, i]));
+                for (const [id, ruw] of Object.entries(voorstel || {})) {
+                    const inp = velden.get(id);
+                    const waarde = (ruw && typeof ruw === 'object' && 'waarde' in ruw) ? ruw.waarde : ruw;
+                    const bron = (ruw && typeof ruw === 'object' && ruw.bron) ? String(ruw.bron) : '';
+                    if (!inp || inp.type === 'info') { geweigerd.push(id + ': onbekend veld'); continue; }
+                    if (waarde === null || waarde === undefined || waarde === '') continue;
+
+                    if (inp.type === 'number') {
+                        const n = typeof waarde === 'number' ? waarde : parseFloat(String(waarde).replace(',', '.'));
+                        if (!isFinite(n)) { geweigerd.push(inp.label + ': geen getal'); continue; }
+                        if (inp.min != null && n < inp.min) { geweigerd.push(inp.label + ': onder het minimum'); continue; }
+                        if (inp.max != null && n > inp.max) { geweigerd.push(inp.label + ': boven het maximum'); continue; }
+                        goed.push({ inp, waarde: String(n), bron });
+                    } else if (inp.type === 'checkbox') {
+                        const aan = waarde === true || /^(true|ja|yes|1)$/i.test(String(waarde));
+                        goed.push({ inp, waarde: aan, bron });
+                    } else if (inp.type === 'checkbox-group') {
+                        const toegestaan = (inp.opties || []).map((o) => String(o.v));
+                        const lijst = (Array.isArray(waarde) ? waarde : [waarde]).map(String).filter((x) => toegestaan.includes(x));
+                        if (!lijst.length) { geweigerd.push(inp.label + ': geen geldige keuze'); continue; }
+                        goed.push({ inp, waarde: lijst, bron });
+                    } else if (inp.opties && inp.opties.length) {
+                        // select, radio en visual-select delen dezelfde optielijst.
+                        const treffer = inp.opties.find((o) => String(o.v) === String(waarde))
+                            || inp.opties.find((o) => String(o.l).toLowerCase() === String(waarde).toLowerCase());
+                        if (!treffer) { geweigerd.push(inp.label + ': "' + waarde + '" staat niet in de keuzelijst'); continue; }
+                        goed.push({ inp, waarde: String(treffer.v), bron });
+                    } else {
+                        goed.push({ inp, waarde: String(waarde), bron });
+                    }
+                }
+                return { goed, geweigerd };
+            }
+
+            // Waar het invullen vandaan komt blijft zichtbaar: een cyaan randje
+            // op het veld en de letterlijke bronzin in de tooltip.
+            const CALC_PREFILL_RAND = '2px solid #06b6d4';
+            let _calcPrefillTerug = null;   // { doc, velden: [{el, type, vorige}] }
+
+            /** De huidige inhoud van één veld, om te kunnen terugzetten. */
+            function _calcVeldWaarde(doc, inp) {
+                if (inp.type === 'checkbox-group') {
+                    return Array.from(doc.querySelectorAll('.calc-input-multi[data-iid="' + inp.id + '"]'))
+                        .filter((c) => c.checked).map((c) => c.dataset.val);
+                }
+                const el = doc.getElementById('calc-in-' + inp.id);
+                if (!el) return null;
+                return inp.type === 'checkbox' ? el.checked : el.value;
+            }
+
+            function _calcVeldGevuld(doc, inp) {
+                const w = _calcVeldWaarde(doc, inp);
+                if (Array.isArray(w)) return w.length > 0;
+                if (typeof w === 'boolean') return w;
+                return !!(w && String(w).trim());
+            }
+
+            function _calcPrefillMarkeer(doc, inp, bron, tekst, gemarkeerd) {
+                const doel = inp.type === 'checkbox-group'
+                    ? doc.querySelector('[data-iid="' + inp.id + '"]')?.closest('div')
+                    : doc.getElementById('calc-in-' + inp.id);
+                if (!doel) return;
+                doel.style.outline = CALC_PREFILL_RAND;
+                doel.style.outlineOffset = '1px';
+                doel.title = tekst || ('Uit het dictaat: "' + bron + '"');
+                if (gemarkeerd) gemarkeerd.push(doel);
+            }
+
+            /** Zet de voorstellen in de velden en onthoud wat er stond. */
+            function _calcPrefillToepassen(doc, calc, goed) {
+                const terug = { doc, velden: [], gemarkeerd: [] };
+                const ingevuld = [];
+                const overgeslagen = [];
+                for (const { inp, waarde, bron } of goed) {
+                    if (_calcVeldGevuld(doc, inp)) {
+                        // Wat jij zelf invulde blijft staan; het voorstel komt in
+                        // de tooltip zodat je het wel ziet.
+                        _calcPrefillMarkeer(doc, inp, bron,
+                            'Zelf ingevuld — uit het dictaat kwam: ' + (Array.isArray(waarde) ? waarde.join(', ') : waarde),
+                            terug.gemarkeerd);
+                        overgeslagen.push(inp.label || inp.id);
+                        continue;
+                    }
+                    terug.velden.push({ inp, vorige: _calcVeldWaarde(doc, inp) });
+                    if (inp.type === 'checkbox-group') {
+                        doc.querySelectorAll('.calc-input-multi[data-iid="' + inp.id + '"]').forEach((c) => {
+                            c.checked = waarde.includes(c.dataset.val);
+                        });
+                    } else if (inp.type === 'checkbox') {
+                        const el = doc.getElementById('calc-in-' + inp.id);
+                        if (el) el.checked = !!waarde;
+                    } else if (inp.type === 'visual-select') {
+                        const el = doc.getElementById('calc-in-' + inp.id);
+                        if (el) el.value = waarde;
+                        doc.querySelectorAll('.calc-visual-opt[data-iid="' + inp.id + '"]').forEach((b) => {
+                            const aan = b.dataset.val === waarde;
+                            b.classList.toggle('border-cyan-500', aan);
+                            b.classList.toggle('bg-cyan-50', aan);
+                            b.classList.toggle('dark:bg-cyan-900/30', aan);
+                            b.classList.toggle('border-neutral-200', !aan);
+                            b.classList.toggle('dark:border-slate-700', !aan);
+                        });
+                    } else {
+                        const el = doc.getElementById('calc-in-' + inp.id);
+                        if (el) el.value = waarde;
+                    }
+                    _calcPrefillMarkeer(doc, inp, bron, bron ? 'Uit het dictaat: "' + bron + '"' : 'Uit het dictaat',
+                        terug.gemarkeerd);
+                    ingevuld.push(inp.label || inp.id);
+                }
+                _calcPrefillTerug = (terug.velden.length || terug.gemarkeerd.length) ? terug : null;
+                return { ingevuld, overgeslagen };
+            }
+
+            /** Alles wat het invullen veranderde terugdraaien. */
+            function calcPrefillOngedaan() {
+                if (!_calcPrefillTerug) return false;
+                const { doc, velden, gemarkeerd } = _calcPrefillTerug;
+                for (const { inp, vorige } of velden) {
+                    if (inp.type === 'checkbox-group') {
+                        doc.querySelectorAll('.calc-input-multi[data-iid="' + inp.id + '"]').forEach((c) => {
+                            c.checked = Array.isArray(vorige) && vorige.includes(c.dataset.val);
+                        });
+                    } else if (inp.type === 'checkbox') {
+                        const el = doc.getElementById('calc-in-' + inp.id);
+                        if (el) el.checked = !!vorige;
+                    } else {
+                        const el = doc.getElementById('calc-in-' + inp.id);
+                        if (el) el.value = vorige == null ? '' : vorige;
+                    }
+                }
+                // Op de onthouden elementen zelf: het venster in het PiP heeft
+                // geen #calc-inputs om op te zoeken.
+                (gemarkeerd || []).forEach((el) => {
+                    el.style.outline = ''; el.style.outlineOffset = ''; el.removeAttribute('title');
+                });
+                _calcPrefillTerug = null;
+                return true;
+            }
+
+            /**
+             * De hele gang: dictaat ophalen, het model bevragen, nacontrole,
+             * invullen en melden wat er gebeurd is. Werkt voor het venster op deze
+             * pagina en voor dat in het PiP; beide geven hun eigen document mee.
+             */
+            async function calcPrefillUitDictaat(calc, doc, meld) {
+                const tekst = (readDictationText() || '').trim();
+                if (!tekst) { meld('Geen gedicteerde tekst gevonden.', true); return; }
+                if (!GEMINI_API_KEY) { meld('Geen Gemini API-sleutel ingesteld in Settings.', true); return; }
+                meld('Bezig met lezen…', false);
+                const template = calcPrefillUrlInput.value.trim() || DEFAULT_CALC_PREFILL_PROMPT;
+                const prompt = fillPrompt(template, { velden: _calcVeldenBeschrijving(calc), tekst });
+                let ruw;
+                try {
+                    ruw = await callGemini(getModel('geminiModelCalcPrefill'), prompt, _newGeminiSignal());
+                } catch (e) {
+                    if (e.name === 'AbortError') return;
+                    meld('Lezen mislukt: ' + e.message, true);
+                    return;
+                }
+                const voorstel = _calcPrefillJson(ruw);
+                if (!voorstel) { meld('Antwoord niet begrepen; niets ingevuld.', true); return; }
+                const { goed, geweigerd } = _calcPrefillControle(calc, voorstel);
+                if (!goed.length) {
+                    meld('Niets bruikbaars in de tekst gevonden'
+                        + (geweigerd.length ? ' (' + geweigerd.length + ' voorstel(len) geweigerd)' : '') + '.', true);
+                    return;
+                }
+                const { ingevuld, overgeslagen } = _calcPrefillToepassen(doc, calc, goed);
+                const delen = [];
+                if (ingevuld.length) delen.push(ingevuld.length + ' veld(en) ingevuld: ' + ingevuld.join(', '));
+                if (overgeslagen.length) delen.push(overgeslagen.length + ' zelf ingevuld gelaten');
+                if (geweigerd.length) delen.push(geweigerd.length + ' geweigerd (' + geweigerd.join('; ') + ')');
+                meld(delen.join(' · ') + '. Beweeg over een veld om de bronzin te zien.', false);
+            }
+
+            const calcPrefillBtn = document.getElementById('calc-prefill-btn');
+            const calcPrefillUndoBtn = document.getElementById('calc-prefill-undo');
+            const calcPrefillMelding = document.getElementById('calc-prefill-melding');
+
+            function _calcPrefillMeld(tekst, fout) {
+                calcPrefillMelding.textContent = tekst || '';
+                calcPrefillMelding.className = 'text-[11px] ' + (fout
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-neutral-500 dark:text-neutral-400');
+                calcPrefillUndoBtn.style.display = _calcPrefillTerug ? '' : 'none';
+            }
+
+            function _actieveCalc() {
+                const info = (window._flowCalculators || {})[_calcCurrentKey];
+                return (info && window.RADCALC) ? window.RADCALC.byId(info.calcId) : null;
+            }
+
+            calcPrefillBtn.addEventListener('click', async () => {
+                const calc = _actieveCalc();
+                if (!calc) return;
+                calcPrefillBtn.disabled = true;
+                try {
+                    await calcPrefillUitDictaat(calc, document, _calcPrefillMeld);
+                } finally {
+                    calcPrefillBtn.disabled = false;
+                    calcPrefillUndoBtn.style.display = _calcPrefillTerug ? '' : 'none';
+                    computeCalc();
+                }
+            });
+
+            calcPrefillUndoBtn.addEventListener('click', () => {
+                if (calcPrefillOngedaan()) {
+                    _calcPrefillMeld('Ingevulde velden teruggezet.', false);
+                    computeCalc();
+                }
+            });
+
             function renderCalcForm(key) {
                 const info = (window._flowCalculators || {})[key];
                 const RC = window.RADCALC;
@@ -2466,6 +2771,9 @@
                 else { link.classList.add('hidden'); }
                 document.getElementById('calc-result').classList.add('hidden');
                 document.getElementById('calc-actions').classList.add('hidden');
+                // Een nieuw formulier: de vorige invulling valt weg.
+                _calcPrefillTerug = null;
+                _calcPrefillMeld('', false);
                 computeCalc();
             }
 
@@ -2693,6 +3001,7 @@
                 geminiModelAiConsult:       'gemini-2.5-pro',
                 geminiModelRealtime:        'gemini-2.5-flash',
                 geminiModelAutofillBackup:  'gemini-2.5-pro',
+                geminiModelCalcPrefill:     'gemini-2.5-flash',
             };
             function getModel(key) {
                 return localStorage.getItem(key) || GEMINI_MODEL_DEFAULTS[key] || 'gemini-2.5-flash';
@@ -7119,7 +7428,39 @@ negated bevindingen
                     calcPanel.style.display = 'none';                 // pijltje sluit het venster
                 });
                 calcActions.append(calcCopyBtn, calcSendBtn);
-                calcBody.append(calcPicker, calcBron, calcInputs, calcResult, calcActions);
+                // Dezelfde knop als op de hoofdpagina: de velden invullen met wat
+                // er gedicteerd is, met de bronzin in de tooltip van elk veld.
+                const calcPrefillRij = mk('div', 'flex items-center gap-2 flex-wrap');
+                const pipPrefillBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Vul in uit dictaat', async () => {
+                    const info = (window._flowCalculators || {})[_pipCalcKey];
+                    const calc = info && window.RADCALC ? window.RADCALC.byId(info.calcId) : null;
+                    if (!calc) return;
+                    pipPrefillBtn.disabled = true;
+                    try {
+                        await calcPrefillUitDictaat(calc, pipWindow.document, pipMeld);
+                    } finally {
+                        pipPrefillBtn.disabled = false;
+                        pipUndoBtn.style.display = _calcPrefillTerug ? '' : 'none';
+                        pipCalcCompute();
+                    }
+                });
+                const pipUndoBtn = mkBtn(SM.replace('cursor-pointer','') + ' cursor-pointer', 'Ongedaan maken', () => {
+                    if (calcPrefillOngedaan()) {
+                        pipMeld('Ingevulde velden teruggezet.', false);
+                        pipCalcCompute();
+                    }
+                });
+                pipUndoBtn.style.display = 'none';
+                const calcPrefillMeldingEl = mk('p', 'text-[11px] text-neutral-500 dark:text-neutral-400');
+                const pipMeld = (tekst, fout) => {
+                    calcPrefillMeldingEl.textContent = tekst || '';
+                    calcPrefillMeldingEl.className = 'text-[11px] ' + (fout
+                        ? 'text-amber-600 dark:text-amber-400'
+                        : 'text-neutral-500 dark:text-neutral-400');
+                    pipUndoBtn.style.display = _calcPrefillTerug ? '' : 'none';
+                };
+                calcPrefillRij.append(pipPrefillBtn, pipUndoBtn);
+                calcBody.append(calcPicker, calcBron, calcPrefillRij, calcPrefillMeldingEl, calcInputs, calcResult, calcActions);
                 calcPanel.append(calcHead, calcBody);
                 wrap.appendChild(calcPanel);
 
@@ -7156,6 +7497,8 @@ negated bevindingen
                     if (!calc) { calcInputs.innerHTML = `<p class="text-xs text-red-500">Calculator niet gevonden.</p>`; return; }
                     calcBron.textContent = (calc.beschrijving || '') + (calc.bron ? '  ·  ' + calc.bron : '');
                     calcInputs.innerHTML = (calc.inputs || []).map(_calcInputHtml).join('');
+                    _calcPrefillTerug = null;
+                    pipMeld('', false);
                     calcResult.style.display = 'none'; calcActions.style.display = 'none';
                     pipCalcCompute();
                 }
