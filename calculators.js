@@ -1761,6 +1761,190 @@
     },
   });
 
+  /* --------------------------------------------------------------------------
+   * Abdomen kind — SD-score van nier, milt en lever
+   * De referentietabellen komen uit het werkblad "metingen_pediatrie":
+   * per leeftijdsband een gemiddelde en een standaarddeviatie. De score is
+   * telkens (gemeten - gemiddelde) / SD.
+   *
+   * Eenheden: in het werkblad staat de nier in cm en staan milt en lever in
+   * mm. Hier gaat alles in mm de calculator in en uit; de niertabel is
+   * daarvoor omgerekend naar mm, zodat de invoervelden onderling gelijk zijn.
+   *
+   * De banden lopen van de ondergrens tot net onder de volgende: "1-3j" is
+   * 1 jaar tot 3 jaar, en wie precies 3 is valt in "3-6j". De tabellen hebben
+   * gaten (milt en lever beginnen pas op 1 maand en slaan 10-12 maanden over,
+   * de nier stopt op 19 jaar). Voor een leeftijd buiten de tabel komt er geen
+   * score maar een melding — een aangrenzende band zou een getal geven dat
+   * nergens op steunt.
+   * ------------------------------------------------------------------------ */
+
+  // [ondergrens in maanden, bovengrens (exclusief), gemiddelde in mm, SD in mm, label]
+  const PED_NIER_MM = [
+    [0, 0.25, 44.8, 3.1, "0-1 week"],
+    [0.25, 4, 52.8, 6.6, "1 week - 4 maanden"],
+    [4, 8, 61.5, 6.7, "4-8 maanden"],
+    [8, 12, 62.3, 6.3, "8-12 maanden"],
+    [12, 24, 66.5, 5.4, "1-2 jaar"],
+    [24, 36, 73.6, 5.4, "2-3 jaar"],
+    [36, 48, 73.6, 6.4, "3-4 jaar"],
+    [48, 60, 78.7, 5.0, "4-5 jaar"],
+    [60, 72, 80.9, 5.4, "5-6 jaar"],
+    [72, 84, 78.3, 7.2, "6-7 jaar"],
+    [84, 96, 83.3, 5.1, "7-8 jaar"],
+    [96, 108, 89.0, 8.8, "8-9 jaar"],
+    [108, 120, 92.0, 9.0, "9-10 jaar"],
+    [120, 132, 91.7, 8.2, "10-11 jaar"],
+    [132, 144, 96.0, 6.4, "11-12 jaar"],
+    [144, 156, 104.2, 8.7, "12-13 jaar"],
+    [156, 168, 97.9, 7.5, "13-14 jaar"],
+    [168, 180, 100.5, 6.2, "14-15 jaar"],
+    [180, 192, 109.3, 7.6, "15-16 jaar"],
+    [192, 204, 100.4, 8.6, "16-17 jaar"],
+    [204, 216, 105.3, 2.9, "17-18 jaar"],
+    [216, 228, 108.1, 11.3, "18-19 jaar"],
+  ];
+
+  // Milt en lever: dezelfde banden, met de min- en maxkolom uit het werkblad.
+  const PED_MILT_MM = [
+    [1, 4, 53, 7.8, "1-3 maanden", 33, 71],
+    [4, 7, 59, 6.3, "4-6 maanden", 45, 71],
+    [7, 10, 63, 7.6, "7-9 maanden", 50, 77],
+    [12, 36, 70, 9.6, "1-3 jaar", 54, 86],
+    [36, 72, 75, 8.4, "3-6 jaar", 60, 91],
+    [72, 84, 84, 9.0, "6-7 jaar", 61, 100],
+    [84, 108, 85, 10.5, "7-9 jaar", 65, 102],
+    [108, 132, 86, 10.7, "9-11 jaar", 64, 114],
+    [132, 156, 97, 9.7, "11-13 jaar", 72, 100],
+    [156, 180, 101, 11.7, "13-15 jaar", 84, 120],
+    [180, Infinity, 101, 10.3, "15 jaar en ouder", 88, 120],
+  ];
+
+  const PED_LEVER_MM = [
+    [1, 4, 64, 10.4, "1-3 maanden", 45, 90],
+    [4, 7, 73, 10.8, "4-6 maanden", 44, 92],
+    [7, 10, 79, 8.0, "7-9 maanden", 68, 100],
+    [12, 36, 85, 10.0, "1-3 jaar", 67, 104],
+    [36, 72, 86, 11.8, "3-6 jaar", 69, 109],
+    [72, 84, 100, 13.6, "6-7 jaar", 73, 125],
+    [84, 108, 105, 10.6, "7-9 jaar", 81, 128],
+    [108, 132, 105, 12.5, "9-11 jaar", 76, 135],
+    [132, 156, 115, 14.0, "11-13 jaar", 93, 137],
+    [156, 180, 118, 14.6, "13-15 jaar", 87, 137],
+    [180, Infinity, 121, 11.7, "15 jaar en ouder", 100, 141],
+  ];
+
+  const pedBand = (tabel, maanden) =>
+    tabel.find((b) => maanden >= b[0] && maanden < b[1]) || null;
+
+  /** Leeftijd in maanden tussen twee datums, met de dag van de maand erbij. */
+  function pedLeeftijdMaanden(geboorte, peildatum) {
+    const g = new Date(geboorte + "T00:00:00");
+    if (isNaN(g.getTime())) return NaN;
+    const p = peildatum || new Date();
+    let m = (p.getFullYear() - g.getFullYear()) * 12 + (p.getMonth() - g.getMonth());
+    // Deel van de lopende maand meerekenen, zodat "0-1 week" ook klopt.
+    const ijk = new Date(g.getFullYear(), g.getMonth() + m, g.getDate());
+    const volgende = new Date(g.getFullYear(), g.getMonth() + m + 1, g.getDate());
+    const dagen = (p - ijk) / 86400000;
+    if (dagen < 0) { m -= 1; }
+    const lengte = (volgende - ijk) / 86400000;
+    return m + Math.max(0, dagen) / (lengte || 30.4);
+  }
+
+  function pedLeeftijdTekst(maanden) {
+    if (maanden < 1) return Math.round(maanden * 30.4) + " dagen";
+    if (maanden < 24) return r1(maanden) + " maanden";
+    return r1(maanden / 12) + " jaar";
+  }
+
+  CALCULATORS.push({
+    id: "ped-abdomen-sd",
+    naam: "Abdomen kind SD",
+    categorie: "Pediatrisch",
+    modaliteit: ["ECHO"],
+    bron: "Referentietabellen naar leeftijd (werkblad metingen pediatrie)",
+    beschrijving: "SD-score van nier, milt en lever bij kinderen: (gemeten - gemiddelde) / SD voor de leeftijdsband. Alle maten in mm.",
+    triggerKeywords: ["abdomen kind", "pediatrisch abdomen", "nier kind", "milt kind", "lever kind",
+      "kinderecho", "echo abdomen kind", "nierlengte", "miltlengte", "leverlengte"],
+    inputs: [
+      { id: "geboortedatum", label: "Geboortedatum kind", type: "date",
+        help: "De leeftijd wordt berekend tegenover vandaag." },
+      { id: "nierL", label: "Diameter linker nier", type: "number", eenheid: "mm", min: 0, step: 1 },
+      { id: "nierR", label: "Diameter rechter nier", type: "number", eenheid: "mm", min: 0, step: 1 },
+      { id: "milt", label: "Diameter milt", type: "number", eenheid: "mm", min: 0, step: 1 },
+      { id: "lever", label: "Diameter lever", type: "number", eenheid: "mm", min: 0, step: 1 },
+      { id: "uitleg", type: "info",
+        tekst: "Vul in wat gemeten is; wat leeg blijft komt niet in het resultaat. Longitudinale doormeters." },
+    ],
+    compute(v) {
+      const maanden = pedLeeftijdMaanden(v.geboortedatum);
+      if (isNaN(maanden)) return fout("Geef de geboortedatum van het kind in.");
+      if (maanden < 0) return fout("De geboortedatum ligt in de toekomst.");
+
+      const metingen = [
+        { sleutel: "nierL", naam: "Linker nier", tabel: PED_NIER_MM },
+        { sleutel: "nierR", naam: "Rechter nier", tabel: PED_NIER_MM },
+        { sleutel: "milt", naam: "Milt", tabel: PED_MILT_MM },
+        { sleutel: "lever", naam: "Lever", tabel: PED_LEVER_MM },
+      ];
+
+      const items = [{ label: "Leeftijd", waarde: pedLeeftijdTekst(maanden) }];
+      const regels = [];
+      const buiten = [];
+      let gemeten = 0;
+      let grootsteAfwijking = 0;
+
+      for (const m of metingen) {
+        const mm = num(v[m.sleutel]);
+        if (isNaN(mm) || mm <= 0) continue;
+        gemeten++;
+        const band = pedBand(m.tabel, maanden);
+        if (!band) {
+          items.push({ label: m.naam, waarde: r0(mm) + " mm — geen referentie voor deze leeftijd" });
+          buiten.push(m.naam.toLowerCase());
+          regels.push(m.naam + " " + r0(mm) + " mm (geen referentiewaarde voor deze leeftijd)");
+          continue;
+        }
+        const [, , gem, sd, label, min, max] = band;
+        const score = (mm - gem) / sd;
+        if (Math.abs(score) > Math.abs(grootsteAfwijking)) grootsteAfwijking = score;
+        const bereik = (min != null && max != null) ? ", norm " + min + "-" + max + " mm" : "";
+        items.push({
+          label: m.naam,
+          waarde: r0(mm) + " mm — SD " + (score >= 0 ? "+" : "") + r2(score)
+            + " (gemiddelde " + r1(gem) + " mm, band " + label + bereik + ")",
+        });
+        regels.push(m.naam + " " + r0(mm) + " mm (SD " + (score >= 0 ? "+" : "") + r2(score) + ")");
+      }
+
+      if (!gemeten) return fout("Geef minstens één diameter in.");
+
+      const afwijkend = Math.abs(grootsteAfwijking) > 2;
+      const klasse = buiten.length && !regels.some((r) => r.indexOf("SD") !== -1)
+        ? "Geen referentie voor deze leeftijd"
+        : afwijkend ? "Buiten ±2 SD" : "Binnen ±2 SD";
+
+      let advies = null;
+      if (afwijkend) {
+        advies = "Minstens één maat ligt meer dan 2 SD van het gemiddelde voor deze leeftijd.";
+      }
+      if (buiten.length) {
+        advies = (advies ? advies + " " : "")
+          + "Voor " + buiten.join(" en ") + " staat er geen referentiewaarde bij deze leeftijd in de tabel.";
+      }
+
+      return {
+        ok: true,
+        titel: "Abdomen kind — SD-score",
+        klasse,
+        items,
+        advies,
+        tekst: "Echografie abdomen, leeftijd " + pedLeeftijdTekst(maanden) + ": " + regels.join("; ") + ".",
+      };
+    },
+  });
+
   // ── Schematische figuren (zelf-gegenereerde SVG, geen externe/auteursrechtelijke beelden) ──
   function aoSpineTLSvg(type) {
     const BONE = "#efe4c8", EDGE = "#a8926a", DISC = "#cfe0ea", RED = "#dc2626";
