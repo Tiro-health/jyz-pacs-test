@@ -1886,8 +1886,8 @@
       { id: "geboortedatum", label: "Geboortedatum kind", type: "date", placeholder: "dd/mm/jjjj",
         help: "Bijvoorbeeld 15/03/2020. De leeftijd wordt berekend tegenover vandaag." },
       { id: "nierL", label: "Diameter linker nier", type: "number", eenheid: "mm", min: 0, step: 1 },
-      { id: "nierR", label: "Diameter rechter nier", type: "number", eenheid: "mm", min: 0, step: 1 },
       { id: "milt", label: "Diameter milt", type: "number", eenheid: "mm", min: 0, step: 1 },
+      { id: "nierR", label: "Diameter rechter nier", type: "number", eenheid: "mm", min: 0, step: 1 },
       { id: "lever", label: "Diameter lever", type: "number", eenheid: "mm", min: 0, step: 1 },
       { id: "uitleg", type: "info",
         tekst: "Vul in wat gemeten is; wat leeg blijft komt niet in het resultaat. Longitudinale doormeters." },
@@ -1901,10 +1901,12 @@
       }
       if (maanden < 0) return fout("De geboortedatum ligt in de toekomst.");
 
+      // Zelfde volgorde als de invoervelden: wat je van boven naar onder
+      // invult, komt van boven naar onder terug in het resultaat.
       const metingen = [
         { sleutel: "nierL", naam: "Linker nier", tabel: PED_NIER_MM },
-        { sleutel: "nierR", naam: "Rechter nier", tabel: PED_NIER_MM },
         { sleutel: "milt", naam: "Milt", tabel: PED_MILT_MM },
+        { sleutel: "nierR", naam: "Rechter nier", tabel: PED_NIER_MM },
         { sleutel: "lever", naam: "Lever", tabel: PED_LEVER_MM },
       ];
 
