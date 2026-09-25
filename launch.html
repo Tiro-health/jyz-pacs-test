@@ -732,6 +732,23 @@
                         <span id="snomed-error-text" class="flex-1"></span>
                         <button type="button" onclick="document.getElementById('snomed-error-banner').classList.add('hidden')" class="shrink-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200">✕</button>
                     </div>
+                    <!-- Dicteerveld voor de eigen DMO-licentie. Een gewoon tekstveld,
+                         want SpeechKit speech-enabled geen velden in de shadow DOM van
+                         tiro-magic-clipboard. Wat hier binnenkomt gaat door dezelfde
+                         dictatie-pijplijn als de andere providers. -->
+                    <div id="dmo-own-dictation" class="hidden mb-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="dmo-dictation-text" class="text-xs font-medium text-neutral-600 dark:text-neutral-400">Dictaat — Dragon Medical One (eigen licentie)</label>
+                            <span id="dmo-own-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                        </div>
+                        <textarea
+                            id="dmo-dictation-text"
+                            data-nusa-concept-name="verslag"
+                            rows="4"
+                            placeholder="Zet de microfoon aan in DMO en dicteer hier…"
+                            class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y leading-relaxed"
+                        ></textarea>
+                    </div>
                     <!-- DMO-dictaatveld voor de textuele modus. Komt in de plaats van
                          het gedeactiveerde SDK-veld, en enkel wanneer het PiP-venster
                          dicht is — zie syncLaunchDmo(). Staat buiten het SDK-element,
@@ -1186,8 +1203,37 @@
                             <option value="Endpoint/squire">Squire</option>
                             <option value="Endpoint/corti">Corti</option>
                             <option value="Endpoint/dmsk" selected>Dragon Medical</option>
+                            <option value="own-dmsk">Dragon Medical (eigen licentie)</option>
                         </select>
                     </div>
+
+                    <!-- Dragon Medical One — eigen licentie (SpeechKit Browser edition) -->
+                    <details id="dmo-license-block" class="rounded-md border border-neutral-200 dark:border-slate-700">
+                        <summary class="flex items-center gap-2 px-2 py-1.5 text-xs font-medium cursor-pointer text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent rounded-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                            Dragon Medical One — eigen licentie
+                            <span id="dmo-license-badge" class="ml-auto text-xs font-normal text-neutral-400 dark:text-neutral-500">niet ingesteld</span>
+                        </summary>
+                        <div class="px-2 py-2 border-t border-neutral-200 dark:border-slate-700 space-y-2">
+                            <p class="text-xs text-neutral-500 dark:text-neutral-400">
+                                De licentiegegevens worden hier niet ingetypt. Ze komen uit een bestand dat je inleest op de
+                                <a href="qc.html" target="_blank" rel="noopener" class="underline hover:text-neutral-700 dark:hover:text-neutral-200">QC-pagina</a>
+                                onder <span class="whitespace-nowrap">Export / Import</span> (achter de pincode), kolom “DMO-licentie”. Ze blijven in deze browser.
+                            </p>
+
+                            <dl id="dmo-config-summary" class="hidden text-xs grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-neutral-600 dark:text-neutral-400"></dl>
+
+                            <div class="flex gap-2 flex-wrap items-center">
+                                <button id="dmo-connect-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Verbinden</button>
+                                <button id="dmo-disconnect-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors">Verbreken</button>
+                                <button id="dmo-reload-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors" title="Opnieuw inlezen na een import op de QC-pagina">Herlaad</button>
+                                <button id="dmo-diagnose-btn" type="button" class="inline-flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors" title="Controleer alles wat zonder geldige licentie al te testen valt">Diagnose</button>
+                                <span id="dmo-status" class="text-xs text-neutral-500 dark:text-neutral-400"></span>
+                            </div>
+
+                            <ul id="dmo-diagnose-list" class="hidden text-xs space-y-0.5"></ul>
+                        </div>
+                    </details>
 
                     <!-- Dictation Shortcut -->
                     <div>
@@ -1482,6 +1528,7 @@
              gedeelde definitie van "vraagt aandacht". Deze bestanden doen bij
              het laden niets aan de pagina, ze definiëren enkel. -->
         <script src="forms-shared.js"></script>
+        <script src="dmo-license.js"></script>
 
         <script>
             // ============================================
@@ -1802,6 +1849,16 @@
             const pacsKlinischeInlichtingen    = params.get("klinische_inlichtingen") || "";
             const pacsDiagnostischeVraagstelling = params.get("diagnostische_vraagstelling") || "";
 
+            // Labels waaronder het onderzoekstype in de formulieren staat, op
+            // volgorde van precisie. De Tiro-template gebruikt "ONDERZOEK TYPE",
+            // dus die variant moet erbij; een los "onderzoek" staat er bewust
+            // NIET meer in, want dat matchte ook "ONDERZOEK DATUM" / "Dag van
+            // het onderzoek" en leverde dan de datum op in plaats van het type.
+            const TYPE_ONDERZOEK_TERMS = [
+                "type onderzoek", "onderzoek type",
+                "type of examination", "examination type",
+            ];
+
             const DEFAULT_QUESTIONNAIRE =
                 "http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.5";
             // Priority: URL param → localStorage saved → default
@@ -1900,7 +1957,7 @@
             /** De flow-bestemming, met het huidige onderzoekstype als zoekterm. */
             function flowHref() {
                 const p = new URLSearchParams(flowParams.toString());
-                const zoek = flowZoekterm(extractAnyField("type onderzoek", "type of examination", "onderzoek"));
+                const zoek = flowZoekterm(extractAnyField(...TYPE_ONDERZOEK_TERMS));
                 if (zoek) p.set("q", zoek); else p.delete("q");
                 return `flow.html?${p.toString()}`;
             }
@@ -1926,7 +1983,7 @@
                 lp.set("Referentie",              field("referentie", "reference", "accession") || params.get("accessionNumber") || "");
                 lp.set("Klinische_informatie",    field("klinische inlichtingen", "clinical information", "klinisch"));
                 lp.set("Diagnostische_vraagstelling", field("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"));
-                lp.set("Type_onderzoek",          field("type onderzoek", "type of examination"));
+                lp.set("Type_onderzoek",          field(...TYPE_ONDERZOEK_TERMS));
                 lp.set("Lateralisatie",           field("lateralisatie", "laterality"));
                 lp.set("Sequentie",               field("sequentie", "serie", "sequence", "series"));
                 lp.set("Gebruikte_medicatie",     field("gebruikte medicatie", "medicatie", "medication"));
@@ -2076,7 +2133,7 @@
                 const r = event.detail?.response;
                 const naam = extractClinicalField(r, "naam", "name", "patiënt", "patient name");
                 const datum = extractClinicalField(r, "datum", "date", "geboortedatum", "onderzoeksdatum");
-                const typeOnderzoek = extractClinicalField(r, "type onderzoek", "type of examination");
+                const typeOnderzoek = extractClinicalField(r, ...TYPE_ONDERZOEK_TERMS);
                 const lateralisatie = extractClinicalField(r, "lateralisatie", "laterality", "lateralisation");
                 const parts = [naam, datum, typeOnderzoek, lateralisatie].filter(Boolean);
                 studyTitleSuffix.textContent = parts.length ? parts.join(" - ") : "";
@@ -2654,8 +2711,12 @@
             // Sync dictation provider dropdown with magic clipboard
             const dictationSelect =
                 document.getElementById("dictation-provider");
+            // "own-dmsk" = de eigen licentie via SpeechKit Browser edition. Dat is
+            // geen Tiro-endpoint, dus dan zetten we dictation-endpoint juist af.
+            const OWN_DMSK = "own-dmsk";
             const applyDictationProvider = () => {
-                if (dictationSelect.value) {
+                const own = dictationSelect.value === OWN_DMSK;
+                if (dictationSelect.value && !own) {
                     clipboard.setAttribute(
                         "dictation-endpoint",
                         dictationSelect.value,
@@ -2663,6 +2724,8 @@
                 } else {
                     clipboard.removeAttribute("dictation-endpoint");
                 }
+                const ownField = document.getElementById("dmo-own-dictation");
+                if (ownField) ownField.classList.toggle("hidden", !own);
             };
             const _savedProvider = localStorage.getItem('dictationProvider');
             if (_savedProvider !== null) dictationSelect.value = _savedProvider;
@@ -2671,6 +2734,190 @@
                 applyDictationProvider();
             });
             applyDictationProvider();
+
+            // ============================================
+            // Dragon Medical One met eigen licentie
+            // ============================================
+            // De licentie van het eigen ziekenhuis (SoD.exe.config van de
+            // DMO-desktop) hergebruiken in deze pagina. Parsing, opslag en het
+            // opzetten van de SpeechKit-sessie zitten in dmo-license.js.
+            (function initDmoLicense() {
+                const DMO = window.DMOLicense;
+                if (!DMO) return;
+
+                const summaryEl   = document.getElementById("dmo-config-summary");
+                const connectBtn  = document.getElementById("dmo-connect-btn");
+                const disconnBtn  = document.getElementById("dmo-disconnect-btn");
+                const reloadBtn   = document.getElementById("dmo-reload-btn");
+                const statusEl    = document.getElementById("dmo-status");
+                const badgeEl     = document.getElementById("dmo-license-badge");
+                const ownStatusEl = document.getElementById("dmo-own-status");
+                const dictTa      = document.getElementById("dmo-dictation-text");
+
+                function setStatus(text, tone) {
+                    statusEl.textContent = text || "";
+                    statusEl.className = "text-xs " + (
+                        tone === "error"   ? "text-red-600 dark:text-red-400" :
+                        tone === "ok"      ? "text-green-600 dark:text-green-400" :
+                                             "text-neutral-500 dark:text-neutral-400"
+                    );
+                }
+
+                // Alleen gemaskeerde gegevens tonen: de token en het wachtwoord
+                // komen hier nooit voluit op het scherm.
+                function renderSummary() {
+                    const s = DMO.summary();
+                    if (!s) { summaryEl.classList.add("hidden"); return; }
+                    const rows = [
+                        ["Gebruiker", s.userId || "—"],
+                        ["SAS-server", s.serverUrl || "—"],
+                        ["Regio", s.region],
+                        ["Organization token", s.organizationToken || "—"],
+                        ["Partner GUID", s.partnerGuid || "—"],
+                        ["Wachtwoord", s.password],
+                        ["Taal / topic", [s.language, s.topic].filter(Boolean).join(" · ") || "—"],
+                    ];
+                    summaryEl.innerHTML = "";
+                    rows.forEach(([k, v]) => {
+                        const dt = document.createElement("dt");
+                        dt.className = "text-neutral-500 dark:text-neutral-500 whitespace-nowrap";
+                        dt.textContent = k;
+                        const dd = document.createElement("dd");
+                        dd.className = "text-neutral-700 dark:text-neutral-300 break-all";
+                        dd.textContent = v;
+                        summaryEl.append(dt, dd);
+                    });
+                    summaryEl.classList.remove("hidden");
+                }
+
+                function renderBadge() {
+                    const st = DMO.state().state;
+                    const has = !!DMO.load();
+                    let text = "niet ingesteld", cls = "text-neutral-400 dark:text-neutral-500";
+                    if (st === "connected")  { text = "verbonden"; cls = "text-green-600 dark:text-green-400"; }
+                    else if (st === "error") { text = "fout";      cls = "text-red-600 dark:text-red-400"; }
+                    else if (has)            { text = "ingesteld"; }
+                    badgeEl.textContent = text;
+                    badgeEl.className = "ml-auto text-xs font-normal " + cls;
+                }
+
+                function renderAll() {
+                    renderSummary();
+                    renderBadge();
+                }
+
+                /**
+                 * De velden die standaard mee moeten: het dicteervenster op deze
+                 * pagina en dat van het PiP-venster wanneer dat open staat.
+                 */
+                function defaultTargets() {
+                    const targets = [dictTa];
+                    if (_pipDmoTa && _pipWindow && !_pipWindow.closed) targets.push(_pipDmoTa);
+                    return targets.filter(Boolean);
+                }
+
+                connectBtn.addEventListener("click", async () => {
+                    const cfg = DMO.load();
+                    if (!cfg) {
+                        setStatus("Nog geen licentiebestand ingelezen — doe dat op de QC-pagina.", "error");
+                        return;
+                    }
+                    const missing = DMO.validate(cfg);
+                    if (missing.length) {
+                        setStatus(`Licentiebestand onvolledig: ${missing.join(", ")}.`, "error");
+                        return;
+                    }
+                    setStatus("Verbinden…", null);
+                    const ok = await DMO.connect(cfg, defaultTargets());
+                    if (ok) {
+                        setStatus("Verbonden — klik in een veld en dicteer.", "ok");
+                        if (dictationSelect.value !== OWN_DMSK) {
+                            dictationSelect.value = OWN_DMSK;
+                            dictationSelect.dispatchEvent(new Event("change", { bubbles: true }));
+                        }
+                    } else {
+                        setStatus(DMO.state().error, "error");
+                    }
+                });
+
+                disconnBtn.addEventListener("click", () => {
+                    DMO.disconnect();
+                    setStatus("Verbinding verbroken. Herlaad de pagina om DMO volledig los te laten.", null);
+                });
+
+                reloadBtn.addEventListener("click", () => {
+                    renderAll();
+                    const cfg = DMO.load();
+                    if (!cfg) { setStatus("Nog geen licentiebestand ingelezen.", "error"); return; }
+                    const missing = DMO.validate(cfg);
+                    setStatus(missing.length ? `Onvolledig: ${missing.join(", ")}.` : "Licentie ingelezen en volledig.",
+                              missing.length ? "error" : "ok");
+                });
+
+                const diagnoseBtn  = document.getElementById("dmo-diagnose-btn");
+                const diagnoseList = document.getElementById("dmo-diagnose-list");
+                diagnoseBtn.addEventListener("click", async () => {
+                    diagnoseBtn.disabled = true;
+                    setStatus("Diagnose loopt…", null);
+                    const rows = await DMO.diagnose();
+                    diagnoseList.innerHTML = "";
+                    rows.forEach(({ label, ok, detail }) => {
+                        const li = document.createElement("li");
+                        li.className = "flex gap-2 " + (
+                            ok === true  ? "text-green-600 dark:text-green-400" :
+                            ok === false ? "text-red-600 dark:text-red-400" :
+                                           "text-neutral-500 dark:text-neutral-400"
+                        );
+                        const mark = document.createElement("span");
+                        mark.textContent = ok === true ? "✓" : ok === false ? "✕" : "?";
+                        const text = document.createElement("span");
+                        text.textContent = `${label} — ${detail}`;
+                        li.append(mark, text);
+                        diagnoseList.appendChild(li);
+                    });
+                    diagnoseList.classList.remove("hidden");
+                    const fouten = rows.filter((r) => r.ok === false).length;
+                    setStatus(fouten ? `${fouten} punt(en) nog niet in orde.` : "Alles wat testbaar is, is in orde.",
+                              fouten ? "error" : "ok");
+                    diagnoseBtn.disabled = false;
+                });
+
+                DMO.onStateChange((state, error) => {
+                    renderBadge();
+                    if (ownStatusEl) {
+                        // Kort houden — de volledige melding staat bij Settings.
+                        ownStatusEl.textContent =
+                            state === "connected" ? "DMO verbonden" :
+                            state === "connecting" ? "verbinden…" :
+                            state === "error" ? "niet verbonden — zie Settings" : "";
+                        ownStatusEl.title = error || "";
+                    }
+                });
+
+                // ── Dicteren in het veld waar je klikt ──────────────────────
+                // Standaard staan het dicteervenster van deze pagina en dat van
+                // het PiP-venster aan; klik je in een ander tekstveld, dan wordt
+                // dat er bij aangemeld.
+                function attachOnFocus(event) {
+                    const el = event.target;
+                    if (DMO.isDictatable(el)) DMO.attach(el);
+                }
+                document.addEventListener("focusin", attachOnFocus);
+                window.DMO_ATTACH_ON_FOCUS = attachOnFocus;   // het PiP-venster hangt dezelfde listener op
+
+                // Dictaat doorgeven aan dezelfde pijplijn als de andere providers,
+                // zodat Autofill, Verslag check, SNOMED en het PiP-venster werken.
+                let _dmoTimer = null;
+                dictTa.addEventListener("input", () => {
+                    clearTimeout(_dmoTimer);
+                    _dmoTimer = setTimeout(() => {
+                        const text = dictTa.value.trim();
+                        if (text) sendToDictationFields(text);
+                    }, 400);
+                });
+
+                renderAll();
+            })();
 
             // ============================================
             // Gemini API integration
@@ -3699,7 +3946,7 @@ Patiënt: {patient_info}
 
             function _extractPacsParam(searchTerms) {
                 const map = [
-                    [pacsTypeOnderzoek,             ["type onderzoek", "type of examination", "onderzoek"]],
+                    [pacsTypeOnderzoek,             TYPE_ONDERZOEK_TERMS],
                     [pacsLateralisatie,              ["lateralisatie", "laterality", "lateralisation"]],
                     [pacsKlinischeInlichtingen,      ["klinische inlichtingen", "clinical information", "klinisch"]],
                     [pacsDiagnostischeVraagstelling, ["diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"]],
@@ -3719,12 +3966,17 @@ Patiënt: {patient_info}
                 return [geslacht, leeftijd].filter(Boolean).join(", ");
             }
 
+            // De zoektermen worden één voor één over het hele formulier gelegd, in
+            // de volgorde waarin ze meegegeven zijn. Vroeger won de eerste ítem dat
+            // op eender welke term paste, waardoor een algemene term een veld
+            // bovenaan het formulier oppikte en een specifiekere term verderop
+            // nooit aan bod kwam. Nu bepaalt de precisie van de term wie wint.
             function extractClinicalField(response, ...searchTerms) {
-                function searchItems(items) {
+                function searchItems(items, term) {
                     if (!items) return "";
                     for (const item of items) {
                         const itemText = (item.text || "").toLowerCase();
-                        const matches = searchTerms.some(term => itemText.includes(term.toLowerCase()));
+                        const matches = itemText.includes(term);
                         if (matches && item.answer && item.answer.length > 0) {
                             const ans = item.answer[0];
                             return ans.valueString
@@ -3734,12 +3986,16 @@ Patiënt: {patient_info}
                                 || "";
                         }
                         // Search nested items
-                        const nested = searchItems(item.item);
+                        const nested = searchItems(item.item, term);
                         if (nested) return nested;
                     }
                     return "";
                 }
-                return searchItems(response?.item) || "";
+                for (const term of searchTerms) {
+                    const hit = searchItems(response?.item, String(term).toLowerCase());
+                    if (hit) return hit;
+                }
+                return "";
             }
 
             // Build a readable template structure string from a FHIR Questionnaire resource.
@@ -3770,7 +4026,7 @@ Patiënt: {patient_info}
             const modalDv = document.getElementById("modal-dv");
 
             async function openRadiologyCheckUrl(ki, dv) {
-                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const patientInfo = extractPatientInfo();
                 const template = kidvActionUrlInput.value.trim() || DEFAULT_KIDV_PROMPT;
                 const prompt = fillPrompt(template, { type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: patientInfo });
@@ -3879,7 +4135,7 @@ Patiënt: {patient_info}
                 aiConsultSend.disabled = true;
 
                 const template = aiConsultUrlInput.value.trim() || DEFAULT_AI_CONSULT_PROMPT;
-                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const pat = extractPatientInfo();
@@ -4257,7 +4513,7 @@ UITVOERFORMAAT — STRIKT:
 
                 if (verslagCheckActive) {
                     const tekst = readDictationText();
-                    const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                    const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
 
@@ -4400,7 +4656,7 @@ UITVOERFORMAAT — STRIKT:
                 realtimeContent.style.overflowY = 'auto';
 
                 const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const patientInfo = extractPatientInfo();
@@ -4856,7 +5112,7 @@ negated bevindingen
             async function runSnomedCtGeneration(providedText) {
                 const tekst = providedText || readDictationText();
                 if (!tekst.trim()) return;
-                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const patientInfo = extractPatientInfo();
@@ -5140,7 +5396,7 @@ negated bevindingen
                     : (extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '');
             }
             function _buildTtHeader() {
-                const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || pacsTypeOnderzoek || '';
+                const type = extractAnyField(...TYPE_ONDERZOEK_TERMS) || pacsTypeOnderzoek || '';
                 const lat  = _buildLat();
                 const parts = [type, lat].filter(Boolean);
                 return parts.length ? parts.join(' ').toUpperCase() + ':' : '';
@@ -5201,7 +5457,7 @@ negated bevindingen
                     else alert("Geen dictatietekst gevonden. Dicteer eerst uw bevindingen.");
                     return;
                 }
-                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const ki  = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv  = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const logic = window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
@@ -5392,7 +5648,7 @@ negated bevindingen
             let _autofillQueue = Promise.resolve(); // serial queue — prevents concurrent autofill calls
 
             function _getStudyLabel() {
-                const type = extractAnyField("type onderzoek", "type of examination", "onderzoek") || '';
+                const type = extractAnyField(...TYPE_ONDERZOEK_TERMS) || '';
                 const lat  = extractAnyField("lateralisatie", "laterality") || '';
                 return [type, lat].filter(Boolean).join(' ').toUpperCase().trim();
             }
@@ -5633,7 +5889,7 @@ negated bevindingen
                 if (!tekst) { alert('Geen dictatietekst. Dicteer eerst een verslag.'); return; }
                 // Capture all context before clearing fields
                 const context = {
-                    typeOnderzoek: extractAnyField("type onderzoek", "type of examination", "onderzoek"),
+                    typeOnderzoek: extractAnyField(...TYPE_ONDERZOEK_TERMS),
                     ki:  extractAnyField("klinische inlichtingen", "clinical information", "klinisch"),
                     dv:  extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"),
                     textTemplate: window._flowTextTemplate || window._flowUserTextTemplate || '',
@@ -6441,7 +6697,7 @@ negated bevindingen
                 const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
                 _pipUpdateStudyHeader = function() {
                     // Specific terms only — "type onderzoek" won't match "datum onderzoek"
-                    const typeRaw = extractAnyField("type onderzoek", "type of examination") || pacsTypeOnderzoek || '';
+                    const typeRaw = extractAnyField(...TYPE_ONDERZOEK_TERMS) || pacsTypeOnderzoek || '';
                     const lat     = extractAnyField("lateralisatie", "laterality") || pacsLateralisatie || '';
                     // Multiple studies may be pipe- or semicolon-separated
                     const types = typeRaw ? typeRaw.split(/[|;]+/).map(t => t.trim()).filter(Boolean) : [];
@@ -6467,6 +6723,16 @@ negated bevindingen
                 const _autoGrow = () => {};
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
+
+                // Eigen DMO-licentie: dit dicteerveld meteen aanmelden, en ook in
+                // dit venster geldt "dicteren waar je klikt". Het PiP-venster is
+                // hetzelfde origin, dus dezelfde SpeechKit-sessie kan het bedienen.
+                try {
+                    window.DMOLicense?.attach(ta);
+                    if (window.DMO_ATTACH_ON_FOCUS) {
+                        pipWindow.document.addEventListener('focusin', window.DMO_ATTACH_ON_FOCUS);
+                    }
+                } catch (_) { /* zonder DMO-sessie is dit niet van belang */ }
 
                 // ── Inline correction mode (contenteditable) ────────
                 const _pipInlineMode = false; // inline toggle removed; always use textarea
@@ -6531,7 +6797,7 @@ negated bevindingen
                         (async () => {
                             try {
                                 const template = inlineCheckUrlInput.value.trim() || DEFAULT_INLINE_CHECK_PROMPT;
-                                const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                                 const ki = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
                                 const dv = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
                                 const pat = extractPatientInfo();
@@ -6629,7 +6895,7 @@ negated bevindingen
                     vcOrigBtn.textContent = '↩ Origineel';
 
                     const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                    const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                     const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
                     const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
                     const pat = extractPatientInfo();
@@ -6950,7 +7216,7 @@ negated bevindingen
                     const loadingBubble = _pipAiAddMessage('model', '<span class="ai-spinner" style="border-top-color:#64748b;border-color:rgba(100,116,139,0.3)"></span>');
                     pipAiSendBtn.disabled = true;
                     const template = aiConsultUrlInput.value.trim() || DEFAULT_AI_CONSULT_PROMPT;
-                    const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                    const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                     const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
                     const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
                     const pat = extractPatientInfo();
@@ -7451,7 +7717,7 @@ negated bevindingen
                 pmAnalyseBtn.addEventListener('click', async () => {
                     if (!medgemmaImages.length) { pipWindow.alert('Upload eerst een afbeelding.'); return; }
                     const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
-                    const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                    const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                     const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                     const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                     const procedureTemplate = getMedgemmaTemplateContext();
@@ -7746,7 +8012,7 @@ negated bevindingen
                         _rtCorrText = null;
 
                         const template = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
-                        const typeOnderzoek = extractAnyField('type onderzoek', 'type of examination', 'onderzoek');
+                        const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                         const ki  = extractAnyField('klinische inlichtingen', 'clinical information', 'klinisch');
                         const dv  = extractAnyField('diagnostische vraagstelling', 'diagnostische vraag', 'diagnostic question');
                         const pat = extractPatientInfo();
@@ -8078,7 +8344,7 @@ UITVOERFORMAAT — geef UITSLUITEND dit terug, geen uitleg, geen preamble:
                     return;
                 }
                 const template = medgemmaActionUrlInput.value.trim() || DEFAULT_MEDGEMMA_PROMPT;
-                const typeOnderzoek = extractAnyField("type onderzoek", "type of examination", "onderzoek");
+                const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const ki = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
                 const procedureTemplate = getMedgemmaTemplateContext();
