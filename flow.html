@@ -608,7 +608,11 @@
                 </div>
                 <div class="px-5 py-3 border-t border-neutral-200 dark:border-slate-700 flex items-center gap-2">
                     <span class="text-xs text-neutral-400 dark:text-neutral-500">Vink bij &eacute;&eacute;n radioloog &quot;ik&quot; aan; die naam komt standaard in het veld Radioloog.</span>
-                    <button id="names-save-btn" class="ml-auto px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
+                    <input type="file" id="names-import-input" accept=".json" class="hidden">
+                    <button id="names-import-btn" type="button" class="ml-auto px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">Importeer JSON</button>
+                    <button id="names-export-btn" type="button" class="px-3 py-1.5 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">Exporteer JSON</button>
+                    <span id="names-import-melding" class="text-xs text-neutral-500 dark:text-neutral-400"></span>
+                    <button id="names-save-btn" class="px-4 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors">Opslaan</button>
                 </div>
                 </div>
             </div>
@@ -634,6 +638,8 @@
 
         <!-- ── Script ─────────────────────────────────────────────────────────── -->
         <script src="calculators.js"></script>
+        <!-- Voor het inlezen van een namenlijst in de personendatabank. -->
+        <script src="forms-shared.js"></script>
         <script>
         const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
 
@@ -3775,6 +3781,11 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 }
             });
 
+            // Zie de opmerking bij de labelsync hieronder: dat overnemen mag
+            // maar één keer per installatie gebeuren.
+            const _LABEL_SYNC_KEY = 'flowLabelSyncUitDef_v1';
+            const _labelSyncEenmalig = !localStorage.getItem(_LABEL_SYNC_KEY);
+
             DEFAULT_EXAM_TYPES.forEach(def => {
                 const et = state.examTypes.find(t => t.id === def.id);
                 if (!et) {
@@ -3827,10 +3838,18 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 if (et.userLabelsDefaultVisible === undefined) { et.userLabelsDefaultVisible = true; changed = true; }
                 // Migrate: add default sectionOrder
                 if (et.sectionOrder === undefined) { et.sectionOrder = ['ai','user','dept']; changed = true; }
-                // Sync from def if explicitly set
-                if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
-                if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
+                // Eenmalig overnemen uit de standaardtemplate. Dit liep vroeger
+                // bij élke paginalading, en dan werd een uitgevinkt label bij de
+                // volgende lading weer aangezet: de keuze was niet vast te
+                // houden. Bestaande installaties krijgen de standaard dus één
+                // keer, daarna is het vinkje van de gebruiker.
+                if (_labelSyncEenmalig) {
+                    if (def.deptLabelsDefaultVisible === true && et.deptLabelsDefaultVisible !== true) { et.deptLabelsDefaultVisible = true; changed = true; }
+                    if (def.userLabelsDefaultVisible === true && et.userLabelsDefaultVisible !== true) { et.userLabelsDefaultVisible = true; changed = true; }
+                }
             });
+            if (_labelSyncEenmalig) localStorage.setItem(_LABEL_SYNC_KEY, '1');
+
             // Seed calculator-koppelingen (eenmalig, enkel wanneer nog niet ingesteld)
             // Eenmalige correctie: verwijder foutieve blaasvolume-koppeling op galblaas-onderzoeken
             // (oude heuristiek matchte "galblaas" op substring "blaas")
@@ -4479,8 +4498,12 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 presetText:    document.getElementById('edit-preset-text').value.trim(),
                 aiRules:       editAiRules,
                 calculators:   editCalculators,
-                deptLabelsDefaultVisible: _existingForSave?.deptLabelsDefaultVisible !== false,
-                userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible !== false,
+                // Behoud wat er staat; enkel een nieuw onderzoekstype begint met
+                // labels aan. Stond hier "!== false", en dat legde dezelfde vlag
+                // anders uit dan de kaartweergave en de editor, die "=== true"
+                // lezen.
+                deptLabelsDefaultVisible: _existingForSave?.deptLabelsDefaultVisible ?? true,
+                userLabelsDefaultVisible: _existingForSave?.userLabelsDefaultVisible ?? true,
                 deptMode:      document.querySelector('input[name="dept-mode"]:checked')?.value || 'template',
                 userMode:      document.querySelector('input[name="user-mode"]:checked')?.value || 'template',
                 sectionOrder:  (() => { const c = document.getElementById('flow-sections-container'); return c ? Array.from(c.querySelectorAll(':scope > details')).map(e => SECTION_KEY_MAP[e.id]).filter(Boolean) : (_existingForSave?.sectionOrder || ['ai','user','dept']); })(),
@@ -4515,9 +4538,22 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
 
         // Preserve URL params for back link (theme etc.)
         const params = new URLSearchParams(window.location.search);
-        if (params.toString()) {
+        // Komt er een zoekterm mee (de flow-knop op launch stuurt het
+        // onderzoekstype zonder modaliteit door), dan staat die meteen in het
+        // zoekveld en zijn de kaarten al gefilterd.
+        const _qParam = (params.get("q") || "").trim();
+        if (_qParam) {
+            const si = document.getElementById('search-input');
+            si.value = _qParam;
+            searchQuery = _qParam;
+            renderCards();
+        }
+        // De zoekterm hoort bij deze pagina en gaat niet mee terug naar launch.
+        const _backParams = new URLSearchParams(params.toString());
+        _backParams.delete("q");
+        if (_backParams.toString()) {
             const bl = document.getElementById('back-link');
-            bl.href = `launch.html?${params.toString()}`;
+            bl.href = `launch.html?${_backParams.toString()}`;
         }
 
         // ── Textuele template logica ─────────────────────────────────────────────
@@ -5033,6 +5069,50 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
             modal.addEventListener('click', e => {
                 if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
             });
+            // ── Import en export van de namenlijst ──────────────────────────
+            // Het inlezen loopt via JyzForms.NameLists, zodat een bestand met
+            // "specialisatie" of "specialty" in plaats van "discipline" toch
+            // met discipline binnenkomt — dat is precies het veld waar de
+            // kolom Specialisatie in de databank op steunt.
+            const importInput = document.getElementById('names-import-input');
+            const importMelding = document.getElementById('names-import-melding');
+            const meld = (tekst, fout) => {
+                importMelding.textContent = tekst;
+                importMelding.className = 'text-xs ' + (fout
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-green-600 dark:text-green-400');
+                setTimeout(() => { importMelding.textContent = ''; }, 6000);
+            };
+
+            document.getElementById('names-import-btn').addEventListener('click', () => importInput.click());
+            importInput.addEventListener('change', async () => {
+                const bestand = importInput.files?.[0];
+                importInput.value = '';
+                if (!bestand) return;
+                if (!window.JyzForms?.NameLists) { meld('Inlezen niet beschikbaar.', true); return; }
+                try {
+                    const data = JSON.parse(await bestand.text());
+                    const n = window.JyzForms.NameLists.importFrom(data);
+                    if (!n) { meld('Geen personen in dit bestand gevonden.', true); return; }
+                    personen = laad();
+                    teken();
+                    const zonder = personen.filter(p => !p.discipline).length;
+                    meld(`${n} personen ingelezen`
+                        + (zonder ? ` — ${zonder} zonder discipline` : '') + '.', false);
+                } catch (e) {
+                    meld('Kon het bestand niet lezen: ' + e.message, true);
+                }
+            });
+
+            document.getElementById('names-export-btn').addEventListener('click', () => {
+                const inhoud = JSON.stringify({ nameLists: { [KEY]: personen } }, null, 2);
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([inhoud], { type: 'application/json' }));
+                a.download = 'personendatabank.json';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+            });
+
             saveBtn.addEventListener('click', () => {
                 const schoon = personen.map(p => normaliseer(p)).filter(p => p.name);
                 let gezien = false;

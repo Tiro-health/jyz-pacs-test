@@ -113,6 +113,14 @@
             .corr { cursor: pointer; text-decoration: underline dotted #ef4444; }
             .corr-reverted { cursor: pointer; text-decoration: underline dotted #22c55e; }
 
+            /* Tekst die de AI in een template-veld heeft aangebracht, tegenover de
+               standaardtekst van de template zelf. Lichter maar volwaardig leesbaar:
+               genoeg contrast met de achtergrond in beide modi, duidelijk verschil
+               met de gewone verslagtekst. Correcties uit de verslag check zetten hun
+               kleur inline en blijven dus rood, ook binnen een .tt-ai-span. */
+            .tt-ai { color: #64748b; }
+            .dark .tt-ai { color: #94a3b8; }
+
             details summary::-webkit-details-marker {
                 display: none;
             }
@@ -265,6 +273,12 @@
             class="fixed bottom-4 left-4 z-50 inline-flex items-center justify-center w-10 h-10 rounded-full bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-bold shadow-lg transition-colors" style="will-change:transform"
         >
             QC
+            <!-- Aantal op te volgen casussen waarvan de datum bereikt is. Blijft
+                 verborgen zolang er geen zijn; zie updateOpvolgBadge(). -->
+            <span
+                id="opvolg-badge"
+                class="hidden absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 inline-flex items-center justify-center rounded-full bg-red-600 text-white text-[11px] font-bold leading-none shadow ring-2 ring-neutral-50 dark:ring-[#161f27]"
+            ></span>
         </a>
 
 
@@ -281,8 +295,7 @@
                             rows="3"
                             class="w-full px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
                             placeholder="Klinische inlichtingen..."
-                        ></textarea>
-                    </div>
+                        ></textarea>                    </div>
                     <div>
                         <label for="modal-dv" class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">Diagnostische vraagstelling</label>
                         <textarea
@@ -637,17 +650,45 @@
                     Dictation
                     <div class="ml-auto flex items-center gap-2 shrink-0">
                     <button
+                        id="ai-consult-btn"
+                        type="button"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
+                        title="AI Radiologie Assistent"
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+                    <button
+                    id="medgemma-quick-btn"
+                    type="button"
+                    style="display:none"
+                    title="Beeldanalyse"
+                    class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
+                    </svg>
+                    </button>
+                    <button
                         id="translate-small-btn"
                         type="button"
                         class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
                         title="Translate"
                     ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></svg></button>
                     <button
-                        id="ai-consult-btn"
+                        id="launch-calc-btn"
                         type="button"
-                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-700 bg-white dark:bg-muted hover:bg-cyan-50 dark:hover:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 transition-colors shrink-0"
-                        title="AI Radiologie Assistent"
-                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></button>
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-cyan-300 dark:border-cyan-800 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 transition-colors shrink-0"
+                        title="Calculator openen"
+                    >🧮</button>
+                    <button
+                        id="verslag-check-btn"
+                        type="button"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Verslag check
+                    </button>
                     <button
                         id="ai-resultaten-btn"
                         type="button"
@@ -668,17 +709,6 @@
                             <path d="M12 8v4l3 3"/>
                         </svg>
                         SNOMED CT
-                    </button>
-                    <button
-                        id="verslag-check-btn"
-                        type="button"
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
-                        Verslag check
                     </button>
                     </div><!-- /ml-auto button group -->
                     <svg
@@ -719,11 +749,23 @@
                             class="w-full px-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-y leading-relaxed"
                         ></textarea>
                     </div>
+                    <!-- DMO-dictaatveld voor de textuele modus. Komt in de plaats van
+                         het gedeactiveerde SDK-veld, en enkel wanneer het PiP-venster
+                         dicht is — zie syncLaunchDmo(). Staat buiten het SDK-element,
+                         want dat wordt bij deactivering volledig verborgen. -->
+                    <div id="launch-dmo-wrap" class="hidden mt-2">
+                        <textarea
+                            id="launch-dmo-ta"
+                            rows="5"
+                            placeholder="Dicteer hier via DMO…"
+                            class="launch-dmo-ta w-full px-3 py-2 text-sm rounded-lg border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none leading-relaxed"
+                        ></textarea>
+                    </div>
                     <tiro-magic-clipboard
                         for="report-form"
                         dictation-language="nl"
                     >
-                        <div class="flex gap-2 mt-2 flex-wrap">
+                        <div id="dictation-actions" class="flex items-center gap-2 mt-2 flex-wrap">
                             <button
                                 id="autofill-btn"
                                 type="submit"
@@ -750,20 +792,22 @@
                                 Kopiëren
                             </button>
                             <span id="paste-text-indicator" class="hidden items-center gap-1 text-xs text-green-600 dark:text-green-400">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                                Tekst ontvangen
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Tekst ontvangen
                             </span>
+                            <!-- Preset en terug horen bij het dicteerveld en staan
+                                 daarom rechts op dezelfde regel als de andere knoppen. -->
                             <button
-                                id="medgemma-quick-btn"
-                                type="button"
-                                style="display:none"
-                                title="Beeldanalyse"
-                                class="ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>
-                                </svg>
-                            </button>
+                            id="launch-preset-btn"
+                            type="button"
+                            title="Preset verslag van dit onderzoekstype toevoegen"
+                            class="ml-auto inline-flex items-center gap-1.5 h-8 px-3 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors"
+                            >📋 Preset</button>
+                            <button
+                            id="launch-undo-btn"
+                            type="button"
+                            class="inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                            ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
                         </div>
                         <!-- Real-time verslag check panel -->
                         <div id="realtime-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
@@ -782,6 +826,27 @@
                             </div>
                         </div>
                     </tiro-magic-clipboard>
+                    <!-- Waar de knoppenrij en het real time-venster naartoe verhuizen
+                         wanneer het SDK-element gedeactiveerd wordt; die blijven dan
+                         gewoon bruikbaar. -->
+                    <div id="dictation-actions-out"></div>
+                    <!-- Vertaling: hetzelfde paneel als in het PiP-venster, onder
+                         het dicteerveld, in plaats van een modaal venster. -->
+                    <div id="launch-translate-panel" class="hidden mt-3 border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden">
+                        <div class="flex items-center justify-between px-3 py-1.5 bg-neutral-50 dark:bg-muted border-b border-neutral-200 dark:border-slate-700">
+                            <span class="text-xs font-medium text-neutral-500 dark:text-neutral-400">Vertaling</span>
+                            <div class="flex items-center gap-2">
+                                <span id="launch-translate-status" class="text-xs text-neutral-400 dark:text-neutral-500"></span>
+                                <button type="button" id="launch-translate-close" title="Sluiten" class="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 leading-none cursor-pointer text-base">×</button>
+                            </div>
+                        </div>
+                        <div id="launch-translate-content" class="px-3 py-2 text-sm text-neutral-700 dark:text-neutral-200 leading-relaxed"></div>
+                        <div id="launch-translate-actions" class="hidden items-center gap-2 px-3 py-2 border-t border-neutral-200 dark:border-slate-700 bg-neutral-50 dark:bg-muted">
+                            <button id="launch-translate-orig" type="button" style="display:none" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">↩ Origineel</button>
+                            <button id="launch-translate-copy" type="button" class="px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors">Kopiëren</button>
+                            <button id="launch-translate-send" type="button" title="Stuur naar dictatie (vervangt tekst)" class="inline-flex items-center justify-center w-[30px] h-[30px] rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-700 dark:text-neutral-200 transition-colors"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
+                        </div>
+                    </div>
                 </div>
             </details>
 
@@ -1049,8 +1114,27 @@
                         <circle cx="12" cy="12" r="3" />
                     </svg>
                     Settings
+                    <!-- Snelknoppen: blijven bruikbaar wanneer Settings is ingeklapt.
+                         Zelfde plek en opmaak als de knoppen bij Clinical information
+                         en Dictation; vierkant omdat het er twee naast elkaar zijn. -->
+                    <div class="ml-auto flex items-center gap-1.5 shrink-0">
+                    <a
+                        id="settings-flow-btn"
+                        href="#"
+                        target="_blank"
+                        title="Template flow"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0"
+                    ><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H5z"/><path d="M9 3v18"/><path d="m16 15-3-3 3-3"/></svg></a>
+                    <button
+                        id="settings-pip-btn"
+                        type="button"
+                        aria-pressed="false"
+                        title="Dictation zwevend venster"
+                        class="inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0 text-[10px] font-semibold leading-none"
+                    >PiP</button>
+                    </div>
                     <svg
-                        class="chevron ml-auto w-4 h-4 transition-transform duration-200"
+                        class="chevron w-4 h-4 transition-transform duration-200 shrink-0"
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                         fill="none"
@@ -1440,6 +1524,10 @@
         <!-- Tiro Web SDK IIFE Bundle -->
         <script src="https://cdn.tiro.health/sdk/next/tiro-web-sdk.iife.js"></script>
         <script src="calculators.js"></script>
+        <!-- Alleen voor de opvolgteller op de QC-knop: RecordStore en de
+             gedeelde definitie van "vraagt aandacht". Deze bestanden doen bij
+             het laden niets aan de pagina, ze definiëren enkel. -->
+        <script src="forms-shared.js"></script>
         <script src="dmo-license.js"></script>
 
         <script>
@@ -1845,6 +1933,40 @@
             const templateFlowBtn = document.getElementById("template-flow-btn");
             const flowParams = new URLSearchParams(window.location.search);
             templateFlowBtn.href = `flow.html?${flowParams.toString()}`;
+            // Dezelfde bestemming voor de snelknop in de Settings-kopbalk. Een klik
+            // in een <summary> klapt het paneel open of dicht, en dat is hier juist
+            // niet de bedoeling: de knop moet werken terwijl Settings ingeklapt is.
+            const settingsFlowBtn = document.getElementById("settings-flow-btn");
+            settingsFlowBtn.setAttribute("href", `flow.html?${flowParams.toString()}`);
+            settingsFlowBtn.addEventListener("click", (e) => e.stopPropagation());
+
+            /**
+             * Het onderzoekstype omzetten naar een zoekterm voor de flow-pagina:
+             * de modaliteit vooraan valt weg, want daarop zoeken levert alle
+             * onderzoeken van die modaliteit op. "ECHO ulnaris" wordt "ulnaris",
+             * "CT abdomen" wordt "abdomen". Staat er geen bekende modaliteit
+             * voor, dan blijft de hele tekst staan.
+             */
+            function flowZoekterm(typeOnderzoek) {
+                const s = String(typeOnderzoek || "").trim();
+                if (!s) return "";
+                const zonder = s.replace(_EXAM_MODALITEIT, "").replace(/^[\s:—–-]+/, "").trim();
+                return zonder || s;
+            }
+
+            /** De flow-bestemming, met het huidige onderzoekstype als zoekterm. */
+            function flowHref() {
+                const p = new URLSearchParams(flowParams.toString());
+                const zoek = flowZoekterm(extractAnyField(...TYPE_ONDERZOEK_TERMS));
+                if (zoek) p.set("q", zoek); else p.delete("q");
+                return `flow.html?${p.toString()}`;
+            }
+
+            // Het onderzoekstype wordt pas later ingevuld (uit PACS of met de hand),
+            // dus de bestemming wordt bij elke klik opnieuw opgebouwd.
+            for (const btn of [templateFlowBtn, settingsFlowBtn]) {
+                btn.addEventListener("click", () => btn.setAttribute("href", flowHref()));
+            }
 
 
             // Patient letter button — builds URL from current form values
@@ -1926,6 +2048,49 @@
             const qcParams = new URLSearchParams(flowParams.toString());
             qcParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
             qcBtn.href = `qc.html?${qcParams.toString()}`;
+            // ── Opvolgteller op de QC-knop ────────────────────────────────
+            // Het cijfer telt de op te volgen casussen waarvan de opvolgdatum
+            // bereikt of verstreken is. Wordt opnieuw geteld wanneer dit tabblad
+            // de aandacht terugkrijgt: je past de casus aan in een ander tabblad,
+            // en dan moet het bolletje hier meteen kloppen.
+            const opvolgBadge = document.getElementById("opvolg-badge");
+
+            async function updateOpvolgBadge() {
+                if (!opvolgBadge || typeof JyzForms === "undefined") return;
+                const ids = await JyzForms.Opvolging.due();
+                const n = ids.length;
+                opvolgBadge.textContent = n > 99 ? "99+" : String(n);
+                opvolgBadge.classList.toggle("hidden", n === 0);
+                opvolgBadge.title = n === 1
+                    ? "1 op te volgen casus vraagt aandacht"
+                    : `${n} op te volgen casussen vragen aandacht`;
+                qcBtn.title = n
+                    ? `Quality Control — ${opvolgBadge.title}`
+                    : "Quality Control";
+            }
+
+            updateOpvolgBadge();
+            window.addEventListener("focus", updateOpvolgBadge);
+            document.addEventListener("visibilitychange", () => {
+                if (!document.hidden) updateOpvolgBadge();
+            });
+
+            // In een nieuw tabblad, net als Store case: een Document PiP-venster
+            // gaat met zijn openende document dicht, dus wegnavigeren kostte hier
+            // zowel de gedicteerde tekst als het PiP-venster zelf.
+            //
+            // Dat gebeurt met window.open en niet met target="_blank": browsers
+            // zetten op zo'n link impliciet rel="noopener", en dan is
+            // window.opener leeg — precies wat qc.html nodig heeft om dit tabblad
+            // bij "Back" weer te kunnen sluiten.
+            qcBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                const url = `qc.html?${qcParams.toString()}`;
+                const tab = window.open(url, "_blank");
+                // Blokkeert de browser het tabblad, dan is wegnavigeren nog altijd
+                // beter dan een knop die niets doet.
+                if (!tab) window.location.href = url;
+            });
 
             // Initialize context form with fixed questionnaire
             const contextForm = document.getElementById("context-form");
@@ -2080,23 +2245,28 @@
                 document.getElementById("save-progress-btn");
             saveProgressBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
             const validateAndSaveBtn = document.getElementById("validate-and-save-btn");
             validateAndSaveBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 const dbParams = new URLSearchParams(window.location.search);
                 dbParams.set("theme", document.documentElement.classList.contains("dark") ? "dark" : "light");
-                window.location.href = `cases.html?${dbParams.toString()}`;
+                // In een nieuw tabblad, net als Template flow en Patient letter.
+                // Deze pagina blijft dus staan met de gedicteerde tekst erin, en het
+                // PiP-venster blijft open: een Document PiP-venster gaat namelijk
+                // met zijn openende document dicht, dus wegnavigeren kostte hier
+                // zowel de tekst in het hoofdvenster als het PiP-venster zelf.
+                const tab = window.open(`cases.html?${dbParams.toString()}`, "_blank");
+                // Blokkeert de browser het tabblad, dan is wegnavigeren nog altijd
+                // beter dan een knop die niets doet — het concept staat bewaard.
+                if (!tab) window.location.href = `cases.html?${dbParams.toString()}`;
             });
 
             const validateBtn = document.getElementById("validate-btn");
             validateBtn.addEventListener("click", (event) => {
                 event.preventDefault();
-                refreshSnomedFromForm();
                 if (form) form.requestSubmit();
             });
 
@@ -2226,6 +2396,11 @@
                 const btn = document.getElementById('autofill-btn');
                 if (btn) btn.type = _hasRealTiroTemplate() ? 'submit' : 'button';
                 updateTextTemplateBackup();
+                // Het dicteerveld hangt af van welke soort template actief is. Deze
+                // functie loopt ook al tijdens de eerste opbouw van de pagina, nog
+                // voor het dicteerveld is opgezet; dan gebeurt dat verderop bij de
+                // eerste syncLaunchDmo().
+                try { syncLaunchDmo(); } catch (_) { }
             }
 
             // ============================================
@@ -2291,6 +2466,14 @@
                 }
                 if (inp.type === 'number') {
                     return `<div>${lbl(inp.label)}<input type="number" id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}" ${inp.min!=null?`min="${inp.min}"`:''} ${inp.max!=null?`max="${inp.max}"`:''} step="${inp.step||'any'}" ${inp.default!=null?`value="${inp.default}"`:''}>${help}</div>`;
+                }
+                if (inp.type === 'date' || inp.type === 'text') {
+                    // Bewust een gewoon tekstveld: de native datumkiezer vult per
+                    // segment en volgt de taal van de browser, waardoor een
+                    // ingetypte datum stil verloren gaat. Uitlezen loopt al via
+                    // de gewone .value-tak; de calculator leest de tekst zelf.
+                    const ph = inp.placeholder || (inp.type === 'date' ? 'dd/mm/jjjj' : '');
+                    return `<div>${lbl(inp.label)}<input type="text" id="${id}" class="calc-input ${baseCls}" data-iid="${inp.id}" ${ph?`placeholder="${ph}"`:''} ${inp.type==='date'?'inputmode="numeric" autocomplete="off"':''}>${help}</div>`;
                 }
                 if (inp.type === 'select' || inp.type === 'radio') {
                     const opts = (inp.opties || []).map(o => `<option value="${String(o.v).replace(/"/g,'&quot;')}" ${inp.default===o.v?'selected':''}>${o.l}</option>`).join('');
@@ -2817,6 +3000,150 @@
                 }
             }
 
+            // ══════════════════════════════════════════════════════════════════
+            // DMO-dictaatveld op de launch-pagina
+            // ══════════════════════════════════════════════════════════════════
+            // Bij een echte Tiro-template hoort het SDK-veld op volle hoogte te
+            // staan: daarin wordt gedicteerd. Staat er enkel een textuele
+            // template (of geen), dan verdwijnt het SDK-venster uit het beeld en
+            // komt er een gewoon dicteerveld in de plaats.
+            //
+            // Het element blijft daarbij actief: het wordt niet op display:none
+            // gezet — dan haalt de browser het uit de rendering en stopt zo'n
+            // component met werken — maar buiten het beeld geschoven op zijn
+            // eigen maat. Het blijft dus gewoon gekoppeld aan het formulier en
+            // beschikbaar voor de AI en de calculatoren, het neemt alleen geen
+            // plaats meer in en is niet meer te zien of aan te klikken.
+            //
+            // Het verbergen gebeurt op het element zelf, niet op een veld binnen
+            // de SDK: die rendert zijn invoerveld in zijn eigen shadow root en
+            // overschrijft opmaak die wij daarop zetten. De knoppenrij en het
+            // real time-venster zijn light-DOM kinderen en zouden mee uit beeld
+            // schuiven, dus die verhuizen naar een plek ernaast.
+            const launchDmoWrap = document.getElementById('launch-dmo-wrap');
+            const launchDmoTa = document.getElementById('launch-dmo-ta');
+            const dictationActions = document.getElementById('dictation-actions');
+            const dictationActionsOut = document.getElementById('dictation-actions-out');
+            const realtimePanelEl = document.getElementById('realtime-panel');
+
+            // Het verhuizen van die kinderen is zelf een DOM-wijziging in het
+            // SDK-element; zonder deze vlag roept de waarnemer verderop zichzelf op.
+            let _sdkBezig = false;
+
+            /** Het eigen invoerveld van het SDK-element, licht of in de shadow root. */
+            function _sdkInvoerveld() {
+                const kies = "textarea, input:not([type=submit]):not([type=button]), [contenteditable='true']";
+                for (const el of clipboard.querySelectorAll(kies)) {
+                    if (!dictationActions.contains(el) && !realtimePanelEl.contains(el)) return el;
+                }
+                return clipboard.shadowRoot?.querySelector(kies) || null;
+            }
+
+            // Buiten het beeld, op de eigen breedte zodat de component normaal
+            // blijft meten en werken. Absoluut gepositioneerd, dus het neemt geen
+            // plaats in; pointer-events uit, zodat er niet per ongeluk in geklikt
+            // wordt.
+            const SDK_UIT_BEELD = 'position:absolute;left:-10000px;top:0;width:480px;opacity:0;pointer-events:none;';
+
+            function _zetSdkUitBeeld(uit) {
+                if (_sdkBezig) return;
+                _sdkBezig = true;
+                try {
+                    const doel = uit ? dictationActionsOut : clipboard;
+                    for (const el of [dictationActions, realtimePanelEl]) {
+                        if (el && el.parentNode !== doel) doel.appendChild(el);
+                    }
+                    clipboard.setAttribute('style', uit ? SDK_UIT_BEELD : '');
+                    // Uit de voorleesboom: het is geen bedienbaar veld meer, het
+                    // DMO-veld heeft die rol. Bewust géén inert — dat blokkeert
+                    // ook focus, en de SDK moet zijn eigen veld kunnen blijven
+                    // aansturen.
+                    if (uit) clipboard.setAttribute('aria-hidden', 'true');
+                    else clipboard.removeAttribute('aria-hidden');
+                } finally {
+                    _sdkBezig = false;
+                }
+            }
+
+            const _launchDmoGrow = () => {
+                if (!launchDmoTa) return;
+                launchDmoTa.style.height = 'auto';
+                launchDmoTa.style.height = launchDmoTa.scrollHeight + 'px';
+            };
+
+            const _pipStaatOpen = () => !!(_pipWindow && !_pipWindow.closed);
+
+            /** Is het eigen DMO-veld op deze pagina nu het actieve dicteerveld? */
+            const launchDmoActief = () =>
+                !!launchDmoWrap && !launchDmoWrap.classList.contains('hidden');
+
+            /** De tekst uit het SDK-veld zelf, buiten het eigen DMO-veld om. */
+            function _sdkTekst() {
+                // Het veld zelf eerst: setDictationText() zet ook eigenschappen op
+                // het host-element, en die kunnen achterlopen op wat er staat.
+                const el = _sdkInvoerveld();
+                const ruw = (el ? extractText(el) : '')
+                    || (clipboard.text ?? clipboard.value ?? clipboard.dictationText)
+                    || latestDictationText || '';
+                return _normalizeDictText(ruw);
+            }
+
+            let _launchDmoWasActief = false;
+
+            function syncLaunchDmo() {
+                if (!launchDmoWrap) return;
+                // Zonder actieve template staat er geen Tiro-formulier klaar, dus
+                // is dit net als bij een textuele template het dicteerveld.
+                const textueleModus = !_hasRealTiroTemplate();
+                const wordtActief = textueleModus && !_pipStaatOpen();
+
+                // Bij het schakelen tussen een Tiro-template en een textuele
+                // template gaat de tekst mee naar het veld dat overneemt.
+                if (wordtActief && !_launchDmoWasActief) {
+                    const over = _sdkTekst();
+                    if (over && !launchDmoTa.value.trim()) launchDmoTa.value = over;
+                } else if (!wordtActief && _launchDmoWasActief) {
+                    const over = launchDmoTa.value;
+                    if (over.trim()) setDictationText(over);
+                }
+                _launchDmoWasActief = wordtActief;
+
+                _zetSdkUitBeeld(textueleModus);
+                launchDmoWrap.classList.toggle('hidden', !wordtActief);
+                if (wordtActief) _launchDmoGrow();
+            }
+
+            // Het SDK-element hoort mee te weten wat er in het eigen veld staat:
+            // de calculator-scan en de auto-detectie van het onderzoekstype
+            // hangen aan zijn input-gebeurtenis. In het PiP-venster gebeurt dat
+            // vanzelf, omdat dat elke ronde setDictationText() aanroept.
+            let _launchDmoSpiegelTimer = null;
+
+            if (launchDmoTa) {
+                launchDmoTa.addEventListener('input', () => {
+                    _launchDmoGrow();
+                    // De rest van de pagina leest de dictatietekst via
+                    // readDictationText(); die kijkt eerst hier. Deze buffer houdt
+                    // de tekst ook bij nadat het veld weer dichtgaat.
+                    latestDictationText = launchDmoTa.value;
+                    if (realtimeEnabled) scheduleRealtimeCheck();
+                    // Zelfde wachttijd als in het PiP-venster, zodat er niet bij
+                    // elke aanslag een scan loopt.
+                    clearTimeout(_launchDmoSpiegelTimer);
+                    _launchDmoSpiegelTimer = setTimeout(() => {
+                        const tekst = launchDmoTa.value.trim();
+                        if (!tekst) return;
+                        setDictationText(tekst);
+                        _scheduleCalcScan();
+                        if (autoStudyDetect) _tryAutoDetectStudyType(tekst);
+                    }, 2000);
+                });
+                // Het SDK-element kan zijn eigen inhoud later opnieuw opbouwen; dan
+                // moet de stand opnieuw gezet worden.
+                new MutationObserver(() => { if (!_sdkBezig) syncLaunchDmo(); })
+                    .observe(clipboard, { childList: true, subtree: true });
+            }
+
             function fillPrompt(template, vars) {
                 let p = template;
                 for (const [k, v] of Object.entries(vars)) {
@@ -2965,7 +3292,10 @@
                 return rawText.replace(/<[^>]+>/g, '');
             }
 
-            const _EXAM_MODALITEIT = /^\s*(RX|CT|CTA|MR|MRI|MRA|NMR|ECHO|ECHOGRAFIE|US|DOPPLER|MAMMO|MAMMOGRAFIE|TOMOSYNTHESE|PET|PET-CT|SPECT|SCINTIGRAFIE|BOTSCAN|DEXA|DOORLICHTING|SCOPIE|ANGIO|ARTROGRAFIE|MYELOGRAFIE|HSG|IVU)\b/i;
+            // PET-CT staat vóór PET: bij een alternatie neemt de regex de eerste
+            // die past, en "PET" past ook op "PET-CT" (het koppelteken is een
+            // woordgrens). De langere schrijfwijze moet dus eerst komen.
+            const _EXAM_MODALITEIT = /^\s*(RX|CTA|CT|MRA|MRI|NMR|MR|ECHOGRAFIE|ECHO|US|DOPPLER|MAMMOGRAFIE|MAMMO|TOMOSYNTHESE|PET-CT|PET|SPECT|SCINTIGRAFIE|BOTSCAN|DEXA|DOORLICHTING|SCOPIE|ANGIO|ARTROGRAFIE|MYELOGRAFIE|HSG|IVU)\b/i;
             function uppercaseExamHeadings(text) {
                 if (!text) return text;
                 return text.split('\n').map(line => {
@@ -3385,7 +3715,17 @@
 
             function sendToDictationFields(text) {
                 if (!text) return;
+                // Zelfde afspraak als de pijlknoppen in het PiP-venster: wat er
+                // stond gaat op de terug-stapel, en de realtime check slaat niet
+                // opnieuw aan op tekst die we hier zelf neerzetten.
+                const _vorige = _currentDmoText();
+                if (_vorige !== text) pushDmoUndo('tekst', _vorige);
+                _realtimeLastText = String(text).trim();
                 setDictationText(text);
+                if (launchDmoActief()) {
+                    setNativeValue(launchDmoTa, text);
+                    _launchDmoGrow();
+                }
                 if (_pipDmoTa && _pipWindow && !_pipWindow.closed) {
                     setNativeValue(_pipDmoTa, text);
                     _pipDmoTa.style.height = 'auto';
@@ -3394,6 +3734,8 @@
             }
 
             function readDictationText() {
+                // Is het eigen DMO-veld het actieve dicteerveld, dan is dat de bron.
+                if (launchDmoActief()) return _normalizeDictText(launchDmoTa.value || "");
                 let raw = "";
                 // 1. Known public property names the SDK might expose
                 const fromProp = clipboard.text ?? clipboard.value ?? clipboard.dictationText ?? null;
@@ -3413,22 +3755,78 @@
                 return _normalizeDictText(raw);
             }
 
+            // ── Vertaalpaneel onder het dicteerveld (zoals in het PiP-venster) ──
+            const trPanelEl   = document.getElementById('launch-translate-panel');
+            const trContentEl = document.getElementById('launch-translate-content');
+            const trStatusEl  = document.getElementById('launch-translate-status');
+            const trActionsEl = document.getElementById('launch-translate-actions');
+            const trOrigBtnEl = document.getElementById('launch-translate-orig');
+            let _trLaunchOrig = null, _trLaunchToontOrig = false, _trLaunchResultHTML = null;
+
+            const _trLaunchToon = () => {
+                trPanelEl.classList.remove('hidden');
+                trActionsEl.classList.remove('hidden');
+                trActionsEl.classList.add('flex');
+            };
+
+            document.getElementById('launch-translate-close').addEventListener('click', () => {
+                trPanelEl.classList.add('hidden');
+            });
+            trOrigBtnEl.addEventListener('click', () => {
+                _trLaunchToontOrig = !_trLaunchToontOrig;
+                if (_trLaunchToontOrig) {
+                    _trLaunchResultHTML = trContentEl.innerHTML;
+                    trContentEl.innerHTML = (_trLaunchOrig || '').replace(/\n/g, '<br>');
+                    trOrigBtnEl.textContent = '↩ Vertaald';
+                } else {
+                    trContentEl.innerHTML = _trLaunchResultHTML;
+                    trOrigBtnEl.textContent = '↩ Origineel';
+                }
+            });
+            document.getElementById('launch-translate-copy').addEventListener('click', (e) => {
+                const btn = e.currentTarget;
+                const tekst = _trLaunchToontOrig ? (_trLaunchOrig || '') : (trContentEl.innerText || '');
+                navigator.clipboard.writeText(tekst).catch(() => {});
+                btn.textContent = 'Gekopieerd ✓';
+                setTimeout(() => { btn.textContent = 'Kopiëren'; }, 2000);
+            });
+            document.getElementById('launch-translate-send').addEventListener('click', () => {
+                const tekst = _trLaunchToontOrig ? (_trLaunchOrig || '') : (trContentEl.innerText || '');
+                if (!tekst.trim()) return;
+                sendToDictationFields(tekst);
+                trPanelEl.classList.add('hidden');
+            });
+
             translateBtn.addEventListener("click", async () => {
                 const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
                 const dictText = readDictationText();
                 if (!dictText.trim()) { alert("Geen dictatietekst gevonden. Dicteer eerst een verslag."); return; }
                 const prompt = fillPrompt(template, { text: dictText });
+                _trLaunchOrig = dictText;
+                _trLaunchToontOrig = false;
+                _trLaunchResultHTML = null;
+                trOrigBtnEl.textContent = '↩ Origineel';
+                trOrigBtnEl.style.display = 'none';
+                trContentEl.innerHTML = '';
+                trPanelEl.classList.remove('hidden');
+                trActionsEl.classList.add('hidden');
+                trActionsEl.classList.remove('flex');
                 if (GEMINI_API_KEY) {
-                    openGeminiModal("Vertaling");
-                    try { resolveGeminiModal(await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal())); }
-                    catch (e) {
-                        if (e.name === "AbortError" && !_abortedByUser) rejectGeminiModal("Tijdslimiet overschreden (60 seconden). Probeer opnieuw.");
-                        else if (e.name !== "AbortError") rejectGeminiModal(e.message);
+                    trStatusEl.textContent = 'Bezig…';
+                    try {
+                        const resultaat = await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal());
+                        trContentEl.innerHTML = renderMarkdown(resultaat);
+                        trStatusEl.textContent = '';
+                        trOrigBtnEl.style.display = '';
+                        _trLaunchToon();
+                    } catch (e) {
+                        if (e.name === "AbortError" && !_abortedByUser) trStatusEl.textContent = 'Tijdslimiet overschreden (60 seconden). Probeer opnieuw.';
+                        else if (e.name !== "AbortError") trStatusEl.textContent = 'Fout: ' + e.message;
                     }
                 } else {
-                    openGeminiModal("Geen API-sleutel");
-                    geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
-                    geminiContent.innerHTML = noApiKeyHtml(prompt);
+                    trStatusEl.textContent = '';
+                    trContentEl.innerHTML = noApiKeyHtml(prompt);
+                    _trLaunchToon();
                 }
             });
 
@@ -3439,6 +3837,10 @@
                 _realtimeResumePause();
                 const text = readDictationText();
                 if (!text) return;
+                // Net als in het PiP-venster: kopiëren rondt het verslag af, dus
+                // het dicteerveld en de resultaatvensters gaan schoon voor het
+                // volgende onderzoek. De terugknop haalt de tekst desnoods terug.
+                _launchReset();
                 navigator.clipboard.writeText(text).then(() => {
                     const icon = dictationCopyBtn.querySelector('svg').outerHTML;
                     dictationCopyBtn.innerHTML = icon + ' Gekopieerd';
@@ -3970,8 +4372,8 @@ UITVOERFORMAAT — STRIKT:
 
             const BTN_OFF_CLASS = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
             const BTN_ON_CLASS  = "ml-auto inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
-            const CAM_BTN_OFF   = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
-            const CAM_BTN_ON    = "ml-auto inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
+            const CAM_BTN_OFF   = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0";
+            const CAM_BTN_ON    = "inline-flex items-center justify-center w-7 h-7 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors shrink-0";
             const PIP_CAM_OFF   = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer leading-none";
             const PIP_CAM_ON    = "inline-flex items-center justify-center w-8 h-8 rounded-md border border-green-500 bg-green-500 hover:bg-green-600 text-white transition-colors cursor-pointer leading-none";
 
@@ -4034,6 +4436,13 @@ UITVOERFORMAAT — STRIKT:
                     mainPanels.classList.add('flex-col','pb-40');
                     templateEl.classList.add('flex-1','min-h-0','flex','flex-col');
                 }
+                // Settings staat nu in de andere kolom; de twee panelen die
+                // erachter horen moeten mee.
+                // De try is er omdat applySplitView ook vroeg in de init loopt,
+                // voor _pipWindow en de paneellijst hieronder bestaan.
+                try {
+                    plaatsPanelenBijSettings(!(_pipWindow && !_pipWindow.closed));
+                } catch (e) { /* nog te vroeg; de init zet ze zelf op hun plaats */ }
             }
 
             function updateSplitViewToggle() {
@@ -4174,7 +4583,9 @@ UITVOERFORMAAT — STRIKT:
                 realtimeToggle.setAttribute('aria-checked', String(realtimeEnabled));
                 realtimeToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${realtimeEnabled ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 realtimeToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${realtimeEnabled ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
-                realtimePanel.classList.toggle('hidden', !realtimeEnabled);
+                // Het venster verschijnt pas bij het eerste resultaat (zie
+                // runRealtimeCheck). Aanzetten toont dus geen leeg kader meer.
+                if (!realtimeEnabled) realtimePanel.classList.add('hidden');
                 if (realtimeEnabled) {
                     // Force verslag check button to active/green and disable it
                     verslagCheckActive = true;
@@ -4555,56 +4966,39 @@ negated bevindingen
                 storeSnomedForDatabase(hoofdLines, bijLines, negatedLines);
             }
 
+            // Alleen bevindingen met een echte SNOMED CT-code horen in de databank.
+            // resolveSnomedConcepts geeft die terug als "263169008 (Fracture of
+            // distal end of radius)"; een concept dat de terminologieserver niet
+            // kende blijft als losse naam staan en verschijnt daardoor ook niet op
+            // de SNOMED CT-pagina. Zulke regels mogen dus geen pathologie-optie
+            // worden: de databanklijst blijft zo één op één met wat er in de velden
+            // staat.
+            const SNOMED_CODED_LINE = /^\d{6,18}\s*\(/;
+            const onlyCoded = (lines) => (lines || []).filter((l) => SNOMED_CODED_LINE.test(String(l).trim()));
+
             // Schrijf het SNOMED-resultaat weg voor de database-formulieren.
             function storeSnomedForDatabase(hoofd, bij, negated) {
                 try {
                     localStorage.setItem("snomedLastResult", JSON.stringify({
-                        hoofddiagnose: hoofd || [],
-                        bijdiagnose: bij || [],
-                        negated: negated || [],
+                        hoofddiagnose: onlyCoded(hoofd),
+                        bijdiagnose: onlyCoded(bij),
+                        negated: onlyCoded(negated),
                         ts: new Date().toISOString(),
                     }));
                 } catch (_) { /* opslag vol — de lijst is een hulpmiddel, geen vereiste */ }
             }
 
-            // Lees een veld uit een Tiro-formulier op basis van zijn label.
-            function deepReadByLabel(rootEl, labelHint) {
-                function search(root) {
-                    if (!root) return null;
-                    for (const el of root.querySelectorAll("*")) {
-                        const leafText = Array.from(el.childNodes)
-                            .filter(n => n.nodeType === Node.TEXT_NODE)
-                            .map(n => n.textContent.trim()).join(" ").toLowerCase();
-                        if (leafText.includes(labelHint.toLowerCase())) {
-                            let container = el;
-                            for (let i = 0; i < 3 && container; i++) {
-                                const input = container.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea");
-                                if (input) return input.value;
-                                container = container.parentElement;
-                            }
-                        }
-                        if (el.shadowRoot) {
-                            const found = search(el.shadowRoot);
-                            if (found !== null) return found;
-                        }
-                    }
-                    return null;
-                }
-                return search(rootEl.shadowRoot || rootEl);
-            }
-
-            // Bij bewaren: neem eventuele handmatige aanpassingen aan de
-            // SNOMED-velden mee, zodat de database-opties overeenkomen met
-            // wat er effectief in het formulier staat.
-            function refreshSnomedFromForm() {
-                const snomedForm = findSnomedCtTemplateForm();
-                if (!snomedForm) return;
-                const split = (v) => (v || "").split("\n").map(s => s.trim()).filter(Boolean);
-                const hoofd = split(deepReadByLabel(snomedForm, "hoofddiagnose"));
-                const bij   = split(deepReadByLabel(snomedForm, "bijdiagnose"));
-                const neg   = split(deepReadByLabel(snomedForm, "negated"));
-                if (hoofd.length || bij.length || neg.length) storeSnomedForDatabase(hoofd, bij, neg);
-            }
+            // Hier stond een tweede schrijfactie: bij het bewaren werden de drie
+            // SNOMED-velden opnieuw uit het Tiro-formulier gelezen op hun
+            // labeltekst, om handmatige aanpassingen mee te nemen. Dat lezen bleek
+            // niet betrouwbaar — het pakte het eerste veld dat het tegenkwam en kon
+            // daardoor driemaal dezelfde waarde teruggeven, of een categorie
+            // leegmaken als het label niet exact matchte — en het overschreef
+            // daarmee de correcte, gecontroleerde lijst op precies het moment dat
+            // de casus werd bewaard. De lijst die de SNOMED CT-analyse in de velden
+            // zet is nu de enige bron, zodat databank en formulier één op één
+            // overeenkomen. Prijs: een handmatige aanpassing in de SNOMED-velden
+            // komt niet in de databankopties terecht.
 
             // AI resultaten button — synced two-way with Active template checkbox
             function updateAiResultatenBtn() {
@@ -4766,6 +5160,9 @@ negated bevindingen
             let _ttOriginalText      = null;
             let _ttResultHTML        = null;
             let _ttShowingOrig       = false;
+            // label → true als de AI dat veld vulde; vastgelegd na fase 1 (autofill)
+            // en hergebruikt na fase 2 (verslag check) en bij de origineel-toggle.
+            let _ttAiMap             = null;
             let _ttAbort             = null;
             let _ttLabelsVisible     = true;
 
@@ -4813,6 +5210,154 @@ negated bevindingen
                 });
             }
 
+            // ── Onderscheid template-tekst / AI-tekst in de autofill-output ───────
+            // Standaardtekst uit de template houdt de gewone verslagkleur; wat de AI
+            // zelf heeft aangebracht wordt lichtgrijs, zodat in één oogopslag te zien
+            // is wat nieuw is. "Normaal", "Geen" en "/" gelden als template-tekst:
+            // die vult de AI in voor niet-besproken velden (zie de invulregels in de
+            // autofill-prompt), dus dat is geen nieuwe bevinding.
+            const TT_STANDARD_FILLERS = new Set(['normaal', 'geen', '/']);
+
+            /** Normaliseer een veldwaarde voor vergelijking: witruimte en slotpunt weg. */
+            function _ttNormValue(s) {
+                return (s || '').replace(/\s+/g, ' ').trim().replace(/\.$/, '').toLowerCase();
+            }
+
+            /**
+             * Lees uit een template per label of het veld een standaardwaarde heeft
+             * (tussen quotes) of open staat (XXX).
+             * @returns {Map<string, {kind: 'literal'|'xxx', value: string}>}
+             */
+            function parseTemplateFields(template) {
+                const fields = new Map();
+                for (const rawLine of (template || '').split('\n')) {
+                    // // commentaar hoort niet bij de waarde
+                    const ci = rawLine.indexOf('//');
+                    let line = (ci >= 0 ? rawLine.slice(0, ci) : rawLine);
+                    // { } markeert een optioneel fragment, niet de waarde zelf
+                    line = line.replace(/[{}]/g, '');
+                    const m = line.match(/\[([^\]]+?:)\s*\]/);
+                    if (!m) continue;
+                    const label = m[1].trim();
+                    const rest = line.slice(m.index + m[0].length).replace(/\[br\]/g, '').trim();
+                    const quoted = rest.match(/^["']([\s\S]*)["']\s*$/);
+                    if (quoted) fields.set(label, { kind: 'literal', value: quoted[1] });
+                    else if (/^XXX$/i.test(rest)) fields.set(label, { kind: 'xxx', value: '' });
+                    else if (rest) fields.set(label, { kind: 'literal', value: rest });
+                }
+                return fields;
+            }
+
+            /**
+             * Bepaal per label of de ingevulde waarde van de AI komt. Werkt op de
+             * platte autofill-tekst (fase 1), zodat de indeling losstaat van hoe het
+             * paneel gerenderd is en dwars door de verslag check heen geldig blijft.
+             * @returns {Map<string, boolean>} label → true als de AI het veld vulde
+             */
+            function classifyAutofillFields(plainText, template) {
+                const fields = parseTemplateFields(template);
+                const out = new Map();
+                if (!fields.size) return out;
+                const lineRe = /\[([^\]]+?:)\s*\]([^\n]*)/g;
+                let m;
+                while ((m = lineRe.exec(plainText || '')) !== null) {
+                    const label = m[1].trim();
+                    const field = fields.get(label);
+                    if (!field) continue;
+                    const value = _ttNormValue(m[2]);
+                    if (!value) { out.set(label, false); continue; }
+                    if (TT_STANDARD_FILLERS.has(value)) { out.set(label, false); continue; }
+                    if (field.kind === 'literal' && value === _ttNormValue(field.value)) {
+                        out.set(label, false); // standaardtekst onveranderd overgenomen
+                        continue;
+                    }
+                    out.set(label, true);
+                }
+                return out;
+            }
+
+            /**
+             * Zet de waarde achter elk als AI-ingevuld gemarkeerd label in .tt-ai.
+             * Correctie-spans van de verslag check blijven ongemoeid — die houden hun
+             * eigen rode kleur. Idempotent: al getinte tekst wordt overgeslagen.
+             */
+            /** "- Supraspinatus:" en "Supraspinatus" tot dezelfde sleutel brengen. */
+            function _veldSleutel(s) {
+                return String(s || '')
+                    .replace(/^[\s\-–—•*]+/, '')   // opsommingstekens vooraan
+                    .replace(/[:\s]+$/, '')        // dubbele punt achteraan
+                    .trim()
+                    .toLowerCase();
+            }
+
+            function applyAiTint(el, classification) {
+                if (!el || !classification || !classification.size) return;
+                const doc = el.ownerDocument;
+                const labels = el.querySelectorAll('.tt-section-label');
+                // Fase 2, de verslag check, haalt de [- Label:]-haakjes uit de tekst.
+                // Dan valt er per label niets meer te vinden en bleef het hele
+                // resultaat één kleur — precies het verschil met een toegevoegd
+                // onderzoek, dat enkel fase 1 doorloopt en zijn haakjes houdt.
+                // Zonder labels tinten we daarom per regel, op de veldnaam.
+                if (!labels.length) { _aiTintPerRegel(el, classification); return; }
+                labels.forEach((label) => {
+                    if (classification.get(label.textContent.trim()) !== true) return;
+                    // Een compact label heeft zijn <br> binnenin; de waarde staat dan
+                    // op de volgende regel maar hoort nog bij dit label.
+                    let node = label.nextSibling;
+                    while (node) {
+                        if (node.nodeName === 'BR') break;                       // einde van de regel
+                        if (node.nodeType === Node.ELEMENT_NODE
+                            && node.classList?.contains('tt-section-label')) break; // volgend veld
+                        const next = node.nextSibling;
+                        if (node.nodeType === Node.TEXT_NODE && node.textContent.trim()) {
+                            const span = doc.createElement('span');
+                            span.className = 'tt-ai';
+                            node.parentNode.insertBefore(span, node);
+                            span.appendChild(node);
+                        }
+                        node = next;
+                    }
+                });
+            }
+
+            /**
+             * Terugval voor tekst zonder [- Label:]-haakjes: elke regel die begint
+             * met een veldnaam en een dubbele punt wordt tegen de classificatie
+             * gelegd, en bij een AI-ingevuld veld gaat de rest van de regel in
+             * .tt-ai. Correctie-spans van de verslag check blijven staan; alleen
+             * losse tekstknopen worden ingepakt.
+             */
+            function _aiTintPerRegel(el, classification) {
+                const doc = el.ownerDocument;
+                // Sleutels van de classificatie, genormaliseerd.
+                const aiVelden = new Set();
+                classification.forEach((isAi, label) => { if (isAi === true) aiVelden.add(_veldSleutel(label)); });
+                if (!aiVelden.size) return;
+
+                // Per regel werken: regels worden door <br> of een blokelement
+                // gescheiden. Een tekstknoop met "Naam:" erin start een veld.
+                const wandel = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                const knopen = [];
+                for (let n = wandel.nextNode(); n; n = wandel.nextNode()) knopen.push(n);
+
+                for (const knoop of knopen) {
+                    if (knoop.parentNode?.closest?.('.tt-ai, .corr')) continue;
+                    const m = /^(\s*)([^:\n]{2,60}):(\s*)(.+)$/.exec(knoop.textContent);
+                    if (!m) continue;
+                    if (!aiVelden.has(_veldSleutel(m[2]))) continue;
+                    // De naam en de dubbele punt blijven staan; de waarde erachter
+                    // wordt getint.
+                    const voor = doc.createTextNode(m[1] + m[2] + ':' + m[3]);
+                    const span = doc.createElement('span');
+                    span.className = 'tt-ai';
+                    span.textContent = m[4];
+                    knoop.parentNode.insertBefore(voor, knoop);
+                    knoop.parentNode.insertBefore(span, knoop);
+                    knoop.parentNode.removeChild(knoop);
+                }
+            }
+
             function applyLabelVisibility() {
                 const labels = ttContent.querySelectorAll('.tt-section-label');
                 labels.forEach(s => { s.style.display = _ttLabelsVisible ? '' : 'none'; });
@@ -4836,6 +5381,7 @@ negated bevindingen
                     ttContent.innerHTML = (_ttOriginalText || '').replace(/\n/g, '<br>');
                     wrapSectionLabels(ttContent);
                     applyCompactBrs(ttContent);
+                    applyAiTint(ttContent, _ttAiMap);
                     applyLabelVisibility();
                     ttToggleOrig.textContent = 'Toon gecorrigeerd';
                 } else {
@@ -4928,6 +5474,7 @@ negated bevindingen
                 if (!GEMINI_API_KEY) {
                     if (pipRefs) {
                         pipRefs.panel.style.display = '';
+                        pipRevealPanel(pipRefs.panel);
                         pipRefs.status.innerHTML = '';
                         pipRefs.content.innerHTML = noApiKeyHtml(backupPrompt);
                         pipRefs.actions.style.display = 'none';
@@ -4947,6 +5494,9 @@ negated bevindingen
                 const targetStatus  = isMain ? ttStatus  : pipRefs.status;
                 const targetActions = isMain ? ttActions : pipRefs.actions;
                 const targetToggle  = isMain ? ttToggleOrig : pipRefs.toggle;
+                // Het hele paneel, niet alleen de inhoud: ook de statusregel en de
+                // actiebalk veranderen van hoogte tijdens een ronde.
+                const targetPanel   = isMain ? ttResultPanel : pipRefs.panel;
 
                 // Close realtime panel
                 if (isMain) {
@@ -4966,17 +5516,24 @@ negated bevindingen
                     _ttOriginalText = null;
                     _ttShowingOrig = false;
                     _ttResultHTML = null;
+                    _ttAiMap = null;
                 } else {
                     pipRefs.panel.style.display = '';
+                    pipRevealPanel(pipRefs.panel);
                     pipRefs.origText = null;
                     pipRefs.showingOrig = false;
                     pipRefs.resultHTML = null;
+                    pipRefs.aiMap = null;
                 }
 
                 targetActions.style.display = 'none';
                 targetToggle.style.display = 'none';
                 targetToggle.textContent = 'Toon origineel';
                 targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verwerken…';
+                // Bij een tweede autofill staat er al een resultaat: hoogte
+                // vasthouden tot het nieuwe er staat, zodat de leespositie van wie
+                // naar het venster gescrold is niet wegklemt.
+                holdPanelHeight(targetPanel);
                 targetContent.innerHTML = '';
 
                 _ttAbort?.abort();
@@ -5020,6 +5577,16 @@ negated bevindingen
                     if (isMain) _ttOriginalText = backupPlainText;
                     else pipRefs.origText = backupPlainText;
 
+                    // Leg nu vast welke velden de AI vulde. Fase 2 herschrijft de tekst,
+                    // dus na die stap is niet meer betrouwbaar te zien wat er
+                    // oorspronkelijk uit de template kwam — deze indeling blijft gelden.
+                    const aiMap = classifyAutofillFields(
+                        backupPlainText,
+                        window._flowTextTemplate || window._flowUserTextTemplate || ''
+                    );
+                    if (isMain) _ttAiMap = aiMap;
+                    else pipRefs.aiMap = aiMap;
+
                     // Phase 2: run verslag check (skipped when vcAfterAutofillEnabled is off)
                     if (vcAfterAutofillEnabled) {
                         targetStatus.innerHTML = '<span class="autofill-spinner"></span> Verslag check…';
@@ -5051,6 +5618,7 @@ negated bevindingen
                         _ttLabelsVisible = window._flowLabelsDefaultVisible === true;
                         wrapSectionLabels(ttContent);
                         applyCompactBrs(ttContent);
+                        applyAiTint(ttContent, _ttAiMap);
                         ttToggleLabels.style.display = hasLabels ? '' : 'none';
                         ttToggleLabels.classList.remove('hidden');
                         applyLabelVisibility();
@@ -5058,6 +5626,7 @@ negated bevindingen
                         pipRefs.labelsVisible = window._flowUserLabelsDefaultVisible === true;
                         wrapSectionLabels(targetContent);
                         applyCompactBrs(targetContent);
+                        applyAiTint(targetContent, pipRefs.aiMap);
                         pipRefs.labelsBtn.style.display = hasLabels ? '' : 'none';
                         pipRefs.applyLabels();
                     }
@@ -5067,6 +5636,8 @@ negated bevindingen
                 } catch (e) {
                     targetStatus.innerHTML = '';
                     if (e.name !== 'AbortError') targetContent.innerHTML = '<span class="text-red-500">Fout: ' + e.message + '</span>';
+                } finally {
+                    releasePanelHeight(targetPanel);
                 }
             }
 
@@ -5130,9 +5701,18 @@ negated bevindingen
 
             function _clearStudyFields() {
                 setDictationText('');
-                if (_pipWindow && !_pipWindow.closed && _pipDmoTa) {
+                // Op de textarea zelf kijken en niet op _pipWindow: als die
+                // verwijzing ooit niet meer klopt terwijl het veld wel bestaat,
+                // bleef de tekst van het vorige onderzoek staan.
+                if (_pipDmoTa?.isConnected) {
                     setNativeValue(_pipDmoTa, '');
                     try { _pipDmoTa.style.height = 'auto'; } catch (_) {}
+                }
+                // En het eigen dicteerveld op deze pagina: zonder dit bleef bij
+                // "voeg toe" de tekst van het vorige onderzoek gewoon staan.
+                if (launchDmoTa) {
+                    setNativeValue(launchDmoTa, '');
+                    _launchDmoGrow();
                 }
                 _autoStudyLastDetected = '';
                 if (contextForm) {
@@ -5140,6 +5720,32 @@ negated bevindingen
                     deepClearSelectByLabel(contextForm, "lateralisatie");
                     deepFillByLabel(contextForm, "klinische inlichtingen", "");
                     deepFillByLabel(contextForm, "diagnostische vraagstelling", "");
+                }
+            }
+
+            // Het verslag afronden op de hoofdpagina: hetzelfde wat _pipReset() in
+            // het PiP-venster doet na kopiëren.
+            function _launchReset() {
+                _realtimeAbort?.abort();
+                clearTimeout(_realtimeDebounce);
+                _realtimeLastText = '';
+                if (launchDmoTa) {
+                    pushDmoUndo('tekst', launchDmoTa.value);
+                    setNativeValue(launchDmoTa, '');
+                    _launchDmoGrow();
+                }
+                setDictationText('');
+                latestDictationText = '';
+                // Auto-detectie opnieuw laten aanslaan bij het volgende onderzoek.
+                if (autoStudyDetect) {
+                    _autoStudyLastDetected = '';
+                    if (contextForm) {
+                        deepFillByLabel(contextForm, "type onderzoek", "");
+                        deepClearSelectByLabel(contextForm, "lateralisatie");
+                    }
+                }
+                for (const id of ['realtime-panel', 'tt-result-panel', 'launch-translate-panel']) {
+                    document.getElementById(id)?.classList.add('hidden');
                 }
             }
 
@@ -5153,6 +5759,129 @@ negated bevindingen
                     if (pbtn) pbtn.textContent = lbl;
                 }
             }
+
+            // ── Terugknop: de laatste stap in het DMO-venster ongedaan maken ──
+            // Twee soorten stappen komen op de stapel:
+            //
+            //   tekst    — het DMO-venster werd in één keer vervangen of leeggemaakt
+            //              (preset, calculatorresultaat, tekst uit een resultaatvenster,
+            //              of het leegmaken bij een nieuw dossier)
+            //   voegtoe  — er werd een onderzoek aan een multi-study toegevoegd
+            //
+            // Bij een voegtoe-stap wordt dat onderzoek weer uit de rij gehaald en
+            // komt zijn tekst terug in het venster, zodat je het kunt aanpassen en
+            // opnieuw kunt toevoegen of afronden met autofill. Was je al aan een
+            // volgend onderzoek begonnen, dan gaat die tekst eerst op de stapel:
+            // teruggaan mag nooit werk weggooien. Staat het venster leeg — de
+            // gewone situatie net na "voeg toe" — dan wandel je met opeenvolgende
+            // drukken stap voor stap door de eerdere onderzoeken terug.
+            const _dmoUndo = [];
+            const DMO_UNDO_MAX = 20;
+
+            function pushDmoUndo(type, text) {
+                _dmoUndo.push({ type, text: String(text ?? "") });
+                if (_dmoUndo.length > DMO_UNDO_MAX) _dmoUndo.shift();
+                updatePipUndoBtn();
+            }
+
+            // Werk op de elementen zelf en niet op _pipWindow: de textarea en de
+            // knop leven in het venster dat aan buildPipUI is meegegeven, en
+            // isConnected zegt rechtstreeks of ze nog bestaan.
+            let _pipUndoBtnRef = null;
+
+            function _currentDmoText() {
+                if (_pipDmoTa?.isConnected) return _pipDmoTa.value || "";
+                return readDictationText() || "";
+            }
+
+            function _applyDmoText(text) {
+                const t = String(text || "");
+                // De realtime check niet opnieuw laten aanslaan op tekst die we zelf
+                // terugzetten, net zoals de andere plekken die het veld vervangen.
+                _pipRealtimeLastText = t.trim();
+                _pipRealtimeAbort?.abort();
+                clearTimeout(_pipRealtimeDebounce);
+                if (_pipDmoTa?.isConnected) setNativeValue(_pipDmoTa, t);
+                if (launchDmoTa) { setNativeValue(launchDmoTa, t); _launchDmoGrow(); }
+                _realtimeLastText = t.trim();
+                setDictationText(t);
+            }
+
+            function dmoUndoStep() {
+                if (!_dmoUndo.length) return;
+                const huidig = _currentDmoText();
+                const stap = _dmoUndo.pop();
+                if (stap.type === "voegtoe") {
+                    if (_multiStudies.length) _multiStudies.pop();
+                    _updateVoegToeBtns();
+                    if (huidig.trim()) pushDmoUndo("tekst", huidig);
+                } else if (huidig !== stap.text) {
+                    // Nog een druk brengt je weer vooruit naar wat er stond.
+                    pushDmoUndo("tekst", huidig);
+                }
+                _applyDmoText(stap.text);
+                updatePipUndoBtn();
+            }
+
+            function updatePipUndoBtn() {
+                // Dezelfde stapel bedient twee knoppen: die in het PiP-venster en
+                // die naast het eigen DMO-veld op deze pagina.
+                const knoppen = [
+                    _pipUndoBtnRef?.isConnected ? _pipUndoBtnRef : null,
+                    document.getElementById('launch-undo-btn'),
+                ].filter(Boolean);
+                if (!knoppen.length) return;
+                const kan = _dmoUndo.length > 0;
+                const top = kan ? _dmoUndo[_dmoUndo.length - 1] : null;
+                const titel = !kan
+                    ? "Niets om terug te zetten"
+                    : top.type === "voegtoe"
+                        ? `Laatste "voeg toe" ongedaan maken en dat onderzoek terugzetten`
+                        : "Vorige tekst in het DMO-venster terugzetten";
+                for (const b of knoppen) {
+                    b.disabled = !kan;
+                    b.style.opacity = kan ? "" : "0.4";
+                    b.style.cursor = kan ? "pointer" : "not-allowed";
+                    b.title = titel;
+                }
+            }
+
+            // ── Preset- en terugknop naast het eigen DMO-veld ──────────────────
+            // Beide doen precies hetzelfde als hun tegenhangers in het PiP-venster.
+            document.getElementById('launch-undo-btn')?.addEventListener('click', () => dmoUndoStep());
+            document.getElementById('launch-preset-btn')?.addEventListener('click', () => {
+                const preset = window._flowPresetText || '';
+                if (!preset.trim()) {
+                    alert('Geen preset verslag ingesteld voor dit onderzoekstype. Stel een preset in via de Flow configuratie pagina.');
+                    return;
+                }
+                const bestaand = launchDmoTa.value.trim();
+                const nieuw = bestaand ? bestaand + '\n\n' + preset : preset;
+                pushDmoUndo('tekst', launchDmoTa.value);
+                setNativeValue(launchDmoTa, nieuw);
+                _launchDmoGrow();
+                latestDictationText = nieuw;
+                setDictationText(nieuw);
+            });
+
+            // Calculatorknop: de calculators wonen in hun eigen venster, dat alleen
+            // verschijnt als er voor dit onderzoekstype eentje aanstaat. Staat er
+            // geen enkele aan, dan opent deze knop "Actieve template", want daar
+            // vink je ze aan.
+            document.getElementById('launch-calc-btn')?.addEventListener('click', (e) => {
+                // De knop staat in de summary van Dictation; zonder dit klapt die
+                // bij elke klik mee open of dicht.
+                e.preventDefault();
+                e.stopPropagation();
+                const calc = document.getElementById('calc-accordion');
+                const doel = (calc && !calc.classList.contains('hidden'))
+                    ? calc
+                    : document.getElementById('active-template-accordion');
+                if (!doel) return;
+                doel.open = true;
+                doel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
+            updatePipUndoBtn();
 
             async function _voegToeHandler(dictText) {
                 const label = _getStudyLabel();
@@ -5170,6 +5899,9 @@ negated bevindingen
                 const capturedHeader = _buildTtHeader(); // capture before fields are cleared
                 const labelsDefaultVisible = window._flowLabelsDefaultVisible !== false;
                 const capturedTextTemplate = window._flowTextTemplate || window._flowUserTextTemplate || '';
+                // Deze stap op de terug-stapel, met de ruwe dictatietekst en niet de
+                // versie met header: de terugknop moet exact teruggeven wat er stond.
+                pushDmoUndo('voegtoe', tekst);
                 // Clear fields immediately so user can continue with next study
                 _clearStudyFields();
                 const btn    = document.getElementById('voeg-toe-btn');
@@ -5230,6 +5962,13 @@ negated bevindingen
                         .replace(/\[([^\]]+?:)\s*\]/g, '<span class="tt-section-label">$1</span>');
                     content.querySelectorAll('.tt-empty-field').forEach(span => { const n = span.nextSibling; if (n && n.nodeName === 'BR') span.appendChild(n); });
                     applyCompactBrs(content, study.textTemplate);
+                    // Elk onderzoek heeft zijn eigen template; classificeer tegen de
+                    // autofill-tekst van dít onderzoek. Bij "toon origineel" staat de
+                    // ruwe dictatie in beeld — daar zijn geen template-velden.
+                    if (!study.showingOriginal) {
+                        study.aiMap = study.aiMap || classifyAutofillFields(study.autofillWithHeader, study.textTemplate);
+                        applyAiTint(content, study.aiMap);
+                    }
                     if (!study.labelsDefaultVisible) {
                         content.querySelectorAll('.tt-section-label').forEach(s => { s.style.display = 'none'; });
                         content.querySelectorAll('.tt-empty-field').forEach(s => { s.style.display = 'none'; });
@@ -5401,6 +6140,7 @@ negated bevindingen
                     if (!pipMsp) return;
                     pipMsp.innerHTML = '';
                     pipMsp.style.display = '';
+                    pipRevealPanel(pipMsp);
                     // Header
                     const mspHead = _pipWindow.document.createElement('div');
                     mspHead.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#ecfdf5;border-bottom:1px solid #a7f3d0';
@@ -5638,7 +6378,13 @@ negated bevindingen
                 medgemmaQuickBtn.className = medgemmaAccordionActive ? CAM_BTN_ON : CAM_BTN_OFF;
             }
 
-            medgemmaQuickBtn.addEventListener("click", toggleMedgemmaAccordion);
+            // De knop staat in de summary van Dictation: de klik mag dat
+            // accordeon niet mee open- of dichtklappen.
+            medgemmaQuickBtn.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                toggleMedgemmaAccordion();
+            });
 
             function updateMedgemmaToggle() {
                 // Settings toggle only shows/hides the camera button; accordion visibility is
@@ -5748,28 +6494,150 @@ negated bevindingen
             // Dictation popout (Document PiP — textarea + realtime check)
             // ============================================
             const dictationPopoutToggle = document.getElementById('dictation-popout-toggle');
+            // Snelknop in de Settings-kopbalk: stuurt dezelfde toggle aan, zodat het
+            // PiP-venster ook te openen is terwijl Settings ingeklapt staat.
+            // stopPropagation, want een klik in een <summary> zou het paneel anders
+            // open of dicht klappen.
+            const settingsPipBtn = document.getElementById('settings-pip-btn');
+            const SETTINGS_PIP_OFF = 'border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200';
+            const SETTINGS_PIP_ON  = 'border-cyan-300 dark:border-cyan-700 bg-cyan-50 dark:bg-cyan-900/30 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-700 dark:text-cyan-300';
+            settingsPipBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                dictationPopoutToggle.click();
+            });
+
+            // Het DMO-venster vult altijd het eerste PiP-schermbeeld (zie
+            // recalcTaHeight), dus resultaatvensters staan onder de fold. Bij een
+            // expliciete knopdruk scrollen we het venster in beeld — anders lijkt de
+            // knop niets te doen. Het real time verslag check-venster opent zichzelf
+            // tijdens het dicteren en gebruikt dit NIET: dat mag het DMO-venster
+            // nooit uit beeld duwen.
+            // ── Scrollpositie bewaren tijdens een verversing ─────────────────────
+            // De real time verslag check maakt zijn resultaatvenster bij elke ronde
+            // eerst leeg en zet een spinner. Dat venster staat onder het DMO-venster,
+            // dus wie ernaartoe gescrold is om te lezen, ziet het document ineens
+            // krimpen: de browser klemt de scrollpositie vast op wat er nog past —
+            // bij een lange dictatie is dat de bovenkant — en die positie komt niet
+            // terug als de nieuwe tekst binnenstroomt. Vandaar: hoogte vasthouden
+            // zolang de verversing loopt, en pas lossen als de nieuwe tekst er staat.
+            function holdPanelHeight(el) {
+                if (!el) return;
+                const h = el.offsetHeight;
+                if (h > 0) el.style.minHeight = h + 'px';
+            }
+
+            function releasePanelHeight(el) {
+                if (!el || !el.style.minHeight) return;
+                const win = el.ownerDocument?.defaultView;
+                const se = win?.document?.scrollingElement || win?.document?.documentElement;
+                const keep = se ? se.scrollTop : 0;
+                el.style.minHeight = '';
+                // Is de nieuwe tekst korter, dan krimpt het document alsnog; houd de
+                // leespositie dan zo goed als mogelijk vast.
+                if (se && se.scrollTop !== keep) se.scrollTop = Math.min(keep, se.scrollHeight - se.clientHeight);
+            }
+
+            /**
+             * Voert een reeks DOM-wijzigingen uit zonder de leespositie te verliezen.
+             * Voor wijzigingen die in één keer gebeuren: krimpt het document tijdens
+             * de reeks (een venster dat leegloopt, een dropzone die verdwijnt), dan
+             * klemt de browser de scrollpositie vast; achteraf zetten we die terug.
+             * Voor wijzigingen met een wachttijd ertussen — een stream die eerst het
+             * venster leegmaakt en pas later vult — werkt dit niet en gebruik je
+             * holdPanelHeight/releasePanelHeight.
+             */
+            function withStableScroll(el, fn) {
+                const doc = el?.ownerDocument;
+                const se = doc?.scrollingElement || doc?.documentElement;
+                const keep = se ? se.scrollTop : 0;
+                try {
+                    return fn();
+                } finally {
+                    if (se && se.scrollTop !== keep) {
+                        se.scrollTop = Math.min(keep, se.scrollHeight - se.clientHeight);
+                    }
+                }
+            }
+
+            function pipRevealPanel(panel) {
+                if (!panel || panel.style.display === 'none') return;
+                const win = panel.ownerDocument?.defaultView;
+                if (!win) return;
+                win.setTimeout(() => {
+                    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }, 60); // ná de 30ms debounce van recalcTaHeight
+            }
+
             let _pipRealtimeAbort = null;
             let _pipRealtimeDebounce = null;
             let _pipRealtimeLastText = '';
             let _pipTtRef = null;
 
+            // ── Waar het textuele standaardverslag en Template thuishoren ──────
+            // Met het PiP-venster open leven die twee daar, onder het
+            // dictaatveld. Sluit je het PiP om op de hoofdpagina te werken, dan
+            // horen ze hier onder Settings te staan.
+            //
+            // Ze worden achter Settings geplaatst en niet in een vaste kolom:
+            // Settings verhuist zelf tussen de kolommen mee met de split view,
+            // en zo volgen deze twee dat automatisch.
+            const _verhuisPanelen = ['text-template-accordion', 'template-accordion']
+                .map((id) => document.getElementById(id))
+                .filter(Boolean);
+
+            // Een merkpunt op de oorspronkelijke plaats van elk paneel, zodat
+            // terugzetten exact klopt in plaats van op een gegokte positie.
+            const _panelAnkers = new Map();
+            for (const el of _verhuisPanelen) {
+                const anker = document.createComment('oorspronkelijke plaats van ' + el.id);
+                el.parentNode.insertBefore(anker, el);
+                _panelAnkers.set(el, anker);
+            }
+
+            function plaatsPanelenBijSettings(bijSettings) {
+                const settingsEl = document.getElementById('settings-accordion');
+                if (!settingsEl || !_verhuisPanelen.length) return;
+                if (bijSettings) {
+                    let na = settingsEl;
+                    for (const el of _verhuisPanelen) { na.after(el); na = el; }
+                } else {
+                    for (const el of _verhuisPanelen) {
+                        const anker = _panelAnkers.get(el);
+                        if (anker?.parentNode) anker.parentNode.insertBefore(el, anker.nextSibling);
+                    }
+                }
+            }
+
             function updateDictationPopoutToggle(active) {
                 dictationPopoutToggle.setAttribute('aria-checked', String(active));
                 dictationPopoutToggle.className = `relative inline-flex h-5 w-9 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-cyan-600' : 'bg-neutral-300 dark:bg-neutral-600'}`;
                 dictationPopoutToggle.querySelector('span').className = `inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${active ? 'translate-x-[19px]' : 'translate-x-[3px]'}`;
+                // De snelknop in de kopbalk volgt dezelfde staat, zodat ook met
+                // ingeklapte Settings te zien is of het PiP-venster openstaat.
+                settingsPipBtn.setAttribute('aria-pressed', String(active));
+                settingsPipBtn.className = 'inline-flex items-center justify-center w-7 h-7 rounded-md border transition-colors shrink-0 text-[10px] font-semibold leading-none '
+                    + (active ? SETTINGS_PIP_ON : SETTINGS_PIP_OFF);
                 localStorage.setItem('pipActive', active ? '1' : '0');
+                // Staat het PiP-venster dicht, dan komen het textuele
+                // standaardverslag en Template onder Settings te staan.
+                plaatsPanelenBijSettings(!active);
             }
 
             function closeDictationPopout() {
                 _pipRealtimeAbort?.abort();
                 clearTimeout(_pipRealtimeDebounce);
                 _ttAbort?.abort();
+                // Wat in het PiP-venster stond, verhuist naar het dicteerveld op
+                // deze pagina, dat hierna weer opengaat.
+                const uitPip = _pipDmoTa?.isConnected ? (_pipDmoTa.value || '') : '';
                 _pipWindow = null;
                 _pipTtRef = null;
                 _pipDmoTa = null;
                 _pipUpdateStudyHeader = null;
                 _pipRealtimeLastText = '';
                 _resetMultiStudies();
+                if (uitPip.trim() && launchDmoTa) launchDmoTa.value = uitPip;
+                syncLaunchDmo();
                 updateDictationPopoutToggle(false);
             }
 
@@ -5817,6 +6685,14 @@ negated bevindingen
                 const wrap = mk('div', 'flex flex-col gap-3');
                 wrap.style.cssText = 'padding:8px;box-sizing:border-box;';
 
+                // Het DMO-venster vult altijd het eerste PiP-schermbeeld (zie
+                // recalcTaHeight), dus resultaatvensters staan onder de fold. Bij een
+                // expliciete knopdruk scrollen we het venster in beeld — anders lijkt
+                // de knop niets te doen. Het real time verslag check-venster opent
+                // zichzelf tijdens het dicteren en gebruikt dit NIET: dat mag het
+                // DMO-venster nooit uit beeld duwen.
+                const pipReveal = (panel) => pipRevealPanel(panel);
+
                 // ── Study info header (type onderzoek + lateralisatie) ──────────
                 const studyInfoHeader = mk('div', 'text-xs font-semibold text-neutral-600 dark:text-neutral-300 text-center tracking-wide leading-snug');
                 _pipUpdateStudyHeader = function() {
@@ -5841,7 +6717,9 @@ negated bevindingen
                 ta.style.minHeight = '130px';
                 ta.style.overflowY = 'auto';
                 ta.style.height = '130px'; // initial; recalcTaHeight() will override
-                // _autoGrow is a no-op: recalcTaHeight handles the height; ta scrolls internally
+                // _autoGrow is een no-op: het DMO-venster heeft een vaste hoogte die
+                // recalcTaHeight bepaalt uit de vensterhoogte, niet uit de tekst. Bij
+                // een lang verslag scrollt het veld intern.
                 const _autoGrow = () => {};
                 wrap.appendChild(ta);
                 _pipDmoTa = ta;
@@ -6003,6 +6881,10 @@ negated bevindingen
                     _vcAbort = new AbortController();
                     btnPipVc.className = VC_BTN_ON; // groen tijdens uitvoering
                     vcPanel.style.display = '';
+                    pipReveal(vcPanel);
+                    // Bij een tweede ronde staat er al een resultaat: hoogte
+                    // vasthouden zodat de leespositie niet wegklemt.
+                    holdPanelHeight(vcPanel);
                     vcContent.innerHTML = '';
                     vcStatus.textContent = 'Verwerken…';
                     vcActions.style.display = 'none';
@@ -6035,6 +6917,7 @@ negated bevindingen
                     } catch (e) {
                         if (e.name !== 'AbortError') vcStatus.textContent = 'Fout: ' + e.message;
                     } finally {
+                        releasePanelHeight(vcPanel);
                         // Restore: groen als realtime aan, grijs als uit
                         btnPipVc.className = realtimeEnabled ? VC_BTN_ON : VC_BTN_OFF;
                     }
@@ -6053,6 +6936,10 @@ negated bevindingen
                     const template = dictationActionUrlInput.value.trim() || DEFAULT_TRANSLATE_PROMPT;
                     const prompt = fillPrompt(template, { text });
                     trPanel.style.display = '';
+                    pipReveal(trPanel);
+                    // Bij een tweede vertaling staat er al een resultaat: hoogte
+                    // vasthouden zodat de leespositie niet wegklemt.
+                    holdPanelHeight(trPanel);
                     trContent.innerHTML = '';
                     trStatus.textContent = 'Bezig…';
                     trActions.style.display = 'none';
@@ -6068,15 +6955,19 @@ negated bevindingen
                                 trStatus.textContent = '';
                                 trActions.style.display = 'flex';
                                 trOrigBtn.style.display = _trOrigText ? '' : 'none';
-                            }).catch(e => { if (e.name !== 'AbortError') trStatus.textContent = 'Fout: ' + e.message; });
+                            })
+                            .catch(e => { if (e.name !== 'AbortError') trStatus.textContent = 'Fout: ' + e.message; })
+                            .finally(() => releasePanelHeight(trPanel));
                     } else {
                         trStatus.textContent = '';
                         trContent.innerHTML = noApiKeyHtml(prompt);
                         trActions.style.display = 'flex';
                         trOrigBtn.style.display = 'none';
+                        releasePanelHeight(trPanel);
                     }
                 });
-                fontBtns.append(btnPipAI, btnPipVc, btnPipCalc, btnPipCam, btnPipTranslate, btnFontDown, btnFontUp);
+                // Zelfde volgorde als in de kopbalk van Dictation op de hoofdpagina.
+                fontBtns.append(btnPipAI, btnPipCam, btnPipTranslate, btnPipCalc, btnPipVc, btnFontDown, btnFontUp);
                 const P  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors cursor-pointer';
                 const S  = 'inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
                 const SM = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors cursor-pointer';
@@ -6096,6 +6987,7 @@ negated bevindingen
                         _pipRealtimeLastText = text.trim();
                         _pipRealtimeAbort?.abort();
                         clearTimeout(_pipRealtimeDebounce);
+                        pushDmoUndo('tekst', ta.value);
                         setNativeValue(ta, text);
                         _autoGrow();
                         setDictationText(text);
@@ -6188,10 +7080,22 @@ negated bevindingen
                     }
                     const existing = ta.value.trim();
                     const newVal = existing ? existing + '\n\n' + preset : preset;
+                    pushDmoUndo('tekst', ta.value);
                     setNativeValue(ta, newVal);
                     _autoGrow();
                     setDictationText(newVal);
                 });
+
+                // Terugknop naast Preset: zet de vorige tekst in het DMO-venster
+                // terug. Zit je in een multi-study, dan maakt hij de laatste
+                // "voeg toe" ongedaan en komt dat onderzoek terug in het venster.
+                // Vierkant, in dezelfde maat als de andere kleine PiP-knoppen.
+                const undoBtn = mk('button', 'inline-flex items-center justify-center w-7 h-7 rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-200 dark:hover:bg-slate-600 text-neutral-700 dark:text-neutral-200 transition-colors shrink-0');
+                undoBtn.id = 'pip-undo-btn';
+                undoBtn.type = 'button';
+                undoBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+                undoBtn.addEventListener('click', () => dmoUndoStep());
+                _pipUndoBtnRef = undoBtn;
 
                 btnRow.append(
                     mkBtn(P, 'Autofill Template', () => {
@@ -6240,6 +7144,7 @@ negated bevindingen
                         setTimeout(() => { btn.textContent = 'Kopiëren'; btn.style.color = ''; }, 2000);
                     }),
                     presetBtn,
+                    undoBtn,
                     sentInd,
                     fontBtns,
                 );
@@ -6340,7 +7245,7 @@ negated bevindingen
                 btnPipAI.addEventListener('click', () => {
                     const open = pipAiPanel.style.display !== 'none';
                     pipAiPanel.style.display = open ? 'none' : '';
-                    if (!open) pipAiInput.focus();
+                    if (!open) { pipReveal(pipAiPanel); pipAiInput.focus(); }
                 });
                 pipAiSendBtn.addEventListener('click', _pipAiSend);
                 pipAiInput.addEventListener('keydown', (e) => {
@@ -6473,6 +7378,7 @@ negated bevindingen
                     _pipRealtimeLastText = merged.trim();             // onderdruk realtime her-trigger
                     _pipRealtimeAbort?.abort();
                     clearTimeout(_pipRealtimeDebounce);
+                    pushDmoUndo('tekst', cur);
                     setNativeValue(ta, merged);
                     _autoGrow();
                     setDictationText(merged);
@@ -6551,6 +7457,7 @@ negated bevindingen
                     const open = calcPanel.style.display !== 'none';
                     if (open) { calcPanel.style.display = 'none'; return; }
                     calcPanel.style.display = '';
+                    pipReveal(calcPanel);
                     pipCalcRenderPicker();
                 });
 
@@ -6605,6 +7512,7 @@ negated bevindingen
                         pipTtContent.innerHTML = (_pipTtOrigText || '').replace(/\n/g, '<br>');
                         wrapSectionLabels(pipTtContent);
                         applyCompactBrs(pipTtContent);
+                        applyAiTint(pipTtContent, _pipTtRef?.aiMap);
                         pipTtApplyLabels();
                         pipTtToggle.textContent = 'Toon gecorrigeerd';
                     } else {
@@ -6768,15 +7676,17 @@ negated bevindingen
                 }
 
                 function _resetPipMedgemmaPanel() {
-                    pmResult.classList.add('hidden');
-                    pmResultContent.innerHTML = '';
-                    medgemmaImages = [];
-                    pmThumbnails.innerHTML = '';
-                    pmFileInput.value = '';
-                    pmPreview.classList.add('hidden');
-                    pmDropzone.classList.remove('hidden');
-                    _pmLabelsVisible = true;
-                    if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+                    withStableScroll(pmResultContent, () => {
+                        pmResult.classList.add('hidden');
+                        pmResultContent.innerHTML = '';
+                        medgemmaImages = [];
+                        pmThumbnails.innerHTML = '';
+                        pmFileInput.value = '';
+                        pmPreview.classList.add('hidden');
+                        pmDropzone.classList.remove('hidden');
+                        _pmLabelsVisible = true;
+                        if (medgemmaAccordionActive) toggleMedgemmaAccordion();
+                    });
                 }
 
                 pmDropzone.addEventListener('click', () => pmFileInput.click());
@@ -6816,13 +7726,18 @@ negated bevindingen
                     pmAnalyseBtn.textContent = 'Analyseren…';
                     try {
                         const result = await callMedGemma(medgemmaImages, prompt);
-                        pmDropzone.classList.add('hidden');
-                        pmPreview.classList.add('hidden');
-                        pmResultContent.innerHTML = renderMarkdown(result);
-                        wrapSectionLabels(pmResultContent);
-                        _pmLabelsVisible = true;
-                        _pmApplyLabels();
-                        pmResult.classList.remove('hidden');
+                        // Dropzone en miniaturen verdwijnen hier, waardoor het paneel
+                        // eerst krimpt voordat het resultaat het weer vult. Wie naar
+                        // het paneel gescrold is, zou daardoor naar boven springen.
+                        withStableScroll(pmResultContent, () => {
+                            pmDropzone.classList.add('hidden');
+                            pmPreview.classList.add('hidden');
+                            pmResultContent.innerHTML = renderMarkdown(result);
+                            wrapSectionLabels(pmResultContent);
+                            _pmLabelsVisible = true;
+                            _pmApplyLabels();
+                            pmResult.classList.remove('hidden');
+                        });
                     } catch (err) {
                         pipWindow.alert('Beeldanalyse fout: ' + err.message);
                     } finally {
@@ -6833,26 +7748,71 @@ negated bevindingen
 
                 pipWindow.document.body.appendChild(wrap);
 
-                // ── Dynamic textarea height ──────────────────────────
-                // Fills available viewport height; never smaller than min-height.
-                // Recalculates when panels show/hide or the window is resized.
+                // ── Hoogte van het DMO-venster ───────────────────────
+                // Het DMO-venster vult de volle hoogte van het eerste PiP-schermbeeld
+                // en scrollt intern bij een lang verslag. Staat er een resultaatvenster
+                // open, dan gaat er één vaste reserve af: de kopbalk plus de eerste
+                // RESERVE_LINES regels, zodat je ziet dát er een resultaat staat en
+                // waarover het gaat. De rest van het resultaat bereik je door in het
+                // PiP-venster naar beneden te scrollen.
+                //
+                // De kern van de eerdere scrollsprongen zat niet in de volle hoogte
+                // maar in de afhankelijkheid: de hoogte werd berekend uit de INHOUD van
+                // het resultaatvenster, dus elke verversing verschoof de layout en gaf
+                // de browser reden een leespositie weg te klemmen. Die afhankelijkheid
+                // is hier weg. De reserve komt uit de kopbalkhoogte en de regelhoogte —
+                // beide vaste opmaakmaten, onafhankelijk van hoe lang het resultaat is.
+                // Daarom staat de DMO-hoogte stil zodra een venster openstaat, en
+                // verschuift een verversing niets meer.
+                //
+                // Het beeld opent altijd met het DMO-venster bovenaan: een automatische
+                // verversing verplaatst het beeld nooit. Alleen een venster dat je zelf
+                // met een knop opent scrollt in beeld (zie pipRevealPanel), want anders
+                // lijkt die knop niets te doen.
                 let _recalcDebounce = null;
+                const MIN_TA = 130;            // px, ondergrens van het DMO-venster
+                const HEAD_FALLBACK = 30;      // px, als de kopbalk niet te meten valt
+                const RESERVE_LINES = 4;       // regels van het resultaat die meekijken
+
                 const recalcTaHeight = () => {
                     clearTimeout(_recalcDebounce);
                     _recalcDebounce = pipWindow.setTimeout(() => {
                         const viewH = pipWindow.document.documentElement.clientHeight;
                         let usedH = 0;
                         let visCount = 0;
+                        let pastBtnRow = false;
+                        let reserve = 0;     // kopbalk + RESERVE_LINES regels, inclusief gap
                         for (const child of wrap.children) {
-                            if (child === ta || child === ce) continue;
-                            if (pipWindow.getComputedStyle(child).display === 'none') continue;
-                            usedH += child.offsetHeight;
-                            visCount++;
+                            const visible = pipWindow.getComputedStyle(child).display !== 'none';
+                            if (pastBtnRow) {
+                                // Eerste zichtbare resultaatvenster bepaalt de reserve.
+                                // Alleen opmaakmaten, nooit de lengte van het resultaat:
+                                // anders zou de DMO-hoogte weer meebewegen met elke
+                                // verversing, en dat was precies de oorzaak.
+                                if (!visible) continue;
+                                const head = child.firstElementChild;
+                                const headH = head ? head.offsetHeight : 0;
+                                const body = head ? head.nextElementSibling : null;
+                                let lines = 0;
+                                if (body) {
+                                    const bcs = pipWindow.getComputedStyle(body);
+                                    const lineH = parseFloat(bcs.lineHeight) || 22;
+                                    lines = (parseFloat(bcs.paddingTop) || 0) + RESERVE_LINES * lineH;
+                                }
+                                reserve = 12 + (headH || HEAD_FALLBACK) + lines;
+                                break;
+                            }
+                            const isChrome = child !== ta && child !== ce;
+                            if (isChrome && visible) {
+                                usedH += child.offsetHeight;
+                                visCount++;
+                            }
+                            if (child === btnRow) pastBtnRow = true;
                         }
-                        const gapTotal = visCount * 12; // gap-3 = 12px per gap between ta and each visible sibling
-                        const wrapPad = 16; // 8px top + 8px bottom
-                        const available = viewH - usedH - gapTotal - wrapPad;
-                        ta.style.height = Math.max(130, Math.floor(available)) + 'px';
+                        const gapTotal = visCount * 12; // gap-3 = 12px per gap tussen ta en elke zichtbare chrome-sibling
+                        const wrapPad = 16;             // 8px boven + 8px onder
+                        const room = viewH - usedH - gapTotal - wrapPad;
+                        ta.style.height = Math.max(MIN_TA, Math.floor(room - reserve)) + 'px';
                     }, 30);
                 };
                 pipWindow.addEventListener('resize', recalcTaHeight);
@@ -6862,6 +7822,7 @@ negated bevindingen
                     _pipPanelObserver.observe(child, { attributes: true, attributeFilter: ['style', 'class'] });
                 }
                 recalcTaHeight();
+                updatePipUndoBtn();   // grijs zolang er niets terug te zetten valt
 
                 // Correction tooltip + click-to-toggle for .corr/.corr-reverted in PiP
                 const pipCorrTooltip = mk('div', '');
@@ -6987,6 +7948,7 @@ negated bevindingen
                     clearTimeout(_pipRealtimeDebounce);
                     _pipRealtimeLastText = '';
                     // dicteervelden leegmaken (textarea + contenteditable)
+                    pushDmoUndo('tekst', ta.value);
                     ta.value = '';
                     setNativeValue(ta, '');
                     _autoGrow();
@@ -7036,6 +7998,10 @@ negated bevindingen
                         _pipRealtimeAbort?.abort();
                         _pipRealtimeAbort = new AbortController();
                         rtPanel.style.display = '';
+                        // Houd de hoogte vast voordat het venster wordt leeggemaakt,
+                        // zodat de leespositie van wie naar beneden gescrold is blijft
+                        // staan tijdens deze ronde.
+                        holdPanelHeight(rtPanel);
                         rtStatus.innerHTML = '<span class="ai-spinner"></span> Verwerken…';
                         rtActions.style.display = 'none';
                         rtOrigBtn.style.display = 'none';
@@ -7068,6 +8034,8 @@ negated bevindingen
                             rtOrigBtn.style.display = _rtOrigText ? '' : 'none';
                         } catch (e) {
                             if (e.name !== 'AbortError') rtStatus.textContent = 'Fout: ' + e.message;
+                        } finally {
+                            releasePanelHeight(rtPanel);
                         }
                     }, 2000);
                 });
@@ -7079,9 +8047,14 @@ negated bevindingen
                     return;
                 }
                 try {
+                    // De tekst uit het dicteerveld op deze pagina verhuist mee naar
+                    // het PiP-venster; daarna sluit dit veld (syncLaunchDmo).
+                    const meeNaarPip = launchDmoActief() ? launchDmoTa.value : '';
                     const pipWindow = await window.documentPictureInPicture.requestWindow({ width: 460, height: 560 });
                     _pipWindow = pipWindow;
                     buildPipUI(pipWindow);
+                    if (meeNaarPip.trim() && _pipDmoTa) setNativeValue(_pipDmoTa, meeNaarPip);
+                    syncLaunchDmo();
                     updateDictationPopoutToggle(true);
                     pipWindow.addEventListener('pagehide', closeDictationPopout);
                 } catch (err) {
@@ -7099,6 +8072,10 @@ negated bevindingen
                 }
             });
 
+            // Eerste stand van het dicteerveld: tijdens de opbouw van de pagina liep
+            // _updateAutofillBtnType al, nog voor het veld was opgezet.
+            syncLaunchDmo();
+
             // Lees opgeslagen staat VOOR updateDictationPopoutToggle — die functie overschrijft anders localStorage
             const _pipWasActive = localStorage.getItem('pipActive') === '1';
             updateDictationPopoutToggle(false);
@@ -7106,6 +8083,7 @@ negated bevindingen
             if (_pipWasActive) {
                 openDictationPopout().catch(() => {});
             }
+
 
             const medgemmaDropzone      = document.getElementById("medgemma-dropzone");
             const medgemmaFileInput     = document.getElementById("medgemma-file-input");
@@ -7133,24 +8111,31 @@ negated bevindingen
             });
 
             function showMedgemmaResult(raw) {
-                medgemmaDropzone.classList.add("hidden");
-                medgemmaPreview.classList.add("hidden");
-                medgemmaResultContent.innerHTML = renderMarkdown(raw);
-                wrapSectionLabels(medgemmaResultContent);
-                _mgLabelsVisible = true;
-                _mgApplyLabels();
-                medgemmaResult.classList.remove("hidden");
+                // Dropzone en miniaturen verdwijnen hier: het paneel krimpt eerst en
+                // wordt daarna door het resultaat gevuld. Zonder bescherming klemt de
+                // browser de leespositie weg van wie naar het paneel gescrold is.
+                withStableScroll(medgemmaResultContent, () => {
+                    medgemmaDropzone.classList.add("hidden");
+                    medgemmaPreview.classList.add("hidden");
+                    medgemmaResultContent.innerHTML = renderMarkdown(raw);
+                    wrapSectionLabels(medgemmaResultContent);
+                    _mgLabelsVisible = true;
+                    _mgApplyLabels();
+                    medgemmaResult.classList.remove("hidden");
+                });
             }
 
             function resetMedgemmaPanel() {
-                medgemmaResult.classList.add("hidden");
-                medgemmaResultContent.innerHTML = "";
-                medgemmaImages = [];
-                medgemmaThumbnails.innerHTML = "";
-                medgemmaFileInput.value = "";
-                medgemmaPreview.classList.add("hidden");
-                medgemmaDropzone.classList.remove("hidden");
-                _mgLabelsVisible = true;
+                withStableScroll(medgemmaResultContent, () => {
+                    medgemmaResult.classList.add("hidden");
+                    medgemmaResultContent.innerHTML = "";
+                    medgemmaImages = [];
+                    medgemmaThumbnails.innerHTML = "";
+                    medgemmaFileInput.value = "";
+                    medgemmaPreview.classList.add("hidden");
+                    medgemmaDropzone.classList.remove("hidden");
+                    _mgLabelsVisible = true;
+                });
             }
 
             medgemmaCopyBtn.addEventListener("click", () => {

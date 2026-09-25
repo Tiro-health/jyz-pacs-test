@@ -156,12 +156,11 @@
                         <input id="search" type="search" placeholder="Zoek in alle velden, namen, pathologie…"
                             class="w-full pl-8 pr-3 py-2 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
                     </div>
-                    <select id="sort" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
-                        <option value="updatedAt-desc">Nieuwste eerst</option>
-                        <option value="updatedAt-asc">Oudste eerst</option>
-                        <option value="pacsnummer-asc">Pacsnummer A→Z</option>
-                        <option value="categorie-asc">Categorie A→Z</option>
-                    </select>
+                    <!-- Filter op specialisatie; opties uit de records zelf, zie
+                         vulSpecialisatieLijst() -->
+                    <select id="spec-filter" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"></select>
+                    <!-- De opties komen uit COLS, zie vulSorteerlijst() -->
+                    <select id="sort" class="px-2 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-background text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500"></select>
                     <button id="clear-filters" type="button"
                         class="px-3 py-2 text-xs rounded-md border border-neutral-300 dark:border-slate-700 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-accent transition-colors">
                         Filters wissen
@@ -196,6 +195,11 @@
                     categoryField: "reden",
                     categories: ["Aanvraag", "Medisch - aanvrager", "Feedback radioloog", "Tweede lezing"],
                     accent: "cyan",
+                    // Bij kwaliteitscontrole is de subreden alleen bij een
+                    // aanvraag uitgesplitst ("Slechte aanvraag", "Links-Rechts
+                    // fout", "Verkeerde aanvraag"); de andere redenen hebben er
+                    // geen, dan blijft de kolom leeg.
+                    detail: (v) => v.aanvraag_soort || "",
                     betrokkene: (v) => [
                         v.feedback_radioloog, v.tweede_naam_radioloog,
                         v.medisch_naam_aanvrager, v.aanvraag_naam_aanvrager,
@@ -209,6 +213,10 @@
                     categoryField: "casus_type",
                     categories: ["Interessante casus", "Op te volgen casus"],
                     accent: "violet",
+                    // Bij casuïstiek staat op die plaats de pathologie, uit de
+                    // interessante of de op te volgen tak.
+                    detail: (v) => [].concat(v.int_pathologie || [], v.opv_pathologie || [])
+                        .filter(Boolean).join(", "),
                     betrokkene: (v) => [].concat(v.int_radioloog || [], v.opv_radioloog || []).filter(Boolean),
                 },
             };
@@ -223,7 +231,12 @@
             let tab = params.get("from") || "all";              // all | qc | database
             let categories = new Set();                          // actieve niveau-2 filters
             let view = localStorage.getItem("dbView") || "table"; // table | cards
-            let sortBy = "updatedAt-desc";
+            // Eén schrijfwijze voor "niet gekend", zodat de kolom en het filter
+            // hetzelfde zeggen.
+            const SPEC_ONBEKEND = "niet gekend";
+            let specFilter = "";   // "" betekent: alle specialisaties
+            const STANDAARD_SORTERING = "updatedAt-desc";
+            let sortBy = STANDAARD_SORTERING;
 
             // ── Hulpjes ─────────────────────────────────────────────────────
             const el = (tag, cls, text) => {
@@ -237,6 +250,18 @@
                 if (!iso) return "";
                 const d = new Date(iso);
                 return isNaN(d) ? "" : d.toLocaleString("nl-BE", { dateStyle: "short", timeStyle: "short" });
+            };
+
+            /**
+             * Een opvolgdatum ("2027-09-04") kort weergeven als 04/09/27. Andere
+             * schrijfwijzen worden ongemoeid gelaten, dan is de ruwe waarde nog
+             * altijd leesbaarder dan niets.
+             */
+            const fmtOpvolgDatum = (waarde) => {
+                const s = String(waarde || "").trim();
+                if (!s) return "";
+                const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+                return m ? `${m[3]}/${m[2]}/${m[1].slice(2)}` : s;
             };
 
             /** Alle velden van een record in schemavolgorde, met hun label. */
@@ -266,6 +291,8 @@
 
             async function loadAll() {
                 ALL = [];
+                // Eén keer per ronde: anders zou elke rij de datum opnieuw bepalen.
+                const _vandaag = JyzForms.Opvolging.vandaag();
                 for (const store of Object.keys(SOURCES)) {
                     const src = SOURCES[store];
                     for (const rec of await RecordStore.all(store)) {
@@ -275,14 +302,45 @@
                             store,
                             bron: src.label,
                             categorie: v[src.categoryField] || "(geen categorie)",
+                            // Alleen voor de weergave; het filteren en sorteren
+                            // blijft op de kale categorie werken.
+                            opvolgDatum: fmtOpvolgDatum(v.opv_reminder_datum),
+                            // Vraagt deze casus aandacht? Zelfde definitie als de
+                            // teller op de QC-knop, uit forms-shared.
+                            opvolgDue: JyzForms.Opvolging.isDue(v, _vandaag),
                             pacsnummer: v.pacsnummer || "",
                             datum: v.onderzoek_datum || "",
+                            modaliteit: v.onderzoek_modaliteit || "",
                             onderzoek: v.onderzoek_type || "",
+                            aanvrager: v.aanvrager || "",
+                            // Wat op de casus zelf is aangeduid gaat voor: dat
+                            // is het veld Discipline dat je bij het bewerken
+                            // invult. Staat daar niets, dan de specialisatie die
+                            // bij het opslaan is meegenomen, en anders live uit
+                            // de namenlijst.
+                            specialisaties: _specialisaties(v),
+                            specialisatie: _specialisaties(v).join(", ") || SPEC_ONBEKEND,
+                            detail: src.detail(v),
                             betrokkenen: src.betrokkene(v),
                             zoektekst: JSON.stringify(v).toLowerCase(),
                         });
                     }
                 }
+            }
+
+            /**
+             * De disciplines van één casus. Het veld Discipline op de casus zelf
+             * is de waarheid; is dat leeg, dan valt het terug op de specialisatie
+             * van de aanvrager.
+             */
+            function _specialisaties(v) {
+                const eigen = [].concat(v.int_discipline || [], v.opv_discipline || [])
+                    .map((x) => String(x).trim())
+                    .filter(Boolean);
+                if (eigen.length) return [...new Set(eigen)];
+                const vanAanvrager = v.aanvrager_specialisatie
+                    || JyzForms.NameLists.disciplineFor(v.aanvrager);
+                return vanAanvrager ? [vanAanvrager] : [];
             }
 
             // ── Filteren en sorteren ────────────────────────────────────────
@@ -291,12 +349,21 @@
                 let rows = ALL.filter((r) => {
                     if (tab !== "all" && r.store !== tab) return false;
                     if (categories.size && !categories.has(r.categorie)) return false;
+                    if (specFilter) {
+                        const past = specFilter === SPEC_ONBEKEND
+                            ? !r.specialisaties.length
+                            : r.specialisaties.includes(specFilter);
+                        if (!past) return false;
+                    }
                     if (q && !r.zoektekst.includes(q) && !r.categorie.toLowerCase().includes(q)) return false;
                     return true;
                 });
                 const [key, dir] = sortBy.split("-");
                 rows.sort((a, b) => {
-                    const av = String(a[key] ?? ""), bv = String(b[key] ?? "");
+                    const av = _sorteerWaarde(key, a[key]), bv = _sorteerWaarde(key, b[key]);
+                    // Lege velden horen achteraan, in beide richtingen: een
+                    // scherm dat opent met een rij streepjes zegt niets.
+                    if (!av !== !bv) return av ? -1 : 1;
                     return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
                 });
                 return rows;
@@ -397,6 +464,11 @@
                     const sp = new URLSearchParams(location.search);
                     sp.delete("from");
                     sp.set("recordId", rec.id);
+                    // Zodat de terugknop op de wijzigpagina hierheen leidt en niet
+                    // naar launch: je komt uit de databank, dus daar wil je terug.
+                    // recordId wordt daar uit de adresbalk gehaald na het inladen,
+                    // deze parameter blijft staan — ook na een verversing.
+                    sp.set("terug", "db");
                     location.href = SOURCES[rec.store].page + "?" + sp.toString();
                 });
                 const del = el("button", "px-3 py-1.5 text-xs font-medium rounded-md border border-neutral-300 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors", "Verwijderen");
@@ -412,22 +484,113 @@
                 return box;
             }
 
-            function badge(rec) {
+            function badge(rec, metOpvolgDatum) {
                 const src = SOURCES[rec.store];
-                const b = el("span", "text-xs px-2 py-0.5 rounded-full border whitespace-nowrap " + ACCENTS[src.accent], rec.categorie);
+                const tekst = metOpvolgDatum && rec.opvolgDatum
+                    ? `${rec.categorie} - ${rec.opvolgDatum}`
+                    : rec.categorie;
+                const b = el("span", "text-xs px-2 py-0.5 rounded-full border whitespace-nowrap " + ACCENTS[src.accent], tekst);
                 return b;
             }
 
             // ── Tabelweergave ───────────────────────────────────────────────
             const COLS = [
-                { key: "pacsnummer", label: "Pacsnummer" },
                 { key: "datum",      label: "Datum" },
+                { key: "modaliteit", label: "Modaliteit" },
                 { key: "onderzoek",  label: "Onderzoek" },
-                { key: "bron",       label: "Soort" },
+                // Eén kolom die per bron iets anders draagt: bij casuïstiek de
+                // pathologie, bij kwaliteitscontrole de subreden.
+                { key: "detail",     label: "Pathologie / reden" },
+                { key: "aanvrager",  label: "Aanvrager" },
+                { key: "specialisatie", label: "Specialisatie" },
                 { key: "categorie",  label: "Categorie" },
-                { key: "betrokken",  label: "Betrokkene" },
-                { key: "updatedAt",  label: "Bewaard" },
             ];
+
+            // Kolommen met een datum erin. Die staan als dd/mm/jjjj in het
+            // record, en dat sorteert als tekst verkeerd: "15/06" komt dan na
+            // "08/09". Voor het vergelijken worden ze omgezet naar jjjj-mm-dd.
+            const DATUM_KOLOMMEN = new Set(["datum"]);
+
+            function _sorteerWaarde(key, waarde) {
+                const s = String(waarde ?? "").trim();
+                if (!s || !DATUM_KOLOMMEN.has(key)) return s;
+                const m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/.exec(s);
+                if (!m) return s;   // al jjjj-mm-dd, of iets anders
+                return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+            }
+
+            /**
+             * De sorteerlijst opbouwen uit COLS. In de tabelweergave sorteer je op
+             * de kolomkoppen zelf en staat deze lijst weg; in de kaartweergave
+             * zijn er geen koppen, dus daar blijft ze de enige manier.
+             */
+            /**
+             * De specialisaties die in de records voorkomen, plus "niet gekend"
+             * wanneer er records zonder zijn. Uit de records en niet uit de
+             * namenlijst: zo staat er nooit een keuze in die niets oplevert.
+             */
+            function vulSpecialisatieLijst() {
+                const sel = document.getElementById("spec-filter");
+                if (!sel) return;
+                const aanwezig = [...new Set(ALL.flatMap((r) => r.specialisaties))]
+                    .filter(Boolean)
+                    .sort((a, b) => a.localeCompare(b));
+                if (ALL.some((r) => !r.specialisaties.length)) aanwezig.push(SPEC_ONBEKEND);
+
+                sel.innerHTML = "";
+                const alle = document.createElement("option");
+                alle.value = "";
+                alle.textContent = "Alle specialisaties";
+                sel.appendChild(alle);
+                for (const spec of aanwezig) {
+                    const o = document.createElement("option");
+                    o.value = spec;
+                    o.textContent = spec;
+                    sel.appendChild(o);
+                }
+                // Was er op iets gefilterd dat niet meer voorkomt, dan valt het
+                // filter terug op alles in plaats van een leeg scherm te geven.
+                if (specFilter && !aanwezig.includes(specFilter)) specFilter = "";
+                sel.value = specFilter;
+            }
+
+            function vulSorteerlijst() {
+                const sel = document.getElementById("sort");
+                const opties = [
+                    ["updatedAt-desc", "Laatst bewaard eerst"],
+                    ["updatedAt-asc", "Eerst bewaard eerst"],
+                ];
+                for (const c of COLS) {
+                    const datum = DATUM_KOLOMMEN.has(c.key);
+                    opties.push([`${c.key}-asc`, `${c.label} — ${datum ? "oudste eerst" : "A→Z"}`]);
+                    opties.push([`${c.key}-desc`, `${c.label} — ${datum ? "nieuwste eerst" : "Z→A"}`]);
+                }
+                sel.innerHTML = "";
+                for (const [waarde, label] of opties) {
+                    const o = document.createElement("option");
+                    o.value = waarde;
+                    o.textContent = label;
+                    sel.appendChild(o);
+                }
+                sel.value = sortBy;
+            }
+
+            /**
+             * Op een kolomkop klikken: eerst sorteren, dan omkeren, dan weer uit.
+             * Datumkolommen beginnen aflopend — bij een datum wil je doorgaans
+             * eerst het recentste zien, bij tekst juist A→Z.
+             */
+            function sorteerOpKolom(key) {
+                const [huidigeKey, huidigeDir] = sortBy.split("-");
+                const eerste = DATUM_KOLOMMEN.has(key) ? "desc" : "asc";
+                const tweede = eerste === "asc" ? "desc" : "asc";
+                if (huidigeKey !== key) sortBy = `${key}-${eerste}`;
+                else if (huidigeDir === eerste) sortBy = `${key}-${tweede}`;
+                else sortBy = STANDAARD_SORTERING;
+                const sel = document.getElementById("sort");
+                if (sel && [...sel.options].some((o) => o.value === sortBy)) sel.value = sortBy;
+                draw();
+            }
 
             function drawTable(rows) {
                 const wrap = el("div", "bg-white dark:bg-background border border-neutral-200 dark:border-slate-700 rounded-lg overflow-hidden");
@@ -437,8 +600,36 @@
                 const thead = el("thead", "bg-neutral-50 dark:bg-muted");
                 const htr = el("tr");
                 htr.appendChild(el("th", "w-8"));
+                const [actieveKey, actieveDir] = sortBy.split("-");
                 COLS.forEach((c) => {
-                    htr.appendChild(el("th", "text-left px-3 py-2 text-xs font-medium text-neutral-500 dark:text-neutral-400 whitespace-nowrap", c.label));
+                    const th = el("th", "text-left px-0 py-0 whitespace-nowrap");
+                    const actief = c.key === actieveKey;
+                    th.setAttribute("aria-sort", actief
+                        ? (actieveDir === "asc" ? "ascending" : "descending")
+                        : "none");
+                    // Een knop in plaats van een klikbare th: zo is de kop ook met
+                    // het toetsenbord te bereiken en te bedienen.
+                    const btn = el("button", "w-full flex items-center gap-1 px-3 py-2 text-xs font-medium text-left "
+                        + "hover:bg-neutral-100 dark:hover:bg-accent transition-colors "
+                        + (actief
+                            ? "text-neutral-800 dark:text-neutral-100"
+                            : "text-neutral-500 dark:text-neutral-400"));
+                    btn.type = "button";
+                    btn.title = actief
+                        ? (actieveDir === "asc"
+                            ? "Klik om de sortering om te keren, nog eens om ze uit te zetten"
+                            : "Klik om de sortering uit te zetten")
+                        : `Sorteren op ${c.label}`;
+                    btn.appendChild(el("span", "", c.label));
+                    // Altijd een teken, ook inactief: dan is te zien dát de kolom
+                    // te sorteren valt. Inactief lichter, zodat de actieve kolom
+                    // er meteen uit springt.
+                    btn.appendChild(el("span",
+                        "text-[10px] leading-none " + (actief ? "" : "opacity-30"),
+                        actief ? (actieveDir === "asc" ? "▲" : "▼") : "⇅"));
+                    btn.addEventListener("click", () => sorteerOpKolom(c.key));
+                    th.appendChild(btn);
+                    htr.appendChild(th);
                 });
                 thead.appendChild(htr);
                 table.appendChild(thead);
@@ -446,21 +637,28 @@
                 const tbody = el("tbody");
                 rows.forEach((rec) => {
                     const tr = el("tr", "border-t border-neutral-200 dark:border-slate-700 hover:bg-neutral-50 dark:hover:bg-accent cursor-pointer transition-colors");
-                    const chev = el("td", "px-2 text-neutral-400");
+                    const chev = el("td", "px-2 text-neutral-400 whitespace-nowrap");
                     chev.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform"><path d="m9 18 6-6-6-6"/></svg>';
+                    if (rec.opvolgDue) {
+                        // Een bolletje vóór de rij, dezelfde aanduiding als het
+                        // cijfer op de QC-knop. Zet de reminder op "Nee" of maak
+                        // de datum leeg, en het verdwijnt.
+                        const bol = el("span", "inline-block w-2 h-2 ml-1 rounded-full bg-red-600 align-middle");
+                        bol.title = "Op te volgen: de datum is bereikt";
+                        bol.dataset.opvolgDue = "1";
+                        chev.appendChild(bol);
+                    }
                     tr.appendChild(chev);
 
-                    tr.appendChild(el("td", "px-3 py-2 font-mono text-xs whitespace-nowrap", rec.pacsnummer || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.datum || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.modaliteit || "—"));
                     tr.appendChild(el("td", "px-3 py-2 text-xs", rec.onderzoek || "—"));
-                    tr.appendChild(el("td", "px-3 py-2 text-xs whitespace-nowrap", rec.bron));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.detail || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.aanvrager || "—"));
+                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.specialisatie));
                     const tdCat = el("td", "px-3 py-2");
-                    tdCat.appendChild(badge(rec));
+                    tdCat.appendChild(badge(rec, true));
                     tr.appendChild(tdCat);
-                    tr.appendChild(el("td", "px-3 py-2 text-xs", rec.betrokkenen.length
-                        ? (rec.betrokkenen.length === 1 ? rec.betrokkenen[0] : rec.betrokkenen[0] + " …(" + rec.betrokkenen.length + ")")
-                        : "—"));
-                    tr.appendChild(el("td", "px-3 py-2 text-xs text-neutral-400 dark:text-neutral-500 whitespace-nowrap", fmtDate(rec.updatedAt || rec.createdAt)));
 
                     const detailTr = el("tr", "detail-row hidden");
                     const td = el("td", "");
@@ -581,6 +779,9 @@
                 drawTabs();
                 drawChips();
                 drawViewButtons();
+                // In de tabel sorteer je op de koppen; dan is de keuzelijst dubbel.
+                const sel = document.getElementById("sort");
+                if (sel) sel.classList.toggle("hidden", view === "table");
                 const rows = visible();
                 const area = document.getElementById("result-area");
                 const empty = document.getElementById("empty-state");
@@ -606,9 +807,15 @@
             });
             document.getElementById("search").addEventListener("input", draw);
             document.getElementById("sort").addEventListener("change", (e) => { sortBy = e.target.value; draw(); });
+            document.getElementById("spec-filter").addEventListener("change", (e) => {
+                specFilter = e.target.value;
+                draw();
+            });
             document.getElementById("clear-filters").addEventListener("click", () => {
                 document.getElementById("search").value = "";
                 categories.clear();
+                specFilter = "";
+                document.getElementById("spec-filter").value = "";
                 tab = "all";
                 draw();
             });
@@ -629,7 +836,9 @@
             });
 
             (async function init() {
+                vulSorteerlijst();
                 await loadAll();
+                vulSpecialisatieLijst();
                 // "from" duidt aan waar je vandaan komt; als beginselectie is
                 // "Alles" duidelijker, dus enkel de terugknop gebruikt het.
                 tab = "all";

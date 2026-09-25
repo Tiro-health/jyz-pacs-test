@@ -55,6 +55,16 @@
                 showWhen: { field: "casus_type", equals: "Interessante casus" },
             },
             {
+                id: "int_discipline", label: "Discipline", type: "dynamicCheckboxes",
+                optionsFrom: "disciplines", addLabel: "Andere toevoegen",
+                searchable: true, searchPlaceholder: "Zoek een discipline…",
+                addPlaceholder: "Discipline toevoegen…",
+                emptyHint: "Nog geen disciplines in de personendatabank. Vul ze aan op de flow-pagina, of gebruik “Andere toevoegen”.",
+                defaultFrom: "aanvragerDiscipline",
+                hint: "Eén of meerdere — staat standaard op de discipline van de aanvrager",
+                showWhen: { field: "casus_type", equals: "Interessante casus" },
+            },
+            {
                 id: "int_opmerkingen", label: "Extra opmerkingen", type: "textarea", rows: 3,
                 showWhen: { field: "casus_type", equals: "Interessante casus" },
             },
@@ -78,6 +88,16 @@
             {
                 id: "opv_pathologie", label: "Pathologie", type: "dynamicCheckboxes",
                 optionsFrom: "snomed", addLabel: "Andere toevoegen", required: true,
+                showWhen: { field: "casus_type", equals: "Op te volgen casus" },
+            },
+            {
+                id: "opv_discipline", label: "Discipline", type: "dynamicCheckboxes",
+                optionsFrom: "disciplines", addLabel: "Andere toevoegen",
+                searchable: true, searchPlaceholder: "Zoek een discipline…",
+                addPlaceholder: "Discipline toevoegen…",
+                emptyHint: "Nog geen disciplines in de personendatabank. Vul ze aan op de flow-pagina, of gebruik “Andere toevoegen”.",
+                defaultFrom: "aanvragerDiscipline",
+                hint: "Eén of meerdere — staat standaard op de discipline van de aanvrager",
                 showWhen: { field: "casus_type", equals: "Op te volgen casus" },
             },
             {

@@ -33,6 +33,85 @@
     // ═══════════════════════════════════════════════════════════════════════
     // RecordStore — IndexedDB
     // ═══════════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════
+    // Opvolging — welke casussen vragen aandacht
+    // ═══════════════════════════════════════════════════════════════════════
+    // Eén definitie, gebruikt door launch.html (het cijfer op de QC-knop) en
+    // db.html (het bolletje bij de rij). Zet je de reminder op "Nee" of maak je
+    // de datum leeg, dan valt de casus vanzelf buiten deze regel en verdwijnt de
+    // aanduiding — daar is geen aparte "gezien"-stand voor nodig.
+    const Opvolging = {
+        /** Vandaag als jjjj-mm-dd, in de tijdzone van de gebruiker. */
+        vandaag() {
+            const d = new Date();
+            const p = (n) => String(n).padStart(2, "0");
+            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+        },
+
+        /**
+         * Vraagt deze casus aandacht? Enkel een op te volgen casus met de
+         * reminder op "Ja" en een datum die bereikt of verstreken is.
+         *
+         * De datum komt uit een date-invoerveld, dus jjjj-mm-dd; die vorm
+         * vergelijkt als tekst correct. Een andere schrijfwijze wordt omgezet.
+         */
+        isDue(values, vandaag) {
+            const v = values || {};
+            if (v.casus_type !== "Op te volgen casus") return false;
+            if (v.opv_reminder !== "Ja") return false;
+            const datum = this._isoDatum(v.opv_reminder_datum);
+            if (!datum) return false;
+            return datum <= (vandaag || this.vandaag());
+        },
+
+        /** dd/mm/jjjj en jjjj-mm-dd tot jjjj-mm-dd brengen; anders leeg. */
+        _isoDatum(waarde) {
+            const s = String(waarde || "").trim();
+            if (!s) return "";
+            if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+            const m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})/.exec(s);
+            if (!m) return "";
+            return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+        },
+
+        /**
+         * De id's van de casussen die aandacht vragen. Leest de casuïstiektabel;
+         * bij een fout geeft ze een lege lijst terug, want een aanduiding die
+         * ontbreekt is beter dan een pagina die niet opent.
+         */
+        async due() {
+            try {
+                const vandaag = this.vandaag();
+                const records = await RecordStore.all("database");
+                return records
+                    .filter((r) => this.isDue(r.values, vandaag))
+                    .map((r) => r.id);
+            } catch (_) {
+                return [];
+            }
+        },
+    };
+
+    /**
+     * Waar de terugknop van een wijzigpagina naartoe moet. Kom je via
+     * "Wijzigen" uit db.html, dan hoort dat db.html te zijn en niet launch.html.
+     * Geeft null wanneer de gewone bestemming geldt.
+     *
+     * Er gaat bewust géén "from" mee: db.html leest die parameter in zijn eigen
+     * terugknop om te bepalen waar díe naartoe gaat. Zou hij hier meegestuurd
+     * worden, dan belandde Back op de databankpagina weer op de wijzigpagina in
+     * plaats van op launch.html. Voor het tabblad heeft hij ook geen zin — bij
+     * het openen zet db.html dat toch op "Alles".
+     */
+    function terugNaarDatabank() {
+        const sp = new URLSearchParams(location.search);
+        if (sp.get("terug") !== "db") return null;
+        sp.delete("terug");
+        sp.delete("recordId");
+        sp.delete("from");
+        return "db.html" + (sp.toString() ? "?" + sp.toString() : "");
+    }
+
     const RecordStore = {
         DB_NAME: "jyzForms",
         DB_VERSION: 1,
@@ -191,21 +270,62 @@
         ROLES: ["radioloog", "aanvrager"],
         ARTS_TYPES: ["Specialist", "Specialist in opleiding"],
 
+        // Een geïmporteerd bestand komt zelden precies in onze veldnamen binnen.
+        // Deze aliassen vangen de Nederlandse en Engelse schrijfwijzen op, zodat
+        // een lijst met "specialisatie" of "dienst" niet stil zonder
+        // specialisatie binnenkomt.
+        ALIAS: {
+            name: ["name", "naam", "fullName", "volledige_naam"],
+            email: ["email", "e-mail", "mail", "emailadres", "e_mail"],
+            phone: ["phone", "telefoon", "tel", "gsm", "telefoonnummer"],
+            artsType: ["artsType", "arts_type", "type", "graad"],
+            discipline: ["discipline", "specialisatie", "specialty", "speciality",
+                "dienst", "vakgebied", "specialisme"],
+            roles: ["roles", "rollen", "rol", "role"],
+        },
+
+        _veld(e, sleutel) {
+            for (const naam of this.ALIAS[sleutel]) {
+                const v = e[naam];
+                if (v !== undefined && v !== null && String(v).trim() !== "") return v;
+            }
+            return "";
+        },
+
         /** Breng elke bekende schrijfwijze terug tot één vorm. */
         _normalise(entry, fallbackRole) {
             const e = typeof entry === "string" ? { name: entry } : (entry || {});
-            const roles = Array.isArray(e.roles) && e.roles.length
-                ? e.roles.filter((r) => this.ROLES.includes(r))
-                : (fallbackRole ? [fallbackRole] : []);
+            const ruweRollen = this._veld(e, "roles");
+            const lijst = Array.isArray(ruweRollen)
+                ? ruweRollen
+                : (ruweRollen ? String(ruweRollen).split(/[,;/]+/) : []);
+            const roles = lijst
+                .map((r) => String(r).trim().toLowerCase())
+                .map((r) => (r.startsWith("radiolo") ? "radioloog" : r.startsWith("aanvrag") ? "aanvrager" : r))
+                .filter((r) => this.ROLES.includes(r));
+            const artsType = String(this._veld(e, "artsType") || "").trim();
             return {
-                name: String(e.name || "").trim(),
-                email: String(e.email || "").trim(),
-                phone: String(e.phone || "").trim(),
-                artsType: this.ARTS_TYPES.includes(e.artsType) ? e.artsType : "",
-                discipline: String(e.discipline || "").trim(),
-                roles: [...new Set(roles)],
+                name: String(this._veld(e, "name")).trim(),
+                email: String(this._veld(e, "email")).trim(),
+                phone: String(this._veld(e, "phone")).trim(),
+                artsType: this.ARTS_TYPES.includes(artsType) ? artsType : "",
+                discipline: String(this._veld(e, "discipline")).trim(),
+                roles: [...new Set(roles.length ? roles : (fallbackRole ? [fallbackRole] : []))],
                 isUser: e.isUser === true,
             };
+        },
+
+        /**
+         * Naam tot een vergelijkbare vorm: kleine letters, geen titels of
+         * leestekens. "Dr. Peeters Jan" en "peeters  jan" worden hetzelfde.
+         */
+        _naamSleutel(naam) {
+            return String(naam || "")
+                .toLowerCase()
+                .replace(/\b(dr|prof|mevr|mevrouw|dhr|de?\s?heer|md)\b\.?/g, " ")
+                .replace(/[^a-zà-ſ\s-]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
         },
 
         /** Voeg personen met dezelfde naam samen; rollen en velden worden aangevuld. */
@@ -289,11 +409,43 @@
             return this.persons().find((p) => p.name.toLowerCase() === target)?.email || "";
         },
 
-        /** De volledige persoon bij een naam. */
+        /**
+         * De volledige persoon bij een naam. Eerst de letterlijke naam; lukt dat
+         * niet, dan zonder titels en leestekens, en ten slotte met omgekeerde
+         * woordvolgorde ("Jan Peeters" voor "Peeters Jan"). Die laatste twee
+         * alleen wanneer er precies één persoon op past — anders liever "niet
+         * gekend" dan de verkeerde specialisatie.
+         */
         personFor(name) {
             const target = String(name || "").trim().toLowerCase();
             if (!target) return null;
-            return this.persons().find((p) => p.name.toLowerCase() === target) || null;
+            const lijst = this.persons();
+            const exact = lijst.find((p) => p.name.toLowerCase() === target);
+            if (exact) return exact;
+
+            const sleutel = this._naamSleutel(name);
+            if (!sleutel) return null;
+            const passend = (fn) => {
+                const treffers = lijst.filter(fn);
+                return treffers.length === 1 ? treffers[0] : null;
+            };
+            const opSleutel = passend((p) => this._naamSleutel(p.name) === sleutel);
+            if (opSleutel) return opSleutel;
+
+            const omgekeerd = sleutel.split(" ").reverse().join(" ");
+            return passend((p) => this._naamSleutel(p.name) === omgekeerd);
+        },
+
+        /** De specialisatie bij een naam, of "" wanneer die niet gekend is. */
+        disciplineFor(name) {
+            return this.personFor(name)?.discipline || "";
+        },
+
+        /** Alle specialisaties die in de namenlijst voorkomen, alfabetisch. */
+        disciplines() {
+            const uit = new Set();
+            this.persons().forEach((p) => { if (p.discipline) uit.add(p.discipline); });
+            return [...uit].sort((a, b) => a.localeCompare(b));
         },
 
         /** Vorm voor de JSON-export. */
@@ -307,9 +459,15 @@
          */
         importFrom(nameLists) {
             if (!nameLists || typeof nameLists !== "object") return 0;
+            // Een bestand kan de lijst op verschillende dieptes aanleveren: kaal,
+            // onder nameLists, of onder een van de bekende sleutels.
+            if (Array.isArray(nameLists)) nameLists = { [this.KEY]: nameLists };
+            else if (nameLists.nameLists) nameLists = nameLists.nameLists;
             const uit = [];
-            if (Array.isArray(nameLists[this.KEY])) {
-                nameLists[this.KEY].forEach((e) => uit.push(this._normalise(e)));
+            for (const sleutel of [this.KEY, "personen", "persons", "namen"]) {
+                if (Array.isArray(nameLists[sleutel])) {
+                    nameLists[sleutel].forEach((e) => uit.push(this._normalise(e)));
+                }
             }
             Object.entries(this.LEGACY).forEach(([rol, key]) => {
                 if (Array.isArray(nameLists[key])) {
@@ -354,6 +512,69 @@
         },
     };
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // De disciplines van het ziekenhuis — vaste keuzelijst
+    // Aangeleverd als lijst; hier genormaliseerd: alles in kleine letters,
+    // "&" voluit als "en", en drie paren samengevoegd die twee schrijfwijzen
+    // van dezelfde discipline waren. De disciplines uit de personendatabank
+    // komen hier bovenop, zodat een eigen toevoeging niet verdwijnt.
+    // ═══════════════════════════════════════════════════════════════════════
+    const DEFAULT_DISCIPLINES = [
+        "algemene en abdominale heelkunde",
+        "algemene, abdominale, laparoscopische heelkunde",
+        "anatomopathologie",
+        "anesthesie",
+        "anesthesie en urgentiegeneeskunde",
+        "anesthesie en pijntherapie",
+        "anesthesie-reanimatie",
+        "cardiologie",
+        "cardiologie en cardiale revalidatie",
+        "dermato-venereologie",
+        "dermatologie",
+        "endocrinologie-diabetologie",
+        "fysische geneeskunde",
+        "gastro-enterologie",
+        "geriatrie",
+        "geriatrie en palliatieve zorg",
+        "gynaecologie",
+        "hematologie",
+        "intensieve zorg en anesthesie-reanimatie",
+        "interventionele cardiologie",
+        "inwendige ziekten en nierziekten",
+        "inwendige ziekten, nierziekten en infectieziekten",
+        "klinische biologie",
+        "medische beeldvorming",
+        "medische oncologie",
+        "mond-, kaak- en aangezichtschirurgie",
+        "nefrologie en klinische infectiologie",
+        "neurologie",
+        "neus-keel-oorziekten en hoofd- en halschirurgie",
+        "nucleaire geneeskunde",
+        "oftalmologie",
+        "orthopedische heelkunde",
+        "pediatrie",
+        "plastische heelkunde",
+        "pneumologie",
+        "pneumologie en respiratoire oncologie",
+        "psychiatrie",
+        "reumatologie",
+        "spinale pathologie",
+        "thorax- en vaatheelkunde",
+        "urgentiegeneeskunde",
+        "urologie",
+    ];
+
+    /** Vaste lijst plus wat er in de personendatabank staat, ontdubbeld. */
+    function alleDisciplines() {
+        const uit = new Map();
+        [...DEFAULT_DISCIPLINES, ...NameLists.disciplines()].forEach((d) => {
+            const naam = String(d || "").trim();
+            const sleutel = naam.toLowerCase();
+            if (naam && !uit.has(sleutel)) uit.set(sleutel, naam);
+        });
+        return [...uit.values()].sort((a, b) => a.localeCompare(b, "nl"));
+    }
+
     /** Los een optionsFrom-verwijzing op naar een concrete optielijst. */
     function resolveOptions(field) {
         if (field.options && field.options.length) return field.options;
@@ -361,6 +582,9 @@
             case "radiologen": return NameLists.get("radiologen");
             case "aanvragers": return NameLists.get("aanvragers");
             case "snomed":     return SnomedOptions.options();
+            // De disciplines zoals ze in de personendatabank staan; die lijst
+            // groeit dus mee met de namenlijst op de flow-pagina.
+            case "disciplines": return alleDisciplines();
             default:           return [];
         }
     }
@@ -484,6 +708,31 @@
                         ? " max-h-44 overflow-y-auto rounded-md border border-neutral-200 dark:border-slate-700 p-2"
                         : ""));
                     boxes.dataset.boxes = "1";
+
+                    // Zoekbalk voor lange keuzelijsten: typen dunt de lijst uit.
+                    // Wat al aangevinkt is blijft altijd staan, zodat je je
+                    // keuze niet uit het oog verliest tijdens het zoeken.
+                    let zoekveld = null;
+                    if (f.searchable && known.length > 5) {
+                        zoekveld = el("input", INPUT + " !py-1 text-sm");
+                        zoekveld.type = "search";
+                        zoekveld.dataset.zoek = "1";
+                        zoekveld.placeholder = f.searchPlaceholder || "Typ om te zoeken…";
+                        const filter = () => {
+                            const q = zoekveld.value.trim().toLowerCase();
+                            boxes.querySelectorAll("label").forEach((lbl) => {
+                                const cb = lbl.querySelector("input[type=checkbox]");
+                                const tekst = (lbl.textContent || "").toLowerCase();
+                                const past = !q || tekst.includes(q) || (cb && cb.checked);
+                                lbl.classList.toggle("hidden", !past);
+                            });
+                        };
+                        zoekveld.addEventListener("input", filter);
+                        zoekveld.addEventListener("change", filter);
+                        input.appendChild(zoekveld);
+                        // Aan- of afvinken kan de zichtbaarheid veranderen.
+                        boxes.addEventListener("change", filter);
+                    }
                     input.appendChild(boxes);
 
                     /** Houd "alle" in lijn met de afzonderlijke vakjes. */
@@ -526,7 +775,7 @@
                     if (f.type === "dynamicCheckboxes") {
                         if (!known.length && !sel.length) {
                             input.appendChild(el("p", "text-xs text-neutral-400 dark:text-neutral-500",
-                                "Nog geen SNOMED CT-resultaten. Gebruik “Andere toevoegen”."));
+                                f.emptyHint || "Nog geen SNOMED CT-resultaten. Gebruik “Andere toevoegen”."));
                         }
                         const add = el("button", "self-end text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer bg-transparent border-0 p-0", f.addLabel || "Andere toevoegen");
                         add.type = "button";
@@ -534,7 +783,7 @@
                             const wrap = el("div", "flex gap-2 items-center pt-1");
                             const txt = el("input", INPUT + " !py-1 text-sm");
                             txt.type = "text";
-                            txt.placeholder = "Pathologie toevoegen…";
+                            txt.placeholder = f.addPlaceholder || "Pathologie toevoegen…";
                             const ok = el("button", BTN_SMALL, "Toevoegen");
                             ok.type = "button";
                             const commit = () => {
@@ -1151,7 +1400,11 @@ Voorbeeld van een geldig antwoord:
         } = config;
 
         const modeKey = MODE_KEY_PREFIX + page;
-        const isTemplateMode = () => localStorage.getItem(modeKey) !== "off";
+        // De niet-template mode is de standaard: zonder opgeslagen keuze staat de
+        // pagina op de eigen velden. Alleen een uitdrukkelijke keuze voor template
+        // mode zet "on" in de opslag, dus wie daarvoor koos houdt die keuze; wie
+        // eerder "off" koos blijft ook waar hij was.
+        const isTemplateMode = () => localStorage.getItem(modeKey) === "on";
         const params = new URLSearchParams(location.search);
         let currentRecordId = null;
         let _dirty = false;   // niet-bewaarde wijzigingen in het formulier
@@ -1163,10 +1416,71 @@ Voorbeeld van een geldig antwoord:
                 SchemaForm.render(native, schema, prefillFromParams(schema, params));
                 if (!native.dataset.sendWatch) {
                     native.dataset.sendWatch = "1";
-                    const touched = () => { _dirty = true; updateSendButton(); };
+                    const touched = (e) => {
+                        if (e?.target?.dataset?.zoek === "1") return;  // zoeken is geen wijziging
+                        _dirty = true;
+                        updateSendButton();
+                    };
                     native.addEventListener("change", touched);
                     native.addEventListener("input", touched);
+                    // De discipline volgt de aanvrager, tot je er zelf aankomt.
+                    const disciplineWatch = (e) => {
+                        if (e.target.dataset?.zoek === "1") return;   // enkel filteren
+                        const eigenRij = e.target.closest?.("[data-field-id]");
+                        if (eigenRij && eigenRij.dataset.discipline === "1") {
+                            eigenRij.dataset.handmatig = "1";
+                            return;
+                        }
+                        syncDisciplineVanAanvrager();
+                    };
+                    native.addEventListener("change", disciplineWatch);
+                    native.addEventListener("input", disciplineWatch);
                 }
+            });
+            _markeerDisciplineRijen();
+            syncDisciplineVanAanvrager();
+        }
+
+        // ── Discipline volgt de aanvrager ───────────────────────────────
+        // Wie een aanvrager invult, krijgt diens discipline aangevinkt. Zodra
+        // je zelf in dat veld klikt, blijft jouw keuze staan: het overschrijft
+        // nooit iets wat er al staat.
+        const DISCIPLINE_BRON = "aanvragerDiscipline";
+
+        function _disciplineRijen() {
+            const uit = [];
+            sections.forEach(({ native, schema }) => {
+                if (!native) return;
+                (schema.fields || []).forEach((f) => {
+                    if (f.defaultFrom !== DISCIPLINE_BRON) return;
+                    const row = native.querySelector('[data-field-id="' + f.id + '"]');
+                    if (row) uit.push({ f, row, native, schema });
+                });
+            });
+            return uit;
+        }
+
+        function _markeerDisciplineRijen() {
+            _disciplineRijen().forEach(({ row }) => { row.dataset.discipline = "1"; });
+        }
+
+        function syncDisciplineVanAanvrager() {
+            const rijen = _disciplineRijen();
+            if (!rijen.length) return;
+            const aanvrager = collect().values.aanvrager || "";
+            const discipline = NameLists.disciplineFor(aanvrager);
+            if (!discipline) return;
+            rijen.forEach(({ f, row, native, schema }) => {
+                if (row.dataset.handmatig === "1") return;
+                const aangevinkt = Array.from(row.querySelectorAll(
+                    "input[type=checkbox]:checked:not([data-select-all])")).map((c) => c.value);
+                // Leeg, of nog precies wat wij er zelf hadden gezet: dan mag het
+                // meeschuiven naar de nieuwe aanvrager. Alles wat de gebruiker
+                // zelf koos blijft staan.
+                if (aangevinkt.length
+                    && aangevinkt.join("\u0000") !== (row.dataset.auto || "")) return;
+                SchemaForm.fill(native, schema, { [f.id]: [discipline] });
+                row.dataset.auto = discipline;
             });
         }
 
@@ -1412,6 +1726,12 @@ Voorbeeld van een geldig antwoord:
         async function saveRecord({ send = false } = {}) {
             const { values, screenshots } = collect();
             if (!Object.keys(values).length) { flash("Niets in te vullen gevonden.", true); return; }
+            // De specialisatie van de aanvrager meebewaren zoals ze nu in de
+            // namenlijst staat. Verandert die persoon later van dienst, dan
+            // blijft dit record de situatie van toen. Staat ze er niet in, dan
+            // wordt er niets bewaard en zoekt de databank ze live op.
+            const _spec = NameLists.disciplineFor(values.aanvrager);
+            if (_spec) values.aanvrager_specialisatie = _spec;
             const record = await RecordStore.save(page, {
                 id: currentRecordId || undefined,
                 form: page,
@@ -1518,8 +1838,12 @@ Voorbeeld van een geldig antwoord:
         AiImageFill,
         NameLists,
         SnomedOptions,
+        DEFAULT_DISCIPLINES,
+        alleDisciplines,
         mountFormsUI,
         resolveOptions,
+        terugNaarDatabank,
+        Opvolging,
         DEFAULT_FORM_FILL_PROMPT,
         styles: { BTN, BTN_PRIMARY, BTN_SMALL, INPUT, LABEL, PANEL, OVERLAY },
         el,

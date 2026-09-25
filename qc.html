@@ -569,9 +569,23 @@
             document.addEventListener("input", refreshDerivedFromNative);
             document.addEventListener("change", refreshDerivedFromNative);
 
-            // Back button: return to launch.html preserving all URL params
+            // Terugknop: naar de databank wanneer je daar via "Wijzigen" uit
+            // kwam, anders naar launch.html. Is deze pagina in een eigen tabblad
+            // geopend vanaf launch.html (de QC-knop doet dat, zodat het werk en
+            // het PiP-venster daar blijven staan), dan is teruggaan simpelweg dit
+            // tabblad sluiten: navigeren zou een tweede launch-tabblad opleveren.
             document.getElementById("back-btn").addEventListener("click", () => {
-                window.location.href = `launch.html?${params.toString()}`;
+                const naarDb = JyzForms.terugNaarDatabank();
+                if (naarDb) { window.location.href = naarDb; return; }
+                const doel = `launch.html?${params.toString()}`;
+                if (window.opener && !window.opener.closed) {
+                    try { window.opener.focus(); } catch (_) { /* andere origin */ }
+                    window.close();
+                    // Sluiten kan geweigerd worden; dan alsnog navigeren.
+                    setTimeout(() => { window.location.href = doel; }, 150);
+                    return;
+                }
+                window.location.href = doel;
             });
 
             // Save: submit both forms
