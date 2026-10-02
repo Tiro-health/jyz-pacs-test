@@ -1,0 +1,243 @@
+# Classificaties, scores en gestandaardiseerde lexicons
+@nl
+!BI-RADS
+BI-RADS 0
+BI-RADS 1
+BI-RADS 2
+BI-RADS 3
+BI-RADS 4
+BI-RADS 4a
+BI-RADS 4b
+BI-RADS 4c
+BI-RADS 5
+BI-RADS 6
+ACR A
+ACR B
+ACR C
+ACR D
+!PI-RADS
+PI-RADS 1
+PI-RADS 2
+PI-RADS 3
+PI-RADS 4
+PI-RADS 5
+!LI-RADS
+LR-1
+LR-2
+LR-3
+LR-4
+LR-5
+LR-M
+LR-TIV
+!TI-RADS
+TR1
+TR2
+TR3
+TR4
+TR5
+EU-TIRADS
+!O-RADS
+Lung-RADS
+C-RADS
+CAD-RADS
+NI-RADS
+VI-RADS
+Node-RADS
+Bone-RADS
+!Bosniak
+Bosniak I
+Bosniak II
+Bosniak IIF
+Bosniak III
+Bosniak IV
+!Fleischner
+Fleischner-criteria
+Fazekas
+Fazekas 1
+Fazekas 2
+Fazekas 3
+Scheltens
+MTA-score
+Koedam
+GCA-score
+ASPECTS
+pc-ASPECTS
+NIHSS
+Fisher
+modified Fisher
+Hunt en Hess
+WFNS
+Spetzler-Martin
+Barkhof
+McDonald-criteria
+Kellgren-Lawrence
+Outerbridge
+ICRS
+Noyes
+Pfirrmann
+Modic
+Modic type 1
+Modic type 2
+Modic type 3
+Meyerding
+Michigan State
+MSU-classificatie
+Lee-classificatie
+Schizas
+Kang-classificatie
+Genant
+Genant graad 1
+Genant graad 2
+Genant graad 3
+Denis
+TLICS
+AOSpine
+SLIC
+Anderson en D'Alonzo
+Levine en Edwards
+Effendi
+Jefferson-fractuur
+hangman-fractuur
+Salter-Harris
+Salter-Harris type I
+Salter-Harris type II
+Salter-Harris type III
+Salter-Harris type IV
+Salter-Harris type V
+Weber A
+Weber B
+Weber C
+Danis-Weber
+Lauge-Hansen
+Garden
+Garden I
+Garden II
+Garden III
+Garden IV
+Pauwels
+Evans
+AO-classificatie
+AO/OTA
+Neer
+Neer-classificatie
+Schatzker
+Gustilo-Anderson
+Frykman
+Mayo
+Herbert
+Gartland
+Milch
+Mason
+Regan-Morrey
+Sanders
+Essex-Lopresti
+Hawkins
+Lisfranc
+Tile
+Young-Burgess
+Judet-Letournel
+Letournel
+Tönnis
+Crowe
+Brooker
+DeLee en Charnley
+Gruen-zones
+Paprosky
+Vancouver
+Kocher-criteria
+Graf
+Graf type I
+Graf type II
+alfahoek
+bètahoek
+Ficat
+Ficat en Arlet
+ARCO
+Steinberg
+Mitchell
+Stoller
+Shepherd
+Mink
+Snyder
+SLAP-letsel
+Bankart
+Hill-Sachs
+Goutallier
+Patte
+Sugaya
+Ellman
+Collin
+Hamada
+Rockwood
+Allman
+Tossy
+Constant
+Insall-Salvati
+Caton-Deschamps
+Blackburne-Peel
+TT-TG
+Dejour
+Wiberg
+Kalbfleisch
+Fairbank
+Ahlbäck
+Hayashi
+Kanavel
+Thompson
+Child-Pugh
+MELD
+Balthazar
+CT severity index
+Atlanta-classificatie
+Hinchey
+Hinchey Ia
+Hinchey Ib
+Alvarado
+AAST
+AAST graad
+Clavien-Dindo
+TNM
+cT
+cN
+cM
+T1a
+T1b
+T2a
+T2b
+T3a
+T3b
+T4a
+T4b
+N0
+N1
+N2
+N3
+M0
+M1
+RECIST
+mRECIST
+iRECIST
+Lugano
+Deauville
+Deauville-score
+Ann Arbor
+Choi-criteria
+PERCIST
+Agatston
+Agatston-score
+calciumscore
+CAC-score
+CAD-RADS
+Stanford type A
+Stanford type B
+DeBakey
+Rutherford
+Fontaine
+NASCET
+ECST
+Wells-score
+Qanadli
+Mastora
+Kircher
+Hounsfield-eenheden
+SUVmax

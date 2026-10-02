@@ -1,0 +1,270 @@
+# Radiologische tekens, eponiemen en eponieme letsels/structuren
+@nl
+Baker-cyste
+Bakercyste
+Hill-Sachs-letsel
+reverse Hill-Sachs
+Bankart-letsel
+benige Bankart
+Perthes-letsel
+ALPSA-letsel
+GLAD-letsel
+HAGL-letsel
+Buford-complex
+sublabraal foramen
+Segond-fractuur
+reverse Segond
+Pellegrini-Stieda
+Osgood-Schlatter
+Sinding-Larsen-Johansson
+Hoffa-vetlichaam
+Hoffa
+Haglund
+Haglund-deformiteit
+Kager-vetlichaam
+Morton-neuroom
+Lisfranc-letsel
+Jones-fractuur
+pseudo-Jones
+Maisonneuve-fractuur
+Tillaux-fractuur
+triplane fractuur
+Pilon-fractuur
+Colles-fractuur
+Smith-fractuur
+Barton-fractuur
+chauffeursfractuur
+Galeazzi-fractuur
+Monteggia-fractuur
+Essex-Lopresti
+Bennett-fractuur
+Rolando-fractuur
+boxersfractuur
+mallet-vinger
+skiduim
+Stener-letsel
+Kienböck
+Preiser
+Madelung
+de Quervain
+Guyon
+Hoffa
+Legg-Calvé-Perthes
+Perthes
+epifysiolyse
+SCFE
+cam-impingement
+pincer-impingement
+FAI
+Freiberg
+Köhler
+Sever
+Scheuermann
+Baastrup
+Bertolotti
+Forestier
+DISH
+Bechterew
+Paget
+Paget-ziekte
+Ollier
+Maffucci
+Chiari
+Chiari-malformatie
+Dandy-Walker
+Arnold-Chiari
+Virchow-Robin-ruimten
+perivasculaire ruimten
+Wallerse degeneratie
+Wernicke
+Creutzfeldt-Jakob
+Binswanger
+Moyamoya
+Sturge-Weber
+von Hippel-Lindau
+Tolosa-Hunt
+Graves
+Hashimoto
+Warthin
+Zenker-divertikel
+Boerhaave
+Mallory-Weiss
+Barrett
+Meckel-divertikel
+Hirschsprung
+Crohn
+ziekte van Crohn
+colitis ulcerosa
+Budd-Chiari
+Caroli
+Mirizzi
+Klatskin
+Bouveret
+Courvoisier
+Ogilvie
+Fournier
+Wilms
+Peyronie
+Nutcracker
+Wilkie
+May-Thurner
+Cockett
+Leriche
+Takayasu
+Kawasaki
+Marfan
+Ehlers-Danlos
+Kommerell-divertikel
+Kerley B-lijnen
+Kerley-lijnen
+Hampton-hump
+Westermark-teken
+Fleischner-teken
+Pancoast-tumor
+Golden S-teken
+Luftsichel-teken
+silhouetteken
+deep sulcus sign
+halo-teken
+reversed halo
+omgekeerd halo-teken
+atoll-teken
+tree-in-bud
+boomknoppatroon
+crazy paving
+signet ring sign
+comet tail
+kometenstaart
+B-lijnen
+A-lijnen
+lung sliding
+lung point
+barcode sign
+seashore sign
+Rigler-teken
+football sign
+coffee bean sign
+koffieboonteken
+target sign
+doelwitteken
+whirlpool sign
+draaikolkteken
+string of pearls
+parelsnoerteken
+bird's beak
+vogelbekteken
+apple core
+appelklokhuis
+lead pipe
+loodpijp
+thumbprinting
+duimafdrukken
+Murphy-teken
+sonografisch Murphy-teken
+WES-teken
+porseleinen galblaas
+double duct sign
+dubbele ductus
+target lesion
+central dot sign
+Chilaiditi
+Morison
+Morison-ruimte
+Douglas-holte
+Spigelse hernia
+hernia inguinalis
+hernia femoralis
+hernia umbilicalis
+littekenbreuk
+hiatushernia
+paraoesofageale hernia
+Bochdalek
+Morgagni
+Hounsfield
+Codman-driehoek
+sunburst
+zonnestraalpatroon
+onion skin
+uienschil
+fallen fragment
+vallend fragment
+fish vertebra
+vissenwervel
+rugger jersey
+picture frame
+ivory vertebra
+ivoren wervel
+winking owl
+knipogende uil
+Scottie dog
+Scotty dog
+hondje van Lachapèle
+inverted Napoleon hat
+omgekeerde napoleonhoed
+double PCL sign
+dubbele PCL
+bucket handle
+emmerhengselscheur
+korfhengselscheur
+parrot beak
+papegaaiensnavel
+flipped meniscus
+ghost meniscus
+lateral femoral notch sign
+kissing contusions
+terrible triad
+unhappy triad
+O'Donoghue
+Stieda-proces
+os trigonum
+os naviculare externum
+os acromiale
+os peroneum
+fabella
+bipartite patella
+Wormse beentjes
+Stafne
+Haller-cellen
+Onodi-cellen
+concha bullosa
+empty sella
+lege sella
+empty delta sign
+dense MCA sign
+insular ribbon sign
+dot sign
+spot sign
+swirl sign
+hot cross bun
+Mickey Mouse
+hummingbird
+kolibrieteken
+eye of the tiger
+panda sign
+dawson fingers
+Dawson-vingers
+open ring sign
+central vein sign
+@en
+Hampton hump
+Westermark sign
+golden S sign
+silhouette sign
+air crescent sign
+continuous diaphragm sign
+ring-around-the-artery
+Rigler sign
+target sign
+sentinel loop
+cut-off sign
+string sign
+cobra head
+spoke wheel
+light bulb sign
+nutmeg liver
+starry sky
+halo sign
+ring of fire
+yin-yang sign
+tardus parvus
+spectral broadening

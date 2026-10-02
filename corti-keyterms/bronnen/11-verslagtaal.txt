@@ -1,0 +1,144 @@
+# Verslagstructuur, dictaatcommando's en vaste formuleringen
+@nl
+!BESLUIT
+!Conclusie
+Indicatie
+Klinische vraagstelling
+Vraagstelling
+Techniek
+Bevindingen
+Vergelijking
+Mededeling
+Addendum
+Opmerking
+Aanbeveling
+Advies
+nieuwe alinea
+nieuwe lijn
+punt
+komma
+dubbelpunt
+puntkomma
+haakje openen
+haakje sluiten
+streepje
+schuine streep
+millimeter
+centimeter
+mm
+cm
+cm³
+ml
+Hounsfield
+graden
+procent
+rechts
+links
+bilateraal
+beiderzijds
+craniaal
+caudaal
+ventraal
+dorsaal
+mediaal
+lateraal
+proximaal
+distaal
+anterieur
+posterieur
+superieur
+inferieur
+anterolateraal
+anteromediaal
+posterolateraal
+posteromediaal
+superolateraal
+inferomediaal
+parasagittaal
+paramediaan
+paravertebraal
+prevertebraal
+retrocruraal
+retrosternaal
+retrocardiaal
+retroperitoneaal
+intraperitoneaal
+extraperitoneaal
+intra-articulair
+peri-articulair
+intramusculair
+subcutaan
+subfasciaal
+intraosseus
+subchondraal
+epifysair
+metafysair
+diafysair
+juxta-articulair
+paralabraal
+perimeniscaal
+infrapatellair
+suprapatellair
+prepatellair
+retropatellair
+peritrochantair
+subtrochantair
+intertrochantair
+pertrochantair
+transcervicaal
+subcapitaal
+basicervicaal
+supracondylair
+intercondylair
+bimalleolair
+trimalleolair
+interligamentair
+intraligamentair
+infraspinaal
+subacromiaal
+subdeltoïdaal
+intracraniaal
+extra-axiaal
+intra-axiaal
+supratentorieel
+infratentorieel
+periventriculair
+subcorticaal
+juxtacorticaal
+pontien
+intraduraal
+extraduraal
+intramedullair
+extramedullair
+epiduraal
+subduraal
+subarachnoïdaal
+voor zover beoordeelbaar
+voor zover evalueerbaar
+niet adequaat evalueerbaar
+echografisch niet adequaat evalueerbaar
+beperkt beoordeelbaar
+suboptimale beeldkwaliteit
+in de mate van het mogelijke
+onder voorbehoud
+Normaal botpatroon.
+Normale alignatie.
+Geen fractuur.
+Geen fracturen.
+Geen hydrops.
+Geen botoedeem.
+Geen kraakbeenletsels.
+Normale weke delen.
+Geen focale letsels.
+Geen vrij vocht.
+Geen adenopathieën.
+Geen pleuravocht.
+Geen pneumothorax.
+Geen consolidaties.
+Normale grootte en morfologie.
+Geen hydronefrose.
+Geen massa-effect.
+Geen recente ischemie.
+Geen intracraniële bloeding.
+Normale atlantodentale verhoudingen.
+Normale osteo-articulaire verhoudingen.

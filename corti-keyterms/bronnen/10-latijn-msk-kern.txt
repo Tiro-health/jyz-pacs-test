@@ -1,0 +1,264 @@
+# Latijnse spier-, pees-, ligament- en zenuwnamen (vaak gedicteerd, door Uberon onvolledig gedekt)
+@la
+musculus supraspinatus
+musculus infraspinatus
+musculus subscapularis
+musculus teres minor
+musculus teres major
+musculus deltoideus
+musculus biceps brachii
+musculus triceps brachii
+musculus brachialis
+musculus pectoralis major
+musculus pectoralis minor
+musculus latissimus dorsi
+musculus trapezius
+musculus serratus anterior
+musculus levator scapulae
+musculus rhomboideus
+musculus sternocleidomastoideus
+musculus longus colli
+musculus psoas
+musculus iliopsoas
+musculus iliacus
+musculus quadratus lumborum
+musculus erector spinae
+musculi multifidi
+musculus gluteus maximus
+musculus gluteus medius
+musculus gluteus minimus
+musculus piriformis
+musculus obturatorius internus
+musculus obturatorius externus
+musculus gemellus
+musculus quadratus femoris
+musculus tensor fasciae latae
+musculus sartorius
+musculus rectus femoris
+musculus vastus lateralis
+musculus vastus medialis
+musculus vastus intermedius
+musculus quadriceps femoris
+musculus adductor longus
+musculus adductor brevis
+musculus adductor magnus
+musculus gracilis
+musculus pectineus
+musculus semitendinosus
+musculus semimembranosus
+musculus biceps femoris
+musculus popliteus
+musculus gastrocnemius
+musculus soleus
+musculus plantaris
+musculus tibialis anterior
+musculus tibialis posterior
+musculus peroneus longus
+musculus peroneus brevis
+musculus fibularis longus
+musculus fibularis brevis
+musculus extensor hallucis longus
+musculus extensor digitorum longus
+musculus flexor hallucis longus
+musculus flexor digitorum longus
+musculus abductor hallucis
+musculus flexor digitorum brevis
+musculus quadratus plantae
+musculus extensor carpi ulnaris
+musculus extensor carpi radialis longus
+musculus extensor carpi radialis brevis
+musculus extensor digitorum
+musculus extensor pollicis longus
+musculus extensor pollicis brevis
+musculus abductor pollicis longus
+musculus flexor carpi ulnaris
+musculus flexor carpi radialis
+musculus flexor digitorum superficialis
+musculus flexor digitorum profundus
+musculus flexor pollicis longus
+musculus palmaris longus
+musculus pronator teres
+musculus pronator quadratus
+musculus supinator
+musculus brachioradialis
+musculus anconeus
+musculus rectus abdominis
+musculus obliquus externus
+musculus obliquus internus
+musculus transversus abdominis
+musculus masseter
+musculus temporalis
+musculus pterygoideus lateralis
+musculus pterygoideus medialis
+supraspinatus
+infraspinatus
+subscapularis
+semimembranosus
+semitendinosus
+gastrocnemius
+tibialis posterior
+tibialis anterior
+peroneus longus
+peroneus brevis
+flexor hallucis longus
+flexor digitorum longus
+extensor hallucis longus
+extensor digitorum longus
+extensor carpi ulnaris
+flexor carpi ulnaris
+flexor carpi radialis
+extensor pollicis longus
+abductor pollicis longus
+extensor pollicis brevis
+flexor digitorum profundus
+flexor digitorum superficialis
+flexor pollicis longus
+ligamentum cruciatum anterius
+ligamentum cruciatum posterius
+ligamentum collaterale mediale
+ligamentum collaterale laterale
+ligamentum patellae
+ligamentum meniscofemorale
+ligament van Humphrey
+ligament van Wrisberg
+ligamentum talofibulare anterius
+ligamentum talofibulare posterius
+ligamentum calcaneofibulare
+ligamentum deltoideum
+ligamentum tibiofibulare anterius
+ligamentum tibiofibulare posterius
+spring ligament
+ligamentum calcaneonaviculare plantare
+ligamentum scapholunatum
+ligamentum lunotriquetrum
+ligamentum collaterale ulnare
+ligamentum collaterale radiale
+ligamentum anulare radii
+ligamentum coracoacromiale
+ligamentum coracoclaviculare
+ligamentum acromioclaviculare
+ligamentum glenohumerale inferius
+ligamentum glenohumerale medium
+ligamentum glenohumerale superius
+ligamentum longitudinale anterius
+ligamentum longitudinale posterius
+ligamentum flavum
+ligamentum interspinale
+ligamentum supraspinale
+ligamentum iliolumbale
+ligamentum sacrotuberale
+ligamentum inguinale
+ligamentum teres
+ligamentum transversum atlantis
+ligamenta alaria
+retinaculum flexorum
+retinaculum extensorum
+retinaculum peroneorum
+tendo calcaneus
+fascia plantaris
+aponeurosis plantaris
+bursa subacromialis
+bursa subdeltoidea
+bursa olecrani
+bursa prepatellaris
+bursa infrapatellaris
+bursa trochanterica
+bursa iliopectinea
+bursa retrocalcanea
+nervus medianus
+nervus ulnaris
+nervus radialis
+nervus axillaris
+nervus suprascapularis
+nervus musculocutaneus
+nervus ischiadicus
+nervus femoralis
+nervus obturatorius
+nervus peroneus communis
+nervus fibularis communis
+nervus tibialis
+nervus suralis
+nervus pudendus
+nervus cutaneus femoris lateralis
+nervus facialis
+nervus trigeminus
+nervus vestibulocochlearis
+nervus vagus
+nervus hypoglossus
+nervus abducens
+nervus oculomotorius
+nervus trochlearis
+nervus glossopharyngeus
+nervus accessorius
+nervus phrenicus
+nervus laryngeus recurrens
+plexus brachialis
+plexus lumbosacralis
+@la
+os scaphoideum
+os lunatum
+os triquetrum
+os pisiforme
+os trapezium
+os trapezoideum
+os capitatum
+os hamatum
+os naviculare
+os cuboideum
+os cuneiforme mediale
+os cuneiforme intermedium
+os cuneiforme laterale
+talus
+calcaneus
+caput humeri
+collum chirurgicum
+collum anatomicum
+tuberculum majus
+tuberculum minus
+processus coracoideus
+cavitas glenoidalis
+caput femoris
+collum femoris
+trochanter major
+trochanter minor
+condylus medialis
+condylus lateralis
+epicondylus medialis
+epicondylus lateralis
+malleolus medialis
+malleolus lateralis
+processus styloideus radii
+processus styloideus ulnae
+olecranon
+caput radii
+processus odontoideus
+corpus vertebrae
+arcus vertebrae
+pars interarticularis
+processus articularis superior
+processus articularis inferior
+foramen magnum
+clivus
+os temporale
+pars petrosa
+os sphenoidale
+os ethmoidale
+os occipitale
+os frontale
+os parietale
+os zygomaticum
+mandibula
+maxilla
+os hyoideum
+cartilago thyroidea
+cartilago cricoidea
+in situ
+status quo ante
+ad latus
+ad longitudinem
+ad axim
+ad peripheriam
+lege artis
+per continuitatem
+sub finem
+in toto

@@ -1,0 +1,252 @@
+# Technieken, modaliteiten, sequenties en protocollen
+# Formaat: '@taal' wisselt de taal (nl/en/la/afk). Een '!' vooraan = kernterm (extra gewicht).
+@nl
+!echografie
+!echo-doppler
+duplexonderzoek
+kleurendoppler
+powerdoppler
+spectrale doppler
+!elastografie
+shear wave elastografie
+contrastechografie
+transvaginale echografie
+transrectale echografie
+endo-echografie
+!computertomografie
+CT-angiografie
+CT-urografie
+CT-colonografie
+CT-perfusie
+CT-enterografie
+lage dosis CT
+dual-energy CT
+spectrale CT
+!magnetische resonantie
+MR-angiografie
+MR-venografie
+MR-cholangiopancreaticografie
+MR-enterografie
+MR-artrografie
+MR-mammografie
+MR-spectroscopie
+MR-perfusie
+MR-defaecografie
+cardiale MR
+functionele MR
+diffusiegewogen beeldvorming
+!mammografie
+tomosynthese
+contrastmammografie
+!radiografie
+conventionele radiografie
+thoraxfoto
+staande opname
+liggende opname
+vergelijkende opname
+functionele opnames
+flexie-extensieopnames
+belaste opname
+stressopname
+scanogram
+skeletleeftijd
+botdensitometrie
+DEXA-scan
+!fluoroscopie
+doorlichting
+slikfoto
+passagefoto
+colon inloop
+urethrocystografie
+mictiecystografie
+hysterosalpingografie
+fistulografie
+artrografie
+myelografie
+!angiografie
+digitale subtractieangiografie
+flebografie
+cavografie
+!scintigrafie
+botscintigrafie
+skeletscintigrafie
+PET-CT
+PET-MR
+SPECT-CT
+FDG-PET
+PSMA-PET
+!contrastinjectie
+intraveneus contrast
+oraal contrast
+rectaal contrast
+arteriële fase
+vroeg-arteriële fase
+laat-arteriële fase
+portaal veneuze fase
+veneuze fase
+nefrografische fase
+excretoire fase
+uitgestelde fase
+evenwichtsfase
+hepatobiliaire fase
+blanco reeks
+blanco opname
+blanco CT
+native reeks
+dunne coupes
+reconstructies
+multiplanaire reconstructies
+coronale reconstructie
+sagittale reconstructie
+axiale coupes
+volume rendering
+maximale intensiteitsprojectie
+longvenster
+botvenster
+weke delen venster
+mediastinaal venster
+hersenvenster
+coupedikte
+sneedikte
+beeldkwaliteit
+bewegingsartefact
+ademhalingsartefact
+metaalartefact
+beam hardening
+!stralingsdosis
+dosis-lengteproduct
+CTDIvol
+@en
+!ultrasound
+Doppler ultrasound
+color Doppler
+power Doppler
+spectral Doppler
+contrast-enhanced ultrasound
+!computed tomography
+CT angiography
+CT urography
+CT colonography
+CT perfusion
+dual-energy CT
+photon-counting CT
+cone beam CT
+!magnetic resonance imaging
+MR angiography
+MR cholangiopancreatography
+MR arthrography
+MR spectroscopy
+diffusion-weighted imaging
+diffusion tensor imaging
+tractography
+susceptibility-weighted imaging
+perfusion-weighted imaging
+dynamic contrast-enhanced
+arterial spin labeling
+!T1-weighted
+!T2-weighted
+proton density
+fat-saturated
+fat suppression
+Dixon
+in-phase
+opposed-phase
+out-of-phase
+FLAIR
+STIR
+TIRM
+DWI
+ADC
+ADC map
+SWI
+GRE
+gradient echo
+spin echo
+turbo spin echo
+fast spin echo
+HASTE
+SSFSE
+TrueFISP
+balanced steady-state free precession
+VIBE
+LAVA
+THRIVE
+MPRAGE
+CISS
+FIESTA
+time-of-flight
+phase contrast
+cine
+late gadolinium enhancement
+T1 mapping
+T2 mapping
+T2 star
+black blood
+MRCP
+DCE
+DTI
+ASL
+PET
+SPECT
+FDG
+PSMA
+SUVmax
+tomosynthesis
+fluoroscopy
+digital subtraction angiography
+maximum intensity projection
+minimum intensity projection
+multiplanar reconstruction
+volume rendering
+curved planar reformation
+iterative reconstruction
+field of view
+slice thickness
+signal-to-noise ratio
+partial volume artifact
+susceptibility artifact
+chemical shift artifact
+magic angle artifact
+motion artifact
+streak artifact
+blooming artifact
+aliasing
+gadolinium
+@afk
+CTA
+CTU
+CTPA
+MRA
+MRV
+MRI
+MR
+CT
+RX
+US
+CEUS
+DSA
+HRCT
+LDCT
+DECT
+CBCT
+MIP
+MinIP
+MPR
+VRT
+CPR
+FOV
+DLP
+FFE
+TSE
+FSE
+SE
+IR
+PD
+PDFS
+T1FS
+T2FS
+T1W
+T2W
+DIXON
+HU
+SUV

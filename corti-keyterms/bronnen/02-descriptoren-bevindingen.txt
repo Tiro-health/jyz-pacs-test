@@ -1,0 +1,695 @@
+# Beschrijvende termen en bevindingen (densiteit, signaal, echogeniciteit, morfologie, verloop)
+@nl
+!hypodens
+!hyperdens
+!isodens
+!hypointens
+!hyperintens
+!isointens
+!hypo-echogeen
+!hyperechogeen
+!iso-echogeen
+!anechogeen
+echoarm
+echorijk
+echovrij
+heterogeen
+homogeen
+inhomogeen
+!aankleuring
+aankleurend
+aankleurt
+contrastcaptatie
+randaankleuring
+ringvormige aankleuring
+nodulaire aankleuring
+perifere aankleuring
+centripetale vulling
+wash-in
+wash-out
+!diffusierestrictie
+diffusiebeperking
+signaaluitval
+signaalverlies
+signaalverhoging
+signaalwijziging
+fat-sat
+vetsuppressie
+vetbevattend
+vethoudend
+macroscopisch vet
+intracellulair vet
+verkalkt
+verkalking
+verkalkingen
+!calcificatie
+calcificaties
+microcalcificaties
+macrocalcificaties
+grofkorrelige verkalkingen
+stippelvormige verkalkingen
+verbening
+sclerotisch
+sclerose
+lytisch
+osteolytisch
+osteoblastisch
+osteocondensatie
+gemengd lytisch-sclerotisch
+geografisch
+mottenvraat
+permeatief
+smalle overgangszone
+brede overgangszone
+periostreactie
+lamellaire periostreactie
+spiculaire periostreactie
+Codman-driehoek
+cortexdoorbraak
+corticale verdunning
+corticale verdikking
+corticale onderbreking
+scalloping
+expansief
+expansieve groei
+infiltratief
+lobulair
+gelobuleerd
+polylobulair
+ovalair
+rondvormig
+spoelvormig
+lineair
+curvilineair
+tubulair
+serpigineus
+nodulair
+micronodulair
+macronodulair
+reticulair
+reticulonodulair
+spiculair
+gespiculeerd
+scherp afgelijnd
+onscherp afgelijnd
+goed afgelijnd
+vaag afgelijnd
+!aflijning
+afgelijnd
+lobulaire contouren
+gladde contouren
+onregelmatige contouren
+contourafwijking
+wandverdikking
+wandaankleuring
+septa
+septaties
+gesepteerd
+multiloculair
+uniloculair
+cystisch
+solide
+semi-solide
+deels cystisch
+complex cystisch
+necrotisch
+centrale necrose
+hemorragisch
+bloedingsresidu
+hemosiderine
+vloeistofniveau
+vocht-vochtniveau
+lucht-vochtniveau
+sedimentatie
+!vochtcollectie
+vochtlaagje
+vochthoudend
+vrij vocht
+ascites
+stuwing
+!oedeem
+botoedeem
+beenmergoedeem
+weke delen oedeem
+perifocaal oedeem
+vasogeen oedeem
+cytotoxisch oedeem
+interstitieel oedeem
+alveolair oedeem
+!opzetting
+uitzetting
+dilatatie
+gedilateerd
+verwijd
+vernauwing
+stenose
+stenosering
+occlusie
+geoccludeerd
+subocclusie
+!ectasie
+ectatisch
+tortueus
+kinking
+!aneurysmatisch
+pseudoaneurysma
+compressie
+impressie
+indeuking
+verplaatsing
+massa-effect
+mass effect
+midline shift
+middellijnverschuiving
+herniatie
+inklemming
+!retractie
+verlittekening
+fibrose
+fibrotisch
+littekenweefsel
+!atrofie
+atrofisch
+vervetting
+vettige infiltratie
+vettige degeneratie
+hypertrofie
+hypertrofisch
+hyperplasie
+dysplasie
+aplasie
+agenesie
+hypoplasie
+asymmetrie
+asymmetrisch
+symmetrisch
+bilateraal
+unilateraal
+ipsilateraal
+contralateraal
+homolateraal
+diffuus
+focaal
+multifocaal
+segmentair
+subsegmentair
+lobair
+peribronchovasculair
+subpleuraal
+centrilobulair
+paraseptaal
+perifissuraal
+juxtapleuraal
+!matglas
+matglasopaciteit
+matglasverdichting
+crazy paving
+!consolidatie
+verdichting
+verdichtingshaard
+infiltraat
+atelectase
+atelectatisch
+dystelectase
+plaatatelectase
+compressieatelectase
+!luchtbronchogram
+air trapping
+mozaïekpatroon
+bronchiëctasieën
+tractiebronchiëctasieën
+honingraat
+honeycombing
+emfyseem
+bullae
+blebs
+caviteit
+caviterend
+cavitatie
+holtevorming
+abcedering
+abces
+pneumatocoele
+!nodulus
+noduli
+nodule
+haard
+haardje
+haardletsel
+!letsel
+letsels
+lesie
+massa
+tumor
+tumoraal
+tumorale massa
+proces
+expansief proces
+ruimte-innemend proces
+infiltratief proces
+weefselplus
+weefselvermeerdering
+weke delen zwelling
+weke delen massa
+zwelling
+verdikking
+!hydrops
+gewrichtsvocht
+gewrichtseffusie
+synoviale verdikking
+synovitis
+bursitis
+tendinose
+tendinopathie
+tendinitis
+peritendinitis
+tenosynovitis
+partiële ruptuur
+volledige ruptuur
+transmurale ruptuur
+fullthickness ruptuur
+partial thickness
+scheur
+scheurtje
+!fissuur
+fissuurlijn
+fractuurlijn
+!fractuur
+fracturen
+breuk
+!avulsie
+avulsiefractuur
+impressiefractuur
+compressiefractuur
+inzakkingsfractuur
+wigvormige inzakking
+spiraalfractuur
+dwarsfractuur
+schuine fractuur
+comminutieve fractuur
+verbrijzelingsfractuur
+meerfragmentaire fractuur
+gedisloceerd
+niet-gedisloceerd
+dislocatie
+!luxatie
+subluxatie
+!angulatie
+verkorting
+rotatiestand
+!alignatie
+malalignatie
+!callus
+callusvorming
+consolidatie van de fractuur
+pseudartrose
+non-union
+delayed union
+malunion
+!osteopenie
+osteoporose
+osteoporotisch
+demineralisatie
+ontkalking
+!artrose
+artrotisch
+degeneratief
+degeneratieve wijzigingen
+!osteofyten
+osteofytaire randwoekering
+randwoekering
+spondylofyten
+!subchondrale sclerose
+subchondrale cysten
+geodes
+!gewrichtsspleetversmalling
+gewrichtsspleet
+kraakbeenverlies
+!chondropathie
+chondromalacie
+kraakbeenletsel
+kraakbeendefect
+osteochondraal letsel
+osteochondraal defect
+!discopathie
+discusdegeneratie
+discushoogteverlies
+discusprotrusie
+!discushernia
+!hernia
+extrusie
+sequester
+gesequestreerd
+foraminale hernia
+extraforaminale hernia
+paramediane hernia
+mediane hernia
+bulging
+annulaire fissuur
+annulaire scheur
+!foraminale stenose
+recessusstenose
+!kanaalstenose
+spinale kanaalstenose
+wortelcompressie
+wortelcontact
+radiculaire compressie
+myelopathie
+myelomalacie
+syrinx
+!facetartrose
+uncartrose
+spondylartrose
+spondylose
+spondylolyse
+spondylolisthesis
+retrolisthesis
+anterolisthesis
+!scoliose
+kyfose
+lordose
+hyperlordose
+afvlakking van de lordose
+rectificatie
+!Modic-wijzigingen
+Schmorl-noduli
+hemangioom
+vertebraal hemangioom
+!botcontusie
+botkneuzing
+trabeculaire microfracturen
+stressfractuur
+stressreactie
+insufficiëntiefractuur
+!osteonecrose
+avasculaire necrose
+botinfarct
+osteomyelitis
+spondylodiscitis
+discitis
+artritis
+septische artritis
+erosies
+erosief
+!tendinose
+enthesopathie
+enthesitis
+calcificerende tendinitis
+calcificaties in de pees
+!lymfadenopathie
+adenopathie
+adenopathieën
+klier
+klieren
+lymfeklier
+lymfeklieren
+!reactieve klieren
+pathologische klieren
+vergrote klieren
+kortsas
+korte as
+lange as
+vethilus
+hilair vet
+verdikte cortex
+!splenomegalie
+!hepatomegalie
+hepatosplenomegalie
+!steatose
+leversteatose
+levercirrose
+cirrotisch
+nodulair leveroppervlak
+portale hypertensie
+varices
+collateralen
+!galstenen
+cholelithiasis
+choledocholithiasis
+sludge
+galblaashydrops
+!nefrolithiasis
+urolithiasis
+niersteen
+ureterlithiasis
+!hydronefrose
+pyelectasie
+pyelocaliëctasie
+calicectasie
+ureterohydronefrose
+corticomedullaire differentiatie
+schorsverdunning
+!niercyste
+Bosniak
+angiomyolipoom
+!divertikels
+diverticulose
+!diverticulitis
+appendicitis
+appendicolith
+fecaliet
+ileus
+subileus
+dunnedarmileus
+volvulus
+invaginatie
+!pneumoperitoneum
+vrije lucht
+pneumatosis
+pneumobilie
+aerobilie
+!pneumothorax
+spanningspneumothorax
+!pleuravocht
+pleura-effusie
+pleuravochtuitstorting
+pleurale verdikking
+pleurale plaques
+!pericardvocht
+pericardeffusie
+cardiomegalie
+!longembolie
+trombo-embolie
+!trombose
+diepe veneuze trombose
+trombus
+embolus
+vullingsdefect
+!dissectie
+intimaflap
+intramuraal hematoom
+penetrerend ulcus
+!aneurysma
+atheromatose
+atherosclerose
+!atherosclerotische plaques
+gemengde plaques
+zachte plaques
+verkalkte plaques
+coronaire verkalkingen
+!hematoom
+hematomen
+!bloeding
+hemorragie
+!subduraal hematoom
+!epiduraal hematoom
+!subarachnoïdale bloeding
+intraparenchymateuze bloeding
+intraventriculaire bloeding
+contusiehaard
+diffuse axonale schade
+!ischemie
+ischemisch
+!infarct
+lacunair infarct
+lacune
+lacunes
+territoriaal infarct
+waterscheidingsinfarct
+!leukoaraiose
+witte stof letsels
+wittestofletsels
+vasculaire leuko-encefalopathie
+microangiopathie
+microbloedingen
+!hersenatrofie
+corticale atrofie
+hippocampusatrofie
+!hydrocefalie
+ventrikeldilatatie
+normale drukhydrocefalie
+!demyelinisatie
+demyeliniserende letsels
+plaques
+!meningeoom
+glioom
+metastase
+metastasen
+metastatisch
+!secundaire letsels
+!lymfoom
+myeloom
+!sarcoom
+!carcinoom
+adenocarcinoom
+plaveiselcelcarcinoom
+!goedaardig
+benigne
+kwaadaardig
+maligne
+maligniteit
+!suspect
+verdacht
+onverdacht
+aspecifiek
+niet-specifiek
+!residu
+recidief
+progressie
+regressie
+stabiel
+status quo
+ongewijzigd
+gewijzigd
+nieuw
+toegenomen
+afgenomen
+in regressie
+in vergelijking met
+!vergeleken met het vorige onderzoek
+vorig onderzoek
+voorgaand onderzoek
+geen vergelijkend onderzoek
+!geen bijzonderheden
+geen afwijkingen
+zonder bijzonderheden
+binnen de normale grenzen
+normaal aspect
+normale morfologie
+normale grootte
+normaal kaliber
+!geen evidentie voor
+geen aanwijzingen voor
+niet uit te sluiten
+kan niet uitgesloten worden
+differentiaaldiagnose
+!suggestief voor
+compatibel met
+passend bij
+te correleren met
+klinische correlatie
+verdere evaluatie
+controle aanbevolen
+opvolging
+follow-up
+!incidentaloom
+toevalsbevinding
+@en
+hypodense
+hyperdense
+isodense
+hypointense
+hyperintense
+isointense
+hypoechoic
+hyperechoic
+isoechoic
+anechoic
+enhancement
+enhancing
+rim enhancement
+restricted diffusion
+diffusion restriction
+ground-glass opacity
+ground glass
+consolidation
+tree-in-bud
+crazy paving
+air bronchogram
+air trapping
+mosaic attenuation
+honeycombing
+bronchiectasis
+traction bronchiectasis
+centrilobular
+perilymphatic
+subpleural
+septal thickening
+interlobular septal thickening
+reticulation
+nodule
+micronodules
+mass
+lesion
+spiculated
+lobulated
+well-circumscribed
+ill-defined
+heterogeneous
+homogeneous
+necrosis
+cavitation
+calcification
+fat stranding
+perienteric stranding
+mass effect
+midline shift
+herniation
+edema
+bone marrow edema
+effusion
+joint effusion
+hemarthrosis
+lipohemarthrosis
+fat-fluid level
+fluid-fluid level
+avulsion
+displacement
+angulation
+comminuted
+impacted
+osteophytes
+subchondral sclerosis
+subchondral cyst
+joint space narrowing
+chondromalacia
+bone bruise
+contusion
+stress fracture
+insufficiency fracture
+osteonecrosis
+avascular necrosis
+lymphadenopathy
+splenomegaly
+hepatomegaly
+steatosis
+cirrhosis
+ascites
+hydronephrosis
+nephrolithiasis
+cholelithiasis
+pneumothorax
+pneumoperitoneum
+pleural effusion
+pericardial effusion
+pulmonary embolism
+deep vein thrombosis
+filling defect
+dissection
+intimal flap
+aneurysm
+pseudoaneurysm
+stenosis
+occlusion
+atherosclerosis
+leukoaraiosis
+white matter hyperintensities
+microbleeds
+lacunar infarct
+hydrocephalus
+atrophy
+incidental finding
+incidentaloma
+unremarkable
+no acute abnormality
+within normal limits

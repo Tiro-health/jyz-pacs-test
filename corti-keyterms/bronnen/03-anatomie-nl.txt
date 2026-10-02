@@ -1,0 +1,505 @@
+# Anatomie in het Nederlands (Vlaamse radiologische verslaggeving), per regio
+@nl
+# Neuro / hoofd
+!hersenparenchym
+hersenstam
+pons
+mesencefalon
+medulla oblongata
+cerebellum
+kleine hersenen
+cerebellaire hemisferen
+vermis
+frontaalkwab
+pariëtaalkwab
+temporaalkwab
+occipitaalkwab
+insula
+hippocampus
+amygdala
+basale kernen
+nucleus caudatus
+putamen
+globus pallidus
+thalamus
+capsula interna
+capsula externa
+corona radiata
+centrum semiovale
+corpus callosum
+periventriculaire witte stof
+juxtacorticale witte stof
+grijze stof
+witte stof
+schors
+cortex
+hypofyse
+hypofysesteel
+sella turcica
+chiasma opticum
+nervus opticus
+pinealis
+epifyse
+ventrikelsysteem
+zijventrikels
+derde ventrikel
+vierde ventrikel
+aquaduct
+foramen van Monro
+basale cisternen
+sulci
+gyri
+falx
+tentorium
+dura
+leptomeningen
+sinus sagittalis superior
+sinus transversus
+sinus sigmoideus
+sinus rectus
+vena van Galenus
+cirkel van Willis
+arteria carotis interna
+arteria cerebri media
+arteria cerebri anterior
+arteria cerebri posterior
+arteria basilaris
+arteria vertebralis
+arteria communicans posterior
+arteria communicans anterior
+rotsbeen
+mastoïd
+mastoïdcellen
+middenoor
+binnenoor
+cochlea
+labyrint
+inwendige gehoorgang
+uitwendige gehoorgang
+orbita
+oogbol
+bulbus
+retrobulbair vet
+oogspieren
+sinussen
+sinus maxillaris
+sinus frontalis
+sinus sphenoidalis
+ethmoïdcellen
+neusbijholten
+neusholte
+neustussenschot
+septum nasi
+conchae
+ostiomeatale complex
+nasofarynx
+orofarynx
+hypofarynx
+larynx
+stembanden
+epiglottis
+glandula parotis
+oorspeekselklier
+glandula submandibularis
+onderkaakspeekselklier
+schildklier
+schildklierkwab
+isthmus
+bijschildklieren
+halsvaten
+vena jugularis interna
+arteria carotis communis
+carotisbifurcatie
+arteria carotis externa
+# Wervelzuil
+!wervelzuil
+cervicale wervelzuil
+thoracale wervelzuil
+lumbale wervelzuil
+lumbosacrale overgang
+cervicothoracale overgang
+thoracolumbale overgang
+!wervellichaam
+wervellichamen
+dekplaat
+sluitplaat
+eindplaat
+tussenwervelschijf
+discus
+nucleus pulposus
+annulus fibrosus
+pediculus
+pedikels
+lamina
+processus spinosus
+processus transversus
+facetgewricht
+facetgewrichten
+uncovertebraal gewricht
+foramen intervertebrale
+foramina
+recessus lateralis
+spinaal kanaal
+wervelkanaal
+durale zak
+myelum
+ruggenmerg
+conus medullaris
+cauda equina
+zenuwwortels
+wortel
+ligamentum flavum
+atlas
+axis
+dens
+atlantodentaal
+atlanto-occipitaal
+sacrum
+heiligbeen
+coccyx
+stuitbeen
+sacro-iliacaal gewricht
+SI-gewrichten
+# Thorax
+!longparenchym
+longvelden
+longtoppen
+longbasis
+bovenkwab
+middenkwab
+onderkwab
+lingula
+fissuur
+grote fissuur
+kleine fissuur
+hilus
+hili
+mediastinum
+voorste mediastinum
+middelste mediastinum
+achterste mediastinum
+trachea
+carina
+hoofdbronchus
+bronchi
+bronchiolen
+pleura
+pleurale ruimte
+costofrenische hoek
+sinus costodiaphragmaticus
+diafragma
+middenrif
+hartschaduw
+hart
+pericard
+atrium
+linker atrium
+rechter atrium
+linker ventrikel
+rechter ventrikel
+interventriculair septum
+myocard
+kransslagaders
+aorta ascendens
+aortaboog
+aorta descendens
+aorta thoracalis
+truncus pulmonalis
+arteria pulmonalis
+longslagader
+longaders
+vena cava superior
+vena azygos
+oesofagus
+slokdarm
+thymus
+okselholte
+oksel
+axillaire klieren
+borstwand
+ribben
+sternum
+borstbeen
+clavicula
+sleutelbeen
+scapula
+schouderblad
+# Borst
+borstklier
+klierweefsel
+fibroglandulair weefsel
+tepel
+areola
+retromamillair
+bovenste buitenkwadrant
+bovenste binnenkwadrant
+onderste buitenkwadrant
+onderste binnenkwadrant
+axillaire uitloper
+pectoralisspier
+# Abdomen
+!leverparenchym
+lever
+leversegmenten
+linker leverkwab
+rechter leverkwab
+lobus caudatus
+leverhilus
+vena portae
+poortader
+levervenen
+galwegen
+intrahepatische galwegen
+extrahepatische galwegen
+ductus choledochus
+choledochus
+ductus hepaticus communis
+ductus cysticus
+galblaas
+galblaaswand
+pancreas
+pancreaskop
+pancreascorpus
+pancreasstaart
+processus uncinatus
+ductus van Wirsung
+ductus pancreaticus
+milt
+bijmilt
+nieren
+nier
+nierschors
+niersinus
+nierbekken
+pyelum
+calices
+ureter
+ureters
+blaas
+blaaswand
+bijnieren
+bijnier
+maag
+fundus
+antrum
+pylorus
+duodenum
+twaalfvingerige darm
+jejunum
+ileum
+terminaal ileum
+ileocaecale klep
+caecum
+appendix
+colon ascendens
+colon transversum
+colon descendens
+sigmoïd
+rectum
+endeldarm
+anaal kanaal
+mesenterium
+mesenteriaal vet
+omentum
+peritoneum
+retroperitoneum
+retroperitoneale ruimte
+truncus coeliacus
+arteria mesenterica superior
+arteria mesenterica inferior
+vena mesenterica superior
+vena lienalis
+arteria renalis
+nierarterie
+nierader
+vena cava inferior
+aorta abdominalis
+iliacale vaten
+arteria iliaca communis
+arteria iliaca externa
+arteria iliaca interna
+buikwand
+liesstreek
+lieskanaal
+navel
+# Bekken / uro-gyn
+prostaat
+transitiezone
+perifere zone
+centrale zone
+anterieur fibromusculair stroma
+zaadblaasjes
+vesiculae seminales
+testis
+teelbal
+bijbal
+epididymis
+scrotum
+urethra
+uterus
+baarmoeder
+endometrium
+myometrium
+cervix
+baarmoederhals
+ovaria
+eierstokken
+adnexen
+eileider
+vagina
+cavum Douglasi
+Douglas
+bekkenbodem
+# Schouder / bovenste lidmaat
+!schoudergewricht
+glenohumeraal gewricht
+acromioclaviculair gewricht
+AC-gewricht
+sternoclaviculair gewricht
+acromion
+coracoïd
+glenoïd
+labrum
+humeruskop
+tuberculum majus
+tuberculum minus
+sulcus intertubercularis
+rotatorenmanchet
+supraspinatuspees
+infraspinatuspees
+subscapularispees
+teres minor
+lange bicepspees
+bicepspees
+subacromiale bursa
+subacromiale ruimte
+elleboog
+ellebooggewricht
+olecranon
+radiuskop
+capitulum
+trochlea
+epicondylus lateralis
+epicondylus medialis
+pols
+polsgewricht
+carpus
+handwortel
+scafoïd
+os scaphoideum
+lunatum
+triquetrum
+pisiforme
+trapezium
+trapezoïdeum
+capitatum
+hamatum
+metacarpaal
+metacarpalen
+vingerkootjes
+falanx
+falangen
+duim
+radius
+ulna
+distale radius
+processus styloideus
+TFCC
+carpale tunnel
+kanaal van Guyon
+# Heup / bekken
+heup
+heupgewricht
+acetabulum
+heupkom
+dijbeenkop
+femurkop
+femurhals
+trochanter major
+trochanter minor
+os ilium
+os ischium
+os pubis
+symphysis pubica
+schaambeen
+zitbeen
+darmbeen
+iliopsoas
+gluteus medius
+gluteus minimus
+adductoren
+hamstrings
+# Knie / onderste lidmaat
+!kniegewricht
+femur
+dijbeen
+tibia
+scheenbeen
+fibula
+kuitbeen
+patella
+knieschijf
+femorotibiaal
+femoropatellair
+patellofemoraal
+mediale meniscus
+laterale meniscus
+meniscus
+meniscussen
+achterhoorn
+voorhoorn
+corpus van de meniscus
+voorste kruisband
+achterste kruisband
+kruisbanden
+mediale collaterale band
+laterale collaterale band
+collaterale banden
+patellapees
+quadricepspees
+trochlea
+femurcondyl
+mediale femurcondyl
+laterale femurcondyl
+tibiaplateau
+tibiale tuberositas
+popliteale holte
+knieholte
+Bakercyste
+pes anserinus
+tractus iliotibialis
+posterolaterale hoek
+enkel
+enkelgewricht
+tibiotalair gewricht
+subtalair gewricht
+talus
+calcaneus
+hielbeen
+naviculare
+cuboïd
+cuneiformia
+middenvoet
+voorvoet
+achtervoet
+metatarsaal
+metatarsalen
+tenen
+grote teen
+hallux
+sesambeentjes
+achillespees
+fascia plantaris
+peroneuspezen
+tibialis posterior pees
+tibialis anterior pees
+deltoïdligament
+voorste talofibulair ligament
+calcaneofibulair ligament
+syndesmose
+sinus tarsi
+Lisfranc-gewricht
+Chopart-gewricht
+kuitspieren
+gastrocnemius
+soleus

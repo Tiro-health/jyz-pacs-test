@@ -1,0 +1,451 @@
+# Diagnosen en pathologie per orgaansysteem
+@nl
+# Neuro
+ischemisch CVA
+herseninfarct
+hersenbloeding
+hersenkneuzing
+schedelfractuur
+schedelbasisfractuur
+hersenoedeem
+hersenabces
+encefalitis
+meningitis
+ventriculitis
+cerebrale veneuze sinustrombose
+sinustrombose
+aneurysma van de arteria communicans anterior
+arterioveneuze malformatie
+caverneus hemangioom
+cavernoom
+developmental venous anomaly
+capillaire telangiëctasie
+glioblastoom
+astrocytoom
+oligodendroglioom
+ependymoom
+medulloblastoom
+pilocytair astrocytoom
+hypofyseadenoom
+macroadenoom
+microadenoom
+craniofaryngioom
+vestibulair schwannoom
+schwannoom
+neurofibroom
+epidermoïdcyste
+dermoïdcyste
+arachnoïdcyste
+colloïdcyste
+pinealiscyste
+Rathke-cyste
+multiple sclerose
+neuromyelitis optica
+leuko-encefalopathie
+ziekte van Alzheimer
+frontotemporale dementie
+Lewy body
+ziekte van Parkinson
+multisysteematrofie
+progressieve supranucleaire parese
+mesiale temporale sclerose
+focale corticale dysplasie
+heterotopie
+polymicrogyrie
+lissencefalie
+schizencefalie
+holoprosencefalie
+# Hoofd-hals
+sinusitis
+pansinusitis
+mucosale zwelling
+mucosaverdikking
+retentiecyste
+mucocoele
+poliepen
+neuspoliepen
+otitis media
+mastoïditis
+cholesteatoom
+otosclerose
+tonsillitis
+peritonsillair abces
+retrofaryngeaal abces
+sialolithiasis
+sialadenitis
+pleomorf adenoom
+schildkliernodus
+schildkliernoduli
+struma
+multinodulair struma
+thyreoïditis
+colloïdnodus
+branchiogene cyste
+ductus thyreoglossus cyste
+# Thorax
+pneumonie
+bronchopneumonie
+lobaire pneumonie
+aspiratiepneumonie
+COVID-19-pneumonie
+tuberculose
+longabces
+empyeem
+longcarcinoom
+longnodus
+solitaire longnodus
+hamartoom
+carcinoïd
+longfibrose
+interstitiële longziekte
+idiopathische longfibrose
+sarcoïdose
+asbestose
+silicose
+hypersensitiviteitspneumonitis
+organiserende pneumonie
+longoedeem
+hartfalen
+decompensatio cordis
+pulmonale hypertensie
+pulmonale congestie
+stuwing
+mediastinitis
+thymoom
+teratoom
+mesothelioom
+pleuritis
+ribfractuur
+ribfracturen
+seriële ribfracturen
+fladderthorax
+longcontusie
+# Cardiovasculair
+coronairlijden
+coronaire stenose
+myocardinfarct
+myocarditis
+pericarditis
+cardiomyopathie
+hypertrofische cardiomyopathie
+gedilateerde cardiomyopathie
+aortastenose
+mitralisinsufficiëntie
+aorta-aneurysma
+abdominaal aorta-aneurysma
+aortadissectie
+penetrerend atherosclerotisch ulcus
+perifeer arterieel vaatlijden
+claudicatio
+carotisstenose
+varices
+veneuze insufficiëntie
+lymfoedeem
+# Abdomen
+acute buik
+cholecystitis
+acute cholecystitis
+lithiasische cholecystitis
+alithiasische cholecystitis
+cholangitis
+primaire scleroserende cholangitis
+pancreatitis
+acute pancreatitis
+chronische pancreatitis
+pseudocyste
+walled-off necrose
+pancreascarcinoom
+pancreasadenocarcinoom
+cystisch pancreasletsel
+leverhemangioom
+hemangioom
+focale nodulaire hyperplasie
+leveradenoom
+hepatocellulair carcinoom
+cholangiocarcinoom
+levermetastasen
+levercyste
+leverabces
+leversteatose
+focale vetsparing
+focale steatose
+hemochromatose
+levercirrose
+miltinfarct
+miltlaceratie
+miltruptuur
+bijnieradenoom
+bijnierincidentaloom
+feochromocytoom
+myelolipoom
+niercelcarcinoom
+oncocytoom
+nierinfarct
+pyelonefritis
+nierabces
+polycysteuze nieren
+hoefijzernier
+dubbelsysteem
+ureterocoele
+blaastumor
+cystitis
+gastritis
+maagulcus
+ulcus pepticum
+perforatie
+maagcarcinoom
+coeliakie
+enteritis
+ileitis
+colitis
+ischemische colitis
+pseudomembraneuze colitis
+appendicitis
+geperforeerde appendicitis
+mucocoele van de appendix
+diverticulitis
+gecompliceerde diverticulitis
+coloncarcinoom
+rectumcarcinoom
+poliep
+adenoom
+darmobstructie
+dunnedarmobstructie
+dikkedarmobstructie
+adhesies
+strengen
+bridenileus
+mesenteriale ischemie
+mesenteriale trombose
+mesenteriale adenitis
+inguinale hernia
+navelbreuk
+peritonitis
+peritoneale carcinomatose
+pseudomyxoma peritonei
+retroperitoneale fibrose
+# Uro-gyn
+prostaathypertrofie
+benigne prostaathyperplasie
+prostaatcarcinoom
+prostatitis
+varicocoele
+hydrocoele
+spermatocoele
+epididymitis
+orchitis
+testistorsie
+testistumor
+seminoom
+myoom
+uterusmyoom
+fibroom
+adenomyose
+endometriose
+endometrioom
+endometriumpoliep
+endometriumverdikking
+endometriumcarcinoom
+cervixcarcinoom
+ovariumcyste
+functionele cyste
+corpus luteum cyste
+dermoïd
+dermoïdcyste
+ovariumtorsie
+ovariumcarcinoom
+hydrosalpinx
+pyosalpinx
+tubo-ovarieel abces
+polycysteuze ovaria
+extra-uteriene zwangerschap
+# Borst
+fibroadenoom
+cyste
+cluster van microcysten
+gecompliceerde cyste
+mastopathie
+fibrocystische veranderingen
+ductale ectasie
+papilloom
+intraductaal papilloom
+radiaal litteken
+architectuurverstoring
+asymmetrische densiteit
+focale asymmetrie
+ontwikkelende asymmetrie
+ductaal carcinoma in situ
+DCIS
+invasief ductaal carcinoom
+invasief lobulair carcinoom
+mastitis
+borstabces
+vetnecrose
+olie-cyste
+gynaecomastie
+# Musculoskeletaal
+meniscusscheur
+horizontale scheur
+radiaire scheur
+longitudinale scheur
+complexe scheur
+lappenscheur
+flap tear
+rampletsel
+wortelscheur
+meniscusextrusie
+discoïde meniscus
+parameniscale cyste
+kruisbandruptuur
+VKB-ruptuur
+mucoïde degeneratie
+ganglion
+ganglioncyste
+intraosseus ganglion
+rotatorcuffruptuur
+supraspinatusruptuur
+impingement
+subacromiaal impingement
+frozen shoulder
+capsulitis adhaesiva
+adhesieve capsulitis
+labrumletsel
+labrumscheur
+schouderluxatie
+epicondylitis
+tenniselleboog
+golferselleboog
+carpaletunnelsyndroom
+scafoïdfractuur
+scafolunaire dissociatie
+DISI
+VISI
+ulnaire impactie
+ulna plus
+ulna minus
+trochanteritis
+gluteale tendinopathie
+labrumscheur van de heup
+femuroacetabulair impingement
+heupdysplasie
+coxartrose
+gonartrose
+femoropatellaire artrose
+patella alta
+patella baja
+patellaluxatie
+trochleadysplasie
+jumpers knee
+osteochondritis dissecans
+spontane osteonecrose van de knie
+plica
+achillespeesruptuur
+achillestendinopathie
+fasciitis plantaris
+hielspoor
+Haglund
+hallux valgus
+hallux rigidus
+platvoet
+holvoet
+tarsale coalitie
+enkelverstuiking
+enkeldistorsie
+syndesmoseletsel
+osteochondraal letsel van de talus
+stressfractuur van het metatarsale
+reumatoïde artritis
+artritis psoriatica
+jicht
+pseudojicht
+chondrocalcinose
+CPPD
+hydroxyapatiet
+spondylitis ankylopoetica
+sacroiliitis
+fibreuze dysplasie
+non-ossifiërend fibroom
+enchondroom
+osteochondroom
+exostose
+osteoïd osteoom
+reuzenceltumor
+aneurysmatische botcyste
+solitaire botcyste
+eenvoudige botcyste
+chondrosarcoom
+osteosarcoom
+Ewing-sarcoom
+botmetastasen
+lipoom
+liposarcoom
+hemangioom van de weke delen
+myositis ossificans
+spierscheur
+spierletsel
+spierhernia
+compartimentsyndroom
+cellulitis
+fasciitis
+necrotiserende fasciitis
+abces van de weke delen
+vreemd voorwerp
+# Pediatrie
+heupdysplasie
+invaginatie
+pylorushypertrofie
+hypertrofische pylorusstenose
+necrotiserende enterocolitis
+malrotatie
+bronchiolitis
+vesico-ureterale reflux
+pyelectasie
+kindermishandeling
+non-accidental injury
+groeischijf
+epifyse
+metafyse
+diafyse
+apofyse
+groeischijffractuur
+greenstick-fractuur
+torusfractuur
+buckle-fractuur
+plastische vervorming
+supracondylaire fractuur
+skeletleeftijd
+@en
+pneumonia
+pulmonary nodule
+lung cancer
+pulmonary fibrosis
+sarcoidosis
+emphysema
+pneumothorax
+pulmonary embolism
+aortic dissection
+abdominal aortic aneurysm
+appendicitis
+diverticulitis
+cholecystitis
+pancreatitis
+small bowel obstruction
+hepatocellular carcinoma
+renal cell carcinoma
+angiomyolipoma
+adrenal adenoma
+meniscal tear
+anterior cruciate ligament tear
+rotator cuff tear
+labral tear
+osteoarthritis
+rheumatoid arthritis
+gout
+osteomyelitis
+stroke
+intracranial hemorrhage
+subarachnoid hemorrhage
+subdural hematoma
+glioblastoma
+meningioma
+multiple sclerosis

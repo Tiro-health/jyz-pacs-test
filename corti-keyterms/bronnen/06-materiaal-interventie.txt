@@ -1,0 +1,238 @@
+# Materiaal, devices, chirurgische en interventionele status
+@nl
+!postoperatieve status
+post-operatieve status
+status na
+!osteosynthesemateriaal
+osteosynthese
+plaat- en schroefmateriaal
+platen en schroeven
+schroeven
+cerclage
+cerclagedraden
+Kirschnerdraden
+K-draden
+intramedullaire pen
+mergpen
+gammanagel
+PFNA
+DHS
+dynamische heupschroef
+tension band
+spondylodese
+pedikelschroeven
+staven
+interbody cage
+cage
+discusprothese
+laminectomie
+hemilaminectomie
+laminotomie
+foraminotomie
+discectomie
+microdiscectomie
+corpectomie
+vertebroplastie
+kyfoplastie
+cementlekkage
+!prothese
+totale heupprothese
+heupprothese
+hemiartroplastie
+kopprothese
+totale knieprothese
+knieprothese
+unicompartimentele knieprothese
+schouderprothese
+reverse schouderprothese
+omgekeerde schouderprothese
+enkelprothese
+cupcomponent
+femurcomponent
+tibiacomponent
+polyethyleen
+inlay
+liner
+loslating
+aseptische loslating
+radiolucente zoom
+heldere zoom
+periprothetische fractuur
+periprothetisch
+particelziekte
+stress shielding
+heterotope ossificaties
+kruisbandplastiek
+VKB-plastiek
+ligamentoplastiek
+transplantaat
+graft
+tibiale tunnel
+femorale tunnel
+meniscectomie
+partiële meniscectomie
+meniscushechting
+acromioplastie
+rotatorenmanchetherstel
+ankers
+hechtingsankers
+tenodese
+tenotomie
+artrodese
+osteotomie
+!pacemaker
+pacemakerleads
+defibrillator
+ICD
+CRT
+leadless pacemaker
+!centraal veneuze katheter
+CVK
+PICC-lijn
+PICC
+port-a-cath
+poortkatheter
+Swan-Ganz
+!endotracheale tube
+tube
+tracheacanule
+tracheostomie
+!maagsonde
+neusmaagsonde
+nasogastrische sonde
+PEG-sonde
+jejunostomie
+!thoraxdrain
+drain
+drains
+pleuradrain
+pigtail
+pigtaildrain
+percutane drainage
+nefrostomie
+nefrostomiekatheter
+!DJ-stent
+dubbel J-stent
+ureterstent
+blaassonde
+verblijfskatheter
+suprapubische katheter
+!stent
+coronaire stent
+carotisstent
+EVAR
+TEVAR
+endoprothese
+endoleak
+endolek
+type II endoleak
+vaatprothese
+bypass
+CABG
+sternotomie
+sternumdraden
+klepprothese
+mechanische klep
+biologische klep
+TAVI
+annuloplastiek
+mitraclip
+LAA-occluder
+coils
+coiling
+clip
+clips
+aneurysmaclip
+flow diverter
+embolisatie
+trombectomie
+trombolyse
+TIPS
+galwegstent
+ERCP
+sfincterotomie
+cholecystectomie
+appendectomie
+hemicolectomie
+colectomie
+sigmoïdresectie
+Hartmann-procedure
+stoma
+ileostomie
+colostomie
+anastomose
+naadlekkage
+gastrectomie
+gastric bypass
+sleeve gastrectomie
+maagband
+Whipple
+pancreaticoduodenectomie
+hepatectomie
+leverresectie
+levertransplantatie
+niertransplantatie
+nefrectomie
+partiële nefrectomie
+prostatectomie
+TURP
+cystectomie
+hysterectomie
+ovariëctomie
+sectio
+keizersnede
+spiraaltje
+IUD
+mastectomie
+lumpectomie
+tumorectomie
+borstsparende chirurgie
+okselklieruitruiming
+schildwachtklier
+sentinel
+borstprothese
+borstimplantaat
+siliconenimplantaat
+kapselcontractuur
+intracapsulaire ruptuur
+extracapsulaire ruptuur
+expander
+clipmarker
+marker
+harpoen
+lobectomie
+segmentectomie
+wigresectie
+pneumonectomie
+thoracoscopie
+VATS
+craniotomie
+craniëctomie
+shunt
+ventriculoperitoneale drain
+VP-drain
+externe ventrikeldrain
+EVD
+cochleair implantaat
+radiotherapie
+bestraling
+postradiotherapeutisch
+radiofrequentie-ablatie
+RFA
+microgolfablatie
+cryoablatie
+TACE
+SIRT
+biopsie
+punctie
+cytologische punctie
+FNAC
+naaldbiopsie
+stanzebiopsie
+vacuümbiopsie
+echogeleide punctie
+CT-geleide biopsie
+infiltratie
+facetinfiltratie
+epidurale infiltratie
+wortelinfiltratie
