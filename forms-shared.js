@@ -1275,26 +1275,7 @@
     // ═══════════════════════════════════════════════════════════════════════
     // Gemini — beeld naar veldwaarden
     // ═══════════════════════════════════════════════════════════════════════
-    const DEFAULT_FORM_FILL_PROMPT = `Je bent een gespecialiseerde radiologie-assistent. Op de bijgevoegde beelden staat informatie over een radiologisch onderzoek (bijvoorbeeld een schermafdruk van een aanvraag, een verslag, een PACS-venster of een papieren document).
-
-Lees de beelden zorgvuldig en vul daarmee de onderstaande formuliervelden in.
-
-=== FORMULIERVELDEN ===
-{velden}
-=== EINDE FORMULIERVELDEN ===
-
-REGELS:
-- Geef UITSLUITEND een geldig JSON-object terug, zonder codeblok-markering en zonder uitleg
-- Gebruik de veld-id als sleutel, exact zoals hierboven vermeld
-- Vul een veld alleen in als de informatie werkelijk op het beeld staat; verzin NOOIT waarden
-- Laat een veld volledig weg uit de JSON wanneer je de informatie niet terugvindt
-- Bij een keuzeveld mag je uitsluitend één van de opgegeven opties gebruiken, letterlijk overgenomen
-- Bij een meerkeuzeveld geef je een array van opties
-- Datums in het formaat JJJJ-MM-DD
-- Neem tekst letterlijk over uit het beeld; vertaal of herformuleer niet
-
-Voorbeeld van een geldig antwoord:
-{"veld_id_1": "waarde", "veld_id_2": ["optie a", "optie b"]}`;
+    const DEFAULT_FORM_FILL_PROMPT = "";
 
     const AiImageFill = {
         PROMPT_KEY: "formFillActionUrl",

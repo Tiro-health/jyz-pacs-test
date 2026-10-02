@@ -2,7 +2,7 @@
  * beveiliging.js — inventaris van alle invulvelden, met PII/AI-classificatie
  * ----------------------------------------------------------------------------
  * Eén plek waar je ziet welke velden er over de hele site bestaan, en per veld
- * aanduidt of de inhoud naar een AI-model mag ("AI-veilig") of niet ("PII").
+ * aanduidt of de inhoud naar een AI-model mag ("AI") of niet ("PII").
  *
  * De lijst wordt niet met de hand bijgehouden maar gescand, zodat "Scan
  * opnieuw" ook velden vindt die er later bijkomen. Gescand worden:
@@ -41,14 +41,14 @@
     // niveau = wie de keuze maakt. "organisatie" zijn de velden die centraal
     // vastliggen — het ziekenhuis bepaalt wat daarvan naar een model mag.
     // "gebruiker" zijn de tekstvelden waarin de radioloog zelf schrijft: die
-    // staan standaard op AI-veilig, maar hij kan er gericht velden uithalen.
+    // staan standaard op AI, maar hij kan er gericht velden uithalen.
     const GROEPEN = [
         { id: "formulier",  niveau: "organisatie", naam: "Formuliervelden",        uitleg: "Uit de velddefinities van de QC- en casusformulieren." },
         { id: "tiro",       niveau: "organisatie", naam: "Tiro-templatevelden",    uitleg: "Veldnamen die de Tiro-formulieren in gebruik lieten zien. Groeit aan naarmate je de formulieren gebruikt." },
         { id: "pacs",       niveau: "organisatie", naam: "PACS-parameters",        uitleg: "Waarmee het PACS de pagina opstart." },
         { id: "prompt",     niveau: "organisatie", naam: "Prompt-placeholders",    uitleg: "Wat letterlijk in een prompt ingevuld wordt — hier telt de keuze het zwaarst." },
         { id: "calculator", niveau: "organisatie", naam: "Calculator-invoer",      uitleg: "Metingen en scores uit de calculatoren." },
-        { id: "verslag",    niveau: "gebruiker",   naam: "Textuele verslagvelden", uitleg: "Veldnamen uit de standaardverslagen, per onderzoekstype. Staan standaard op AI-veilig; zet hier zelf de velden om die patiëntgegevens kunnen bevatten." },
+        { id: "verslag",    niveau: "gebruiker",   naam: "Textuele verslagvelden", uitleg: "Veldnamen uit de standaardverslagen, per onderzoekstype. Staan standaard op AI; zet hier zelf de velden om die patiëntgegevens kunnen bevatten." },
         { id: "pagina",     niveau: "gebruiker",   naam: "Overige invoervelden",   uitleg: "Invoervelden van de pagina's zelf: instellingen, zoekbalken, sleutels." },
     ];
 
