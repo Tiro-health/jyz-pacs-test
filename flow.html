@@ -175,6 +175,7 @@
                 <button id="names-modal-btn" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">Namenlijsten</button>
             </div>
             <div class="flex justify-end gap-4 px-4 pb-2.5">
+                <button id="beveiliging-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🔒 Beveiliging</button>
                 <button id="calc-overview-btn" type="button" class="text-[11px] text-neutral-500 dark:text-neutral-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:underline cursor-pointer">🧮 Calculatoren</button>
             </div>
 
@@ -552,6 +553,51 @@
             </div>
         </div>
 
+        <!-- ── Beveiliging: alle invulvelden, AI-veilig of PII ─────────────────── -->
+        <div id="beveiliging-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+            <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col" style="max-height:88vh">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
+                    <div class="min-w-0">
+                        <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🔒 Beveiliging — invulvelden</h2>
+                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
+                            <span class="font-medium text-red-500">PII</span> = persoonsgegevens, mogen niet naar een AI-model ·
+                            <span class="font-medium text-green-600 dark:text-green-500">AI-veilig</span> = mag mee in een prompt
+                        </p>
+                    </div>
+                    <button id="beveiliging-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none flex-shrink-0">✕</button>
+                </div>
+
+                <!-- Overzicht + bediening -->
+                <div class="px-5 py-3 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0 space-y-2.5">
+                    <div id="beveiliging-totalen" class="flex items-center gap-3 flex-wrap text-xs"></div>
+                    <div class="flex gap-2 flex-wrap items-center">
+                        <div class="relative flex-1 min-w-[160px]">
+                            <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                            <input id="beveiliging-zoek" type="text" placeholder="Zoek een veld…" class="w-full pl-8 pr-3 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
+                        </div>
+                        <select id="beveiliging-filter" class="px-3 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="alle">Alle velden</option>
+                            <option value="pii">Enkel PII</option>
+                            <option value="ai">Enkel AI-veilig</option>
+                            <option value="nieuw">Enkel nieuw</option>
+                        </select>
+                        <button id="beveiliging-scan" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+                            Scan opnieuw
+                        </button>
+                    </div>
+                    <p id="beveiliging-scanmelding" class="text-xs text-neutral-400 dark:text-neutral-500"></p>
+                </div>
+
+                <div id="beveiliging-inhoud" class="flex-1 overflow-y-auto px-5 py-4 text-sm"></div>
+
+                <div class="px-5 py-3 border-t border-neutral-200 dark:border-slate-700 flex-shrink-0 flex items-center gap-3 flex-wrap">
+                    <button id="beveiliging-export" type="button" class="text-xs text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">⬇ Exporteer lijst (JSON)</button>
+                    <span class="text-xs text-neutral-400 dark:text-neutral-500">De keuzes worden meteen bewaard en reizen mee met de configuratie-export op de QC-pagina.</span>
+                </div>
+            </div>
+        </div>
+
         <!-- ── Textueel back-up logica modal ──────────────────────────────────── -->
         <div id="logic-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col" style="max-height:85vh">
@@ -640,6 +686,11 @@
         <script src="calculators.js"></script>
         <!-- Voor het inlezen van een namenlijst in de personendatabank. -->
         <script src="forms-shared.js"></script>
+        <!-- Voor de beveiligingslijst: de velddefinities van de formulieren en
+             de scanner die alle invulvelden van de site verzamelt. -->
+        <script src="qc-schema.js"></script>
+        <script src="cases-schema.js"></script>
+        <script src="beveiliging.js"></script>
         <script>
         const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
 
@@ -5179,6 +5230,192 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         document.getElementById('calc-catalog-search').addEventListener('input', e => renderCalcCatalog(e.target.value));
         document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
         document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+        // ── Beveiliging: alle invulvelden, AI-veilig of PII ──────────────────────
+        // De lijst komt uit beveiliging.js. Hier staat enkel de weergave: groepen
+        // met een teller, per veld een of/of-pil, en zoeken/filteren erboven.
+        (function beveiliging() {
+            const VB = window.VELDBEVEILIGING;
+            if (!VB) return;
+
+            const modal     = document.getElementById('beveiliging-modal');
+            const inhoud    = document.getElementById('beveiliging-inhoud');
+            const totalenEl = document.getElementById('beveiliging-totalen');
+            const zoekEl    = document.getElementById('beveiliging-zoek');
+            const filterEl  = document.getElementById('beveiliging-filter');
+            const scanBtn   = document.getElementById('beveiliging-scan');
+            const meldingEl = document.getElementById('beveiliging-scanmelding');
+
+            let velden = [];
+            let nieuweSleutels = new Set();   // sinds de vorige scan bijgekomen
+            let openGroepen = new Set();
+
+            const PIL_AAN  = 'text-white border-transparent';
+            const PIL_UIT  = 'bg-transparent text-neutral-400 dark:text-neutral-500 border-neutral-300 dark:border-slate-600 hover:border-neutral-400';
+
+            function tekstVan(v) { return (v.label + ' ' + (v.detail || '')).toLowerCase(); }
+
+            function zichtbareVelden() {
+                const q = zoekEl.value.trim().toLowerCase();
+                const f = filterEl.value;
+                const map = VB.load();
+                return velden.filter(v => {
+                    if (q && !tekstVan(v).includes(q)) return false;
+                    if (f === 'pii'   && VB.klasse(v, map) !== VB.PII) return false;
+                    if (f === 'ai'    && VB.klasse(v, map) !== VB.AI) return false;
+                    if (f === 'nieuw' && !nieuweSleutels.has(v.key)) return false;
+                    return true;
+                });
+            }
+
+            function renderTotalen() {
+                const t = VB.tel(velden);
+                totalenEl.innerHTML = `
+                    <span class="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-300 font-medium">${t.totaal} velden</span>
+                    <span class="px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-medium">${t.pii} PII</span>
+                    <span class="px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">${t.ai} AI-veilig</span>
+                    ${nieuweSleutels.size ? `<span class="px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 font-medium">${nieuweSleutels.size} nieuw</span>` : ''}`;
+            }
+
+            function render() {
+                const zicht = zichtbareVelden();
+                const map = VB.load();
+                if (!velden.length) {
+                    inhoud.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-6 text-center">Nog niet gescand. Druk op “Scan opnieuw”.</p>`;
+                    return;
+                }
+                if (!zicht.length) {
+                    inhoud.innerHTML = `<p class="text-xs text-neutral-400 dark:text-neutral-500 italic py-6 text-center">Geen velden die aan de filter voldoen.</p>`;
+                    return;
+                }
+
+                inhoud.innerHTML = VB.GROEPEN.map(groep => {
+                    const inGroep = zicht.filter(v => v.groep === groep.id);
+                    if (!inGroep.length) return '';
+                    const t = VB.tel(inGroep, map);
+                    const open = openGroepen.has(groep.id);
+                    return `
+                    <details class="mb-2 rounded-lg border border-neutral-200 dark:border-slate-700 overflow-hidden" data-groep="${groep.id}"${open ? ' open' : ''}>
+                        <summary class="flex items-center gap-2 px-3 py-2 cursor-pointer bg-neutral-50 dark:bg-slate-800/50 hover:bg-neutral-100 dark:hover:bg-slate-800">
+                            <span class="text-xs font-semibold text-neutral-800 dark:text-neutral-100">${esc(groep.naam)}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-white dark:bg-slate-700 text-neutral-500 dark:text-neutral-300 border border-neutral-200 dark:border-slate-600">${t.totaal}</span>
+                            ${t.pii ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">${t.pii} PII</span>` : ''}
+                            <span class="ml-auto flex items-center gap-1.5" data-stop>
+                                <button type="button" data-bulk="ai" data-groep="${groep.id}" class="text-[10px] px-2 py-0.5 rounded border border-green-300 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30">alles AI-veilig</button>
+                                <button type="button" data-bulk="pii" data-groep="${groep.id}" class="text-[10px] px-2 py-0.5 rounded border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">alles PII</button>
+                            </span>
+                        </summary>
+                        <p class="px-3 pt-2 text-[11px] text-neutral-400 dark:text-neutral-500">${esc(groep.uitleg)}</p>
+                        <div class="divide-y divide-neutral-100 dark:divide-slate-800">
+                            ${inGroep.map(v => rijHtml(v, VB.klasse(v, map))).join('')}
+                        </div>
+                    </details>`;
+                }).join('');
+            }
+
+            function rijHtml(v, stand) {
+                const pii = stand === VB.PII;
+                return `
+                <div class="flex items-center gap-3 px-3 py-1.5" data-key="${esc(v.key)}">
+                    <div class="min-w-0 flex-1">
+                        <span class="text-xs text-neutral-800 dark:text-neutral-100">${esc(v.label)}</span>
+                        ${nieuweSleutels.has(v.key) ? `<span class="ml-1.5 text-[9px] px-1 py-0.5 rounded bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 align-middle">nieuw</span>` : ''}
+                        ${v.detail ? `<span class="block text-[10px] text-neutral-400 dark:text-neutral-500 truncate">${esc(v.detail)}</span>` : ''}
+                    </div>
+                    <div class="flex flex-shrink-0 rounded-full overflow-hidden border ${pii ? 'border-red-500' : 'border-green-600'}">
+                        <button type="button" data-zet="pii" class="text-[10px] font-semibold px-2.5 py-1 border-r ${pii ? 'bg-red-500 ' + PIL_AAN : PIL_UIT}">🔒 PII</button>
+                        <button type="button" data-zet="ai" class="text-[10px] font-semibold px-2.5 py-1 ${!pii ? 'bg-green-600 ' + PIL_AAN : PIL_UIT}">✓ AI-veilig</button>
+                    </div>
+                </div>`;
+            }
+
+            // Eén listener voor de hele lijst: de inhoud wordt telkens opnieuw
+            // opgebouwd, dus per knop een listener hangen loopt vol.
+            inhoud.addEventListener('click', e => {
+                const bulk = e.target.closest('[data-bulk]');
+                if (bulk) {
+                    e.preventDefault();
+                    const groepId = bulk.dataset.groep;
+                    const inGroep = zichtbareVelden().filter(v => v.groep === groepId);
+                    VB.zetVeel(inGroep, bulk.dataset.bulk);
+                    openGroepen.add(groepId);
+                    renderTotalen(); render();
+                    return;
+                }
+                const zet = e.target.closest('[data-zet]');
+                if (!zet) return;
+                const rij = zet.closest('[data-key]');
+                if (!rij) return;
+                VB.zet(rij.dataset.key, zet.dataset.zet);
+                // Enkel deze rij hertekenen houdt de scrollpositie waar ze staat.
+                const v = velden.find(x => x.key === rij.dataset.key);
+                if (v) rij.outerHTML = rijHtml(v, zet.dataset.zet);
+                renderTotalen();
+            });
+
+            // Open/dicht onthouden, zodat een herteken de groepen niet dichtklapt.
+            inhoud.addEventListener('toggle', e => {
+                const d = e.target.closest('details[data-groep]');
+                if (!d) return;
+                d.open ? openGroepen.add(d.dataset.groep) : openGroepen.delete(d.dataset.groep);
+            }, true);
+
+            function toonScanmelding(resultaat, nieuw) {
+                const tijd = new Date(resultaat.ts).toLocaleString('nl-BE');
+                meldingEl.textContent = nieuw === null
+                    ? `Laatste scan: ${tijd} — ${resultaat.velden.length} velden.`
+                    : `Gescand op ${tijd}: ${resultaat.velden.length} velden, waarvan ${nieuw} nieuw.`;
+            }
+
+            async function scanNu() {
+                scanBtn.disabled = true;
+                meldingEl.textContent = 'Bezig met scannen…';
+                const vorige = new Set(velden.map(v => v.key));
+                const resultaat = await VB.scan({ examTypes: state.examTypes });
+                velden = resultaat.velden;
+                nieuweSleutels = vorige.size
+                    ? new Set(velden.filter(v => !vorige.has(v.key)).map(v => v.key))
+                    : new Set();
+                toonScanmelding(resultaat, nieuweSleutels.size);
+                renderTotalen(); render();
+                scanBtn.disabled = false;
+            }
+
+            document.getElementById('beveiliging-btn').addEventListener('click', async () => {
+                modal.classList.remove('hidden');
+                zoekEl.value = ''; filterEl.value = 'alle';
+                const vorig = VB.laatsteScan();
+                if (vorig && vorig.velden && vorig.velden.length) {
+                    velden = vorig.velden;
+                    toonScanmelding(vorig, null);
+                    renderTotalen(); render();
+                } else {
+                    await scanNu();
+                }
+            });
+            document.getElementById('beveiliging-close').addEventListener('click', () => modal.classList.add('hidden'));
+            modal.addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+            scanBtn.addEventListener('click', scanNu);
+            zoekEl.addEventListener('input', render);
+            filterEl.addEventListener('change', render);
+
+            document.getElementById('beveiliging-export').addEventListener('click', () => {
+                const map = VB.load();
+                const payload = {
+                    kind: 'veld-beveiliging',
+                    version: '1.0',
+                    timestamp: new Date().toISOString(),
+                    velden: velden.map(v => ({ ...v, classificatie: VB.klasse(v, map) })),
+                };
+                const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'veld-beveiliging-' + new Date().toISOString().slice(0, 10) + '.json';
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        })();
 
         </script>
 

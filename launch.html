@@ -1529,6 +1529,9 @@
              het laden niets aan de pagina, ze definiëren enkel. -->
         <script src="forms-shared.js"></script>
         <script src="dmo-license.js"></script>
+        <!-- Onthoudt de veldnamen van de Tiro-formulieren voor de
+             beveiligingslijst op de flow-pagina. -->
+        <script src="beveiliging.js"></script>
 
         <script>
             // ============================================
@@ -3928,12 +3931,26 @@ Patiënt: {patient_info}
             let latestClinicalResponse = null;
             let latestContextResponse = null;
             let latestPreviousStudiesResponse = null;
+
+            // De veldnamen van de Tiro-formulieren staan nergens in dit project:
+            // de SDK bouwt ze op. Zodra een formulier een antwoord oplevert
+            // onthouden we welke velden erin zaten, zodat de beveiligingslijst op
+            // de flow-pagina ze bij een volgende scan kent.
+            function _onthoudTiroVelden(formulier, response) {
+                const VB = window.VELDBEVEILIGING;
+                if (!VB || !response) return;
+                try { VB.onthoudTiroVelden(formulier, VB.veldnamenUitResponse(response)); }
+                catch (_) { /* een volle opslag mag de pagina niet breken */ }
+            }
+
             clinicalForm.addEventListener("tiro-update", (event) => {
                 latestClinicalResponse = event.detail?.response || null;
+                _onthoudTiroVelden("Klinische informatie", latestClinicalResponse);
                 _pipUpdateStudyHeader?.();
             });
             contextForm.addEventListener("tiro-update", (event) => {
                 latestContextResponse = event.detail?.response || null;
+                _onthoudTiroVelden("Study and patient information", latestContextResponse);
                 _pipUpdateStudyHeader?.();
             });
 

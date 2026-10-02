@@ -897,6 +897,9 @@
                         prompts: Object.keys(prompts).length ? prompts : null,
                         dicomCodesBase: dicomBase && dicomBase.length ? dicomBase : null,
                         dicomCodesExtra: dicomExtra.length ? dicomExtra : null,
+                        // De PII/AI-keuzes per invulveld, gezet op de flow-pagina
+                        // onder Beveiliging.
+                        veldBeveiliging: JSON.parse(localStorage.getItem('veldBeveiliging') || 'null'),
                     };
                     downloadJson(payload, 'flow-config');
                 });
@@ -1127,6 +1130,7 @@
                         if (data.prompts) Object.entries(data.prompts).forEach(([k, v]) => localStorage.setItem(k, v));
                         if (data.dicomCodesBase)  localStorage.setItem('dicomCodesBase',  JSON.stringify(data.dicomCodesBase));
                         if (data.dicomCodesExtra) localStorage.setItem('dicomCodesExtra', JSON.stringify(data.dicomCodesExtra));
+                        if (data.veldBeveiliging) localStorage.setItem('veldBeveiliging', JSON.stringify(data.veldBeveiliging));
                         if (data.nameLists) JyzForms.NameLists.importFrom(data.nameLists);
                         // Ouder gecombineerd bestand: neem de records alsnog mee.
                         if (data.formRecords) await JyzForms.RecordStore.importAll(data.formRecords);
