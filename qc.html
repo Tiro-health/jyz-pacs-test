@@ -751,7 +751,7 @@
                 async function tryDecrypt() {
                     const pin = pinInput.value;
                     if (_exportPinPending) {
-                        if (pin === '8800') {
+                        if (pin === '9000') {
                             _exportPinPending = false;
                             _exportPin = pin;          // nodig om flow.json te openen
                             closePinModal();
@@ -798,7 +798,7 @@
                 });
                 pinModal.addEventListener("click", (e) => { if (e.target === pinModal) closePinModal(); });
 
-                // Export / Import button (PIN 8800)
+                // Export / Import button (PIN 9000)
                 document.getElementById('export-import-btn').addEventListener('click', () => {
                     _exportPinPending = true;
                     activeBlob = null;

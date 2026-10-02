@@ -13,7 +13,7 @@
  * bestand weg bij wie er toevallig langs surft of het indexeert — het is geen
  * bescherming tegen iemand die de pagina leest.
  *
- * Gebruik:  node scripts/versleutel-flow-json.mjs flow-defaults.json 8800 > flow.json
+ * Gebruik:  node scripts/versleutel-flow-json.mjs flow-defaults.json 9000 > flow.json
  * ==========================================================================*/
 import { readFileSync } from "node:fs";
 import { webcrypto } from "node:crypto";

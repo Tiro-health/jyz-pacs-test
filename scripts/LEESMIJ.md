@@ -27,7 +27,7 @@ lokaal; je hebt hem nodig om `flow.json` opnieuw te maken.
 node scripts/extraheer-defaults.mjs > flow-defaults.json
 
 # 2. versleutelen naar het bestand dat de site ophaalt
-node scripts/versleutel-flow-json.mjs flow-defaults.json 8800 > flow.json
+node scripts/versleutel-flow-json.mjs flow-defaults.json 9000 > flow.json
 ```
 
 Heb je de templates via de flow-pagina aangepast, dan exporteer je ze op de
