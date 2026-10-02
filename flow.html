@@ -553,19 +553,15 @@
             </div>
         </div>
 
-        <!-- ── Beveiliging: alle invulvelden, AI-veilig of PII ─────────────────── -->
+        <!-- ── Beveiliging: alle invulvelden, AI of PII ────────────────────────── -->
         <div id="beveiliging-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
             <div class="bg-white dark:bg-[#1a2530] border border-neutral-200 dark:border-slate-700 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col" style="max-height:88vh">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-neutral-200 dark:border-slate-700 flex-shrink-0">
                     <div class="min-w-0">
                         <h2 class="text-sm font-semibold text-neutral-900 dark:text-neutral-100">🔒 Beveiliging — invulvelden</h2>
                         <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5">
-                            <span class="font-medium text-red-500">PII</span> = persoonsgegevens, mogen niet naar een AI-model ·
-                            <span class="font-medium text-green-600 dark:text-green-500">AI-veilig</span> = mag mee in een prompt
-                        </p>
-                        <p class="text-xs text-neutral-400 dark:text-neutral-500 mt-1">
-                            <span class="font-medium text-indigo-500 dark:text-indigo-400">🏛 Organisatie</span> legt centraal vast wat er mag ·
-                            <span class="font-medium text-amber-600 dark:text-amber-500">👤 Gebruiker</span> kiest het zelf in zijn eigen tekstvelden
+                            <span class="font-medium text-red-500">PII</span> = personally identifiable information ·
+                            <span class="font-medium text-green-600 dark:text-green-500">AI</span> = AI safe information
                         </p>
                     </div>
                     <button id="beveiliging-close" type="button" class="p-1.5 rounded hover:bg-neutral-100 dark:hover:bg-accent text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors text-lg leading-none flex-shrink-0">✕</button>
@@ -582,7 +578,7 @@
                         <select id="beveiliging-filter" class="px-3 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-700 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500">
                             <option value="alle">Alle velden</option>
                             <option value="pii">Enkel PII</option>
-                            <option value="ai">Enkel AI-veilig</option>
+                            <option value="ai">Enkel AI</option>
                             <option value="nieuw">Enkel nieuw</option>
                         </select>
                         <button id="beveiliging-scan" type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors flex-shrink-0">
@@ -5235,7 +5231,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
         document.getElementById('calc-overview-close').addEventListener('click', () => document.getElementById('calc-overview-modal').classList.add('hidden'));
         document.getElementById('calc-overview-modal').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
 
-        // ── Beveiliging: alle invulvelden, AI-veilig of PII ──────────────────────
+        // ── Beveiliging: alle invulvelden, AI of PII ────────────────────────────
         // De lijst komt uit beveiliging.js. Hier staat enkel de weergave: groepen
         // met een teller, per veld een of/of-pil, en zoeken/filteren erboven.
         (function beveiliging() {
@@ -5277,7 +5273,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                 totalenEl.innerHTML = `
                     <span class="px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-slate-800 text-neutral-600 dark:text-neutral-300 font-medium">${t.totaal} velden</span>
                     <span class="px-2 py-0.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-medium">${t.pii} PII</span>
-                    <span class="px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">${t.ai} AI-veilig</span>
+                    <span class="px-2 py-0.5 rounded-full bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-medium">${t.ai} AI</span>
                     ${nieuweSleutels.size ? `<span class="px-2 py-0.5 rounded-full bg-cyan-50 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 font-medium">${nieuweSleutels.size} nieuw</span>` : ''}`;
             }
 
@@ -5313,7 +5309,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                             <span class="text-[10px] px-1.5 py-0.5 rounded-full bg-white dark:bg-slate-700 text-neutral-500 dark:text-neutral-300 border border-neutral-200 dark:border-slate-600">${t.totaal}</span>
                             ${t.pii ? `<span class="text-[10px] px-1.5 py-0.5 rounded-full bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400">${t.pii} PII</span>` : ''}
                             <span class="ml-auto flex items-center gap-1.5" data-stop>
-                                <button type="button" data-bulk="ai" data-groep="${groep.id}" class="text-[10px] px-2 py-0.5 rounded border border-green-300 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30">alles AI-veilig</button>
+                                <button type="button" data-bulk="ai" data-groep="${groep.id}" class="text-[10px] px-2 py-0.5 rounded border border-green-300 dark:border-green-800 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/30">alles AI</button>
                                 <button type="button" data-bulk="pii" data-groep="${groep.id}" class="text-[10px] px-2 py-0.5 rounded border border-red-300 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30">alles PII</button>
                             </span>
                         </summary>
@@ -5337,7 +5333,7 @@ XXX // Beschrijf hier de gradatie systemen van de opgestomde gradatie's besproke
                     </div>
                     <div class="flex flex-shrink-0 rounded-full overflow-hidden border ${pii ? 'border-red-500' : 'border-green-600'}">
                         <button type="button" data-zet="pii" class="text-[10px] font-semibold px-2.5 py-1 border-r ${pii ? 'bg-red-500 ' + PIL_AAN : PIL_UIT}">🔒 PII</button>
-                        <button type="button" data-zet="ai" class="text-[10px] font-semibold px-2.5 py-1 ${!pii ? 'bg-green-600 ' + PIL_AAN : PIL_UIT}">✓ AI-veilig</button>
+                        <button type="button" data-zet="ai" class="text-[10px] font-semibold px-2.5 py-1 ${!pii ? 'bg-green-600 ' + PIL_AAN : PIL_UIT}">✓ AI</button>
                     </div>
                 </div>`;
             }
