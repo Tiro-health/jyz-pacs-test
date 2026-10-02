@@ -2,3 +2,7 @@ node_modules
 dist
 .env
 .env.local
+
+# De leesbare standaardinhoud hoort niet in de repo: flow.json draagt ze
+# versleuteld. Zie scripts/LEESMIJ.md.
+flow-defaults.json

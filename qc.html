@@ -304,6 +304,12 @@
                     </div>
 
                 </div>
+
+                <!-- Standaardinhoud: die zit niet in de pagina's maar in flow.json -->
+                <div class="px-5 py-3 border-t border-neutral-200 dark:border-slate-700 flex items-center gap-3 flex-wrap">
+                    <button id="load-defaults-btn" type="button" class="text-xs font-medium text-cyan-600 dark:text-cyan-400 hover:underline cursor-pointer">⬇ Standaardtemplates en prompts (flow.json)</button>
+                    <span id="load-defaults-status" class="text-xs text-neutral-400 dark:text-neutral-500">Downloadt het bestand en zet de standaardinhoud meteen klaar.</span>
+                </div>
             </div>
         </div>
 
@@ -714,6 +720,7 @@
                 const pinError = document.getElementById("pin-error");
                 let activeBlob = null;
                 let _exportPinPending = false;
+                let _exportPin = null;
 
                 async function decrypt(blob, pin) {
                     const data = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
@@ -746,6 +753,7 @@
                     if (_exportPinPending) {
                         if (pin === '8800') {
                             _exportPinPending = false;
+                            _exportPin = pin;          // nodig om flow.json te openen
                             closePinModal();
                             document.getElementById('export-import-modal').classList.remove('hidden');
                             refreshCounts();
@@ -815,7 +823,7 @@
                 const PROMPT_KEYS = [
                     ['dictationActionUrl','dictationActionVersion'],
                     ['kidvActionUrl', null],
-                    ['aiConsultUrl','aiConsultPromptVersion'],
+                    ['aiConsultUrl','aiConsultVersion'],
                     ['verslagCheckUrl','verslagCheckVersion'],
                     ['inlineCheckUrl','inlineCheckVersion'],
                     ['snomedCtActionUrl','snomedCtPromptVersion'],
@@ -832,14 +840,14 @@
                 // ── Prompt + model defaults init (zodat export altijd volledig is) ──
                 (function() {
                     const _PD = [
-                        { key: 'dictationActionUrl', vk: 'dictationActionVersion', ver: '2', val: `Vertaal onderstaand medisch radiologisch verslag naar het Frans.\n\n- Behoud de volledige opmaak en structuur (koppen, alinea's, witregels) ongewijzigd\n- Vertaal medische termen naar het correcte Frans medisch equivalent\n- Behoud getallen, eenheden, metingen en afkortingen exact zoals ze zijn\n\n{text}` },
-                        { key: 'kidvActionUrl',        vk: null, ver: null, val: `Je bent een gespecialiseerde radiologie-assistent. Genereer een gestructureerde companion checklist voor een radioloog op basis van onderstaande informatie. Baseer je uitsluitend op evidence-based radiologische bronnen (Radiopaedia, Radiology Assistant, Fleischner Society, SRU, TNM, ACR, ESR iGuide, relevante richtlijnen en academische literatuur).\n\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n\nGeef een beknopte, scanbare checklist. Pas de inhoud aan op basis van de klinische context: bij oncologische vraagstellingen focus op staging/uitbreiding; bij niet-oncologische vraagstellingen focus op systematische volledigheid en besluitondersteuning.\n\n1. <b>Te beoordelen regio's en structuren</b> — wat mag niet gemist worden\n2. <b>Typische radiologische kenmerken</b> — kernbevindingen van de gevraagde pathologie\n3. <b>Uitbreiding / complicaties</b> — locoregionaal, metastasen (oncologie) of complicaties/nevenbevindingen (niet-oncologie)\n4. <b>Top 3 differentiaaldiagnoses</b> — met onderscheidende radiologische features\n5. <b>Classificatie / scoring</b> — toepasselijke protocollen (Fleischner, Bosniak, LI-RADS, TNM, BI-RADS, ASPECTS, Wells, ...)\n6. <b>Evidence-based follow-up</b> — aanbevolen interval, modaliteit en drempelwaarden volgens richtlijnen\n7. <b>Pitfalls & frequent gemiste bevindingen</b> — klassieke valkuilen voor dit onderzoekstype\n\nGebruik korte bullets, vetgedrukte kernwoorden, geen inleidende zinnen. Maximale scanbaarheid.` },
-                        { key: 'verslagCheckUrl',      vk: 'verslagCheckVersion',   ver: '9', val: `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer onderstaand radiologisch verslag grondig op fouten.\n\n=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n=== EINDE CONTEXT ===\n\n=== TE CONTROLEREN VERSLAG ===\n{tekst}\n=== EINDE VERSLAG ===\n\nControleer actief op de volgende foutcategorieën:\n\n**KRITIEK (altijd controleren):**\n- Lateraliteit: links/rechts verwisseling bij gepaarde organen/structuren\n- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder" — bv. "geen pneumothorax" → "pneumothorax"\n- Klinisch-logische fouten: bevindingen die anatomisch onmogelijk zijn voor dit type onderzoek\n\n**SPEECH-TO-TEXT FOUTEN:**\n- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname, acuut↔inactief, focaal↔diffuus\n- Voorvoegsel-/achtervoegselfouten: hyper-/hypo-, in-/un-, -itis/-osis, vergroot↔verkleind, aanwezig↔afwezig\n- Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling\n- Zinsafbreking: ontbrekende woorden die de betekenis wijzigen\n\n**TERMINOLOGIE:**\n- Verkeerde anatomische benamingen voor dit type onderzoek\n- Inconsistent gebruik van termen binnen hetzelfde verslag\n- Niet-gedefinieerde afkortingen\n\nINSTRUCTIES VOOR UITVOER:\n- Geef UITSLUITEND de verslagtekst terug — geen veldnamen, geen labels, geen sectietitels, geen context\n- Geef de volledige gecorrigeerde verslagtekst terug, ongewijzigd qua opmaak\n- Vervang uitsluitend foutieve woorden/zinsdelen door de correctie op dezelfde plaats\n- Geef de gecorrigeerde tekst terug zonder enige markering of opmaak\n- Wijzig NIETS aan correcte tekst — geen herformuleringen, geen stijlwijzigingen\n- Indien geen fouten gevonden: geef de originele tekst ongewijzigd terug` },
-                        { key: 'inlineCheckUrl',       vk: 'inlineCheckVersion',    ver: '3', val: `Je bent een gespecialiseerde radiologie-kwaliteitscontroleur. Controleer UITSLUITEND de zin onder "TE CONTROLEREN ZIN" op fouten.\n\n=== KLINISCHE CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n=== EINDE CONTEXT ===\n\n=== REEDS GEDICTEERD VERSLAG (uitsluitend ter referentie voor lateraliteit- en consistentiecontrole — niet teruggeven, niet aanpassen) ===\n{volledige_tekst}\n=== EINDE VERSLAG ===\n\n=== TE CONTROLEREN ZIN ===\n{tekst}\n=== EINDE ZIN ===\n\nControleer actief op:\n\n**KRITIEK:**\n- Lateraliteit: links/rechts verwisseling\n- Negatie: ontbrekend of verkeerd geplaatst "geen", "niet", "zonder"\n\n**SPEECH-TO-TEXT FOUTEN:**\n- Homofoniefouten: ileum↔ilium, hyper↔hypo, toename↔afname, acuut↔inactief, focaal↔diffuus\n- Voorvoegsel-/achtervoegselfouten: hyper-/hypo-, in-/un-, -itis/-osis, vergroot↔verkleind, aanwezig↔afwezig\n- Cijfer- en maatfouten: verwisselde decimalen (2,5↔5,2), ontbrekende eenheden, mm↔cm verwisseling\n- Ontbrekende woorden die de betekenis wijzigen\n\nUITVOERFORMAAT — STRIKT:\n- Geef UITSLUITEND de gecorrigeerde versie van de "TE CONTROLEREN ZIN" terug\n- Indien geen fouten gevonden: geef de originele zin ongewijzigd terug` },
-                        { key: 'aiConsultUrl',         vk: 'aiConsultPromptVersion', ver: '2', val: `Je bent een medisch-radiologische expertassistent met diepgaande kennis van radiologische anatomie, pathologie, diagnostische beeldvorming en klinische geneeskunde. Je ondersteunt een radioloog tijdens zijn/haar rapportage en beantwoordt gerichte vragen.\n\n=== KLINISCHE CONTEXT ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n\n=== GEDRAGSREGELS ===\n- Beantwoord vragen over radiologische pathologie, anatomie, differentiaaldiagnose en klinische interpretatie.\n- Baseer je uitsluitend op evidence-based bronnen: Radiopaedia, Radiology Assistant, Fleischner Society, ACR, ESR, TNM-classificaties en peer-reviewed literatuur.\n- Wees bondig, precies en klinisch relevant. Gebruik vetgedrukte kernwoorden voor scanbaarheid.\n- Gebruik Markdown-tabellen voor vergelijkingen.\n- Sluit klikbare bronlinks in als Markdown-links.\n- Geef nooit een definitieve diagnose — ondersteun de radioloog in zijn/haar klinische redenering.\n- Antwoord in dezelfde taal als de vraag (Nederlands of Engels).` },
-                        { key: 'autofillBackupUrl',    vk: 'autofillBackupVersion', ver: '1', val: `Je bent een gespecialiseerde radioloog-assistent. Vul de textuele back-up template volledig in op basis van de gedicteerde bevindingen.\n\n=== TEXTUELE BACK-UP TEMPLATE ===\n{text_template}\n=== EINDE TEMPLATE ===\n\n=== SYNTAXIS VAN DE TEMPLATE-NOTATIES ===\n{text_template_logic}\n=== EINDE SYNTAXIS ===\n\n=== KLINISCHE CONTEXT (ter referentie — niet teruggeven in output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\n=== EINDE CONTEXT ===\n\n=== GEDICTEERDE BEVINDINGEN ===\n{tekst}\n=== EINDE DICTATIE ===\n\nINVULREGELS:\n1. Sectie besproken in dictatie → vervang XXX of de inhoud tussen ' ' / " " door de overeenkomstige bevinding\n2. Sectie NIET besproken → gebruik de standaardtekst maar verwijder de aanhalingstekens; heeft het veld geen standaard (XXX), schrijf dan "/"\n3. [ ]-labels → behoud de [ ] haakjes exact\n4. { }-prefix → verwijder de { } haakjes; toon enkel als het veld ingevuld werd\n5. // commentaren → volledig verwijderen uit de output\n6. Neem gedicteerde zinnen LETTERLIJK over\n7. Behoud de structuur, de volgorde en de opmaak van de template\n\nGeef UITSLUITEND de ingevulde verslagtekst terug.` },
-                        { key: 'medgemmaActionUrl',    vk: 'medgemmaPromptVersion', ver: '5', val: `Je bent een gespecialiseerde expert radioloog. Analyseer het bijgevoegde medisch beeld en schrijf een volledig radiologisch verslag.\n\n=== CONTEXT (uitsluitend ter referentie — niet teruggeven in de output) ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nVerslag protocol: {Procedure template}\n=== EINDE CONTEXT ===\n\nVERSLAGREGELS:\n- Schrijf uitsluitend een VERSLAG en een BESLUIT\n- Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief\n\nUITVOERFORMAAT:\n<b>Verslag</b>\n[bevindingen]\n<b>Besluit</b>\n[besluit]` },
-                        { key: 'snomedCtActionUrl',    vk: 'snomedCtPromptVersion', ver: '1', val: `Je bent een gespecialiseerde medische SNOMED CT-coder voor radiologische verslagen. Analyseer het verslag en identificeer de te coderen bevindingen.\n\n=== CONTEXT ===\nType onderzoek: {type_onderzoek}\nKlinische inlichtingen: {klinische_inlichtingen}\nDiagnostische vraagstelling: {diagnostische_vraagstelling}\nPatiënt: {patient_info}\n=== EINDE CONTEXT ===\n\n=== TE CODEREN VERSLAG ===\n{tekst}\n=== EINDE VERSLAG ===\n\nUITVOERFORMAAT:\nhoofddiagnose\n[SNOMED CT-conceptnaam]\nbijdiagnose\n[SNOMED CT-conceptnaam]\nnegated bevindingen\n[SNOMED CT-conceptnaam]` },
+                        { key: 'dictationActionUrl', vk: 'dictationActionVersion', ver: '2', val: "" },
+                        { key: 'kidvActionUrl',        vk: null, ver: null, val: "" },
+                        { key: 'verslagCheckUrl',      vk: 'verslagCheckVersion',   ver: '9', val: "" },
+                        { key: 'inlineCheckUrl',       vk: 'inlineCheckVersion',    ver: '3', val: "" },
+                        { key: 'aiConsultUrl',         vk: 'aiConsultPromptVersion', ver: '2', val: "" },
+                        { key: 'autofillBackupUrl',    vk: 'autofillBackupVersion', ver: '1', val: "" },
+                        { key: 'medgemmaActionUrl',    vk: 'medgemmaPromptVersion', ver: '5', val: "" },
+                        { key: 'snomedCtActionUrl',    vk: 'snomedCtPromptVersion', ver: '1', val: "" },
                     ];
                     // De standaardtekst komt uit forms-shared.js, zodat er één bron is.
                     // Ontbreekt die laag, dan slaan we deze prompt over in plaats van
@@ -860,6 +868,9 @@
                         { key: 'geminiModelAiConsult',      val: 'gemini-2.5-pro' },
                     ];
                     _PD.forEach(({ key, vk, ver, val }) => {
+                        // De prompt-teksten zitten niet meer in de pagina maar in
+                        // flow.json; zonder tekst valt er niets te initialiseren.
+                        if (!val) return;
                         if (localStorage.getItem(key) === null) {
                             localStorage.setItem(key, val);
                             if (vk && ver) localStorage.setItem(vk, ver);
@@ -1100,6 +1111,59 @@
                     if (!confirm('De DMO-licentiegegevens uit deze browser verwijderen?')) return;
                     DMOLicense.clear();
                     refreshDmoCount();
+                });
+
+                // ── Standaardtemplates en prompts ───────────────────────────
+                // Die zitten niet in de pagina's: ze staan versleuteld in
+                // flow.json en komen pas beschikbaar nadat je ze hier ophaalt.
+                // De knop doet twee dingen tegelijk — het bestand downloaden en
+                // de inhoud meteen klaarzetten.
+                const defaultsBtn = document.getElementById('load-defaults-btn');
+                const defaultsStatus = document.getElementById('load-defaults-status');
+
+                function setDefaultsStatus(tekst, kleur) {
+                    defaultsStatus.textContent = tekst;
+                    defaultsStatus.className = 'text-xs ' + (
+                        kleur === 'fout' ? 'text-red-600 dark:text-red-400' :
+                        kleur === 'ok'   ? 'text-green-600 dark:text-green-400' :
+                                           'text-neutral-400 dark:text-neutral-500');
+                }
+
+                defaultsBtn.addEventListener('click', async () => {
+                    if (!_exportPin) { setDefaultsStatus('Geef eerst de pincode.', 'fout'); return; }
+                    defaultsBtn.disabled = true;
+                    setDefaultsStatus('Ophalen…', null);
+                    try {
+                        const res = await fetch('flow.json', { cache: 'no-store' });
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        const data = JSON.parse(await decrypt((await res.text()).trim(), _exportPin));
+                        if (data.kind !== 'flow-defaults') throw new Error('onverwacht bestandstype');
+
+                        // Templates en DICOM-codes
+                        if (Array.isArray(data.examTypes)) {
+                            const huidig = JSON.parse(localStorage.getItem('flowConfig_v1') || 'null') || {};
+                            huidig.examTypes = data.examTypes;
+                            localStorage.setItem('flowConfig_v1', JSON.stringify(huidig));
+                        }
+                        if (Array.isArray(data.dicomCodesBase)) {
+                            localStorage.setItem('dicomCodesBase', JSON.stringify(data.dicomCodesBase));
+                        }
+                        // Prompts en hun versies
+                        Object.entries(data.prompts || {}).forEach(([k, v]) => localStorage.setItem(k, v));
+                        Object.entries(data.promptVersions || {}).forEach(([k, v]) => localStorage.setItem(k, v));
+
+                        // Het bestand zelf ook meegeven, ontsleuteld en leesbaar.
+                        downloadJson(data, 'flow');
+
+                        setDefaultsStatus(
+                            `Geladen: ${(data.examTypes || []).length} onderzoekstypes, ` +
+                            `${Object.keys(data.prompts || {}).length} prompts, ` +
+                            `${(data.dicomCodesBase || []).length} DICOM-codes. De pagina wordt herladen.`, 'ok');
+                        setTimeout(() => location.reload(), 1200);
+                    } catch (err) {
+                        setDefaultsStatus('Ophalen mislukt: ' + (err && err.message ? err.message : err), 'fout');
+                        defaultsBtn.disabled = false;
+                    }
                 });
 
                 document.getElementById('export-qc-btn').addEventListener('click', () =>
