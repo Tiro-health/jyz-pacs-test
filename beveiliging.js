@@ -37,15 +37,25 @@
 
     // Volgorde waarin de groepen getoond worden; de bovenste zijn de groepen
     // waar persoonsgegevens in kunnen zitten.
+    //
+    // niveau = wie de keuze maakt. "organisatie" zijn de velden die centraal
+    // vastliggen — het ziekenhuis bepaalt wat daarvan naar een model mag.
+    // "gebruiker" zijn de tekstvelden waarin de radioloog zelf schrijft: die
+    // staan standaard op AI-veilig, maar hij kan er gericht velden uithalen.
     const GROEPEN = [
-        { id: "formulier",  naam: "Formuliervelden",        uitleg: "Uit de velddefinities van de QC- en casusformulieren." },
-        { id: "tiro",       naam: "Tiro-templatevelden",    uitleg: "Veldnamen die de Tiro-formulieren in gebruik lieten zien. Groeit aan naarmate je de formulieren gebruikt." },
-        { id: "pacs",       naam: "PACS-parameters",        uitleg: "Waarmee het PACS de pagina opstart." },
-        { id: "prompt",     naam: "Prompt-placeholders",    uitleg: "Wat letterlijk in een prompt ingevuld wordt — hier telt de keuze het zwaarst." },
-        { id: "calculator", naam: "Calculator-invoer",      uitleg: "Metingen en scores uit de calculatoren." },
-        { id: "verslag",    naam: "Textuele verslagvelden", uitleg: "Veldnamen uit de standaardverslagen, per onderzoekstype." },
-        { id: "pagina",     naam: "Overige invoervelden",   uitleg: "Invoervelden van de pagina's zelf: instellingen, zoekbalken, sleutels." },
+        { id: "formulier",  niveau: "organisatie", naam: "Formuliervelden",        uitleg: "Uit de velddefinities van de QC- en casusformulieren." },
+        { id: "tiro",       niveau: "organisatie", naam: "Tiro-templatevelden",    uitleg: "Veldnamen die de Tiro-formulieren in gebruik lieten zien. Groeit aan naarmate je de formulieren gebruikt." },
+        { id: "pacs",       niveau: "organisatie", naam: "PACS-parameters",        uitleg: "Waarmee het PACS de pagina opstart." },
+        { id: "prompt",     niveau: "organisatie", naam: "Prompt-placeholders",    uitleg: "Wat letterlijk in een prompt ingevuld wordt — hier telt de keuze het zwaarst." },
+        { id: "calculator", niveau: "organisatie", naam: "Calculator-invoer",      uitleg: "Metingen en scores uit de calculatoren." },
+        { id: "verslag",    niveau: "gebruiker",   naam: "Textuele verslagvelden", uitleg: "Veldnamen uit de standaardverslagen, per onderzoekstype. Staan standaard op AI-veilig; zet hier zelf de velden om die patiëntgegevens kunnen bevatten." },
+        { id: "pagina",     niveau: "gebruiker",   naam: "Overige invoervelden",   uitleg: "Invoervelden van de pagina's zelf: instellingen, zoekbalken, sleutels." },
     ];
+
+    const NIVEAUS = {
+        organisatie: { label: "Organisatie", icoon: "🏛", uitleg: "Centraal vastgelegd door het ziekenhuis." },
+        gebruiker:   { label: "Gebruiker",   icoon: "👤", uitleg: "Door de radioloog zelf te kiezen." },
+    };
 
     // Pagina's die meegescand worden voor losse invoervelden. Het zijn statische
     // bestanden op dezelfde host, dus ophalen en uitlezen kan gewoon.
@@ -387,10 +397,19 @@
         catch { return null; }
     }
 
+    /**
+     * Wat een AI-model in de plaats van de waarde te zien krijgt wanneer een
+     * veld als PII gemarkeerd staat: de veldnaam tussen vierkante haken, niet
+     * de inhoud. Vandaag enkel ter illustratie in het overzicht.
+     */
+    function vervanging(label) {
+        return "[" + String(label || "veld").trim() + "]";
+    }
+
     window.VELDBEVEILIGING = {
-        KEY, SCAN_KEY, TIRO_KEY, PII, AI, GROEPEN,
+        KEY, SCAN_KEY, TIRO_KEY, PII, AI, GROEPEN, NIVEAUS,
         scan, laatsteScan,
-        load, save, klasse, zet, zetVeel, tel, voorstel,
+        load, save, klasse, zet, zetVeel, tel, voorstel, vervanging,
         onthoudTiroVelden, veldnamenUitResponse,
         veldnamenUitTemplate,
     };
