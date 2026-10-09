@@ -1329,7 +1329,7 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(body),
             });
-            let res = await verstuur(geminiBody(this.getModel(), { contents: [{ parts }] }));
+            let res = await verstuur(geminiBody(this.getModel(), { contents: [{ parts }] }, denkNiveau(this.MODEL_KEY)));
             if (!res.ok) {
                 const tekst = await res.text();
                 // Kent dit model het denkveld niet, dan nog eens zonder.
@@ -1821,32 +1821,118 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // Denkniveau van Gemini — scheelt het meest aan wachttijd
+    // Syntaxis van de textuele back-up template
     // ═══════════════════════════════════════════════════════════════════════
     //
-    // De Gemini 3-modellen denken standaard na vóór ze beginnen te antwoorden.
-    // Voor het werk hier — vertalen, invullen, corrigeren — levert dat weinig
-    // op en kost het seconden voor het eerste token. Sturen we niets mee, dan
-    // geldt het standaardniveau van het model; daarom zetten we het expliciet.
+    // Deze tekst gaat als {text_template_logic} mee in de autofill-prompt en
+    // bepaalt dus rechtstreeks hoe strikt de template gevolgd wordt. Ze staat
+    // hier en niet in flow.html, omdat launch.html ze leest en qc.html ze
+    // mee exporteert — drie pagina's, één bron.
+    const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE (v3)
+
+GRONDREGEL — Je verzint niets. Elke bevinding in de output komt uit de dictatie of staat letterlijk als standaardtekst in de template. Je voegt geen bevinding, geen graadaanduiding, geen zijde, geen maat en geen orgaannaam toe die de radioloog niet zelf heeft uitgesproken. Weet je het niet, dan laat je het veld op zijn standaardtekst staan of laat je het weg — nooit zelf aanvullen.
+
+' '  of  " "  =  Invulveld waarbij de standaard invultekst overeenkomt met de tekst tussen de haakjes. Deze tekst is zichtbaar wanneer er geen andere bevindingen werden besproken.
+
+XXX  =  Invulveld zonder onderliggende standaard invultekst.
+
+//  =  Contextuele / informatieve tekst voor betere en accuratere AI-prompt met betrekking tot het gekoppelde invulveld.
+
+[]   =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk in de output op DEZELFDE regel als de bevinding — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
+    Voorbeelden:
+      - [ Botpatroon:] 'Normaal'       →   output:  [ Botpatroon:] Normaal
+      - Botpatroon: 'Normaal'          →   output:  - Botpatroon: Normaal
+
+[br]  =  Systeem-markering — enkel te plaatsen direct na een [] -label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen moet worden (compact weergave). De AI negeert [br] volledig — het wordt nooit in de output geschreven. Het systeem leest [br] rechtstreeks uit de template en verwerkt het via regex.
+    Voorbeeld:
+      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:] Normaal
+                                           (systeem verbergt de enter bij het verbergen van het label)
+
+{ }  =  Optioneel fragment. WEGLATEN is de standaard. Het fragment verschijnt ALLEEN in de output wanneer de dictatie het gekoppelde veld effectief beschrijft. Werd er niets over gezegd, dan verdwijnt het volledige fragment — label, standaardtekst, de regel zelf en de regelovergang. Een standaardtekst tussen ' ' of " " binnen { } is géén reden om het fragment te tonen; die tekst geldt pas zodra het veld besproken is. Bij twijfel: weglaten.
+    Voorbeelden:
+      - {[ Hydrops:] 'Geen hydrops.'}   dictatie zegt niets over hydrops   →   output: (niets, regel valt volledig weg)
+      - {[ Hydrops:] 'Geen hydrops.'}   dictatie zegt "lichte hydrops"     →   output:  [ Hydrops:] Lichte hydrops.
+
+NIET BESPROKEN VELDEN BUITEN { }  =  Zegt de dictatie iets in de trant van "verder normale bevindingen", "verder geen afwijkingen" of "voor het overige normaal", dan vul je elk niet besproken veld in met EXACT één woord: "Normaal" of "Geen" — wat van de twee bij het veld past. Je voegt daar geen orgaannaam, geen bevinding en geen extra woorden aan toe, ook niet wanneer de standaardtekst van dat veld langer is.
+    Voorbeelden:
+      - [ Hydrops:] 'Geen hydrops.'     →   output:  [ Hydrops:] Geen          (NIET "Geen hydrops")
+      - [ Botpatroon:] 'Normaal bot.'   →   output:  [ Botpatroon:] Normaal    (NIET "Normaal bot")`;
+
+    /** Kopregel waaraan we zien of een opgeslagen tekst nog actueel is. */
+    const TEXT_TEMPLATE_LOGIC_KOP = "SYNTAXIS TEXTUELE BACK-UP TEMPLATE (v3)";
+
+    /**
+     * De syntaxistekst zoals de prompt ze moet krijgen. Staat er een oudere
+     * versie opgeslagen — ook eentje die net uit een geïmporteerde configuratie
+     * kwam — dan vervangen we die hier. Zo werkt een bestaande export van vóór
+     * deze versie gewoon, zonder dat ze de oude regels weer binnenhaalt.
+     *
+     * Let wel: dit overschrijft ook een zelf aangepaste syntaxistekst.
+     */
+    function templateLogic() {
+        let opgeslagen = null;
+        try { opgeslagen = localStorage.getItem("textTemplateLogic"); } catch (_) {}
+        if (opgeslagen && opgeslagen.indexOf(TEXT_TEMPLATE_LOGIC_KOP) !== -1) return opgeslagen;
+        try { localStorage.setItem("textTemplateLogic", DEFAULT_TEXT_TEMPLATE_LOGIC); } catch (_) {}
+        return DEFAULT_TEXT_TEMPLATE_LOGIC;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // Denkniveau van Gemini — per taak, niet één knop voor alles
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // De Gemini 3-modellen denken na vóór ze beginnen te antwoorden. Hoeveel,
+    // dat bepaalt thinkingLevel. Sturen we niets mee, dan geldt het
+    // standaardniveau van het model — bij 3.7 en 3.8 Flash is dat "medium".
+    //
+    // Laag scheelt seconden, maar kost precisie bij werk met veel regels. Het
+    // autofill-invullen moet een templatesyntaxis letterlijk volgen ({ }-velden
+    // weglaten, een niet-besproken veld exact "Geen" noemen en niet "Geen
+    // hydrops"); dat gaat op "laag" mis. Vertalen en corrigeren niet. Daarom
+    // staat het niveau per taak apart — zie DENK_DEFAULTS hieronder.
     //
     // De knop verschilt per generatie:
-    //   gemini-3.x          thinkingLevel: "low"  (helemaal uit kan niet)
-    //   gemini-2.5-flash*   thinkingBudget: 0     (wel echt uit)
+    //   gemini-3.x          thinkingLevel: low | medium | high
+    //                       ("minimal" bestaat, maar 3.7 en 3.8 weigeren het)
+    //   gemini-2.5-flash*   thinkingBudget: 0 — enkel om het uit te zetten;
+    //                       omhoog kan daar niet, dus gemiddeld/hoog = niets
     //   gemini-2.5-pro      niets — pro kan het denken niet uitzetten
     //   iets anders         niets — een onbekend of nieuwer model krijgt geen
     //                       veld dat het misschien niet kent
     //
     // Zie ai.google.dev/gemini-api/docs/generate-content/thinking
-    function denkConfig(model) {
+    const DENK_NIVEAUS = ["laag", "gemiddeld", "hoog"];
+
+    /** Standaardniveau per modelsleutel. Alles laag, behalve het regelwerk. */
+    const DENK_DEFAULTS = {
+        geminiModelAutofillBackup: "gemiddeld", // moet de templatesyntaxis letterlijk volgen
+        geminiModelKidv:           "gemiddeld", // evidence-based checklist
+        geminiModelAiConsult:      "gemiddeld", // expertgesprek over meerdere beurten
+    };
+
+    /** Het ingestelde niveau voor een modelsleutel, of de standaard ervan. */
+    function denkNiveau(modelKey) {
+        let opgeslagen = null;
+        try { opgeslagen = localStorage.getItem("denkniveau_" + modelKey); } catch (_) {}
+        if (DENK_NIVEAUS.indexOf(opgeslagen) !== -1) return opgeslagen;
+        return DENK_DEFAULTS[modelKey] || "laag";
+    }
+
+    function denkConfig(model, niveau) {
         const m = String(model || "").toLowerCase();
-        if (/^gemini-3/.test(m)) return { thinkingConfig: { thinkingLevel: "low" } };
-        if (/^gemini-2\.5-flash/.test(m)) return { thinkingConfig: { thinkingBudget: 0 } };
+        const n = DENK_NIVEAUS.indexOf(niveau) !== -1 ? niveau : "laag";
+        if (/^gemini-3/.test(m)) {
+            return { thinkingConfig: { thinkingLevel: n === "hoog" ? "high" : n === "gemiddeld" ? "medium" : "low" } };
+        }
+        // Bij 2.5 is er enkel een uit-knop. Vragen we om meer denkwerk, dan
+        // sturen we niets mee en houdt het model zijn eigen standaard.
+        if (n === "laag" && /^gemini-2\.5-flash/.test(m)) return { thinkingConfig: { thinkingBudget: 0 } };
         return null;
     }
 
     /** Body voor een Gemini-aanroep, met het denkniveau erbij wanneer dat kan. */
-    function geminiBody(model, inhoud) {
-        const cfg = denkConfig(model);
+    function geminiBody(model, inhoud, niveau) {
+        const cfg = denkConfig(model, niveau);
         return cfg ? Object.assign({}, inhoud, { generationConfig: cfg }) : inhoud;
     }
 
@@ -1875,6 +1961,10 @@
         terugNaarDatabank,
         Opvolging,
         DEFAULT_FORM_FILL_PROMPT,
+        DEFAULT_TEXT_TEMPLATE_LOGIC,
+        templateLogic,
+        DENK_NIVEAUS,
+        denkNiveau,
         denkConfig,
         geminiBody,
         isDenkFout,

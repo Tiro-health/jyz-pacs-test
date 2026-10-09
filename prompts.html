@@ -118,6 +118,11 @@
                         <select id="translate-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
+                        <select id="translate-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="laag">denken: laag</option>
+                            <option value="gemiddeld">denken: gemiddeld</option>
+                            <option value="hoog">denken: hoog</option>
+                        </select>
                         <button id="reload-models-btn" type="button" class="px-1.5 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted hover:bg-neutral-100 dark:hover:bg-accent text-neutral-600 dark:text-neutral-300 transition-colors shrink-0" title="Haal beschikbare modellen op">↺</button>
                         <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · snel, lage kost</span>
                     </div>
@@ -145,7 +150,12 @@
                             <select id="ai-consult-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                             </select>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro aanbevolen · hoge kwaliteit</span>
+                            <select id="ai-consult-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="laag">denken: laag</option>
+                                <option value="gemiddeld">denken: gemiddeld</option>
+                                <option value="hoog">denken: hoog</option>
+                            </select>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">3.8-flash aanbevolen · multi-turn gesprek</span>
                         </div>
                     </div>
                 </div>
@@ -167,7 +177,12 @@
                             <select id="kidv-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                             </select>
-                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro aanbevolen · meest capabel</span>
+                            <select id="kidv-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="laag">denken: laag</option>
+                                <option value="gemiddeld">denken: gemiddeld</option>
+                                <option value="hoog">denken: hoog</option>
+                            </select>
+                            <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">3.8-flash aanbevolen · evidence-based checklist</span>
                         </div>
                     </div>
                 </div>
@@ -195,12 +210,22 @@
                             <select id="verslag-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                             </select>
+                            <select id="verslag-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="laag">denken: laag</option>
+                                <option value="gemiddeld">denken: gemiddeld</option>
+                                <option value="hoog">denken: hoog</option>
+                            </select>
                             <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · beste nauwkeurigheid</span>
                         </div>
                         <div class="flex items-center gap-2">
                             <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Real time</label>
                             <select id="realtime-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                                 <option value="gemini-2.5-flash-lite">gemini-2.5-flash-lite</option>
+                            </select>
+                            <select id="realtime-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                                <option value="laag">denken: laag</option>
+                                <option value="gemiddeld">denken: gemiddeld</option>
+                                <option value="hoog">denken: hoog</option>
                             </select>
                             <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">Flash Lite · laagste latentie &amp; kost</span>
                         </div>
@@ -235,6 +260,11 @@
                         <select id="snomed-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                         </select>
+                        <select id="snomed-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="laag">denken: laag</option>
+                            <option value="gemiddeld">denken: gemiddeld</option>
+                            <option value="hoog">denken: hoog</option>
+                        </select>
                         <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · nauwkeurige codering</span>
                     </div>
                 </div>
@@ -253,6 +283,11 @@
                         <label class="text-xs font-medium text-neutral-500 dark:text-neutral-400 shrink-0 w-12">Model</label>
                         <select id="medgemma-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-flash">gemini-2.5-flash</option>
+                        </select>
+                        <select id="medgemma-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="laag">denken: laag</option>
+                            <option value="gemiddeld">denken: gemiddeld</option>
+                            <option value="hoog">denken: hoog</option>
                         </select>
                         <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-flash · multimodaal beeld</span>
                     </div>
@@ -273,6 +308,11 @@
                         <select id="form-fill-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                         </select>
+                        <select id="form-fill-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="laag">denken: laag</option>
+                            <option value="gemiddeld">denken: gemiddeld</option>
+                            <option value="hoog">denken: hoog</option>
+                        </select>
                         <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro · multimodaal beeld</span>
                     </div>
                 </div>
@@ -292,7 +332,12 @@
                         <select id="autofill-backup-model" class="flex-1 min-w-0 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
                             <option value="gemini-2.5-pro">gemini-2.5-pro</option>
                         </select>
-                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">2.5-pro aanbevolen · complex template</span>
+                        <select id="autofill-backup-denk" title="Hoeveel het model nadenkt voor het begint te antwoorden. Laag is het snelst; gemiddeld en hoog volgen regels strikter, maar kosten wachttijd. Geldt alleen bij Gemini 3; bij 2.5 kan enkel laag (= denken uit)." class="shrink-0 w-32 px-2 py-1 text-xs rounded-md border border-neutral-300 dark:border-slate-700 bg-neutral-50 dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-1 focus:ring-cyan-500">
+                            <option value="laag">denken: laag</option>
+                            <option value="gemiddeld">denken: gemiddeld</option>
+                            <option value="hoog">denken: hoog</option>
+                        </select>
+                        <span class="text-xs text-neutral-400 dark:text-neutral-500 shrink-0">3.6-flash aanbevolen · lange template</span>
                     </div>
                 </div>
             </div>
@@ -307,6 +352,9 @@
 
         </div>
 
+        <!-- Voor JyzForms.denkNiveau: de standaard denkniveaus staan daar, zodat
+             deze pagina dezelfde waarde toont als de aanroep straks verstuurt. -->
+        <script src="forms-shared.js"></script>
         <script>
             const params = new URLSearchParams(window.location.search);
 
@@ -590,6 +638,21 @@
                 sel.value = localStorage.getItem(cfg.storageKey) || cfg.defaultModel;
                 if (localStorage.getItem(cfg.storageKey) === null) localStorage.setItem(cfg.storageKey, sel.value);
                 sel.addEventListener("change", () => localStorage.setItem(cfg.storageKey, sel.value));
+            });
+
+            // ── Denkniveau per taak ───────────────────────────────────────────
+            // Laag scheelt het meest aan wachttijd, maar een taak met veel
+            // regels — zoals het invullen van de textuele template — volgt die
+            // regels dan losser. Daarom staat het per taak apart; de standaard
+            // komt uit JyzForms.denkNiveau in forms-shared.js.
+            MODEL_CONFIGS.forEach(cfg => {
+                const sel = document.getElementById(cfg.id.replace("-model", "-denk"));
+                if (!sel) return;
+                const opslagSleutel = "denkniveau_" + cfg.storageKey;
+                sel.value = window.JyzForms?.denkNiveau
+                    ? JyzForms.denkNiveau(cfg.storageKey)
+                    : (localStorage.getItem(opslagSleutel) || "laag");
+                sel.addEventListener("change", () => localStorage.setItem(opslagSleutel, sel.value));
             });
 
             // Reload button (↺) — just refreshes the list
