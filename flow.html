@@ -607,6 +607,10 @@
                 </div>
                 <div class="flex-1 overflow-y-auto px-5 py-4">
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Pas hier de syntaxisregels aan die gelden voor alle textuele back-up templates. Wordt mee opgenomen als context in AI-prompts.</p>
+                    <div id="logic-vorige-nota" class="hidden mb-2 flex items-center gap-2 text-xs rounded-md border border-amber-200/70 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/15 px-2.5 py-1.5">
+                        <span class="text-amber-700 dark:text-amber-400 flex-1">Deze tekst is bijgewerkt naar een nieuwere versie. Stond er iets eigens in, dan vind je het hier terug.</span>
+                        <button id="logic-vorige-btn" type="button" class="shrink-0 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30">Toon vorige</button>
+                    </div>
                     <textarea
                         id="logic-textarea"
                         rows="16"
@@ -692,25 +696,9 @@
         <script src="cases-schema.js"></script>
         <script src="beveiliging.js"></script>
         <script>
-        const DEFAULT_TEXT_TEMPLATE_LOGIC = `SYNTAXIS TEXTUELE BACK-UP TEMPLATE
-
-' '  of  " "  =  Invulveld waarbij de standaard invultekst overeenkomt met de tekst tussen de haakjes. Deze tekst is zichtbaar wanneer er geen andere bevindingen werden besproken.
-
-XXX  =  Invulveld zonder onderliggende standaard invultekst.
-
-//  =  Contextuele / informatieve tekst voor betere en accuratere AI-prompt met betrekking tot het gekoppelde invulveld.
-
-[]   =  Sectielabel dat de bijbehorende tekst benoemt. De AI behoudt dit label letterlijk in de output op DEZELFDE regel als de bevinding — het systeem herkent de labels via regex en laat ze visueel aan/uit schakelen. De tekst tussen de haakjes verschijnt dus WEL in het resultaat.
-    Voorbeelden:
-      - [ Botpatroon:] 'Normaal'       →   output:  [ Botpatroon:] Normaal
-      - Botpatroon: 'Normaal'          →   output:  - Botpatroon: Normaal
-
-[br]  =  Systeem-markering — enkel te plaatsen direct na een [] -label (op dezelfde regel). Signaleert dat de regelovergang na het label samen met het label verborgen moet worden (compact weergave). De AI negeert [br] volledig — het wordt nooit in de output geschreven. Het systeem leest [br] rechtstreeks uit de template en verwerkt het via regex.
-    Voorbeeld:
-      - [ Botpatroon:][br] 'Normaal'   →   output:  [ Botpatroon:] Normaal
-                                           (systeem verbergt de enter bij het verbergen van het label)
-
-{ }  =  Maakt duidelijk dat de tekst tussen deze haakjes enkel in het eindresultaat zichtbaar is als het gekoppelde invulveld effectief werd ingevuld. Als het niet besproken werd, is deze niet zichtbaar.`;
+        // De syntaxistekst staat in forms-shared.js — launch.html en qc.html
+        // lezen ze daar ook, zodat er één versie is.
+        const DEFAULT_TEXT_TEMPLATE_LOGIC = window.JyzForms?.DEFAULT_TEXT_TEMPLATE_LOGIC || '';
 
         // ── Data: JYZ DICOM codes ────────────────────────────────────────────────
         const JYZ_DICOM_CODES = [] ;
@@ -887,11 +875,8 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
                 }
             });
             if (changed) saveData();
-            // Update saved textTemplateLogic if it predates [br] support
-            const savedLogic = localStorage.getItem('textTemplateLogic');
-            if (savedLogic && !savedLogic.includes('[br]')) {
-                localStorage.setItem('textTemplateLogic', DEFAULT_TEXT_TEMPLATE_LOGIC);
-            }
+            // Werkt een opgeslagen syntaxistekst van een oudere versie bij.
+            window.JyzForms?.templateLogic?.();
         })();
         let currentEditId = null;
         let activeModality = 'ALLE';
@@ -1575,12 +1560,32 @@ XXX  =  Invulveld zonder onderliggende standaard invultekst.
         // ── Textuele template logica ─────────────────────────────────────────────
         const logicTextarea = document.getElementById('logic-textarea');
         const logicSaveBtn  = document.getElementById('logic-save-btn');
-        logicTextarea.value = localStorage.getItem('textTemplateLogic') || DEFAULT_TEXT_TEMPLATE_LOGIC;
+        logicTextarea.value = window.JyzForms?.templateLogic?.() || DEFAULT_TEXT_TEMPLATE_LOGIC;
         logicSaveBtn.addEventListener('click', () => {
             localStorage.setItem('textTemplateLogic', logicTextarea.value);
             logicSaveBtn.textContent = 'Opgeslagen ✓';
             setTimeout(() => { logicSaveBtn.textContent = 'Opslaan'; }, 2000);
         });
+
+        // Is er bij een versiewissel een oudere tekst aan de kant gezet, dan is
+        // die hier op te vragen. Wie er eigen regels in had staan kan ze zo
+        // overnemen; Opslaan bewaart wat er op dat moment in het vak staat.
+        (function () {
+            const vorige = window.JyzForms?.vorigeTemplateLogic?.();
+            if (!vorige) return;
+            const nota = document.getElementById('logic-vorige-nota');
+            const knop = document.getElementById('logic-vorige-btn');
+            if (!nota || !knop) return;
+            nota.classList.remove('hidden');
+            let toontVorige = false;
+            knop.addEventListener('click', () => {
+                toontVorige = !toontVorige;
+                logicTextarea.value = toontVorige
+                    ? vorige
+                    : (window.JyzForms?.templateLogic?.() || DEFAULT_TEXT_TEMPLATE_LOGIC);
+                knop.textContent = toontVorige ? 'Toon huidige' : 'Toon vorige';
+            });
+        })();
 
         // ── Textuele back-up template code editor ───────────────────────────────
 

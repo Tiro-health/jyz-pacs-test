@@ -1722,7 +1722,7 @@
                 window._flowUserLabelsDefaultVisible = match.userLabelsDefaultVisible === true;
                 window._flowTextTemplateLogic = '';
                 try {
-                    window._flowTextTemplateLogic = localStorage.getItem('textTemplateLogic') || '';
+                    window._flowTextTemplateLogic = window.JyzForms?.templateLogic?.() || localStorage.getItem('textTemplateLogic') || '';
                 } catch(_) {}
 
                 if (items.length === 0) {
@@ -3183,12 +3183,19 @@
 
             // Het denkniveau gaat mee in elke aanroep — zie JyzForms.denkConfig in
             // forms-shared.js. Ontbreekt die laag, dan versturen we zoals vroeger.
-            const _geminiBody = (model, inhoud) =>
-                window.JyzForms?.geminiBody ? JyzForms.geminiBody(model, inhoud) : inhoud;
+            //
+            // De aanroephelpers krijgen daarom de modelsleutel mee en niet de
+            // modelnaam: uit die sleutel volgen zowel het model als het niveau,
+            // en zo staat die keuze op één plaats in plaats van op zestien.
+            const _geminiBody = (model, inhoud, niveau) =>
+                window.JyzForms?.geminiBody ? JyzForms.geminiBody(model, inhoud, niveau) : inhoud;
             const _isDenkFout = (status, tekst) =>
                 window.JyzForms?.isDenkFout ? JyzForms.isDenkFout(status, tekst) : false;
+            const denk = (modelKey) =>
+                window.JyzForms?.denkNiveau ? JyzForms.denkNiveau(modelKey) : 'laag';
 
-            async function callGemini(model, prompt, signal) {
+            async function callGemini(modelKey, prompt, signal) {
+                const model = getModel(modelKey), niveau = denk(modelKey);
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
                 const basis = { contents: [{ parts: [{ text: fullPrompt }] }] };
                 const verstuur = (body) => fetch(
@@ -3196,7 +3203,7 @@
                     { method: "POST", headers: { "Content-Type": "application/json" },
                       body: JSON.stringify(body), signal }
                 );
-                let res = await verstuur(_geminiBody(model, basis));
+                let res = await verstuur(_geminiBody(model, basis, niveau));
                 if (!res.ok && _isDenkFout(res.status, await res.clone().text().catch(() => ""))) {
                     res = await verstuur(basis);   // dit model kent het denkveld niet
                 }
@@ -3212,14 +3219,15 @@
                 return data.candidates?.[0]?.content?.parts?.[0]?.text ?? "(geen resultaat)";
             }
 
-            async function callGeminiStream(model, prompt, onChunk, signal) {
+            async function callGeminiStream(modelKey, prompt, onChunk, signal) {
+                const model = getModel(modelKey), niveau = denk(modelKey);
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
                 const basis = { contents: [{ parts: [{ text: fullPrompt }] }] };
                 const verstuur = (body) => fetch(
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
                     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal }
                 );
-                let res = await verstuur(_geminiBody(model, basis));
+                let res = await verstuur(_geminiBody(model, basis, niveau));
                 if (!res.ok) {
                     let ruw = await res.text().catch(() => "");
                     if (_isDenkFout(res.status, ruw)) {
@@ -3849,7 +3857,7 @@
                 if (GEMINI_API_KEY) {
                     trStatusEl.textContent = 'Bezig…';
                     try {
-                        const resultaat = await callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal());
+                        const resultaat = await callGemini('geminiModelTranslate', prompt, _newGeminiSignal());
                         trContentEl.innerHTML = renderMarkdown(resultaat);
                         trStatusEl.textContent = '';
                         trOrigBtnEl.style.display = '';
@@ -4160,7 +4168,7 @@
                 _aiConsultAbort = new AbortController();
                 try {
                     const full = await callGeminiChatStream(
-                        getModel('geminiModelAiConsult'),
+                        'geminiModelAiConsult',
                         systemPrompt,
                         _aiConsultHistory,
                         (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); aiConsultMessages.scrollTop = aiConsultMessages.scrollHeight; },
@@ -4388,7 +4396,7 @@
                     _verslagOriginalText = tekst;
                     openGeminiModal("Verslag check");
                     try {
-                        const text = await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                        const text = await callGeminiStream('geminiModelVerslag', prompt, (partial) => {
                             geminiLoading.classList.add("hidden"); geminiLoading.classList.remove("flex");
                             _geminiRawText = partial;
                             geminiContent.innerHTML = renderMarkdown(partial);
@@ -4576,7 +4584,7 @@
                 let firstChunk = true;
                 let streamedText = '';
                 try {
-                    await callGeminiStream(getModel('geminiModelRealtime'), prompt, (partial) => {
+                    await callGeminiStream('geminiModelRealtime', prompt, (partial) => {
                         if (firstChunk) { realtimeContent.innerHTML = ''; firstChunk = false; }
                         streamedText = partial;
                         realtimeContent.innerHTML = partial.replace(/\n/g, '<br>');
@@ -5004,7 +5012,7 @@
                 if (GEMINI_API_KEY) {
                     document.getElementById("snomed-error-banner").classList.add("hidden");
                     try {
-                        const raw = await callGemini(getModel('geminiModelSnomed'), prompt);
+                        const raw = await callGemini('geminiModelSnomed', prompt);
                         showSnomedInfo('SNOMED CT: codes opzoeken…');
                         const { resolvedText, notFound } = await resolveSnomedConcepts(raw);
                         document.getElementById("snomed-error-banner").classList.add("hidden");
@@ -5343,7 +5351,7 @@
                 const typeOnderzoek = extractAnyField(...TYPE_ONDERZOEK_TERMS);
                 const ki  = extractAnyField("klinische inlichtingen", "clinical information", "klinisch");
                 const dv  = extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question");
-                const logic = window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
+                const logic = window._flowTextTemplateLogic || window.JyzForms?.templateLogic?.() || '';
                 const savedPrompt = localStorage.getItem('autofillBackupUrl');
                 const backupTemplate = savedPrompt || DEFAULT_AUTOFILL_BACKUP_PROMPT;
                 const backupPrompt = fillPrompt(backupTemplate, {
@@ -5437,7 +5445,7 @@
                             patient_info: extractPatientInfo(),
                             text_template: '',
                         });
-                        await callGeminiStream(getModel('geminiModelVerslag'), vcPrm, (partial) => {
+                        await callGeminiStream('geminiModelVerslag', vcPrm, (partial) => {
                             if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
                             targetContent.innerHTML = renderMarkdown(partial);
                         }, _ttAbort.signal);
@@ -5450,7 +5458,7 @@
                     } else {
 
                     // Phase 1: generate filled backup template
-                    await callGeminiStream(getModel('geminiModelAutofillBackup'), backupPrompt, (partial) => {
+                    await callGeminiStream('geminiModelAutofillBackup', backupPrompt, (partial) => {
                         if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
                         targetContent.innerHTML = renderMarkdown(partial.replace(/\[br\]/g, ''));
                     }, _ttAbort.signal);
@@ -5483,7 +5491,7 @@
                             text_template: window._flowTextTemplate || '',
                         });
                         firstChunk = true;
-                        await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => {
+                        await callGeminiStream('geminiModelVerslag', vcPrompt, (partial) => {
                             if (firstChunk) { firstChunk = false; targetStatus.innerHTML = ''; }
                             targetContent.innerHTML = renderMarkdown(partial);
                         }, _ttAbort.signal);
@@ -5537,7 +5545,7 @@
             }
 
             async function _runAutofillSilent(tekst, context) {
-                const logic = context.logic || window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '';
+                const logic = context.logic || window._flowTextTemplateLogic || window.JyzForms?.templateLogic?.() || '';
                 let result = '';
                 if (!context.textTemplate) {
                     // No template — run verslag check directly on dictation text
@@ -5551,7 +5559,7 @@
                             patient_info: extractPatientInfo(),
                             text_template: '',
                         });
-                        await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => { result = partial; });
+                        await callGeminiStream('geminiModelVerslag', vcPrompt, (partial) => { result = partial; });
                     } else {
                         result = tekst;
                     }
@@ -5566,7 +5574,7 @@
                     text_template: context.textTemplate,
                     text_template_logic: logic,
                 });
-                await callGeminiStream(getModel('geminiModelAutofillBackup'), prompt, (partial) => { result = partial; });
+                await callGeminiStream('geminiModelAutofillBackup', prompt, (partial) => { result = partial; });
                 if (vcAfterAutofillEnabled) {
                     const vcTemplate = verslagCheckUrlInput.value.trim() || DEFAULT_VERSLAG_CHECK_PROMPT;
                     const vcPrompt = fillPrompt(vcTemplate, {
@@ -5577,7 +5585,7 @@
                         patient_info: extractPatientInfo(),
                         text_template: context.textTemplate || '',
                     });
-                    await callGeminiStream(getModel('geminiModelVerslag'), vcPrompt, (partial) => { result = partial; });
+                    await callGeminiStream('geminiModelVerslag', vcPrompt, (partial) => { result = partial; });
                 }
                 return result.replace(/\[br\]/g, '');
             }
@@ -5776,7 +5784,7 @@
                     ki:  extractAnyField("klinische inlichtingen", "clinical information", "klinisch"),
                     dv:  extractAnyField("diagnostische vraagstelling", "diagnostische vraag", "diagnostic question"),
                     textTemplate: window._flowTextTemplate || window._flowUserTextTemplate || '',
-                    logic: window._flowTextTemplateLogic || localStorage.getItem('textTemplateLogic') || '',
+                    logic: window._flowTextTemplateLogic || window.JyzForms?.templateLogic?.() || '',
                 };
                 const originalWithHeader = _prependTtHeader(tekst);
                 const capturedHeader = _buildTtHeader(); // capture before fields are cleared
@@ -6687,7 +6695,7 @@
                                 const volledigeTekst = getCeText();
                                 const prompt = fillPrompt(template, { tekst: capturedText, type_onderzoek: typeOnderzoek, klinische_inlichtingen: ki, diagnostische_vraagstelling: dv, patient_info: pat, volledige_tekst: volledigeTekst });
                                 let full = '';
-                                await callGeminiStream(getModel('geminiModelRealtime'), prompt, p => { full = p; }, undefined);
+                                await callGeminiStream('geminiModelRealtime', prompt, p => { full = p; }, undefined);
                                 // Take only the first non-empty line — prevents AI from returning multiple sentences
                                 const corrText = extractCleanCorrection(full).split('\n').map(l => l.trim()).filter(Boolean)[0] || capturedText;
                                 const corrHTML = computeDiffHTML(capturedText, corrText);
@@ -6787,7 +6795,7 @@
                     try {
                         let streamedText = '';
                         let first = true;
-                        await callGeminiStream(getModel('geminiModelVerslag'), prompt, (partial) => {
+                        await callGeminiStream('geminiModelVerslag', prompt, (partial) => {
                             if (first) { vcContent.innerHTML = ''; first = false; }
                             streamedText = partial;
                             vcContent.innerHTML = partial.replace(/\n/g, '<br>');
@@ -6832,7 +6840,7 @@
                     _trResultHTML = null;
                     trOrigBtn.textContent = '↩ Origineel';
                     if (GEMINI_API_KEY) {
-                        callGemini(getModel('geminiModelTranslate'), prompt, _newGeminiSignal())
+                        callGemini('geminiModelTranslate', prompt, _newGeminiSignal())
                             .then(result => {
                                 trContent.innerHTML = renderMarkdown(result);
                                 trStatus.textContent = '';
@@ -7107,7 +7115,7 @@
                     _pipAiAbort = new AbortController();
                     try {
                         const full = await callGeminiChatStream(
-                            getModel('geminiModelAiConsult'),
+                            'geminiModelAiConsult',
                             systemPrompt,
                             _pipAiHistory,
                             (partial) => { loadingBubble.innerHTML = renderMarkdown(partial); pipAiMessages.scrollTop = pipAiMessages.scrollHeight; },
@@ -7905,7 +7913,7 @@
                         try {
                             let first = true;
                             let pipStreamedText = '';
-                            await callGeminiStream(getModel('geminiModelRealtime'), prompt, (partial) => {
+                            await callGeminiStream('geminiModelRealtime', prompt, (partial) => {
                                 if (first) { rtContent.innerHTML = ''; first = false; }
                                 pipStreamedText = partial;
                                 rtContent.innerHTML = partial.replace(/\n/g, '<br>');
@@ -8134,7 +8142,8 @@
                 medgemmaDropzone.classList.remove("hidden");
             });
 
-            async function callGeminiChatStream(model, systemPrompt, history, onChunk, signal) {
+            async function callGeminiChatStream(modelKey, systemPrompt, history, onChunk, signal) {
+                const model = getModel(modelKey), niveau = denk(modelKey);
                 const basis = {
                     system_instruction: { parts: [{ text: systemPrompt }] },
                     contents: history,
@@ -8143,7 +8152,7 @@
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
                     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal }
                 );
-                let res = await verstuur(_geminiBody(model, basis));
+                let res = await verstuur(_geminiBody(model, basis, niveau));
                 if (!res.ok && _isDenkFout(res.status, await res.clone().text().catch(() => ""))) {
                     res = await verstuur(basis);   // dit model kent het denkveld niet
                 }
@@ -8171,7 +8180,7 @@
             }
 
             async function callMedGemma(images, prompt) {
-                const model = getModel('geminiModelMedgemma');
+                const model = getModel('geminiModelMedgemma'), niveau = denk('geminiModelMedgemma');
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 if (!GEMINI_API_KEY) throw new Error("Geen Gemini API key ingevuld. Vul een sleutel in bij Settings.");
                 const imageParts = images.map(img => ({ inline_data: { mime_type: img.mime, data: img.base64 } }));
@@ -8181,7 +8190,7 @@
                 let metDenkniveau = true;
                 const MAX_ATTEMPTS = 3, RETRY_DELAY_MS = 3000;
                 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-                    const body = JSON.stringify(metDenkniveau ? _geminiBody(model, basis) : basis);
+                    const body = JSON.stringify(metDenkniveau ? _geminiBody(model, basis, niveau) : basis);
                     const res = await fetch(
                         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                         { method: "POST", headers: { "Content-Type": "application/json" }, body }
