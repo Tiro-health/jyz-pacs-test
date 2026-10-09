@@ -1280,7 +1280,7 @@
     const AiImageFill = {
         PROMPT_KEY: "formFillActionUrl",
         MODEL_KEY: "geminiModelFormFill",
-        DEFAULT_MODEL: "gemini-2.5-pro",
+        DEFAULT_MODEL: "gemini-3.6-flash",
         DEFAULT_PROMPT: DEFAULT_FORM_FILL_PROMPT,
 
         getApiKey() {
@@ -1324,12 +1324,21 @@
 
             const url = "https://generativelanguage.googleapis.com/v1beta/models/" +
                 encodeURIComponent(this.getModel()) + ":generateContent?key=" + encodeURIComponent(key);
-            const res = await fetch(url, {
+            const verstuur = (body) => fetch(url, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts }] }),
+                body: JSON.stringify(body),
             });
-            if (!res.ok) throw new Error("Gemini-fout " + res.status + ": " + (await res.text()).slice(0, 200));
+            let res = await verstuur(geminiBody(this.getModel(), { contents: [{ parts }] }));
+            if (!res.ok) {
+                const tekst = await res.text();
+                // Kent dit model het denkveld niet, dan nog eens zonder.
+                if (!isDenkFout(res.status, tekst)) {
+                    throw new Error("Gemini-fout " + res.status + ": " + tekst.slice(0, 200));
+                }
+                res = await verstuur({ contents: [{ parts }] });
+                if (!res.ok) throw new Error("Gemini-fout " + res.status + ": " + (await res.text()).slice(0, 200));
+            }
             const json = await res.json();
             const text = (json.candidates?.[0]?.content?.parts || []).map((p) => p.text || "").join("");
             return this.parseJson(text);
@@ -1811,6 +1820,46 @@
         return { applyMode, renderNative, saveRecord, isTemplateMode, fillFromImages, flash, loadRecordFromUrl };
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // Denkniveau van Gemini — scheelt het meest aan wachttijd
+    // ═══════════════════════════════════════════════════════════════════════
+    //
+    // De Gemini 3-modellen denken standaard na vóór ze beginnen te antwoorden.
+    // Voor het werk hier — vertalen, invullen, corrigeren — levert dat weinig
+    // op en kost het seconden voor het eerste token. Sturen we niets mee, dan
+    // geldt het standaardniveau van het model; daarom zetten we het expliciet.
+    //
+    // De knop verschilt per generatie:
+    //   gemini-3.x          thinkingLevel: "low"  (helemaal uit kan niet)
+    //   gemini-2.5-flash*   thinkingBudget: 0     (wel echt uit)
+    //   gemini-2.5-pro      niets — pro kan het denken niet uitzetten
+    //   iets anders         niets — een onbekend of nieuwer model krijgt geen
+    //                       veld dat het misschien niet kent
+    //
+    // Zie ai.google.dev/gemini-api/docs/generate-content/thinking
+    function denkConfig(model) {
+        const m = String(model || "").toLowerCase();
+        if (/^gemini-3/.test(m)) return { thinkingConfig: { thinkingLevel: "low" } };
+        if (/^gemini-2\.5-flash/.test(m)) return { thinkingConfig: { thinkingBudget: 0 } };
+        return null;
+    }
+
+    /** Body voor een Gemini-aanroep, met het denkniveau erbij wanneer dat kan. */
+    function geminiBody(model, inhoud) {
+        const cfg = denkConfig(model);
+        return cfg ? Object.assign({}, inhoud, { generationConfig: cfg }) : inhoud;
+    }
+
+    /**
+     * Een 400 die over het denkveld gaat betekent dat dit model die knop niet
+     * kent — dan is het beter het zonder te proberen dan de gebruiker met een
+     * foutmelding achter te laten. Elk ander antwoord geven we onaangeroerd
+     * terug, ook een mislukte: de aanroeper leest de status zelf.
+     */
+    function isDenkFout(status, tekst) {
+        return status === 400 && /thinking|thinkingconfig|thinkinglevel|thinkingbudget/i.test(tekst || "");
+    }
+
     global.JyzForms = {
         RecordStore,
         SchemaForm,
@@ -1826,6 +1875,9 @@
         terugNaarDatabank,
         Opvolging,
         DEFAULT_FORM_FILL_PROMPT,
+        denkConfig,
+        geminiBody,
+        isDenkFout,
         styles: { BTN, BTN_PRIMARY, BTN_SMALL, INPUT, LABEL, PANEL, OVERLAY },
         el,
     };

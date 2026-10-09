@@ -2942,7 +2942,7 @@
                 geminiModelMedgemma:        'gemini-2.5-flash',
                 geminiModelAiConsult:       'gemini-2.5-pro',
                 geminiModelRealtime:        'gemini-2.5-flash',
-                geminiModelAutofillBackup:  'gemini-2.5-pro',
+                geminiModelAutofillBackup:  'gemini-3.6-flash',
             };
             function getModel(key) {
                 return localStorage.getItem(key) || GEMINI_MODEL_DEFAULTS[key] || 'gemini-2.5-flash';
@@ -3181,15 +3181,25 @@
 
             const GEMINI_SYSTEM = "Geef uitsluitend het gevraagde resultaat terug — geen inleiding, geen uitleg, geen commentaar achteraf. Gebruik voor opmaak uitsluitend HTML-tags: <b> voor vet, <i> voor cursief, <del> voor verwijderde tekst, <ins> voor ingevoegde/gecorrigeerde tekst. Combineer tags waar nodig.";
 
+            // Het denkniveau gaat mee in elke aanroep — zie JyzForms.denkConfig in
+            // forms-shared.js. Ontbreekt die laag, dan versturen we zoals vroeger.
+            const _geminiBody = (model, inhoud) =>
+                window.JyzForms?.geminiBody ? JyzForms.geminiBody(model, inhoud) : inhoud;
+            const _isDenkFout = (status, tekst) =>
+                window.JyzForms?.isDenkFout ? JyzForms.isDenkFout(status, tekst) : false;
+
             async function callGemini(model, prompt, signal) {
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
-                const res = await fetch(
+                const basis = { contents: [{ parts: [{ text: fullPrompt }] }] };
+                const verstuur = (body) => fetch(
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                     { method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        contents: [{ parts: [{ text: fullPrompt }] }]
-                      }), signal }
+                      body: JSON.stringify(body), signal }
                 );
+                let res = await verstuur(_geminiBody(model, basis));
+                if (!res.ok && _isDenkFout(res.status, await res.clone().text().catch(() => ""))) {
+                    res = await verstuur(basis);   // dit model kent het denkveld niet
+                }
                 if (!res.ok) {
                     const body = await res.json().catch(() => ({}));
                     const msg = body?.error?.message || res.statusText;
@@ -3204,18 +3214,26 @@
 
             async function callGeminiStream(model, prompt, onChunk, signal) {
                 const fullPrompt = GEMINI_SYSTEM + "\n\n" + prompt;
-                const body = { contents: [{ parts: [{ text: fullPrompt }] }] };
-                const res = await fetch(
+                const basis = { contents: [{ parts: [{ text: fullPrompt }] }] };
+                const verstuur = (body) => fetch(
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
                     { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal }
                 );
+                let res = await verstuur(_geminiBody(model, basis));
                 if (!res.ok) {
-                    const b = await res.json().catch(() => ({}));
-                    const msg = b?.error?.message || res.statusText;
-                    if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer een ander model in Settings. Details: ${msg}`);
-                    if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
-                    if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de API-sleutel via aistudio.google.com/apikey.`);
-                    throw new Error(`Gemini fout ${res.status}: ${msg}`);
+                    let ruw = await res.text().catch(() => "");
+                    if (_isDenkFout(res.status, ruw)) {
+                        res = await verstuur(basis);   // dit model kent het denkveld niet
+                        if (!res.ok) ruw = await res.text().catch(() => "");
+                    }
+                    if (!res.ok) {
+                        let msg = res.statusText;
+                        try { msg = JSON.parse(ruw)?.error?.message || msg; } catch (_) {}
+                        if (res.status === 429) throw new Error(`Quotum overschreden (429). Probeer een ander model in Settings. Details: ${msg}`);
+                        if (res.status === 400) throw new Error(`Ongeldige aanvraag (400): ${msg}`);
+                        if (res.status === 403) throw new Error(`Toegang geweigerd (403). Controleer de API-sleutel via aistudio.google.com/apikey.`);
+                        throw new Error(`Gemini fout ${res.status}: ${msg}`);
+                    }
                 }
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
@@ -8117,14 +8135,18 @@
             });
 
             async function callGeminiChatStream(model, systemPrompt, history, onChunk, signal) {
-                const body = JSON.stringify({
+                const basis = {
                     system_instruction: { parts: [{ text: systemPrompt }] },
                     contents: history,
-                });
-                const res = await fetch(
+                };
+                const verstuur = (body) => fetch(
                     `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?key=${GEMINI_API_KEY}&alt=sse`,
-                    { method: "POST", headers: { "Content-Type": "application/json" }, body, signal }
+                    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal }
                 );
+                let res = await verstuur(_geminiBody(model, basis));
+                if (!res.ok && _isDenkFout(res.status, await res.clone().text().catch(() => ""))) {
+                    res = await verstuur(basis);   // dit model kent het denkveld niet
+                }
                 if (!res.ok) {
                     const err = await res.json().catch(() => ({}));
                     throw new Error(err?.error?.message || res.statusText);
@@ -8153,15 +8175,22 @@
                 if (!model) throw new Error("Geen model geselecteerd. Klik ↺ naast het model-veld in Settings.");
                 if (!GEMINI_API_KEY) throw new Error("Geen Gemini API key ingevuld. Vul een sleutel in bij Settings.");
                 const imageParts = images.map(img => ({ inline_data: { mime_type: img.mime, data: img.base64 } }));
-                const body = JSON.stringify({
-                    contents: [{ parts: [...imageParts, { text: prompt }] }]
-                });
+                const basis = { contents: [{ parts: [...imageParts, { text: prompt }] }] };
+                // Zodra blijkt dat dit model het denkveld niet kent, laten we het
+                // voor de verdere pogingen weg in plaats van er telkens op te stuiten.
+                let metDenkniveau = true;
                 const MAX_ATTEMPTS = 3, RETRY_DELAY_MS = 3000;
                 for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+                    const body = JSON.stringify(metDenkniveau ? _geminiBody(model, basis) : basis);
                     const res = await fetch(
                         `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`,
                         { method: "POST", headers: { "Content-Type": "application/json" }, body }
                     );
+                    if (metDenkniveau && _isDenkFout(res.status, await res.clone().text().catch(() => ""))) {
+                        metDenkniveau = false;
+                        attempt--;              // deze poging telt niet mee
+                        continue;
+                    }
                     if (res.status === 503) {
                         if (attempt < MAX_ATTEMPTS) {
                             await new Promise(r => setTimeout(r, RETRY_DELAY_MS));

@@ -465,31 +465,40 @@
                 { id: "kidv-model",            storageKey: "geminiModelKidv",            defaultModel: "gemini-2.5-pro"    },
                 { id: "verslag-model",         storageKey: "geminiModelVerslag",         defaultModel: "gemini-2.5-flash"      },
                 { id: "realtime-model",        storageKey: "geminiModelRealtime",        defaultModel: "gemini-2.5-flash-lite"  },
-                { id: "autofill-backup-model", storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-2.5-pro"    },
+                { id: "autofill-backup-model", storageKey: "geminiModelAutofillBackup",  defaultModel: "gemini-3.6-flash"  },
                 { id: "snomed-model",          storageKey: "geminiModelSnomed",          defaultModel: "gemini-2.5-flash"  },
                 { id: "medgemma-model",        storageKey: "geminiModelMedgemma",        defaultModel: "gemini-2.5-flash"  },
-                { id: "form-fill-model",       storageKey: "geminiModelFormFill",        defaultModel: "gemini-2.5-pro"    },
+                { id: "form-fill-model",       storageKey: "geminiModelFormFill",        defaultModel: "gemini-3.6-flash"  },
                 { id: "ai-consult-model",      storageKey: "geminiModelAiConsult",       defaultModel: "gemini-2.5-pro"    },
             ];
 
             // Preferred models per task in priority order (first available wins)
+            // Aanbevolen modellen per taak, in volgorde van voorkeur (eerste die
+            // beschikbaar is wint). Het denkniveau gaat apart mee in de aanroep —
+            // zie JyzForms.denkConfig in forms-shared.js — dus hier kiezen we op
+            // kwaliteit en niet op "denkt dit model standaard mee".
             const RECOMMENDED_MODELS = {
-                // Translate: flash voldoende voor medische NL→FR vertaling
-                geminiModelTranslate:       ["gemini-3.5-flash", "gemini-2.5-flash", "gemini-3.6-flash", "gemini-2.0-flash"],
-                // KIDV checklist: complexe evidence-based reasoning → pro (geen stabiele 3.x pro)
-                geminiModelKidv:            ["gemini-2.5-pro", "gemini-3.5-flash", "gemini-3.6-flash"],
+                // Translate: flash volstaat voor medische NL→FR vertaling
+                geminiModelTranslate:       ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash"],
+                // KIDV checklist: complexe evidence-based reasoning → zwaarste flash
+                geminiModelKidv:            ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-2.5-pro"],
                 // Verslag check: streaming correctie → nieuwste stabiele flash
                 geminiModelVerslag:         ["gemini-3.6-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash"],
-                // Realtime inline: per-zin, laagste latentie → nieuwste stabiele flash-lite
+                // Realtime inline: per zin, laagste latentie → flash-lite
                 geminiModelRealtime:        ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"],
-                // Autofill backup: complexe slot-filling → pro (geen stabiele 3.x pro)
-                geminiModelAutofillBackup:  ["gemini-2.5-pro", "gemini-3.5-flash", "gemini-3.6-flash"],
-                // SNOMED: gestructureerde extractie, kort output → flash-lite
+                // Autofill backup: lange template invullen zonder velden te laten
+                // vallen. Dat is lange-contextwerk, dus flash en geen flash-lite;
+                // pro is hier overbodig traag.
+                geminiModelAutofillBackup:  ["gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash"],
+                // Formulier invullen uit beeld: een foto naar veldwaarden. Stond
+                // niet in deze lijst, dus "gebruik aanbevolen" sloeg het over.
+                geminiModelFormFill:        ["gemini-3.1-flash-image", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-2.5-flash"],
+                // SNOMED: gestructureerde extractie, korte uitvoer → flash-lite
                 geminiModelSnomed:          ["gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.0-flash-lite"],
-                // Medgemma: multimodaal beeldanalyse → gespecialiseerd image-model
-                geminiModelMedgemma:        ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-2.5-flash-image", "gemini-3.5-flash", "gemini-2.5-flash"],
-                // AI Consult: multi-turn expert chat → pro (geen stabiele 3.x pro)
-                geminiModelAiConsult:       ["gemini-2.5-pro", "gemini-3.5-flash", "gemini-3.6-flash"],
+                // Medgemma: multimodale beeldanalyse → gespecialiseerd image-model
+                geminiModelMedgemma:        ["gemini-3.1-flash-image", "gemini-3.1-flash-lite-image", "gemini-2.5-flash-image", "gemini-3.6-flash", "gemini-2.5-flash"],
+                // AI Consult: multi-turn expertgesprek → zwaarste flash
+                geminiModelAiConsult:       ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-2.5-pro"],
             };
 
             let _cachedModels = null;
