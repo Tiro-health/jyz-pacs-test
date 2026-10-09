@@ -1149,29 +1149,6 @@
                 <div
                     class="px-3 py-2 border-t border-neutral-200 dark:border-neutral-800 space-y-3"
                 >
-                    <!-- Questionnaire Reference -->
-                    <form id="questionnaire-form">
-                        <label
-                            for="questionnaire-input"
-                            class="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1"
-                            >Questionnaire Reference</label
-                        >
-                        <div class="flex gap-2">
-                            <input
-                                id="questionnaire-input"
-                                type="text"
-                                placeholder="http://templates.tiro.health/templates/..."
-                                class="flex-1 px-2 py-1.5 text-sm rounded-md border border-neutral-300 dark:border-slate-700 bg-white dark:bg-muted text-neutral-800 dark:text-neutral-200 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                            />
-                            <button
-                                type="submit"
-                                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-md bg-cyan-600 hover:bg-cyan-700 text-white transition-colors whitespace-nowrap"
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </form>
-
                     <!-- Gemini API Key -->
                     <div>
                         <label
@@ -1864,11 +1841,14 @@
 
             const DEFAULT_QUESTIONNAIRE =
                 "http://templates.tiro.health/templates/07e26acc4114489bb52b971d0c4ca855|2.0.5";
-            // Priority: URL param → localStorage saved → default
-            const questionnaire =
-                params.get("questionnaire") ||
-                localStorage.getItem("savedQuestionnaire") ||
-                DEFAULT_QUESTIONNAIRE;
+            // URL-parameter (zo start het PACS de pagina) of anders de standaard.
+            // Er was hier ook een "savedQuestionnaire" uit localStorage, gezet door
+            // het veld "Questionnaire Reference" in de instellingen. Dat veld is weg:
+            // createTemplateForms() bouwt de formulieren op uit de aangevinkte
+            // templates en zette de questionnaire daarbij telkens opnieuw, dus wat je
+            // er typte overleefde de eerstvolgende wijziging van een vinkje of een
+            // herkend onderzoekstype niet.
+            const questionnaire = params.get("questionnaire") || DEFAULT_QUESTIONNAIRE;
 
             // Restore saved template selections
             const savedTemplateNames = JSON.parse(localStorage.getItem("savedTemplateNames") || "[]");
@@ -1902,11 +1882,6 @@
             let form = null; // set by createTemplateForms(), always points to the primary (first) form filler
             let latestReportQuestionnaire = null;
             const loadingOverlay = document.getElementById("loading-overlay");
-            const questionnaireForm = document.getElementById("questionnaire-form");
-            const questionnaireInput = document.getElementById("questionnaire-input");
-
-            // Initialize the input with the current questionnaire
-            questionnaireInput.value = questionnaire;
 
             // ============================================
             // Utility Functions
@@ -2186,37 +2161,6 @@
                 cb.addEventListener("change", updateActiveTemplateSuffix);
             });
             updateActiveTemplateSuffix();
-
-            // ============================================
-            // Load Questionnaire Handler
-            // ============================================
-            function loadQuestionnaire(newQuestionnaire) {
-                if (!newQuestionnaire) return;
-
-                // Update the questionnaire parameter in launch context
-                const updatedParamResource = {
-                    ...paramResource,
-                    parameter: [
-                        ...paramResource.parameter.filter(p => p.name !== "questionnaire"),
-                        { name: "questionnaire", valueString: newQuestionnaire },
-                    ],
-                };
-                const updatedLaunchContext = {
-                    ...launchContext,
-                    custom: updatedParamResource,
-                };
-
-                form.setAttribute("questionnaire", newQuestionnaire);
-                form.setAttribute("launch-context", JSON.stringify(updatedLaunchContext));
-                console.log("Questionnaire updated:", newQuestionnaire);
-            }
-
-            questionnaireForm.addEventListener("submit", (e) => {
-                e.preventDefault();
-                const newUrl = questionnaireInput.value.trim();
-                localStorage.setItem("savedQuestionnaire", newUrl);
-                loadQuestionnaire(newUrl);
-            });
 
             function showLoading() {
                 loadingOverlay.classList.remove("hidden");
