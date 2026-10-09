@@ -1867,14 +1867,25 @@ NIET BESPROKEN VELDEN BUITEN { }  =  Zegt de dictatie iets in de trant van "verd
      * kwam — dan vervangen we die hier. Zo werkt een bestaande export van vóór
      * deze versie gewoon, zonder dat ze de oude regels weer binnenhaalt.
      *
-     * Let wel: dit overschrijft ook een zelf aangepaste syntaxistekst.
+     * Dit raakt ook een zelf aangepaste tekst, en wie hier eigen regels in
+     * gezet heeft wil die niet kwijt. De vorige versie blijft daarom bewaard
+     * onder textTemplateLogic_vorige; de flow-pagina toont ze in het venster
+     * "Algemene logica textuele back-up templates".
      */
     function templateLogic() {
         let opgeslagen = null;
         try { opgeslagen = localStorage.getItem("textTemplateLogic"); } catch (_) {}
         if (opgeslagen && opgeslagen.indexOf(TEXT_TEMPLATE_LOGIC_KOP) !== -1) return opgeslagen;
-        try { localStorage.setItem("textTemplateLogic", DEFAULT_TEXT_TEMPLATE_LOGIC); } catch (_) {}
+        try {
+            if (opgeslagen) localStorage.setItem("textTemplateLogic_vorige", opgeslagen);
+            localStorage.setItem("textTemplateLogic", DEFAULT_TEXT_TEMPLATE_LOGIC);
+        } catch (_) {}
         return DEFAULT_TEXT_TEMPLATE_LOGIC;
+    }
+
+    /** De tekst die bij een versiewissel aan de kant is gezet, of null. */
+    function vorigeTemplateLogic() {
+        try { return localStorage.getItem("textTemplateLogic_vorige"); } catch (_) { return null; }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -1963,6 +1974,7 @@ NIET BESPROKEN VELDEN BUITEN { }  =  Zegt de dictatie iets in de trant van "verd
         DEFAULT_FORM_FILL_PROMPT,
         DEFAULT_TEXT_TEMPLATE_LOGIC,
         templateLogic,
+        vorigeTemplateLogic,
         DENK_NIVEAUS,
         denkNiveau,
         denkConfig,

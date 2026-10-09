@@ -607,6 +607,10 @@
                 </div>
                 <div class="flex-1 overflow-y-auto px-5 py-4">
                     <p class="text-xs text-neutral-400 dark:text-neutral-500 mb-2">Pas hier de syntaxisregels aan die gelden voor alle textuele back-up templates. Wordt mee opgenomen als context in AI-prompts.</p>
+                    <div id="logic-vorige-nota" class="hidden mb-2 flex items-center gap-2 text-xs rounded-md border border-amber-200/70 dark:border-amber-800/40 bg-amber-50 dark:bg-amber-900/15 px-2.5 py-1.5">
+                        <span class="text-amber-700 dark:text-amber-400 flex-1">Deze tekst is bijgewerkt naar een nieuwere versie. Stond er iets eigens in, dan vind je het hier terug.</span>
+                        <button id="logic-vorige-btn" type="button" class="shrink-0 px-2 py-0.5 rounded border border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30">Toon vorige</button>
+                    </div>
                     <textarea
                         id="logic-textarea"
                         rows="16"
@@ -1562,6 +1566,26 @@
             logicSaveBtn.textContent = 'Opgeslagen ✓';
             setTimeout(() => { logicSaveBtn.textContent = 'Opslaan'; }, 2000);
         });
+
+        // Is er bij een versiewissel een oudere tekst aan de kant gezet, dan is
+        // die hier op te vragen. Wie er eigen regels in had staan kan ze zo
+        // overnemen; Opslaan bewaart wat er op dat moment in het vak staat.
+        (function () {
+            const vorige = window.JyzForms?.vorigeTemplateLogic?.();
+            if (!vorige) return;
+            const nota = document.getElementById('logic-vorige-nota');
+            const knop = document.getElementById('logic-vorige-btn');
+            if (!nota || !knop) return;
+            nota.classList.remove('hidden');
+            let toontVorige = false;
+            knop.addEventListener('click', () => {
+                toontVorige = !toontVorige;
+                logicTextarea.value = toontVorige
+                    ? vorige
+                    : (window.JyzForms?.templateLogic?.() || DEFAULT_TEXT_TEMPLATE_LOGIC);
+                knop.textContent = toontVorige ? 'Toon huidige' : 'Toon vorige';
+            });
+        })();
 
         // ── Textuele back-up template code editor ───────────────────────────────
 
